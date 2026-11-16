@@ -3,6 +3,19 @@
     "name": "GitVerse",
     "tagline": "Modern, local-first cross-platform Git client"
   },
+  "window": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close",
+    "toggleSidebar": "Toggle Sidebar"
+  },
+  "application": {
+    "status": {
+      "desktopShellReady": "Desktop Shell Ready",
+      "browserPreviewMode": "Browser Preview"
+    }
+  },
   "common": {
     "open": "Open",
     "close": "Close",

@@ -3,6 +3,19 @@
     "name": "گیت‌ورس",
     "tagline": "کلاینت گیت محلی، چندسکویی و مدرن"
   },
+  "window": {
+    "minimize": "کوچک‌سازی",
+    "maximize": "بزرگ‌نمایی",
+    "restore": "اندازه عادی",
+    "close": "بستن",
+    "toggleSidebar": "تغییر وضعیت نوار کناری"
+  },
+  "application": {
+    "status": {
+      "desktopShellReady": "محیط دسکتاپ آماده",
+      "browserPreviewMode": "پیش‌نمایش مرورگر"
+    }
+  },
   "common": {
     "open": "باز کردن",
     "close": "بستن",

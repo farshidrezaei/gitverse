@@ -5,7 +5,7 @@ const { toggleColorMode, colorMode } = useThemeController()
 </script>
 
 <template>
-  <div class="mx-auto flex max-w-6xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
+  <div class="h-full w-full flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div class="flex items-center gap-3">
         <SharedBrandLogo size="lg" is-decorative />
