@@ -38,6 +38,17 @@ export default defineNuxtConfig({
     storageKey: 'gitverse-color-mode',
   },
 
+  vite: {
+    optimizeDeps: {
+      include: [
+        '@tauri-apps/api/core',
+        '@tauri-apps/api/event',
+        '@tauri-apps/api/window',
+        '@tauri-apps/plugin-dialog',
+      ],
+    },
+  },
+
   icon: {
     clientBundle: {
       scan: {
