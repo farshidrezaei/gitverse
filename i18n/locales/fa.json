@@ -16,6 +16,13 @@
       "browserPreviewMode": "پیش‌نمایش مرورگر"
     }
   },
+  "footer": {
+    "branch": "شاخه",
+    "sync": "همگام‌سازی",
+    "workingTreeClean": "درخت کاری تمیز است",
+    "workingTreeDirty": "{count} تغییر",
+    "gitReady": "گیت آماده است"
+  },
   "common": {
     "open": "باز کردن",
     "close": "بستن",
@@ -75,10 +82,23 @@
     }
   },
   "settings": {
+    "title": "تنظیمات",
     "appearance": {
+      "title": "ظاهر و تم",
+      "description": "شخصی‌سازی حالت تم، رنگ‌های برند و خطوط گراف.",
       "light": "روشن",
       "dark": "تیره",
       "system": "سیستم"
+    },
+    "language": {
+      "title": "زبان و جهت‌بندی",
+      "description": "انتخاب زبان برنامه و جهت خواندن متن."
+    },
+    "git": {
+      "title": "موتور گیت",
+      "description": "شناسایی فایل اجرایی نیتیو گیت و پیکربندی رفتارها.",
+      "executablePath": "مسیر فایل اجرایی گیت",
+      "defaultBranch": "نام شاخه پیش‌فرض"
     }
   },
   "theme": {

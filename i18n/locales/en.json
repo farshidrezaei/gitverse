@@ -16,6 +16,13 @@
       "browserPreviewMode": "Browser Preview"
     }
   },
+  "footer": {
+    "branch": "Branch",
+    "sync": "Sync",
+    "workingTreeClean": "Working tree clean",
+    "workingTreeDirty": "{count} changes",
+    "gitReady": "Git CLI Ready"
+  },
   "common": {
     "open": "Open",
     "close": "Close",
@@ -75,10 +82,23 @@
     }
   },
   "settings": {
+    "title": "Settings",
     "appearance": {
+      "title": "Appearance & Theme",
+      "description": "Customize theme mode, brand colors, and graph lane accents.",
       "light": "Light",
       "dark": "Dark",
       "system": "System"
+    },
+    "language": {
+      "title": "Language & Direction",
+      "description": "Select application language and text direction."
+    },
+    "git": {
+      "title": "Git Engine",
+      "description": "Native Git CLI discovery and configuration.",
+      "executablePath": "Git Executable Path",
+      "defaultBranch": "Default Branch Name"
     }
   },
   "theme": {

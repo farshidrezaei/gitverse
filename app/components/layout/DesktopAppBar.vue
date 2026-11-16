@@ -1,7 +1,5 @@
 <script setup lang="ts">
 const { t } = useI18n()
-const { locale, changeLocale } = useLocaleController()
-const { colorMode, toggleColorMode } = useThemeController()
 const {
   isMaximized,
   isWindowControlsAvailable,
@@ -9,6 +7,10 @@ const {
   toggleMaximizeWindow,
   closeWindow,
 } = useWindowControls()
+
+const emit = defineEmits<{
+  openSettings: []
+}>()
 
 function handleBarDoubleClick(event: MouseEvent): void {
   const target = event.target as HTMLElement | null
@@ -24,10 +26,10 @@ function handleBarDoubleClick(event: MouseEvent): void {
 <template>
   <header
     data-tauri-drag-region
-    class="flex h-10 shrink-0 select-none items-center justify-between border-b border-default bg-[var(--gv-sidebar)] px-2.5 text-xs"
+    class="flex h-10 shrink-0 select-none items-center justify-between border-b border-default bg-[var(--gv-sidebar)] px-3 text-xs"
     @dblclick="handleBarDoubleClick"
   >
-    <!-- Leading: Brand & Active Context -->
+    <!-- Leading: Brand & Active Repository Context (No navigation links) -->
     <div data-tauri-drag-region class="flex items-center gap-2.5 min-w-0">
       <div data-tauri-drag-region class="flex items-center gap-1.5">
         <SharedBrandLogo size="sm" is-decorative />
@@ -38,33 +40,13 @@ function handleBarDoubleClick(event: MouseEvent): void {
 
       <span class="text-muted/60" aria-hidden="true">/</span>
 
-      <!-- Active Workspace / Repository Breadcrumb -->
+      <!-- Active Repository & Branch Breadcrumb -->
       <div data-tauri-drag-region class="flex items-center gap-1.5 text-muted truncate">
         <span class="font-medium text-toned truncate">gitverse</span>
         <UBadge size="xs" color="primary" variant="subtle" icon="i-lucide-git-branch">
           main
         </UBadge>
       </div>
-
-      <!-- Navigation Links -->
-      <nav class="flex items-center gap-1 ms-2">
-        <UButton
-          to="/"
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-git-graph"
-          :label="t('navigation.workspace')"
-        />
-        <UButton
-          to="/design-system"
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-palette"
-          :label="t('navigation.designSystem')"
-        />
-      </nav>
     </div>
 
     <!-- Center Drag Region -->
@@ -78,27 +60,17 @@ function handleBarDoubleClick(event: MouseEvent): void {
       </span>
     </div>
 
-    <!-- Trailing: Language, Theme & Frameless Window Controls -->
-    <div class="flex items-center gap-1 shrink-0">
-      <UTooltip :text="t('designSystem.controls.languageToggle')">
+    <!-- Trailing: Settings Trigger & Native Window Controls (No theme/lang toggles) -->
+    <div class="flex items-center gap-1.5 shrink-0">
+      <!-- Settings Button -->
+      <UTooltip :text="t('settings.title')">
         <UButton
           size="xs"
           color="neutral"
           variant="ghost"
-          icon="i-lucide-languages"
-          @click="changeLocale(locale === 'en' ? 'fa' : 'en')"
-        >
-          {{ locale === 'en' ? 'FA' : 'EN' }}
-        </UButton>
-      </UTooltip>
-
-      <UTooltip :text="t('common.theme')">
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          :icon="colorMode.value === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'"
-          @click="toggleColorMode"
+          icon="i-lucide-settings"
+          :aria-label="t('settings.title')"
+          @click="emit('openSettings')"
         />
       </UTooltip>
 
