@@ -125,6 +125,23 @@
       "architectureLabel": "Architecture Standard"
     }
   },
+  "repository": {
+    "noActiveRepository": "No Repository Open",
+    "openRepository": "Open Repository",
+    "openFolder": "Open Folder",
+    "cloneRepository": "Clone Repository",
+    "initRepository": "Create New Repository",
+    "closeRepository": "Close Repository",
+    "recentRepositories": "Recent Repositories",
+    "noRecentRepositories": "No recent repositories yet",
+    "cleanWorkingTree": "Working tree is clean",
+    "dirtyWorkingTree": "{count} uncommitted changes",
+    "emptyRepository": "Empty repository (no commits yet)",
+    "detachedHead": "Detached HEAD",
+    "welcomeTitle": "Welcome to GitVerse",
+    "welcomeSubtitle": "Select a local repository from your machine or choose from recent projects to begin working.",
+    "selectDirectoryHint": "Choose any existing Git repository folder on disk"
+  },
   "theme": {
     "dark": "Dark",
     "light": "Light",

@@ -125,6 +125,23 @@
       "architectureLabel": "استاندارد معماری"
     }
   },
+  "repository": {
+    "noActiveRepository": "مخزنی باز نیست",
+    "openRepository": "باز کردن مخزن",
+    "openFolder": "انتخاب پوشه",
+    "cloneRepository": "کلون مخزن",
+    "initRepository": "ایجاد مخزن جدید",
+    "closeRepository": "بستن مخزن",
+    "recentRepositories": "مخازن اخیر",
+    "noRecentRepositories": "هنوز مخزن اخیری ثبت نشده است",
+    "cleanWorkingTree": "درخت کاری تمیز است",
+    "dirtyWorkingTree": "{count} تغییر ثبت‌نشده",
+    "emptyRepository": "مخزن خالی است (بدون کامیت)",
+    "detachedHead": "وضعیت Detached HEAD",
+    "welcomeTitle": "به گیت‌ورس خوش آمدید",
+    "welcomeSubtitle": "یک مخزن گیت محلی را از روی دیسک باز کنید یا از لیست پروژه‌های اخیر انتخاب نمایید.",
+    "selectDirectoryHint": "پوشه یک مخزن گیت موجود را انتخاب کنید"
+  },
   "theme": {
     "dark": "تیره",
     "light": "روشن",

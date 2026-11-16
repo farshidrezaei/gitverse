@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { SplitterItem } from '@nuxt/ui'
+import WelcomeWorkspaceState from '~/components/workspace/WelcomeWorkspaceState.vue'
 
 const { t } = useI18n()
+const { currentRepository, promptAndOpenRepository } = useWorkspaceManager()
 
 // Main horizontal layout with floating inset panels (Island-style)
 const mainSplitterItems = ref<SplitterItem[]>([
@@ -152,7 +154,12 @@ function selectCommit(sha: string): void {
 
 <template>
   <div class="h-full w-full flex-1 overflow-hidden select-none bg-[var(--gv-background)]">
+    <!-- Zero Repository Open State: Show Welcome screen with recent repos -->
+    <WelcomeWorkspaceState v-if="!currentRepository" />
+
+    <!-- Active Repository: Multi-pane Inset Workbench -->
     <USplitter
+      v-else
       id="gitverse-workbench-splitter"
       auto-save-id="gitverse-workbench-layout"
       :items="mainSplitterItems"

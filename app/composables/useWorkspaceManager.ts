@@ -104,6 +104,30 @@ export function useWorkspaceManager() {
     }
   }
 
+  async function promptAndOpenRepository(): Promise<RepositoryOverview | null> {
+    try {
+      if (await isTauriEnvironment()) {
+        const { open } = await import('@tauri-apps/plugin-dialog')
+        const selected = await open({
+          directory: true,
+          multiple: false,
+          title: 'Select Git Repository',
+        })
+        if (selected && typeof selected === 'string') {
+          return await openRepository(selected)
+        }
+        return null
+      } else {
+        // Web mock
+        const samplePath = '/home/farshid/Desktop/self/gitverse'
+        return await openRepository(samplePath)
+      }
+    } catch (error: any) {
+      lastError.value = error?.message || 'Directory picker failed'
+      return null
+    }
+  }
+
   async function closeRepository(): Promise<void> {
     if (await isTauriEnvironment()) {
       const { invoke } = await import('@tauri-apps/api/core')
@@ -121,6 +145,7 @@ export function useWorkspaceManager() {
     discoverGit,
     fetchRecentRepositories,
     openRepository,
+    promptAndOpenRepository,
     closeRepository,
   }
 }

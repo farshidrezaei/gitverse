@@ -20,6 +20,7 @@ pub fn run() {
     let _ = tracing_subscriber::fmt().with_env_filter(filter).try_init();
 
     let application_result = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|application| {
             tracing::info!("GitVerse desktop application runtime initializing...");
 
