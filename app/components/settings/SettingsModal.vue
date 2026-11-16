@@ -24,13 +24,13 @@ const categories = computed<Array<{ id: SettingsCategory; labelKey: string; icon
   <UModal
     v-model:open="isOpen"
     :ui="{
-      content: 'sm:max-w-4xl max-h-[85vh] p-0 border-0 bg-transparent shadow-none',
+      content: 'sm:max-w-4xl max-h-[85vh] p-0 border-0 bg-transparent shadow-none ring-0 focus:outline-none overflow-hidden rounded-2xl',
     }"
   >
     <template #content="{ close }">
-      <div class="flex flex-col w-full max-h-[85vh] rounded-2xl border border-default/80 bg-[var(--gv-surface)] backdrop-blur-2xl shadow-2xl overflow-hidden text-xs">
+      <div class="flex flex-col w-full max-h-[85vh] rounded-2xl border border-[var(--gv-border)] bg-[var(--gv-surface)] backdrop-blur-2xl shadow-2xl overflow-hidden text-xs">
         <!-- Unified Modal Header -->
-        <div class="flex h-12 shrink-0 items-center justify-between px-4 border-b border-default/70 bg-muted/20 select-none">
+        <div class="flex h-12 shrink-0 items-center justify-between px-4 border-b border-[var(--gv-border)] bg-[var(--gv-sidebar)] select-none">
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-settings" class="h-4 w-4 text-primary" />
             <h2 class="text-sm font-bold text-highlighted">
@@ -55,7 +55,7 @@ const categories = computed<Array<{ id: SettingsCategory; labelKey: string; icon
         <!-- Unified Body: Categorized Sidebar + Content (No box-in-a-box seams!) -->
         <div class="flex flex-1 min-h-[480px] overflow-hidden">
           <!-- Sidebar Navigation -->
-          <div class="w-48 sm:w-52 shrink-0 border-e border-default/60 bg-muted/10 p-2 space-y-1 select-none">
+          <div class="w-48 sm:w-52 shrink-0 border-e border-[var(--gv-border)] bg-[var(--gv-sidebar)] p-2 space-y-1 select-none">
             <button
               v-for="cat in categories"
               :key="cat.id"
@@ -81,7 +81,7 @@ const categories = computed<Array<{ id: SettingsCategory; labelKey: string; icon
           </div>
 
           <!-- Main Settings Content Area -->
-          <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-surface/30">
+          <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-[var(--gv-background)]">
             <AppearanceSettingsCard v-if="activeCategory === 'appearance'" />
             <GitEngineSettingsCard v-else-if="activeCategory === 'git'" />
             <LanguageSettingsCard v-else-if="activeCategory === 'language'" />

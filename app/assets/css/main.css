@@ -13,25 +13,41 @@
 
 /* =========================================================================
    1. FONT SIZE SCALING
+   Dynamically scales all Tailwind & Nuxt UI text utilities via root rem & variables
    ========================================================================= */
 html {
   font-size: 14px;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
 }
 
 html[data-font-size="compact"] {
-  font-size: 13px;
+  font-size: 12.5px;
+  --text-xs: 0.72rem;
+  --text-sm: 0.82rem;
+  --text-base: 0.92rem;
 }
 
 html[data-font-size="normal"] {
   font-size: 14px;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
 }
 
 html[data-font-size="relaxed"] {
-  font-size: 15px;
+  font-size: 15.5px;
+  --text-xs: 0.78rem;
+  --text-sm: 0.92rem;
+  --text-base: 1.05rem;
 }
 
 html[data-font-size="large"] {
-  font-size: 16px;
+  font-size: 17px;
+  --text-xs: 0.82rem;
+  --text-sm: 0.98rem;
+  --text-base: 1.12rem;
 }
 
 /* =========================================================================
@@ -194,16 +210,26 @@ html[data-shadow="dramatic"] {
 
 /* =========================================================================
    5. NEUTRAL SCALES (Slate, Zinc, Gray, Neutral, Black OLED)
+   Synchronized with both GitVerse design tokens and Nuxt UI semantic tokens:
+   --ui-bg, --ui-bg-elevated, --ui-bg-muted, --ui-border
    ========================================================================= */
 
-/* Slate (Default) */
+/* Slate (Default Cool Tech) */
 html:not([data-neutral]), html[data-neutral="slate"] {
-  --gv-background: #f1f3f7;
+  --gv-background: #eef2f6;
   --gv-sidebar: #f8fafc;
   --gv-surface: #ffffff;
-  --gv-surface-elevated: #ffffff;
-  --gv-border: #d0d7de;
+  --gv-surface-elevated: #f1f5f9;
+  --gv-border: #cbd5e1;
   --gv-surface-rgb: 255, 255, 255;
+  --gv-glass-border: rgba(203, 213, 225, 0.85);
+
+  --ui-bg: #ffffff;
+  --ui-bg-muted: #f8fafc;
+  --ui-bg-elevated: #f1f5f9;
+  --ui-bg-accented: #e2e8f0;
+  --ui-border: #cbd5e1;
+  --ui-border-muted: #e2e8f0;
 }
 
 .dark:not([data-neutral]), .dark[data-neutral="slate"] {
@@ -213,16 +239,32 @@ html:not([data-neutral]), html[data-neutral="slate"] {
   --gv-surface-elevated: #1c2432;
   --gv-border: #263143;
   --gv-surface-rgb: 20, 26, 36;
+  --gv-glass-border: rgba(38, 49, 67, 0.85);
+
+  --ui-bg: #141a24;
+  --ui-bg-muted: #0f141d;
+  --ui-bg-elevated: #1c2432;
+  --ui-bg-accented: #263143;
+  --ui-border: #263143;
+  --ui-border-muted: #1c2432;
 }
 
-/* Zinc */
+/* Zinc (Industrial High-Contrast) */
 html[data-neutral="zinc"] {
   --gv-background: #f4f4f5;
   --gv-sidebar: #fafafa;
   --gv-surface: #ffffff;
-  --gv-surface-elevated: #ffffff;
-  --gv-border: #e4e4e7;
+  --gv-surface-elevated: #f4f4f5;
+  --gv-border: #d4d4d8;
   --gv-surface-rgb: 255, 255, 255;
+  --gv-glass-border: rgba(212, 212, 216, 0.85);
+
+  --ui-bg: #ffffff;
+  --ui-bg-muted: #fafafa;
+  --ui-bg-elevated: #f4f4f5;
+  --ui-bg-accented: #e4e4e7;
+  --ui-border: #d4d4d8;
+  --ui-border-muted: #e4e4e7;
 }
 
 .dark[data-neutral="zinc"] {
@@ -232,16 +274,32 @@ html[data-neutral="zinc"] {
   --gv-surface-elevated: #27272a;
   --gv-border: #27272a;
   --gv-surface-rgb: 24, 24, 27;
+  --gv-glass-border: rgba(39, 39, 42, 0.85);
+
+  --ui-bg: #18181b;
+  --ui-bg-muted: #121215;
+  --ui-bg-elevated: #27272a;
+  --ui-bg-accented: #3f3f46;
+  --ui-border: #27272a;
+  --ui-border-muted: #27272a;
 }
 
-/* Gray */
+/* Gray (Balanced Neutral Gray) */
 html[data-neutral="gray"] {
   --gv-background: #f3f4f6;
   --gv-sidebar: #f9fafb;
   --gv-surface: #ffffff;
-  --gv-surface-elevated: #ffffff;
-  --gv-border: #e5e7eb;
+  --gv-surface-elevated: #f3f4f6;
+  --gv-border: #d1d5db;
   --gv-surface-rgb: 255, 255, 255;
+  --gv-glass-border: rgba(209, 213, 219, 0.85);
+
+  --ui-bg: #ffffff;
+  --ui-bg-muted: #f9fafb;
+  --ui-bg-elevated: #f3f4f6;
+  --ui-bg-accented: #e5e7eb;
+  --ui-border: #d1d5db;
+  --ui-border-muted: #e5e7eb;
 }
 
 .dark[data-neutral="gray"] {
@@ -251,16 +309,32 @@ html[data-neutral="gray"] {
   --gv-surface-elevated: #374151;
   --gv-border: #374151;
   --gv-surface-rgb: 31, 41, 55;
+  --gv-glass-border: rgba(55, 65, 81, 0.85);
+
+  --ui-bg: #1f2937;
+  --ui-bg-muted: #172033;
+  --ui-bg-elevated: #374151;
+  --ui-bg-accented: #4b5563;
+  --ui-border: #374151;
+  --ui-border-muted: #374151;
 }
 
-/* Neutral */
+/* Neutral (Soft Minimalist Warm Neutral) */
 html[data-neutral="neutral"] {
   --gv-background: #f5f5f5;
   --gv-sidebar: #fafafa;
   --gv-surface: #ffffff;
-  --gv-surface-elevated: #ffffff;
-  --gv-border: #e5e5e5;
+  --gv-surface-elevated: #f5f5f5;
+  --gv-border: #d4d4d4;
   --gv-surface-rgb: 255, 255, 255;
+  --gv-glass-border: rgba(212, 212, 212, 0.85);
+
+  --ui-bg: #ffffff;
+  --ui-bg-muted: #fafafa;
+  --ui-bg-elevated: #f5f5f5;
+  --ui-bg-accented: #e5e5e5;
+  --ui-border: #d4d4d4;
+  --ui-border-muted: #e5e5e5;
 }
 
 .dark[data-neutral="neutral"] {
@@ -270,16 +344,32 @@ html[data-neutral="neutral"] {
   --gv-surface-elevated: #262626;
   --gv-border: #262626;
   --gv-surface-rgb: 26, 26, 26;
+  --gv-glass-border: rgba(38, 38, 38, 0.85);
+
+  --ui-bg: #1a1a1a;
+  --ui-bg-muted: #141414;
+  --ui-bg-elevated: #262626;
+  --ui-bg-accented: #404040;
+  --ui-border: #262626;
+  --ui-border-muted: #262626;
 }
 
-/* Black (OLED Pitch Black) */
+/* Black (Pure OLED Pitch Black) */
 html[data-neutral="black"] {
-  --gv-background: #f4f4f5;
-  --gv-sidebar: #fafafa;
+  --gv-background: #e4e4e7;
+  --gv-sidebar: #f4f4f5;
   --gv-surface: #ffffff;
-  --gv-surface-elevated: #ffffff;
-  --gv-border: #e4e4e7;
+  --gv-surface-elevated: #f4f4f5;
+  --gv-border: #a1a1aa;
   --gv-surface-rgb: 255, 255, 255;
+  --gv-glass-border: rgba(161, 161, 170, 0.85);
+
+  --ui-bg: #ffffff;
+  --ui-bg-muted: #f4f4f5;
+  --ui-bg-elevated: #e4e4e7;
+  --ui-bg-accented: #d4d4d8;
+  --ui-border: #a1a1aa;
+  --ui-border-muted: #d4d4d8;
 }
 
 .dark[data-neutral="black"] {
@@ -289,6 +379,14 @@ html[data-neutral="black"] {
   --gv-surface-elevated: #141414;
   --gv-border: #1c1c1c;
   --gv-surface-rgb: 10, 10, 10;
+  --gv-glass-border: rgba(28, 28, 28, 0.85);
+
+  --ui-bg: #0a0a0a;
+  --ui-bg-muted: #050505;
+  --ui-bg-elevated: #141414;
+  --ui-bg-accented: #262626;
+  --ui-border: #1c1c1c;
+  --ui-border-muted: #141414;
 }
 
 /* =========================================================================

@@ -43,11 +43,37 @@ const DEFAULT_THEME_SETTINGS: ThemeSettingsState = {
 
 const THEME_STORAGE_KEY = 'gitverse-theme-preferences'
 
+// Module-level singleton state so all components and modals share the exact same reactive instance
+const sharedSettings = ref<ThemeSettingsState>({ ...DEFAULT_THEME_SETTINGS })
+let isInitialized = false
+
+function getPersistedSettings(): ThemeSettingsState {
+  if (typeof window === 'undefined') {
+    return { ...DEFAULT_THEME_SETTINGS }
+  }
+  const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored) as Partial<ThemeSettingsState>
+      return { ...DEFAULT_THEME_SETTINGS, ...parsed }
+    } catch {
+      // Fallback
+    }
+  }
+  return { ...DEFAULT_THEME_SETTINGS }
+}
+
 export function useThemeController() {
   const colorMode = useColorMode()
   const appConfig = useAppConfig()
 
-  const settings = ref<ThemeSettingsState>({ ...DEFAULT_THEME_SETTINGS })
+  // Ensure singleton state reads from storage on first call
+  if (!isInitialized && typeof window !== 'undefined') {
+    sharedSettings.value = getPersistedSettings()
+    isInitialized = true
+  }
+
+  const settings = sharedSettings
 
   function applySettingsToDom(state: ThemeSettingsState): void {
     if (typeof document === 'undefined') {
