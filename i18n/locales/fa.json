@@ -83,9 +83,26 @@
   },
   "settings": {
     "title": "تنظیمات",
+    "subtitle": "شخصی‌سازی فضای کاری گیت‌ورس، تم‌ها و هسته نیتیو گیت.",
+    "categories": {
+      "appearance": "ظاهر و تم",
+      "git": "موتور گیت",
+      "language": "زبان",
+      "about": "درباره"
+    },
     "appearance": {
       "title": "ظاهر و تم",
-      "description": "شخصی‌سازی حالت تم، رنگ‌های برند و خطوط گراف.",
+      "description": "شخصی‌سازی حالت تم، رنگ‌های برند، مات‌شدگی شیشه‌ای، شعاع گوشه‌ها و اندازه فونت.",
+      "themeMode": "حالت تم",
+      "themePresets": "پالت‌های رنگی آماده",
+      "glassmorphismTitle": "شیشه‌ای بودن و شفافیت",
+      "glassmorphismDescription": "افکت شیشه‌ای مات و بلر روی پنل‌های جزیره‌ای، مدال‌ها و منوها.",
+      "backdropBlurLabel": "شعاع مات‌شدگی پس‌زمینه",
+      "surfaceOpacityLabel": "میزان شفافیت سطوح",
+      "borderRadiusTitle": "گردی گوشه‌ها و شعاع",
+      "fontSizeTitle": "اندازه فونت و مقیاس متن",
+      "shadowTitle": "عمق سایه‌ها و برجستگی",
+      "spacingTitle": "تراکم فاصله‌گذاری",
       "light": "روشن",
       "dark": "تیره",
       "system": "سیستم"
@@ -99,6 +116,13 @@
       "description": "شناسایی فایل اجرایی نیتیو گیت و پیکربندی رفتارها.",
       "executablePath": "مسیر فایل اجرایی گیت",
       "defaultBranch": "نام شاخه پیش‌فرض"
+    },
+    "about": {
+      "title": "درباره گیت‌ورس",
+      "description": "اطلاعات نسخه و مشخصات معماری پایه.",
+      "versionLabel": "نسخه برنامه",
+      "runtimeLabel": "محیط دسکتاپ",
+      "architectureLabel": "استاندارد معماری"
     }
   },
   "theme": {

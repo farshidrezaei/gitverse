@@ -3,34 +3,34 @@ import type { SplitterItem } from '@nuxt/ui'
 
 const { t } = useI18n()
 
-// Main horizontal layout: Sidebar | Center Graph | Staging Inspector
+// Main horizontal layout with floating inset panels (Island-style)
 const mainSplitterItems = ref<SplitterItem[]>([
   {
-    id: 'sidebar-panel',
+    id: 'sidebar-island',
     slot: 'sidebar',
     minSize: 14,
-    defaultSize: 18,
+    defaultSize: 19,
     maxSize: 32,
     collapsible: true,
     collapsedSize: 0,
-    class: 'border-e border-default bg-[var(--gv-sidebar)] overflow-hidden flex flex-col',
+    class: 'p-1.5 overflow-hidden flex flex-col',
   },
   {
-    id: 'center-panel',
+    id: 'center-island',
     slot: 'center',
     minSize: 35,
-    defaultSize: 54,
-    class: 'overflow-hidden flex flex-col bg-[var(--gv-surface)]',
+    defaultSize: 53,
+    class: 'p-1.5 overflow-hidden flex flex-col',
   },
   {
-    id: 'staging-panel',
+    id: 'staging-island',
     slot: 'staging',
     minSize: 18,
     defaultSize: 28,
     maxSize: 45,
     collapsible: true,
     collapsedSize: 0,
-    class: 'border-s border-default bg-[var(--gv-sidebar)] overflow-hidden flex flex-col',
+    class: 'p-1.5 overflow-hidden flex flex-col',
   },
 ])
 
@@ -41,14 +41,14 @@ const centerSplitterItems = ref<SplitterItem[]>([
     slot: 'graph',
     minSize: 30,
     defaultSize: 55,
-    class: 'overflow-hidden flex flex-col',
+    class: 'pb-1 overflow-hidden flex flex-col',
   },
   {
     id: 'diff-bottom-panel',
     slot: 'diff',
     minSize: 20,
     defaultSize: 45,
-    class: 'border-t border-default overflow-hidden flex flex-col bg-[var(--gv-background)]',
+    class: 'pt-1 overflow-hidden flex flex-col',
   },
 ])
 
@@ -151,23 +151,23 @@ function selectCommit(sha: string): void {
 </script>
 
 <template>
-  <div class="h-full w-full flex-1 overflow-hidden select-none">
+  <div class="h-full w-full flex-1 overflow-hidden select-none bg-[var(--gv-background)]">
     <USplitter
       id="gitverse-workbench-splitter"
       auto-save-id="gitverse-workbench-layout"
       :items="mainSplitterItems"
       class="h-full w-full"
       :ui="{
-        handle: 'w-1 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-col-resize',
+        handle: 'w-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-col-resize',
       }"
     >
       <!-- ================================================================= -->
-      <!-- PANEL 1: SIDEBAR (Branches, Tags, Remotes)                         -->
+      <!-- PANEL 1: INSET SIDEBAR ISLAND (Branches, Tags, Remotes)           -->
       <!-- ================================================================= -->
       <template #sidebar>
-        <div class="flex h-full flex-col overflow-hidden">
+        <div class="gv-island-panel flex h-full flex-col overflow-hidden">
           <!-- Sidebar Header -->
-          <div class="flex h-9 shrink-0 items-center justify-between border-b border-default px-3 bg-[var(--gv-sidebar)]">
+          <div class="flex h-9 shrink-0 items-center justify-between border-b border-default/70 px-3 bg-muted/20">
             <span class="text-xs font-semibold text-highlighted uppercase tracking-wider">
               {{ t('navigation.repositories') }}
             </span>
@@ -193,7 +193,7 @@ function selectCommit(sha: string): void {
                   v-for="branch in branches"
                   :key="branch.name"
                   type="button"
-                  class="flex w-full items-center justify-between rounded px-2 py-1.5 text-start transition-colors hover:bg-primary/10"
+                  class="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-primary/10"
                   :class="branch.isHead ? 'bg-primary/15 font-semibold text-primary' : 'text-toned'"
                 >
                   <div class="flex items-center gap-1.5 min-w-0">
@@ -222,7 +222,7 @@ function selectCommit(sha: string): void {
                   v-for="remote in remotes"
                   :key="remote.name"
                   type="button"
-                  class="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-start text-toned transition-colors hover:bg-primary/10"
+                  class="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-start text-toned transition-colors hover:bg-primary/10"
                 >
                   <UIcon name="i-lucide-cloud" class="h-3.5 w-3.5 shrink-0 text-muted" />
                   <span class="truncate">{{ remote.name }}</span>
@@ -241,7 +241,7 @@ function selectCommit(sha: string): void {
                   v-for="tag in tags"
                   :key="tag.name"
                   type="button"
-                  class="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-start text-toned transition-colors hover:bg-primary/10"
+                  class="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-start text-toned transition-colors hover:bg-primary/10"
                 >
                   <UIcon name="i-lucide-tag" class="h-3.5 w-3.5 shrink-0 text-muted" />
                   <span class="truncate">{{ tag.name }}</span>
@@ -253,7 +253,7 @@ function selectCommit(sha: string): void {
       </template>
 
       <!-- ================================================================= -->
-      <!-- PANEL 2: CENTER (Commit Graph & Nested Diff Inspector)             -->
+      <!-- PANEL 2: INSET CENTER ISLANDS (Commit Graph + Diff Viewer)        -->
       <!-- ================================================================= -->
       <template #center>
         <USplitter
@@ -263,14 +263,14 @@ function selectCommit(sha: string): void {
           :items="centerSplitterItems"
           class="h-full w-full"
           :ui="{
-            handle: 'h-1 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-row-resize',
+            handle: 'h-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-row-resize',
           }"
         >
-          <!-- Top Subpanel: Commit Graph & History -->
+          <!-- Top Island: Commit Graph & History -->
           <template #graph>
-            <div class="flex h-full flex-col overflow-hidden">
+            <div class="gv-island-panel flex h-full flex-col overflow-hidden">
               <!-- Git Operation Toolbar -->
-              <div class="flex h-10 shrink-0 items-center justify-between border-b border-default bg-[var(--gv-surface-elevated)] px-3 gap-2">
+              <div class="flex h-10 shrink-0 items-center justify-between border-b border-default/70 bg-muted/20 px-3 gap-2">
                 <div class="flex items-center gap-1.5">
                   <UButton size="xs" color="primary" variant="solid" icon="i-lucide-arrow-up-circle">
                     {{ t('git.push') }}
@@ -303,7 +303,7 @@ function selectCommit(sha: string): void {
               <!-- Interactive Commit Graph DAG Viewport -->
               <div class="flex-1 overflow-y-auto">
                 <table class="w-full text-start text-xs border-collapse">
-                  <thead class="sticky top-0 bg-[var(--gv-surface-elevated)] border-b border-default text-[11px] text-muted">
+                  <thead class="sticky top-0 bg-muted/40 backdrop-blur-md border-b border-default/70 text-[11px] text-muted">
                     <tr>
                       <th class="py-1.5 ps-3 pe-2 text-start font-medium w-16">Graph</th>
                       <th class="py-1.5 px-2 text-start font-medium">Description</th>
@@ -381,11 +381,11 @@ function selectCommit(sha: string): void {
             </div>
           </template>
 
-          <!-- Bottom Subpanel: Diff & Patch Viewer -->
+          <!-- Bottom Island: Diff & Patch Viewer -->
           <template #diff>
-            <div class="flex h-full flex-col overflow-hidden font-mono text-xs" dir="ltr">
+            <div class="gv-island-panel flex h-full flex-col overflow-hidden font-mono text-xs" dir="ltr">
               <!-- Diff Header Bar -->
-              <div class="flex h-8 shrink-0 items-center justify-between border-b border-default bg-[var(--gv-surface)] px-3 text-muted">
+              <div class="flex h-8 shrink-0 items-center justify-between border-b border-default/70 bg-muted/20 px-3 text-muted">
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-file-diff" class="h-3.5 w-3.5" />
                   <span class="font-medium text-highlighted font-sans">
@@ -401,8 +401,8 @@ function selectCommit(sha: string): void {
               </div>
 
               <!-- Diff Content -->
-              <div class="flex-1 overflow-y-auto p-2 bg-[var(--gv-background)]">
-                <div class="rounded border border-default overflow-hidden">
+              <div class="flex-1 overflow-y-auto p-2 bg-[var(--gv-surface)]">
+                <div class="rounded-lg border border-default/70 overflow-hidden">
                   <div class="bg-[var(--gv-diff-hunk-bg)] text-[var(--gv-diff-hunk-text)] px-3 py-1 font-semibold">
                     @@ -24,7 +24,11 @@ pub struct SafeProcessRunner {
                   </div>
@@ -429,12 +429,12 @@ function selectCommit(sha: string): void {
       </template>
 
       <!-- ================================================================= -->
-      <!-- PANEL 3: STAGING & COMMIT INSPECTOR                               -->
+      <!-- PANEL 3: INSET STAGING ISLAND & COMMIT INSPECTOR                  -->
       <!-- ================================================================= -->
       <template #staging>
-        <div class="flex h-full flex-col overflow-hidden">
+        <div class="gv-island-panel flex h-full flex-col overflow-hidden">
           <!-- Staging Header -->
-          <div class="flex h-9 shrink-0 items-center justify-between border-b border-default px-3 bg-[var(--gv-sidebar)]">
+          <div class="flex h-9 shrink-0 items-center justify-between border-b border-default/70 px-3 bg-muted/20">
             <span class="text-xs font-semibold text-highlighted uppercase tracking-wider">
               {{ t('navigation.changes') }}
             </span>
@@ -454,7 +454,7 @@ function selectCommit(sha: string): void {
                 </span>
                 <UButton size="xs" color="neutral" variant="ghost" :label="t('git.unstageAll')" />
               </div>
-              <div class="rounded-md border border-default divide-y divide-default bg-surface">
+              <div class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80">
                 <div
                   v-for="file in stagedFiles"
                   :key="file.path"
@@ -479,7 +479,7 @@ function selectCommit(sha: string): void {
                 </span>
                 <UButton size="xs" color="neutral" variant="ghost" :label="t('git.stageAll')" />
               </div>
-              <div class="rounded-md border border-default divide-y divide-default bg-surface">
+              <div class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80">
                 <div
                   v-for="file in unstagedFiles"
                   :key="file.path"
@@ -501,7 +501,7 @@ function selectCommit(sha: string): void {
           </div>
 
           <!-- Commit Box (Docked at Bottom) -->
-          <div class="border-t border-default p-3 bg-[var(--gv-surface)] flex flex-col gap-2 shrink-0">
+          <div class="border-t border-default/70 p-3 bg-muted/10 flex flex-col gap-2 shrink-0">
             <UTextarea
               v-model="commitMessage"
               :rows="3"

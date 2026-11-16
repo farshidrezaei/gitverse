@@ -83,9 +83,26 @@
   },
   "settings": {
     "title": "Settings",
+    "subtitle": "Customize your GitVerse workspace, themes, and native Git runtime.",
+    "categories": {
+      "appearance": "Appearance & Theme",
+      "git": "Git Engine",
+      "language": "Language",
+      "about": "About"
+    },
     "appearance": {
       "title": "Appearance & Theme",
-      "description": "Customize theme mode, brand colors, and graph lane accents.",
+      "description": "Customize theme mode, brand colors, glassmorphism blur, radius, and typography scale.",
+      "themeMode": "Theme Mode",
+      "themePresets": "Color Palette Presets",
+      "glassmorphismTitle": "Glassmorphism & Transparency",
+      "glassmorphismDescription": "Frosted glass blur on island panels, modals, and popovers.",
+      "backdropBlurLabel": "Backdrop Blur Radius",
+      "surfaceOpacityLabel": "Surface Opacity",
+      "borderRadiusTitle": "Corner Roundness & Radius",
+      "fontSizeTitle": "Font Size & Typography Scale",
+      "shadowTitle": "Shadow Depth & Elevation",
+      "spacingTitle": "Spacing Density",
       "light": "Light",
       "dark": "Dark",
       "system": "System"
@@ -99,6 +116,13 @@
       "description": "Native Git CLI discovery and configuration.",
       "executablePath": "Git Executable Path",
       "defaultBranch": "Default Branch Name"
+    },
+    "about": {
+      "title": "About GitVerse",
+      "description": "Version information and core architectural baseline.",
+      "versionLabel": "Application Version",
+      "runtimeLabel": "Desktop Runtime",
+      "architectureLabel": "Architecture Standard"
     }
   },
   "theme": {

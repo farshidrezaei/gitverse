@@ -10,32 +10,38 @@
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --text-display: 1.5rem;
-  --text-title: 1.25rem;
-  --text-section: 1rem;
-  --text-body: 0.875rem;
-  --text-label: 0.8125rem;
-  --text-caption: 0.75rem;
+  --text-display: var(--gv-text-display, 1.5rem);
+  --text-title: var(--gv-text-title, 1.25rem);
+  --text-section: var(--gv-text-section, 1rem);
+  --text-body: var(--gv-text-body, 0.875rem);
+  --text-label: var(--gv-text-label, 0.8125rem);
+  --text-caption: var(--gv-text-caption, 0.75rem);
 }
 
 :root {
-  --ui-radius: 6px;
-  --ui-container: 80rem;
+  --ui-radius: var(--gv-radius-md, 10px);
+  --ui-container: 100%;
 
   /* =========================================================================
      LIGHT THEME (GitVerse Light — Crisp Developer Clean)
      ========================================================================= */
-  --gv-background: #f6f8fa;
-  --gv-sidebar: #eff2f5;
+  --gv-background: #f1f3f7;
+  --gv-sidebar: #f8fafc;
   --gv-surface: #ffffff;
   --gv-surface-elevated: #ffffff;
   --gv-surface-hover: #f3f4f6;
   --gv-surface-active: #e5e7eb;
   --gv-overlay-solid: #0d1117;
-  --gv-overlay: rgba(13, 17, 23, 0.48);
+  --gv-overlay: rgba(13, 17, 23, 0.55);
 
-  --ui-bg: #f6f8fa;
-  --ui-bg-muted: #eff2f5;
+  /* Glassmorphism & Blur Tokens */
+  --gv-glass-blur: 16px;
+  --gv-glass-opacity: 0.88;
+  --gv-glass-surface: rgba(255, 255, 255, var(--gv-glass-opacity));
+  --gv-glass-border: rgba(208, 215, 222, 0.7);
+
+  --ui-bg: #f1f3f7;
+  --ui-bg-muted: #e9ecef;
   --ui-bg-elevated: #ffffff;
   --ui-bg-accented: #fff7ed;
   --ui-bg-inverted: #0d1117;
@@ -117,27 +123,22 @@
   --gv-space-4: 16px;
   --gv-space-6: 24px;
   --gv-space-8: 32px;
-  --gv-space-10: 40px;
-  --gv-space-12: 48px;
-  --gv-space-16: 64px;
-  --gv-space-20: 80px;
-  --gv-space-24: 96px;
 
   /* Border Radius */
   --gv-radius-none: 0px;
   --gv-radius-sm: 6px;
   --gv-radius-md: 10px;
   --gv-radius-lg: 14px;
-  --gv-radius-xl: 16px;
-  --gv-radius-2xl: 20px;
+  --gv-radius-xl: 18px;
+  --gv-radius-2xl: 22px;
   --gv-radius-full: 9999px;
 
   /* Shadows (Light) */
   --gv-shadow-none: none;
-  --gv-shadow-sm: 0 1px 2px rgb(15 23 42 / 0.05);
-  --gv-shadow-md: 0 4px 12px rgb(15 23 42 / 0.06);
-  --gv-shadow-lg: 0 12px 32px rgb(15 23 42 / 0.10);
-  --gv-shadow-xl: 0 20px 48px rgb(15 23 42 / 0.12);
+  --gv-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --gv-shadow-md: 0 4px 14px rgba(15, 23, 42, 0.08);
+  --gv-shadow-lg: 0 12px 36px rgba(15, 23, 42, 0.12);
+  --gv-shadow-xl: 0 20px 48px rgba(15, 23, 42, 0.15);
   --gv-shadow-focus: 0 0 0 2px var(--gv-focus-ring);
 
   /* Component Dimensions */
@@ -146,57 +147,44 @@
   --gv-control-height-lg: 42px;
   --gv-input-height: 38px;
   --gv-sidebar-width: 256px;
-  --gv-sidebar-collapsed-width: 64px;
-  --gv-icon-size-sm: 14px;
-  --gv-icon-size-md: 16px;
-  --gv-icon-size-lg: 20px;
-  --gv-dialog-width-sm: 420px;
-  --gv-dialog-width-md: 540px;
-  --gv-dialog-width-lg: 760px;
-  --gv-popover-width: 288px;
-  --gv-content-max-width: 1440px;
 
   /* Motion Tokens */
   --gv-duration-fast: 120ms;
   --gv-duration-standard: 180ms;
   --gv-duration-slow: 280ms;
   --gv-ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
-
-  /* Syntax Highlighting Tokens (Light) */
-  --gv-syntax-comment: #6e7781;
-  --gv-syntax-keyword: #cf222e;
-  --gv-syntax-string: #0a3069;
-  --gv-syntax-number: #0550ae;
-  --gv-syntax-attr: #116329;
-  --gv-syntax-tag: #116329;
-  --gv-syntax-operator: #24292f;
-  --gv-syntax-literal: #8250df;
 }
 
 .dark {
   /* =========================================================================
      DARK THEME (GitVerse Dark — Deep Graphite & Cosmic Slate)
      ========================================================================= */
-  --gv-background: #0d1117;
-  --gv-sidebar: #090d13;
-  --gv-surface: #161b22;
-  --gv-surface-elevated: #21262d;
-  --gv-surface-hover: #30363d;
-  --gv-surface-active: #383f47;
+  --gv-background: #090d13;
+  --gv-sidebar: #0f141d;
+  --gv-surface: #141a24;
+  --gv-surface-elevated: #1c2432;
+  --gv-surface-hover: #263143;
+  --gv-surface-active: #313f55;
   --gv-overlay-solid: #010409;
   --gv-overlay: rgba(1, 4, 9, 0.72);
 
-  --ui-bg: #0d1117;
-  --ui-bg-muted: #090d13;
-  --ui-bg-elevated: #21262d;
+  /* Glassmorphism & Blur Tokens (Dark) */
+  --gv-glass-blur: 16px;
+  --gv-glass-opacity: 0.85;
+  --gv-glass-surface: rgba(20, 26, 36, var(--gv-glass-opacity));
+  --gv-glass-border: rgba(48, 54, 61, 0.75);
+
+  --ui-bg: #090d13;
+  --ui-bg-muted: #0d1219;
+  --ui-bg-elevated: #1c2432;
   --ui-bg-accented: #2d1808;
   --ui-bg-inverted: #f0f6fc;
 
-  --ui-border: #30363d;
-  --ui-border-muted: #21262d;
+  --ui-border: #263143;
+  --ui-border-muted: #1c2432;
   --ui-border-accented: #fb923c;
-  --gv-border-subtle: #21262d;
-  --gv-border-strong: #484f58;
+  --gv-border-subtle: #1c2432;
+  --gv-border-strong: #3b495f;
   --gv-border-focus: #fb923c;
 
   --ui-text: #f0f6fc;
@@ -223,10 +211,10 @@
   --gv-status-pending: #8b949e;
   --gv-status-live: #3fb950;
 
-  --gv-input-bg: #161b22;
-  --gv-input-border: #30363d;
+  --gv-input-bg: #141a24;
+  --gv-input-border: #263143;
   --gv-focus-ring: rgba(251, 146, 60, 0.35);
-  --gv-disabled-bg: #161b22;
+  --gv-disabled-bg: #141a24;
   --gv-disabled-text: #484f58;
 
   /* Git Status Tokens (Dark) */
@@ -263,20 +251,10 @@
 
   /* Shadows (Dark) */
   --gv-shadow-none: none;
-  --gv-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.25);
-  --gv-shadow-md: 0 4px 12px rgb(0 0 0 / 0.35);
-  --gv-shadow-lg: 0 12px 32px rgb(0 0 0 / 0.45);
-  --gv-shadow-xl: 0 20px 48px rgb(0 0 0 / 0.55);
-
-  /* Syntax Highlighting Tokens (Dark) */
-  --gv-syntax-comment: #8b949e;
-  --gv-syntax-keyword: #ff7b72;
-  --gv-syntax-string: #a5d6ff;
-  --gv-syntax-number: #79c0ff;
-  --gv-syntax-attr: #7ee787;
-  --gv-syntax-tag: #7ee787;
-  --gv-syntax-operator: #d2a8ff;
-  --gv-syntax-literal: #ffa657;
+  --gv-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --gv-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --gv-shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.55);
+  --gv-shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.65);
 }
 
 :root[dir="rtl"] {
@@ -296,56 +274,26 @@
   }
 }
 
-/* Syntax highlighting helper classes */
-.gv-code-block .hljs-comment,
-.gv-code-block .hljs-quote {
-  color: var(--gv-syntax-comment);
-  font-style: italic;
+/* Glassmorphic & Inset Island Utilities */
+.gv-island-panel {
+  background-color: var(--gv-glass-surface);
+  backdrop-filter: blur(var(--gv-glass-blur));
+  -webkit-backdrop-filter: blur(var(--gv-glass-blur));
+  border: 1px solid var(--gv-glass-border);
+  border-radius: var(--gv-radius-xl);
+  box-shadow: var(--gv-shadow-sm);
+  transition: box-shadow var(--gv-duration-standard) var(--gv-ease-standard),
+              border-color var(--gv-duration-standard) var(--gv-ease-standard);
 }
 
-.gv-code-block .hljs-keyword,
-.gv-code-block .hljs-selector-tag,
-.gv-code-block .hljs-meta,
-.gv-code-block .hljs-built_in {
-  color: var(--gv-syntax-keyword);
+.gv-island-panel:hover {
+  box-shadow: var(--gv-shadow-md);
 }
 
-.gv-code-block .hljs-string,
-.gv-code-block .hljs-regexp,
-.gv-code-block .hljs-addition {
-  color: var(--gv-syntax-string);
-}
-
-.gv-code-block .hljs-number,
-.gv-code-block .hljs-literal,
-.gv-code-block .hljs-variable,
-.gv-code-block .hljs-template-variable {
-  color: var(--gv-syntax-number);
-}
-
-.gv-code-block .hljs-attr,
-.gv-code-block .hljs-attribute,
-.gv-code-block .hljs-property,
-.gv-code-block .hljs-section {
-  color: var(--gv-syntax-attr);
-}
-
-.gv-code-block .hljs-name,
-.gv-code-block .hljs-tag,
-.gv-code-block .hljs-deletion {
-  color: var(--gv-syntax-tag);
-}
-
-.gv-code-block .hljs-symbol,
-.gv-code-block .hljs-bullet,
-.gv-code-block .hljs-link,
-.gv-code-block .hljs-title {
-  color: var(--gv-syntax-literal);
-}
-
-.gv-code-block .hljs-punctuation,
-.gv-code-block .hljs-operator {
-  color: var(--gv-syntax-operator);
+/* Glass dialog / modal overlay backdrop styling */
+[role="dialog"] {
+  backdrop-filter: blur(var(--gv-glass-blur));
+  -webkit-backdrop-filter: blur(var(--gv-glass-blur));
 }
 
 @media (prefers-reduced-motion: reduce) {

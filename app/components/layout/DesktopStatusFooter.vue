@@ -42,7 +42,7 @@ const emit = defineEmits<{
       <span>{{ t('footer.gitReady') }}</span>
     </div>
 
-    <!-- End: Git Version, Direction Info & Settings Trigger -->
+    <!-- End: Git Version, Direction Info & Settings Trigger (Design system hidden from user UI) -->
     <div class="flex shrink-0 items-center gap-2.5">
       <span class="font-mono text-toned" dir="ltr">
         git 2.43.0
@@ -55,18 +55,6 @@ const emit = defineEmits<{
       </span>
 
       <span class="h-3 w-px bg-default/80" aria-hidden="true" />
-
-      <!-- Design System Link -->
-      <UTooltip :text="t('navigation.designSystem')">
-        <UButton
-          to="/design-system"
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-palette"
-          class="h-5 w-5 p-0"
-        />
-      </UTooltip>
 
       <!-- Settings Trigger -->
       <UTooltip :text="t('settings.title')">

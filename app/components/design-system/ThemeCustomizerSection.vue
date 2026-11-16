@@ -2,7 +2,7 @@
 import type { CustomThemePalette } from '~/composables/useThemeController'
 
 const { t } = useI18n()
-const { customPalette, setCustomPalette } = useThemeController()
+const { customPalette, setCustomPalette, resetToDefaults: resetThemeDefaults } = useThemeController()
 
 const defaultPrimaryColor = '#ea580c'
 const defaultAccentColor = '#0284c7'
@@ -51,7 +51,7 @@ function resetToDefaults(): void {
   lane1Input.value = defaultLane1Color
   lane2Input.value = defaultLane2Color
   lane3Input.value = defaultLane3Color
-  setCustomPalette(null)
+  resetThemeDefaults()
 }
 </script>
 
