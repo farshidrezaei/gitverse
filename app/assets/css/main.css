@@ -1,0 +1,359 @@
+@import "@fontsource-variable/ibm-plex-sans";
+@import "@fontsource-variable/vazirmatn";
+@import "@fontsource-variable/jetbrains-mono";
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme {
+  --font-sans: "IBM Plex Sans Variable", "Vazirmatn Variable", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --text-display: 1.5rem;
+  --text-title: 1.25rem;
+  --text-section: 1rem;
+  --text-body: 0.875rem;
+  --text-label: 0.8125rem;
+  --text-caption: 0.75rem;
+}
+
+:root {
+  --ui-radius: 6px;
+  --ui-container: 80rem;
+
+  /* =========================================================================
+     LIGHT THEME (GitVerse Light — Crisp Developer Clean)
+     ========================================================================= */
+  --gv-background: #f6f8fa;
+  --gv-sidebar: #eff2f5;
+  --gv-surface: #ffffff;
+  --gv-surface-elevated: #ffffff;
+  --gv-surface-hover: #f3f4f6;
+  --gv-surface-active: #e5e7eb;
+  --gv-overlay-solid: #0d1117;
+  --gv-overlay: rgba(13, 17, 23, 0.48);
+
+  --ui-bg: #f6f8fa;
+  --ui-bg-muted: #eff2f5;
+  --ui-bg-elevated: #ffffff;
+  --ui-bg-accented: #fff7ed;
+  --ui-bg-inverted: #0d1117;
+
+  --ui-border: #d0d7de;
+  --ui-border-muted: #e1e4e8;
+  --ui-border-accented: #fdba74;
+  --gv-border-subtle: #e1e4e8;
+  --gv-border-strong: #afb8c1;
+  --gv-border-focus: #ea580c;
+
+  --ui-text: #1f2328;
+  --ui-text-highlighted: #0d1117;
+  --ui-text-toned: #57606a;
+  --ui-text-muted: #57606a;
+  --ui-text-dimmed: #8c959f;
+  --ui-text-inverted: #ffffff;
+  --gv-text-muted: #8c959f;
+
+  /* Brand Primary & Semantic Tokens (Git Ember & Coral) */
+  --ui-primary: #ea580c;
+  --gv-primary-hover: #c2410c;
+  --gv-primary-active: #9a3412;
+  --gv-primary-soft: #fff7ed;
+  --ui-secondary: #f97316;
+  --gv-accent: #0284c7;
+  --gv-accent-soft: #f0f9ff;
+
+  --ui-success: #1a7f37;
+  --ui-warning: #9a6700;
+  --ui-error: #cf222e;
+  --ui-info: #0969da;
+  --gv-status-pending: #6e7781;
+  --gv-status-live: #1a7f37;
+
+  --gv-input-bg: #ffffff;
+  --gv-input-border: #d0d7de;
+  --gv-focus-ring: rgba(234, 88, 12, 0.28);
+  --gv-disabled-bg: #eff2f5;
+  --gv-disabled-text: #afb8c1;
+
+  /* Git Status Tokens (Light) */
+  --gv-git-staged: #1a7f37;
+  --gv-git-staged-bg: rgba(26, 127, 55, 0.10);
+  --gv-git-unstaged: #9a6700;
+  --gv-git-unstaged-bg: rgba(154, 103, 0, 0.10);
+  --gv-git-untracked: #57606a;
+  --gv-git-untracked-bg: rgba(87, 96, 106, 0.10);
+  --gv-git-conflicted: #cf222e;
+  --gv-git-conflicted-bg: rgba(207, 34, 46, 0.12);
+  --gv-git-head: #ea580c;
+  --gv-git-tag: #8250df;
+
+  /* Diff Tokens (Light) */
+  --gv-diff-add-bg: #dafbe1;
+  --gv-diff-add-border: #aceebb;
+  --gv-diff-add-text: #1a7f37;
+  --gv-diff-remove-bg: #ffebe9;
+  --gv-diff-remove-border: #ffc1c0;
+  --gv-diff-remove-text: #cf222e;
+  --gv-diff-hunk-bg: #ddf4ff;
+  --gv-diff-hunk-text: #0969da;
+
+  /* Commit Graph Lane Colors (Deterministic DAG visualization) */
+  --gv-lane-0: #ea580c;
+  --gv-lane-1: #0891b2;
+  --gv-lane-2: #16a34a;
+  --gv-lane-3: #8b5cf6;
+  --gv-lane-4: #e11d48;
+  --gv-lane-5: #d97706;
+  --gv-lane-6: #2563eb;
+  --gv-lane-7: #4f46e5;
+
+  /* Spacing Scale (4px base) */
+  --gv-space-0: 0px;
+  --gv-space-1: 4px;
+  --gv-space-2: 8px;
+  --gv-space-3: 12px;
+  --gv-space-4: 16px;
+  --gv-space-6: 24px;
+  --gv-space-8: 32px;
+  --gv-space-10: 40px;
+  --gv-space-12: 48px;
+  --gv-space-16: 64px;
+  --gv-space-20: 80px;
+  --gv-space-24: 96px;
+
+  /* Border Radius */
+  --gv-radius-none: 0px;
+  --gv-radius-sm: 6px;
+  --gv-radius-md: 10px;
+  --gv-radius-lg: 14px;
+  --gv-radius-xl: 16px;
+  --gv-radius-2xl: 20px;
+  --gv-radius-full: 9999px;
+
+  /* Shadows (Light) */
+  --gv-shadow-none: none;
+  --gv-shadow-sm: 0 1px 2px rgb(15 23 42 / 0.05);
+  --gv-shadow-md: 0 4px 12px rgb(15 23 42 / 0.06);
+  --gv-shadow-lg: 0 12px 32px rgb(15 23 42 / 0.10);
+  --gv-shadow-xl: 0 20px 48px rgb(15 23 42 / 0.12);
+  --gv-shadow-focus: 0 0 0 2px var(--gv-focus-ring);
+
+  /* Component Dimensions */
+  --gv-control-height-sm: 30px;
+  --gv-control-height-md: 36px;
+  --gv-control-height-lg: 42px;
+  --gv-input-height: 38px;
+  --gv-sidebar-width: 256px;
+  --gv-sidebar-collapsed-width: 64px;
+  --gv-icon-size-sm: 14px;
+  --gv-icon-size-md: 16px;
+  --gv-icon-size-lg: 20px;
+  --gv-dialog-width-sm: 420px;
+  --gv-dialog-width-md: 540px;
+  --gv-dialog-width-lg: 760px;
+  --gv-popover-width: 288px;
+  --gv-content-max-width: 1440px;
+
+  /* Motion Tokens */
+  --gv-duration-fast: 120ms;
+  --gv-duration-standard: 180ms;
+  --gv-duration-slow: 280ms;
+  --gv-ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Syntax Highlighting Tokens (Light) */
+  --gv-syntax-comment: #6e7781;
+  --gv-syntax-keyword: #cf222e;
+  --gv-syntax-string: #0a3069;
+  --gv-syntax-number: #0550ae;
+  --gv-syntax-attr: #116329;
+  --gv-syntax-tag: #116329;
+  --gv-syntax-operator: #24292f;
+  --gv-syntax-literal: #8250df;
+}
+
+.dark {
+  /* =========================================================================
+     DARK THEME (GitVerse Dark — Deep Graphite & Cosmic Slate)
+     ========================================================================= */
+  --gv-background: #0d1117;
+  --gv-sidebar: #090d13;
+  --gv-surface: #161b22;
+  --gv-surface-elevated: #21262d;
+  --gv-surface-hover: #30363d;
+  --gv-surface-active: #383f47;
+  --gv-overlay-solid: #010409;
+  --gv-overlay: rgba(1, 4, 9, 0.72);
+
+  --ui-bg: #0d1117;
+  --ui-bg-muted: #090d13;
+  --ui-bg-elevated: #21262d;
+  --ui-bg-accented: #2d1808;
+  --ui-bg-inverted: #f0f6fc;
+
+  --ui-border: #30363d;
+  --ui-border-muted: #21262d;
+  --ui-border-accented: #fb923c;
+  --gv-border-subtle: #21262d;
+  --gv-border-strong: #484f58;
+  --gv-border-focus: #fb923c;
+
+  --ui-text: #f0f6fc;
+  --ui-text-highlighted: #ffffff;
+  --ui-text-toned: #8b949e;
+  --ui-text-muted: #8b949e;
+  --ui-text-dimmed: #6e7681;
+  --ui-text-inverted: #0d1117;
+  --gv-text-muted: #6e7681;
+
+  /* Brand Primary & Semantic Tokens (Dark Git Ember) */
+  --ui-primary: #fb923c;
+  --gv-primary-hover: #fdba74;
+  --gv-primary-active: #f97316;
+  --gv-primary-soft: #381c06;
+  --ui-secondary: #f97316;
+  --gv-accent: #38bdf8;
+  --gv-accent-soft: #082f49;
+
+  --ui-success: #3fb950;
+  --ui-warning: #d29922;
+  --ui-error: #f85149;
+  --ui-info: #58a6ff;
+  --gv-status-pending: #8b949e;
+  --gv-status-live: #3fb950;
+
+  --gv-input-bg: #161b22;
+  --gv-input-border: #30363d;
+  --gv-focus-ring: rgba(251, 146, 60, 0.35);
+  --gv-disabled-bg: #161b22;
+  --gv-disabled-text: #484f58;
+
+  /* Git Status Tokens (Dark) */
+  --gv-git-staged: #3fb950;
+  --gv-git-staged-bg: rgba(63, 185, 80, 0.16);
+  --gv-git-unstaged: #d29922;
+  --gv-git-unstaged-bg: rgba(210, 153, 34, 0.16);
+  --gv-git-untracked: #8b949e;
+  --gv-git-untracked-bg: rgba(139, 148, 158, 0.16);
+  --gv-git-conflicted: #f85149;
+  --gv-git-conflicted-bg: rgba(248, 81, 73, 0.20);
+  --gv-git-head: #fb923c;
+  --gv-git-tag: #a371f7;
+
+  /* Diff Tokens (Dark) */
+  --gv-diff-add-bg: rgba(46, 160, 67, 0.18);
+  --gv-diff-add-border: rgba(46, 160, 67, 0.40);
+  --gv-diff-add-text: #3fb950;
+  --gv-diff-remove-bg: rgba(248, 81, 73, 0.18);
+  --gv-diff-remove-border: rgba(248, 81, 73, 0.40);
+  --gv-diff-remove-text: #f85149;
+  --gv-diff-hunk-bg: rgba(56, 139, 253, 0.15);
+  --gv-diff-hunk-text: #58a6ff;
+
+  /* Commit Graph Lane Colors (Dark) */
+  --gv-lane-0: #fb923c;
+  --gv-lane-1: #22d3ee;
+  --gv-lane-2: #4ade80;
+  --gv-lane-3: #a78bfa;
+  --gv-lane-4: #fb7185;
+  --gv-lane-5: #fbbf24;
+  --gv-lane-6: #60a5fa;
+  --gv-lane-7: #818cf8;
+
+  /* Shadows (Dark) */
+  --gv-shadow-none: none;
+  --gv-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.25);
+  --gv-shadow-md: 0 4px 12px rgb(0 0 0 / 0.35);
+  --gv-shadow-lg: 0 12px 32px rgb(0 0 0 / 0.45);
+  --gv-shadow-xl: 0 20px 48px rgb(0 0 0 / 0.55);
+
+  /* Syntax Highlighting Tokens (Dark) */
+  --gv-syntax-comment: #8b949e;
+  --gv-syntax-keyword: #ff7b72;
+  --gv-syntax-string: #a5d6ff;
+  --gv-syntax-number: #79c0ff;
+  --gv-syntax-attr: #7ee787;
+  --gv-syntax-tag: #7ee787;
+  --gv-syntax-operator: #d2a8ff;
+  --gv-syntax-literal: #ffa657;
+}
+
+:root[dir="rtl"] {
+  --font-sans: "Vazirmatn Variable", "IBM Plex Sans Variable", system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--gv-background);
+    color: var(--ui-text);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Syntax highlighting helper classes */
+.gv-code-block .hljs-comment,
+.gv-code-block .hljs-quote {
+  color: var(--gv-syntax-comment);
+  font-style: italic;
+}
+
+.gv-code-block .hljs-keyword,
+.gv-code-block .hljs-selector-tag,
+.gv-code-block .hljs-meta,
+.gv-code-block .hljs-built_in {
+  color: var(--gv-syntax-keyword);
+}
+
+.gv-code-block .hljs-string,
+.gv-code-block .hljs-regexp,
+.gv-code-block .hljs-addition {
+  color: var(--gv-syntax-string);
+}
+
+.gv-code-block .hljs-number,
+.gv-code-block .hljs-literal,
+.gv-code-block .hljs-variable,
+.gv-code-block .hljs-template-variable {
+  color: var(--gv-syntax-number);
+}
+
+.gv-code-block .hljs-attr,
+.gv-code-block .hljs-attribute,
+.gv-code-block .hljs-property,
+.gv-code-block .hljs-section {
+  color: var(--gv-syntax-attr);
+}
+
+.gv-code-block .hljs-name,
+.gv-code-block .hljs-tag,
+.gv-code-block .hljs-deletion {
+  color: var(--gv-syntax-tag);
+}
+
+.gv-code-block .hljs-symbol,
+.gv-code-block .hljs-bullet,
+.gv-code-block .hljs-link,
+.gv-code-block .hljs-title {
+  color: var(--gv-syntax-literal);
+}
+
+.gv-code-block .hljs-punctuation,
+.gv-code-block .hljs-operator {
+  color: var(--gv-syntax-operator);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

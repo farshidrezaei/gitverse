@@ -1,0 +1,113 @@
+{
+  "app": {
+    "name": "گیت‌ورس",
+    "tagline": "کلاینت گیت محلی، چندسکویی و مدرن"
+  },
+  "common": {
+    "open": "باز کردن",
+    "close": "بستن",
+    "cancel": "انصراف",
+    "confirm": "تأیید",
+    "save": "ذخیره",
+    "delete": "حذف",
+    "refresh": "بازنشانی",
+    "search": "جستجو",
+    "filter": "فیلتر",
+    "settings": "تنظیمات",
+    "language": "زبان",
+    "theme": "تم",
+    "direction": "جهت",
+    "loading": "در حال بارگذاری...",
+    "empty": "موردی یافت نشد",
+    "error": "خطایی رخ داد",
+    "reset": "بازنشانی",
+    "apply": "اعمال"
+  },
+  "navigation": {
+    "workspace": "فضای کاری",
+    "repositories": "مخازن",
+    "changes": "تغییرات",
+    "history": "تاریخچه",
+    "graph": "گراف کامیت",
+    "remotes": "ریموت‌ها",
+    "pullRequests": "درخواست‌های ادغام",
+    "settings": "تنظیمات",
+    "designSystem": "سیستم دیزاین"
+  },
+  "git": {
+    "branch": "شاخه",
+    "branches": "شاخه‌ها",
+    "commit": "کامیت",
+    "commits": "کامیت‌ها",
+    "stage": "استیج",
+    "unstage": "آن‌استیج",
+    "stageAll": "استیج همه",
+    "unstageAll": "آن‌استیج همه",
+    "push": "پوش",
+    "pull": "پول",
+    "fetch": "فچ",
+    "merge": "مرج",
+    "rebase": "ریبیس",
+    "stash": "استش",
+    "tag": "تگ",
+    "status": {
+      "staged": "استیج‌شده",
+      "unstaged": "استیج‌نشده",
+      "conflicted": "دارای تداخل",
+      "untracked": "ردیابی‌نشده",
+      "modified": "تغییریافته",
+      "added": "افزوده‌شده",
+      "deleted": "حذف‌شده",
+      "renamed": "تغییرنام‌یافته"
+    }
+  },
+  "settings": {
+    "appearance": {
+      "light": "روشن",
+      "dark": "تیره",
+      "system": "سیستم"
+    }
+  },
+  "theme": {
+    "dark": "تیره",
+    "light": "روشن",
+    "system": "سیستم",
+    "custom": "تم سفارشی",
+    "customize": "شخصی‌سازی رنگ‌ها",
+    "primaryColor": "رنگ اصلی برند",
+    "accentColor": "رنگ فرعی (Accent)",
+    "laneColors": "رنگ‌های خطوط گراف",
+    "resetDefaults": "بازگشت به پالت پیش‌فرض"
+  },
+  "designSystem": {
+    "title": "سیستم دیزاین و شوکیس رابط کاربری گیت‌ورس",
+    "subtitle": "راهنمای زنده تعاملی، بررسی وضعیت کامپوننت‌ها و بازرس توکن‌های رنگی.",
+    "controls": {
+      "languageToggle": "تغییر زبان",
+      "resetDefaults": "بازگشت به پالت پیش‌فرض",
+      "exportPalette": "خروجی پالت"
+    },
+    "matrix": {
+      "themeControls": "حالت تم",
+      "directionControls": "جهت‌بندی سند",
+      "englishLtr": "English (LTR)",
+      "persianRtl": "فارسی (RTL)"
+    },
+    "sections": {
+      "themeMatrix": "ماتریس تم و جهت‌بندی",
+      "themeCustomizer": "شخصی‌سازی زنده تم",
+      "colors": "توکن‌های رنگی و سطوح",
+      "lanes": "خطوط گراف کامیت",
+      "typography": "مقیاس تایپوگرافی",
+      "components": "کامپوننت‌های پایه رابط کاربری"
+    },
+    "descriptions": {
+      "themeMatrix": "بررسی سلسله‌مراتب بصری در حالت‌های تیره/روشن و چیدمان‌های چپ‌به‌راست و راست‌به‌چپ.",
+      "themeCustomizer": "شخصی‌سازی لحظه‌ای رنگ‌های برند، اکسنت و خطوط گراف با به‌روزرسانی آنی متغیرهای CSS.",
+      "colors": "نقش‌های معنایی استاندارد، سطوح و نشانگرهای وضعیت گیت.",
+      "lanes": "تخصیص قطعی خطوط برای تصویرسازی شاخه‌های موازی و ادغام‌ها.",
+      "typography": "مقیاس فونت دوزبانه با IBM Plex Sans، وزیرمتن و JetBrains Mono.",
+      "components": "کامپوننت‌های رسمی Nuxt UI مورد ارزیابی در تمام حالت‌های تعاملی."
+    }
+  }
+}

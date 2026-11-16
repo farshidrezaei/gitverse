@@ -1,0 +1,113 @@
+{
+  "app": {
+    "name": "GitVerse",
+    "tagline": "Modern, local-first cross-platform Git client"
+  },
+  "common": {
+    "open": "Open",
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "refresh": "Refresh",
+    "search": "Search",
+    "filter": "Filter",
+    "settings": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "direction": "Direction",
+    "loading": "Loading...",
+    "empty": "No items found",
+    "error": "An error occurred",
+    "reset": "Reset",
+    "apply": "Apply"
+  },
+  "navigation": {
+    "workspace": "Workspace",
+    "repositories": "Repositories",
+    "changes": "Changes",
+    "history": "History",
+    "graph": "Commit Graph",
+    "remotes": "Remotes",
+    "pullRequests": "Pull Requests",
+    "settings": "Settings",
+    "designSystem": "Design System"
+  },
+  "git": {
+    "branch": "Branch",
+    "branches": "Branches",
+    "commit": "Commit",
+    "commits": "Commits",
+    "stage": "Stage",
+    "unstage": "Unstage",
+    "stageAll": "Stage All",
+    "unstageAll": "Unstage All",
+    "push": "Push",
+    "pull": "Pull",
+    "fetch": "Fetch",
+    "merge": "Merge",
+    "rebase": "Rebase",
+    "stash": "Stash",
+    "tag": "Tag",
+    "status": {
+      "staged": "Staged",
+      "unstaged": "Unstaged",
+      "conflicted": "Conflicted",
+      "untracked": "Untracked",
+      "modified": "Modified",
+      "added": "Added",
+      "deleted": "Deleted",
+      "renamed": "Renamed"
+    }
+  },
+  "settings": {
+    "appearance": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    }
+  },
+  "theme": {
+    "dark": "Dark",
+    "light": "Light",
+    "system": "System",
+    "custom": "Custom Theme",
+    "customize": "Customize Colors",
+    "primaryColor": "Primary Brand Color",
+    "accentColor": "Accent Color",
+    "laneColors": "Graph Lane Colors",
+    "resetDefaults": "Reset to Default Palette"
+  },
+  "designSystem": {
+    "title": "GitVerse Design System & UI Showcase",
+    "subtitle": "Interactive living style guide, component state verification, and color token inspector.",
+    "controls": {
+      "languageToggle": "Toggle Language",
+      "resetDefaults": "Reset to Default Palette",
+      "exportPalette": "Export Palette"
+    },
+    "matrix": {
+      "themeControls": "Theme Mode",
+      "directionControls": "Document Direction",
+      "englishLtr": "English (LTR)",
+      "persianRtl": "فارسی (RTL)"
+    },
+    "sections": {
+      "themeMatrix": "Theme & Direction Matrix",
+      "themeCustomizer": "Live Theme Customizer",
+      "colors": "Color Tokens & Surfaces",
+      "lanes": "Commit Graph Lanes",
+      "typography": "Typography Scale",
+      "components": "Core UI Components"
+    },
+    "descriptions": {
+      "themeMatrix": "Verify visual hierarchy across Light/Dark modes and LTR/RTL layouts.",
+      "themeCustomizer": "Customize brand colors, accents, and graph lanes in real-time with automatic CSS variable rebinding.",
+      "colors": "Standard semantic roles, surfaces, and Git status indicators.",
+      "lanes": "Deterministic lane assignments for parallel branch and merge visualization.",
+      "typography": "Type scale with bilingual IBM Plex Sans, Vazirmatn, and JetBrains Mono.",
+      "components": "Nuxt UI components tested across all interaction states."
+    }
+  }
+}
