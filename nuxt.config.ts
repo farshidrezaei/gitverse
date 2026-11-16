@@ -32,13 +32,6 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  ui: {
-    fonts: false,
-    theme: {
-      colors: ['primary', 'secondary', 'success', 'info', 'warning', 'error'],
-    },
-  },
-
   colorMode: {
     preference: 'dark',
     fallback: 'dark',

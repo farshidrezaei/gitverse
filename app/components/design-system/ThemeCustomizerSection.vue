@@ -1,58 +1,27 @@
 <script setup lang="ts">
-import type { CustomThemePalette } from '~/composables/useThemeController'
+import type { PrimaryColorKey, NeutralColorKey } from '~/composables/useThemeController'
 
 const { t } = useI18n()
-const { customPalette, setCustomPalette, resetToDefaults: resetThemeDefaults } = useThemeController()
+const { settings, updateSettings, resetToDefaults } = useThemeController()
 
-const defaultPrimaryColor = '#ea580c'
-const defaultAccentColor = '#0284c7'
-const defaultLane0Color = '#ea580c'
-const defaultLane1Color = '#0891b2'
-const defaultLane2Color = '#16a34a'
-const defaultLane3Color = '#8b5cf6'
-
-const primaryInput = ref(customPalette.value?.primaryColor ?? defaultPrimaryColor)
-const accentInput = ref(customPalette.value?.accentColor ?? defaultAccentColor)
-const lane0Input = ref(customPalette.value?.lane0Color ?? defaultLane0Color)
-const lane1Input = ref(customPalette.value?.lane1Color ?? defaultLane1Color)
-const lane2Input = ref(customPalette.value?.lane2Color ?? defaultLane2Color)
-const lane3Input = ref(customPalette.value?.lane3Color ?? defaultLane3Color)
-
-const primaryPresets: string[] = [
-  '#ea580c', // Git Ember
-  '#f05032', // Git Official Orange
-  '#2563eb', // Royal Blue
-  '#059669', // Emerald
-  '#7c3aed', // Cosmic Violet
-  '#db2777', // Rose Pink
+const primaryPaletteOptions: Array<{ key: PrimaryColorKey; label: string; preview: string }> = [
+  { key: 'orange', label: 'Git Ember', preview: '#ea580c' },
+  { key: 'rose', label: 'Crimson Flame', preview: '#e11d48' },
+  { key: 'blue', label: 'Royal Blue', preview: '#2563eb' },
+  { key: 'emerald', label: 'Emerald Mint', preview: '#059669' },
+  { key: 'violet', label: 'Cosmic Violet', preview: '#7c3aed' },
+  { key: 'cyan', label: 'Cyberpunk Cyan', preview: '#0891b2' },
+  { key: 'amber', label: 'Golden Amber', preview: '#d97706' },
+  { key: 'indigo', label: 'Deep Indigo', preview: '#4f46e5' },
 ]
 
-function applyTheme(): void {
-  const palette: CustomThemePalette = {
-    primaryColor: primaryInput.value,
-    accentColor: accentInput.value,
-    lane0Color: lane0Input.value,
-    lane1Color: lane1Input.value,
-    lane2Color: lane2Input.value,
-    lane3Color: lane3Input.value,
-  }
-  setCustomPalette(palette)
-}
-
-function selectPrimaryPreset(color: string): void {
-  primaryInput.value = color
-  applyTheme()
-}
-
-function resetToDefaults(): void {
-  primaryInput.value = defaultPrimaryColor
-  accentInput.value = defaultAccentColor
-  lane0Input.value = defaultLane0Color
-  lane1Input.value = defaultLane1Color
-  lane2Input.value = defaultLane2Color
-  lane3Input.value = defaultLane3Color
-  resetThemeDefaults()
-}
+const neutralPaletteOptions: Array<{ key: NeutralColorKey; label: string; preview: string }> = [
+  { key: 'slate', label: 'Slate', preview: '#1e293b' },
+  { key: 'zinc', label: 'Zinc', preview: '#27272a' },
+  { key: 'gray', label: 'Gray', preview: '#374151' },
+  { key: 'neutral', label: 'Neutral', preview: '#262626' },
+  { key: 'black', label: 'OLED Black', preview: '#000000' },
+]
 </script>
 
 <template>
@@ -75,103 +44,50 @@ function resetToDefaults(): void {
       </SharedSectionHeader>
     </template>
 
-    <div class="flex flex-col gap-6">
-      <!-- Quick Presets -->
+    <div class="flex flex-col gap-6 text-xs">
+      <!-- Primary Colors -->
       <div class="flex flex-col gap-2">
-        <span class="text-xs font-semibold text-highlighted">
-          {{ t('theme.primaryColor') }} (Presets)
-        </span>
-        <div class="flex flex-wrap items-center gap-2">
+        <span class="font-semibold text-highlighted">Primary Brand Accent</span>
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <button
-            v-for="color in primaryPresets"
-            :key="color"
+            v-for="item in primaryPaletteOptions"
+            :key="item.key"
             type="button"
-            class="h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 focus:outline-none"
-            :class="primaryInput === color ? 'border-highlighted scale-110 shadow-sm' : 'border-transparent'"
-            :style="{ backgroundColor: color }"
-            @click="selectPrimaryPreset(color)"
-          />
+            class="flex items-center gap-2 rounded-xl border p-2.5 text-start transition-all hover:scale-[1.02]"
+            :class="settings.primaryColor === item.key
+              ? 'border-primary ring-1 ring-primary bg-primary/10 shadow-xs'
+              : 'border-default bg-surface/50 hover:bg-muted/30'"
+            @click="updateSettings({ primaryColor: item.key })"
+          >
+            <span
+              class="h-4 w-4 shrink-0 rounded-full shadow-xs"
+              :style="{ backgroundColor: item.preview }"
+            />
+            <span class="font-medium text-highlighted truncate">{{ item.label }}</span>
+          </button>
         </div>
       </div>
 
-      <!-- Color Pickers Grid -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div class="flex flex-col gap-1.5 rounded-md border border-default bg-muted/20 p-3">
-          <label class="text-xs font-medium text-toned">{{ t('theme.primaryColor') }}</label>
-          <div class="flex items-center gap-2">
-            <input
-              v-model="primaryInput"
-              type="color"
-              class="h-8 w-10 cursor-pointer rounded border border-default bg-transparent p-0"
-              @change="applyTheme"
-            >
-            <span class="font-mono text-xs text-muted" dir="ltr">{{ primaryInput }}</span>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-1.5 rounded-md border border-default bg-muted/20 p-3">
-          <label class="text-xs font-medium text-toned">{{ t('theme.accentColor') }}</label>
-          <div class="flex items-center gap-2">
-            <input
-              v-model="accentInput"
-              type="color"
-              class="h-8 w-10 cursor-pointer rounded border border-default bg-transparent p-0"
-              @change="applyTheme"
-            >
-            <span class="font-mono text-xs text-muted" dir="ltr">{{ accentInput }}</span>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-1.5 rounded-md border border-default bg-muted/20 p-3">
-          <label class="text-xs font-medium text-toned">Graph Lane 0 (Main Branch)</label>
-          <div class="flex items-center gap-2">
-            <input
-              v-model="lane0Input"
-              type="color"
-              class="h-8 w-10 cursor-pointer rounded border border-default bg-transparent p-0"
-              @change="applyTheme"
-            >
-            <span class="font-mono text-xs text-muted" dir="ltr">{{ lane0Input }}</span>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-1.5 rounded-md border border-default bg-muted/20 p-3">
-          <label class="text-xs font-medium text-toned">Graph Lane 1 (Feature 1)</label>
-          <div class="flex items-center gap-2">
-            <input
-              v-model="lane1Input"
-              type="color"
-              class="h-8 w-10 cursor-pointer rounded border border-default bg-transparent p-0"
-              @change="applyTheme"
-            >
-            <span class="font-mono text-xs text-muted" dir="ltr">{{ lane1Input }}</span>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-1.5 rounded-md border border-default bg-muted/20 p-3">
-          <label class="text-xs font-medium text-toned">Graph Lane 2 (Feature 2)</label>
-          <div class="flex items-center gap-2">
-            <input
-              v-model="lane2Input"
-              type="color"
-              class="h-8 w-10 cursor-pointer rounded border border-default bg-transparent p-0"
-              @change="applyTheme"
-            >
-            <span class="font-mono text-xs text-muted" dir="ltr">{{ lane2Input }}</span>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-1.5 rounded-md border border-default bg-muted/20 p-3">
-          <label class="text-xs font-medium text-toned">Graph Lane 3 (Feature 3)</label>
-          <div class="flex items-center gap-2">
-            <input
-              v-model="lane3Input"
-              type="color"
-              class="h-8 w-10 cursor-pointer rounded border border-default bg-transparent p-0"
-              @change="applyTheme"
-            >
-            <span class="font-mono text-xs text-muted" dir="ltr">{{ lane3Input }}</span>
-          </div>
+      <!-- Neutral Colors -->
+      <div class="flex flex-col gap-2 pt-2 border-t border-default/70">
+        <span class="font-semibold text-highlighted">Surface & Background Palette</span>
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <button
+            v-for="item in neutralPaletteOptions"
+            :key="item.key"
+            type="button"
+            class="flex items-center gap-2 rounded-xl border p-2.5 text-start transition-all hover:scale-[1.02]"
+            :class="settings.neutralColor === item.key
+              ? 'border-primary ring-1 ring-primary bg-primary/10 shadow-xs'
+              : 'border-default bg-surface/50 hover:bg-muted/30'"
+            @click="updateSettings({ neutralColor: item.key })"
+          >
+            <span
+              class="h-3.5 w-3.5 shrink-0 rounded-full border border-white/20"
+              :style="{ backgroundColor: item.preview }"
+            />
+            <span class="font-semibold text-highlighted truncate">{{ item.label }}</span>
+          </button>
         </div>
       </div>
     </div>

@@ -9,93 +9,138 @@
   --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-
-  --text-display: var(--gv-text-display, 1.5rem);
-  --text-title: var(--gv-text-title, 1.25rem);
-  --text-section: var(--gv-text-section, 1rem);
-  --text-body: var(--gv-text-body, 0.875rem);
-  --text-label: var(--gv-text-label, 0.8125rem);
-  --text-caption: var(--gv-text-caption, 0.75rem);
 }
 
+/* =========================================================================
+   1. FONT SIZE SCALING
+   ========================================================================= */
+html {
+  font-size: 14px;
+}
+
+html[data-font-size="compact"] {
+  font-size: 13px;
+}
+
+html[data-font-size="normal"] {
+  font-size: 14px;
+}
+
+html[data-font-size="relaxed"] {
+  font-size: 15px;
+}
+
+html[data-font-size="large"] {
+  font-size: 16px;
+}
+
+/* =========================================================================
+   2. BORDER RADIUS SCALING
+   ========================================================================= */
 :root {
-  --ui-radius: var(--gv-radius-md, 10px);
-  --ui-container: 100%;
+  --ui-radius: 10px;
+  --gv-radius-sm: 6px;
+  --gv-radius-md: 10px;
+  --gv-radius-lg: 14px;
+  --gv-radius-xl: 18px;
+}
 
-  /* =========================================================================
-     LIGHT THEME (GitVerse Light — Crisp Developer Clean)
-     ========================================================================= */
-  --gv-background: #f1f3f7;
-  --gv-sidebar: #f8fafc;
-  --gv-surface: #ffffff;
-  --gv-surface-elevated: #ffffff;
-  --gv-surface-hover: #f3f4f6;
-  --gv-surface-active: #e5e7eb;
-  --gv-overlay-solid: #0d1117;
-  --gv-overlay: rgba(13, 17, 23, 0.55);
+html[data-radius="sharp"] {
+  --ui-radius: 0px;
+  --gv-radius-sm: 0px;
+  --gv-radius-md: 0px;
+  --gv-radius-lg: 2px;
+  --gv-radius-xl: 4px;
+}
 
-  /* Glassmorphism & Blur Tokens */
+html[data-radius="subtle"] {
+  --ui-radius: 6px;
+  --gv-radius-sm: 4px;
+  --gv-radius-md: 6px;
+  --gv-radius-lg: 10px;
+  --gv-radius-xl: 12px;
+}
+
+html[data-radius="default"] {
+  --ui-radius: 10px;
+  --gv-radius-sm: 6px;
+  --gv-radius-md: 10px;
+  --gv-radius-lg: 14px;
+  --gv-radius-xl: 18px;
+}
+
+html[data-radius="curved"] {
+  --ui-radius: 14px;
+  --gv-radius-sm: 8px;
+  --gv-radius-md: 14px;
+  --gv-radius-lg: 18px;
+  --gv-radius-xl: 22px;
+}
+
+html[data-radius="pill"] {
+  --ui-radius: 20px;
+  --gv-radius-sm: 12px;
+  --gv-radius-md: 20px;
+  --gv-radius-lg: 24px;
+  --gv-radius-xl: 28px;
+}
+
+/* =========================================================================
+   3. SHADOW DEPTH SCALING
+   ========================================================================= */
+:root {
+  --gv-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --gv-shadow-md: 0 4px 14px rgba(15, 23, 42, 0.08);
+  --gv-shadow-lg: 0 12px 36px rgba(15, 23, 42, 0.12);
+}
+
+.dark {
+  --gv-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --gv-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --gv-shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.55);
+}
+
+html[data-shadow="none"] {
+  --gv-shadow-sm: none;
+  --gv-shadow-md: none;
+  --gv-shadow-lg: none;
+}
+
+html[data-shadow="subtle"] {
+  --gv-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.10);
+  --gv-shadow-md: 0 3px 10px rgba(0, 0, 0, 0.15);
+  --gv-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.20);
+}
+
+html[data-shadow="elevated"] {
+  --gv-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.20);
+  --gv-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --gv-shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.50);
+}
+
+html[data-shadow="dramatic"] {
+  --gv-shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --gv-shadow-md: 0 14px 38px rgba(0, 0, 0, 0.55);
+  --gv-shadow-lg: 0 26px 64px rgba(0, 0, 0, 0.75);
+}
+
+/* =========================================================================
+   4. GLASSMORPHISM & BLUR
+   ========================================================================= */
+:root {
   --gv-glass-blur: 16px;
   --gv-glass-opacity: 0.88;
-  --gv-glass-surface: rgba(255, 255, 255, var(--gv-glass-opacity));
-  --gv-glass-border: rgba(208, 215, 222, 0.7);
+  --gv-surface-rgb: 255, 255, 255;
+  --gv-glass-surface: rgba(var(--gv-surface-rgb), var(--gv-glass-opacity));
+  --gv-glass-border: rgba(208, 215, 222, 0.75);
+  --gv-overlay: rgba(13, 17, 23, 0.50);
 
-  --ui-bg: #f1f3f7;
-  --ui-bg-muted: #e9ecef;
-  --ui-bg-elevated: #ffffff;
-  --ui-bg-accented: #fff7ed;
-  --ui-bg-inverted: #0d1117;
-
-  --ui-border: #d0d7de;
-  --ui-border-muted: #e1e4e8;
-  --ui-border-accented: #fdba74;
-  --gv-border-subtle: #e1e4e8;
-  --gv-border-strong: #afb8c1;
-  --gv-border-focus: #ea580c;
-
-  --ui-text: #1f2328;
-  --ui-text-highlighted: #0d1117;
-  --ui-text-toned: #57606a;
-  --ui-text-muted: #57606a;
-  --ui-text-dimmed: #8c959f;
-  --ui-text-inverted: #ffffff;
-  --gv-text-muted: #8c959f;
-
-  /* Brand Primary & Semantic Tokens (Git Ember & Coral) */
-  --ui-primary: #ea580c;
-  --gv-primary-hover: #c2410c;
-  --gv-primary-active: #9a3412;
-  --gv-primary-soft: #fff7ed;
-  --ui-secondary: #f97316;
-  --gv-accent: #0284c7;
-  --gv-accent-soft: #f0f9ff;
-
-  --ui-success: #1a7f37;
-  --ui-warning: #9a6700;
-  --ui-error: #cf222e;
-  --ui-info: #0969da;
-  --gv-status-pending: #6e7781;
-  --gv-status-live: #1a7f37;
-
-  --gv-input-bg: #ffffff;
-  --gv-input-border: #d0d7de;
-  --gv-focus-ring: rgba(234, 88, 12, 0.28);
-  --gv-disabled-bg: #eff2f5;
-  --gv-disabled-text: #afb8c1;
-
-  /* Git Status Tokens (Light) */
+  /* Light Git & Diff tokens */
   --gv-git-staged: #1a7f37;
-  --gv-git-staged-bg: rgba(26, 127, 55, 0.10);
   --gv-git-unstaged: #9a6700;
-  --gv-git-unstaged-bg: rgba(154, 103, 0, 0.10);
   --gv-git-untracked: #57606a;
-  --gv-git-untracked-bg: rgba(87, 96, 106, 0.10);
   --gv-git-conflicted: #cf222e;
-  --gv-git-conflicted-bg: rgba(207, 34, 46, 0.12);
-  --gv-git-head: #ea580c;
   --gv-git-tag: #8250df;
-
-  /* Diff Tokens (Light) */
   --gv-diff-add-bg: #dafbe1;
   --gv-diff-add-border: #aceebb;
   --gv-diff-add-text: #1a7f37;
@@ -105,8 +150,7 @@
   --gv-diff-hunk-bg: #ddf4ff;
   --gv-diff-hunk-text: #0969da;
 
-  /* Commit Graph Lane Colors (Deterministic DAG visualization) */
-  --gv-lane-0: #ea580c;
+  --gv-lane-0: var(--ui-primary, #ea580c);
   --gv-lane-1: #0891b2;
   --gv-lane-2: #16a34a;
   --gv-lane-3: #8b5cf6;
@@ -114,122 +158,21 @@
   --gv-lane-5: #d97706;
   --gv-lane-6: #2563eb;
   --gv-lane-7: #4f46e5;
-
-  /* Spacing Scale (4px base) */
-  --gv-space-0: 0px;
-  --gv-space-1: 4px;
-  --gv-space-2: 8px;
-  --gv-space-3: 12px;
-  --gv-space-4: 16px;
-  --gv-space-6: 24px;
-  --gv-space-8: 32px;
-
-  /* Border Radius */
-  --gv-radius-none: 0px;
-  --gv-radius-sm: 6px;
-  --gv-radius-md: 10px;
-  --gv-radius-lg: 14px;
-  --gv-radius-xl: 18px;
-  --gv-radius-2xl: 22px;
-  --gv-radius-full: 9999px;
-
-  /* Shadows (Light) */
-  --gv-shadow-none: none;
-  --gv-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
-  --gv-shadow-md: 0 4px 14px rgba(15, 23, 42, 0.08);
-  --gv-shadow-lg: 0 12px 36px rgba(15, 23, 42, 0.12);
-  --gv-shadow-xl: 0 20px 48px rgba(15, 23, 42, 0.15);
-  --gv-shadow-focus: 0 0 0 2px var(--gv-focus-ring);
-
-  /* Component Dimensions */
-  --gv-control-height-sm: 30px;
-  --gv-control-height-md: 36px;
-  --gv-control-height-lg: 42px;
-  --gv-input-height: 38px;
-  --gv-sidebar-width: 256px;
-
-  /* Motion Tokens */
-  --gv-duration-fast: 120ms;
-  --gv-duration-standard: 180ms;
-  --gv-duration-slow: 280ms;
-  --gv-ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dark {
-  /* =========================================================================
-     DARK THEME (GitVerse Dark — Deep Graphite & Cosmic Slate)
-     ========================================================================= */
-  --gv-background: #090d13;
-  --gv-sidebar: #0f141d;
-  --gv-surface: #141a24;
-  --gv-surface-elevated: #1c2432;
-  --gv-surface-hover: #263143;
-  --gv-surface-active: #313f55;
-  --gv-overlay-solid: #010409;
-  --gv-overlay: rgba(1, 4, 9, 0.72);
-
-  /* Glassmorphism & Blur Tokens (Dark) */
-  --gv-glass-blur: 16px;
   --gv-glass-opacity: 0.85;
-  --gv-glass-surface: rgba(20, 26, 36, var(--gv-glass-opacity));
+  --gv-surface-rgb: 20, 26, 36;
+  --gv-glass-surface: rgba(var(--gv-surface-rgb), var(--gv-glass-opacity));
   --gv-glass-border: rgba(48, 54, 61, 0.75);
+  --gv-overlay: rgba(1, 4, 9, 0.70);
 
-  --ui-bg: #090d13;
-  --ui-bg-muted: #0d1219;
-  --ui-bg-elevated: #1c2432;
-  --ui-bg-accented: #2d1808;
-  --ui-bg-inverted: #f0f6fc;
-
-  --ui-border: #263143;
-  --ui-border-muted: #1c2432;
-  --ui-border-accented: #fb923c;
-  --gv-border-subtle: #1c2432;
-  --gv-border-strong: #3b495f;
-  --gv-border-focus: #fb923c;
-
-  --ui-text: #f0f6fc;
-  --ui-text-highlighted: #ffffff;
-  --ui-text-toned: #8b949e;
-  --ui-text-muted: #8b949e;
-  --ui-text-dimmed: #6e7681;
-  --ui-text-inverted: #0d1117;
-  --gv-text-muted: #6e7681;
-
-  /* Brand Primary & Semantic Tokens (Dark Git Ember) */
-  --ui-primary: #fb923c;
-  --gv-primary-hover: #fdba74;
-  --gv-primary-active: #f97316;
-  --gv-primary-soft: #381c06;
-  --ui-secondary: #f97316;
-  --gv-accent: #38bdf8;
-  --gv-accent-soft: #082f49;
-
-  --ui-success: #3fb950;
-  --ui-warning: #d29922;
-  --ui-error: #f85149;
-  --ui-info: #58a6ff;
-  --gv-status-pending: #8b949e;
-  --gv-status-live: #3fb950;
-
-  --gv-input-bg: #141a24;
-  --gv-input-border: #263143;
-  --gv-focus-ring: rgba(251, 146, 60, 0.35);
-  --gv-disabled-bg: #141a24;
-  --gv-disabled-text: #484f58;
-
-  /* Git Status Tokens (Dark) */
+  /* Dark Git & Diff tokens */
   --gv-git-staged: #3fb950;
-  --gv-git-staged-bg: rgba(63, 185, 80, 0.16);
   --gv-git-unstaged: #d29922;
-  --gv-git-unstaged-bg: rgba(210, 153, 34, 0.16);
   --gv-git-untracked: #8b949e;
-  --gv-git-untracked-bg: rgba(139, 148, 158, 0.16);
   --gv-git-conflicted: #f85149;
-  --gv-git-conflicted-bg: rgba(248, 81, 73, 0.20);
-  --gv-git-head: #fb923c;
   --gv-git-tag: #a371f7;
-
-  /* Diff Tokens (Dark) */
   --gv-diff-add-bg: rgba(46, 160, 67, 0.18);
   --gv-diff-add-border: rgba(46, 160, 67, 0.40);
   --gv-diff-add-text: #3fb950;
@@ -239,8 +182,7 @@
   --gv-diff-hunk-bg: rgba(56, 139, 253, 0.15);
   --gv-diff-hunk-text: #58a6ff;
 
-  /* Commit Graph Lane Colors (Dark) */
-  --gv-lane-0: #fb923c;
+  --gv-lane-0: var(--ui-primary, #fb923c);
   --gv-lane-1: #22d3ee;
   --gv-lane-2: #4ade80;
   --gv-lane-3: #a78bfa;
@@ -248,15 +190,226 @@
   --gv-lane-5: #fbbf24;
   --gv-lane-6: #60a5fa;
   --gv-lane-7: #818cf8;
-
-  /* Shadows (Dark) */
-  --gv-shadow-none: none;
-  --gv-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
-  --gv-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
-  --gv-shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.55);
-  --gv-shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.65);
 }
 
+/* =========================================================================
+   5. NEUTRAL SCALES (Slate, Zinc, Gray, Neutral, Black OLED)
+   ========================================================================= */
+
+/* Slate (Default) */
+html:not([data-neutral]), html[data-neutral="slate"] {
+  --gv-background: #f1f3f7;
+  --gv-sidebar: #f8fafc;
+  --gv-surface: #ffffff;
+  --gv-surface-elevated: #ffffff;
+  --gv-border: #d0d7de;
+  --gv-surface-rgb: 255, 255, 255;
+}
+
+.dark:not([data-neutral]), .dark[data-neutral="slate"] {
+  --gv-background: #090d13;
+  --gv-sidebar: #0f141d;
+  --gv-surface: #141a24;
+  --gv-surface-elevated: #1c2432;
+  --gv-border: #263143;
+  --gv-surface-rgb: 20, 26, 36;
+}
+
+/* Zinc */
+html[data-neutral="zinc"] {
+  --gv-background: #f4f4f5;
+  --gv-sidebar: #fafafa;
+  --gv-surface: #ffffff;
+  --gv-surface-elevated: #ffffff;
+  --gv-border: #e4e4e7;
+  --gv-surface-rgb: 255, 255, 255;
+}
+
+.dark[data-neutral="zinc"] {
+  --gv-background: #09090b;
+  --gv-sidebar: #121215;
+  --gv-surface: #18181b;
+  --gv-surface-elevated: #27272a;
+  --gv-border: #27272a;
+  --gv-surface-rgb: 24, 24, 27;
+}
+
+/* Gray */
+html[data-neutral="gray"] {
+  --gv-background: #f3f4f6;
+  --gv-sidebar: #f9fafb;
+  --gv-surface: #ffffff;
+  --gv-surface-elevated: #ffffff;
+  --gv-border: #e5e7eb;
+  --gv-surface-rgb: 255, 255, 255;
+}
+
+.dark[data-neutral="gray"] {
+  --gv-background: #111827;
+  --gv-sidebar: #172033;
+  --gv-surface: #1f2937;
+  --gv-surface-elevated: #374151;
+  --gv-border: #374151;
+  --gv-surface-rgb: 31, 41, 55;
+}
+
+/* Neutral */
+html[data-neutral="neutral"] {
+  --gv-background: #f5f5f5;
+  --gv-sidebar: #fafafa;
+  --gv-surface: #ffffff;
+  --gv-surface-elevated: #ffffff;
+  --gv-border: #e5e5e5;
+  --gv-surface-rgb: 255, 255, 255;
+}
+
+.dark[data-neutral="neutral"] {
+  --gv-background: #0a0a0a;
+  --gv-sidebar: #141414;
+  --gv-surface: #1a1a1a;
+  --gv-surface-elevated: #262626;
+  --gv-border: #262626;
+  --gv-surface-rgb: 26, 26, 26;
+}
+
+/* Black (OLED Pitch Black) */
+html[data-neutral="black"] {
+  --gv-background: #f4f4f5;
+  --gv-sidebar: #fafafa;
+  --gv-surface: #ffffff;
+  --gv-surface-elevated: #ffffff;
+  --gv-border: #e4e4e7;
+  --gv-surface-rgb: 255, 255, 255;
+}
+
+.dark[data-neutral="black"] {
+  --gv-background: #000000;
+  --gv-sidebar: #050505;
+  --gv-surface: #0a0a0a;
+  --gv-surface-elevated: #141414;
+  --gv-border: #1c1c1c;
+  --gv-surface-rgb: 10, 10, 10;
+}
+
+/* =========================================================================
+   6. PRIMARY BRAND SCALES
+   ========================================================================= */
+
+/* Orange (Git Ember) */
+html[data-primary="orange"] {
+  --ui-primary: #ea580c;
+  --gv-border-focus: #ea580c;
+  --gv-git-head: #ea580c;
+  --gv-lane-0: #ea580c;
+}
+.dark[data-primary="orange"] {
+  --ui-primary: #fb923c;
+  --gv-border-focus: #fb923c;
+  --gv-git-head: #fb923c;
+  --gv-lane-0: #fb923c;
+}
+
+/* Rose (Crimson Flame) */
+html[data-primary="rose"] {
+  --ui-primary: #e11d48;
+  --gv-border-focus: #e11d48;
+  --gv-git-head: #e11d48;
+  --gv-lane-0: #e11d48;
+}
+.dark[data-primary="rose"] {
+  --ui-primary: #fb7185;
+  --gv-border-focus: #fb7185;
+  --gv-git-head: #fb7185;
+  --gv-lane-0: #fb7185;
+}
+
+/* Blue (Royal / GitHub Blue) */
+html[data-primary="blue"] {
+  --ui-primary: #2563eb;
+  --gv-border-focus: #2563eb;
+  --gv-git-head: #2563eb;
+  --gv-lane-0: #2563eb;
+}
+.dark[data-primary="blue"] {
+  --ui-primary: #60a5fa;
+  --gv-border-focus: #60a5fa;
+  --gv-git-head: #60a5fa;
+  --gv-lane-0: #60a5fa;
+}
+
+/* Emerald (Forest Green) */
+html[data-primary="emerald"] {
+  --ui-primary: #059669;
+  --gv-border-focus: #059669;
+  --gv-git-head: #059669;
+  --gv-lane-0: #059669;
+}
+.dark[data-primary="emerald"] {
+  --ui-primary: #34d399;
+  --gv-border-focus: #34d399;
+  --gv-git-head: #34d399;
+  --gv-lane-0: #34d399;
+}
+
+/* Violet (Cosmic Purple) */
+html[data-primary="violet"] {
+  --ui-primary: #7c3aed;
+  --gv-border-focus: #7c3aed;
+  --gv-git-head: #7c3aed;
+  --gv-lane-0: #7c3aed;
+}
+.dark[data-primary="violet"] {
+  --ui-primary: #a78bfa;
+  --gv-border-focus: #a78bfa;
+  --gv-git-head: #a78bfa;
+  --gv-lane-0: #a78bfa;
+}
+
+/* Cyan (Neon Cyberpunk) */
+html[data-primary="cyan"] {
+  --ui-primary: #0891b2;
+  --gv-border-focus: #0891b2;
+  --gv-git-head: #0891b2;
+  --gv-lane-0: #0891b2;
+}
+.dark[data-primary="cyan"] {
+  --ui-primary: #22d3ee;
+  --gv-border-focus: #22d3ee;
+  --gv-git-head: #22d3ee;
+  --gv-lane-0: #22d3ee;
+}
+
+/* Amber (Golden Amber) */
+html[data-primary="amber"] {
+  --ui-primary: #d97706;
+  --gv-border-focus: #d97706;
+  --gv-git-head: #d97706;
+  --gv-lane-0: #d97706;
+}
+.dark[data-primary="amber"] {
+  --ui-primary: #fbbf24;
+  --gv-border-focus: #fbbf24;
+  --gv-git-head: #fbbf24;
+  --gv-lane-0: #fbbf24;
+}
+
+/* Indigo (Deep Indigo) */
+html[data-primary="indigo"] {
+  --ui-primary: #4f46e5;
+  --gv-border-focus: #4f46e5;
+  --gv-git-head: #4f46e5;
+  --gv-lane-0: #4f46e5;
+}
+.dark[data-primary="indigo"] {
+  --ui-primary: #818cf8;
+  --gv-border-focus: #818cf8;
+  --gv-git-head: #818cf8;
+  --gv-lane-0: #818cf8;
+}
+
+/* =========================================================================
+   7. BASE UTILITIES & ISLAND PANEL
+   ========================================================================= */
 :root[dir="rtl"] {
   --font-sans: "Vazirmatn Variable", "IBM Plex Sans Variable", system-ui, -apple-system, sans-serif;
 }
@@ -274,7 +427,7 @@
   }
 }
 
-/* Glassmorphic & Inset Island Utilities */
+/* Floating Island Panel */
 .gv-island-panel {
   background-color: var(--gv-glass-surface);
   backdrop-filter: blur(var(--gv-glass-blur));
@@ -282,18 +435,12 @@
   border: 1px solid var(--gv-glass-border);
   border-radius: var(--gv-radius-xl);
   box-shadow: var(--gv-shadow-sm);
-  transition: box-shadow var(--gv-duration-standard) var(--gv-ease-standard),
-              border-color var(--gv-duration-standard) var(--gv-ease-standard);
+  transition: box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .gv-island-panel:hover {
   box-shadow: var(--gv-shadow-md);
-}
-
-/* Glass dialog / modal overlay backdrop styling */
-[role="dialog"] {
-  backdrop-filter: blur(var(--gv-glass-blur));
-  -webkit-backdrop-filter: blur(var(--gv-glass-blur));
 }
 
 @media (prefers-reduced-motion: reduce) {

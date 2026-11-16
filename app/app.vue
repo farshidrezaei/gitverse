@@ -3,6 +3,11 @@ const localeHead = useLocaleHead()
 const { restorePersistedLocale } = useLocaleController()
 const { restorePersistedTheme } = useThemeController()
 
+// Initialize persisted theme attributes early
+if (import.meta.client) {
+  restorePersistedTheme()
+}
+
 useHead(() => ({
   htmlAttrs: localeHead.value.htmlAttrs,
 }))

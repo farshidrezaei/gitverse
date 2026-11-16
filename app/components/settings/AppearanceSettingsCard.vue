@@ -1,48 +1,60 @@
 <script setup lang="ts">
-import type { CustomThemePalette } from '~/composables/useThemeController'
+import type {
+  BorderRadiusKey,
+  FontSizeScaleKey,
+  NeutralColorKey,
+  PrimaryColorKey,
+  ShadowIntensityKey,
+} from '~/composables/useThemeController'
 
 const { t } = useI18n()
-const { colorMode, customPalette, setCustomPalette, resetToDefaults } = useThemeController()
+const { colorMode, settings, updateSettings, resetToDefaults } = useThemeController()
 
-const primaryPresets: Array<{ name: string; color: string }> = [
-  { name: 'Git Ember', color: '#ea580c' },
-  { name: 'Official Git', color: '#f05032' },
-  { name: 'Cosmic Blue', color: '#2563eb' },
-  { name: 'Emerald Forest', color: '#059669' },
-  { name: 'Cosmic Violet', color: '#7c3aed' },
-  { name: 'Rose Flame', color: '#db2777' },
+const primaryPaletteOptions: Array<{ key: PrimaryColorKey; label: string; preview: string }> = [
+  { key: 'orange', label: 'Git Ember', preview: '#ea580c' },
+  { key: 'rose', label: 'Crimson Flame', preview: '#e11d48' },
+  { key: 'blue', label: 'Royal Blue', preview: '#2563eb' },
+  { key: 'emerald', label: 'Emerald Mint', preview: '#059669' },
+  { key: 'violet', label: 'Cosmic Violet', preview: '#7c3aed' },
+  { key: 'cyan', label: 'Cyberpunk Cyan', preview: '#0891b2' },
+  { key: 'amber', label: 'Golden Amber', preview: '#d97706' },
+  { key: 'indigo', label: 'Deep Indigo', preview: '#4f46e5' },
 ]
 
-const fontScaleOptions = [
-  { value: 'compact', label: 'Compact (13px)' },
-  { value: 'normal', label: 'Standard (14px)' },
-  { value: 'relaxed', label: 'Relaxed (15px)' },
-  { value: 'large', label: 'Large (16px)' },
+const neutralPaletteOptions: Array<{ key: NeutralColorKey; label: string; desc: string; preview: string }> = [
+  { key: 'slate', label: 'Slate', desc: 'Cool Tech Slate (Default)', preview: '#1e293b' },
+  { key: 'zinc', label: 'Zinc', desc: 'Industrial High-Contrast', preview: '#27272a' },
+  { key: 'gray', label: 'Gray', desc: 'Balanced Neutral Gray', preview: '#374151' },
+  { key: 'neutral', label: 'Neutral', desc: 'Soft Minimalist Neutral', preview: '#262626' },
+  { key: 'black', label: 'OLED Black', desc: 'Pure Pitch Black (#000000)', preview: '#000000' },
 ]
 
-const radiusOptions = [
-  { value: 'sharp', label: 'Sharp (0px)' },
-  { value: 'subtle', label: 'Subtle (6px)' },
-  { value: 'default', label: 'Default (10px)' },
-  { value: 'curved', label: 'Curved (14px)' },
-  { value: 'pill', label: 'Pill (20px)' },
+const fontScaleOptions: Array<{ key: FontSizeScaleKey; label: string; desc: string }> = [
+  { key: 'compact', label: 'Compact', desc: '13px Root' },
+  { key: 'normal', label: 'Standard', desc: '14px Root' },
+  { key: 'relaxed', label: 'Relaxed', desc: '15px Root' },
+  { key: 'large', label: 'Large', desc: '16px Root' },
 ]
 
-const shadowOptions = [
-  { value: 'none', label: 'Flat (None)' },
-  { value: 'subtle', label: 'Subtle (Default)' },
-  { value: 'elevated', label: 'Elevated' },
-  { value: 'dramatic', label: 'Dramatic' },
+const radiusOptions: Array<{ key: BorderRadiusKey; label: string }> = [
+  { key: 'sharp', label: 'Sharp (0px)' },
+  { key: 'subtle', label: 'Subtle (6px)' },
+  { key: 'default', label: 'Default (10px)' },
+  { key: 'curved', label: 'Curved (14px)' },
+  { key: 'pill', label: 'Pill (20px)' },
 ]
 
-function updatePalette(patch: Partial<CustomThemePalette>): void {
-  setCustomPalette(patch)
-}
+const shadowOptions: Array<{ key: ShadowIntensityKey; label: string }> = [
+  { key: 'none', label: 'Flat (None)' },
+  { key: 'subtle', label: 'Subtle' },
+  { key: 'elevated', label: 'Elevated' },
+  { key: 'dramatic', label: 'Dramatic' },
+]
 </script>
 
 <template>
   <div class="space-y-6 text-xs">
-    <!-- Theme Mode (Light / Dark / System) -->
+    <!-- 1. Theme Mode -->
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
@@ -51,7 +63,7 @@ function updatePalette(patch: Partial<CustomThemePalette>): void {
               {{ t('settings.appearance.themeMode') }}
             </h3>
             <p class="text-[11px] text-muted">
-              Select your preferred desktop appearance.
+              Select Light, Dark, or System mode.
             </p>
           </div>
           <div class="flex items-center gap-1.5">
@@ -83,69 +95,61 @@ function updatePalette(patch: Partial<CustomThemePalette>): void {
         </div>
       </template>
 
-      <!-- Palette Presets & Primary / Accent Colors -->
-      <div class="space-y-4">
+      <!-- 2. Primary Brand Colors (Standard Curated) -->
+      <div class="space-y-3">
         <div>
-          <span class="font-medium text-toned block mb-2">{{ t('settings.appearance.themePresets') }}</span>
-          <div class="flex flex-wrap items-center gap-2">
+          <span class="font-semibold text-highlighted block mb-1">Primary Brand Accent</span>
+          <p class="text-[11px] text-muted mb-2">Controls buttons, active branches, indicators, and focus rings.</p>
+          <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button
-              v-for="preset in primaryPresets"
-              :key="preset.name"
+              v-for="item in primaryPaletteOptions"
+              :key="item.key"
               type="button"
-              class="flex items-center gap-1.5 rounded-lg border border-default px-2.5 py-1.5 transition-all hover:scale-105"
-              :class="customPalette.primaryColor === preset.color ? 'border-primary ring-1 ring-primary bg-primary/10' : 'bg-surface'"
-              @click="updatePalette({ primaryColor: preset.color })"
+              class="flex items-center gap-2 rounded-xl border p-2.5 text-start transition-all hover:scale-[1.02]"
+              :class="settings.primaryColor === item.key
+                ? 'border-primary ring-1 ring-primary bg-primary/10 shadow-xs'
+                : 'border-default bg-surface/50 hover:bg-muted/30'"
+              @click="updateSettings({ primaryColor: item.key })"
             >
-              <span class="h-3.5 w-3.5 rounded-full inline-block shadow-xs" :style="{ backgroundColor: preset.color }" />
-              <span class="font-medium text-highlighted text-[11px]">{{ preset.name }}</span>
+              <span
+                class="h-4 w-4 shrink-0 rounded-full shadow-xs"
+                :style="{ backgroundColor: item.preview }"
+              />
+              <span class="font-medium text-highlighted text-xs truncate">{{ item.label }}</span>
             </button>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div class="flex flex-col gap-1 rounded-lg border border-default p-2.5 bg-muted/20">
-            <label class="text-[11px] font-medium text-toned">{{ t('theme.primaryColor') }}</label>
-            <div class="flex items-center gap-2">
-              <input
-                type="color"
-                :value="customPalette.primaryColor"
-                class="h-7 w-9 cursor-pointer rounded border border-default bg-transparent p-0"
-                @input="updatePalette({ primaryColor: ($event.target as HTMLInputElement).value })"
-              >
-              <span class="font-mono text-[11px] text-muted" dir="ltr">{{ customPalette.primaryColor }}</span>
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-1 rounded-lg border border-default p-2.5 bg-muted/20">
-            <label class="text-[11px] font-medium text-toned">{{ t('theme.accentColor') }}</label>
-            <div class="flex items-center gap-2">
-              <input
-                type="color"
-                :value="customPalette.accentColor"
-                class="h-7 w-9 cursor-pointer rounded border border-default bg-transparent p-0"
-                @input="updatePalette({ accentColor: ($event.target as HTMLInputElement).value })"
-              >
-              <span class="font-mono text-[11px] text-muted" dir="ltr">{{ customPalette.accentColor }}</span>
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-1 rounded-lg border border-default p-2.5 bg-muted/20">
-            <label class="text-[11px] font-medium text-toned">Graph Lane 0 (Main)</label>
-            <div class="flex items-center gap-2">
-              <input
-                type="color"
-                :value="customPalette.lane0Color"
-                class="h-7 w-9 cursor-pointer rounded border border-default bg-transparent p-0"
-                @input="updatePalette({ lane0Color: ($event.target as HTMLInputElement).value })"
-              >
-              <span class="font-mono text-[11px] text-muted" dir="ltr">{{ customPalette.lane0Color }}</span>
-            </div>
+        <!-- 3. Neutral / Background Scale -->
+        <div class="pt-4 border-t border-default/70">
+          <span class="font-semibold text-highlighted block mb-1">Surface & Background Palette</span>
+          <p class="text-[11px] text-muted mb-2">Controls application backgrounds, island borders, and card surfaces.</p>
+          <div class="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            <button
+              v-for="item in neutralPaletteOptions"
+              :key="item.key"
+              type="button"
+              class="flex flex-col gap-1 rounded-xl border p-2.5 text-start transition-all hover:scale-[1.02]"
+              :class="settings.neutralColor === item.key
+                ? 'border-primary ring-1 ring-primary bg-primary/10 shadow-xs'
+                : 'border-default bg-surface/50 hover:bg-muted/30'"
+              @click="updateSettings({ neutralColor: item.key })"
+            >
+              <div class="flex items-center gap-1.5">
+                <span
+                  class="h-3 w-3 shrink-0 rounded-full border border-white/20"
+                  :style="{ backgroundColor: item.preview }"
+                />
+                <span class="font-semibold text-highlighted text-xs">{{ item.label }}</span>
+              </div>
+              <span class="text-[10px] text-muted truncate">{{ item.desc }}</span>
+            </button>
           </div>
         </div>
       </div>
     </UCard>
 
-    <!-- Glassmorphism & Backdrop Blur -->
+    <!-- 4. Glassmorphism & Backdrop Blur -->
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
@@ -158,8 +162,8 @@ function updatePalette(patch: Partial<CustomThemePalette>): void {
             </p>
           </div>
           <USwitch
-            :model-value="customPalette.glassmorphismEnabled !== false"
-            @update:model-value="(val) => updatePalette({ glassmorphismEnabled: val })"
+            :model-value="settings.glassmorphismEnabled"
+            @update:model-value="(val) => updateSettings({ glassmorphismEnabled: val })"
           />
         </div>
       </template>
@@ -168,38 +172,68 @@ function updatePalette(patch: Partial<CustomThemePalette>): void {
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center justify-between">
             <label class="font-medium text-toned">{{ t('settings.appearance.backdropBlurLabel') }}</label>
-            <span class="font-mono text-muted">{{ customPalette.backdropBlurPx ?? 16 }}px</span>
+            <span class="font-mono text-muted">{{ settings.backdropBlurPx }}px</span>
           </div>
           <input
             type="range"
             min="0"
             max="32"
             step="4"
-            :value="customPalette.backdropBlurPx ?? 16"
+            :value="settings.backdropBlurPx"
             class="w-full accent-primary cursor-pointer"
-            @input="updatePalette({ backdropBlurPx: Number(($event.target as HTMLInputElement).value) })"
+            @input="updateSettings({ backdropBlurPx: Number(($event.target as HTMLInputElement).value) })"
           >
         </div>
 
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center justify-between">
             <label class="font-medium text-toned">{{ t('settings.appearance.surfaceOpacityLabel') }}</label>
-            <span class="font-mono text-muted">{{ customPalette.surfaceOpacityPercent ?? 88 }}%</span>
+            <span class="font-mono text-muted">{{ settings.surfaceOpacityPercent }}%</span>
           </div>
           <input
             type="range"
             min="50"
             max="100"
             step="5"
-            :value="customPalette.surfaceOpacityPercent ?? 88"
+            :value="settings.surfaceOpacityPercent"
             class="w-full accent-primary cursor-pointer"
-            @input="updatePalette({ surfaceOpacityPercent: Number(($event.target as HTMLInputElement).value) })"
+            @input="updateSettings({ surfaceOpacityPercent: Number(($event.target as HTMLInputElement).value) })"
           >
         </div>
       </div>
     </UCard>
 
-    <!-- Border Radius & Roundness -->
+    <!-- 5. Font Size Scaling -->
+    <UCard>
+      <template #header>
+        <div class="space-y-0.5">
+          <h3 class="text-sm font-semibold text-highlighted">
+            {{ t('settings.appearance.fontSizeTitle') }}
+          </h3>
+          <p class="text-[11px] text-muted">
+            Scales entire typography hierarchy across all UI components and graph viewports.
+          </p>
+        </div>
+      </template>
+
+      <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 pt-1">
+        <button
+          v-for="opt in fontScaleOptions"
+          :key="opt.key"
+          type="button"
+          class="flex flex-col gap-0.5 rounded-xl border p-2.5 text-start transition-all"
+          :class="settings.fontSizeScale === opt.key
+            ? 'border-primary ring-1 ring-primary bg-primary/10 shadow-xs'
+            : 'border-default bg-surface/50 hover:bg-muted/30'"
+          @click="updateSettings({ fontSizeScale: opt.key })"
+        >
+          <span class="font-semibold text-highlighted text-xs">{{ opt.label }}</span>
+          <span class="text-[10px] text-muted">{{ opt.desc }}</span>
+        </button>
+      </div>
+    </UCard>
+
+    <!-- 6. Corner Roundness & Radius -->
     <UCard>
       <template #header>
         <div class="space-y-0.5">
@@ -215,43 +249,17 @@ function updatePalette(patch: Partial<CustomThemePalette>): void {
       <div class="flex flex-wrap gap-2 pt-1">
         <UButton
           v-for="opt in radiusOptions"
-          :key="opt.value"
+          :key="opt.key"
           size="xs"
-          :color="customPalette.borderRadiusLevel === opt.value ? 'primary' : 'neutral'"
-          :variant="customPalette.borderRadiusLevel === opt.value ? 'solid' : 'outline'"
+          :color="settings.borderRadiusLevel === opt.key ? 'primary' : 'neutral'"
+          :variant="settings.borderRadiusLevel === opt.key ? 'solid' : 'outline'"
           :label="opt.label"
-          @click="updatePalette({ borderRadiusLevel: opt.value as any })"
+          @click="updateSettings({ borderRadiusLevel: opt.key })"
         />
       </div>
     </UCard>
 
-    <!-- Font Size & Typography Scale -->
-    <UCard>
-      <template #header>
-        <div class="space-y-0.5">
-          <h3 class="text-sm font-semibold text-highlighted">
-            {{ t('settings.appearance.fontSizeTitle') }}
-          </h3>
-          <p class="text-[11px] text-muted">
-            Adjust global UI typography scale and reading comfort.
-          </p>
-        </div>
-      </template>
-
-      <div class="flex flex-wrap gap-2 pt-1">
-        <UButton
-          v-for="opt in fontScaleOptions"
-          :key="opt.value"
-          size="xs"
-          :color="customPalette.fontSizeScale === opt.value ? 'primary' : 'neutral'"
-          :variant="customPalette.fontSizeScale === opt.value ? 'solid' : 'outline'"
-          :label="opt.label"
-          @click="updatePalette({ fontSizeScale: opt.value as any })"
-        />
-      </div>
-    </UCard>
-
-    <!-- Shadow Depth & Elevation -->
+    <!-- 7. Shadow Depth & Elevation -->
     <UCard>
       <template #header>
         <div class="space-y-0.5">
@@ -259,7 +267,7 @@ function updatePalette(patch: Partial<CustomThemePalette>): void {
             {{ t('settings.appearance.shadowTitle') }}
           </h3>
           <p class="text-[11px] text-muted">
-            Control visual elevation and depth hierarchy.
+            Control depth and floating elevation of island cards.
           </p>
         </div>
       </template>
@@ -267,12 +275,12 @@ function updatePalette(patch: Partial<CustomThemePalette>): void {
       <div class="flex flex-wrap gap-2 pt-1">
         <UButton
           v-for="opt in shadowOptions"
-          :key="opt.value"
+          :key="opt.key"
           size="xs"
-          :color="customPalette.shadowIntensity === opt.value ? 'primary' : 'neutral'"
-          :variant="customPalette.shadowIntensity === opt.value ? 'solid' : 'outline'"
+          :color="settings.shadowIntensity === opt.key ? 'primary' : 'neutral'"
+          :variant="settings.shadowIntensity === opt.key ? 'solid' : 'outline'"
           :label="opt.label"
-          @click="updatePalette({ shadowIntensity: opt.value as any })"
+          @click="updateSettings({ shadowIntensity: opt.key })"
         />
       </div>
     </UCard>
