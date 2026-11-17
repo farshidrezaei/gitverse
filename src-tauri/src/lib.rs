@@ -78,6 +78,11 @@ pub fn run() {
             commands::cherry_pick_commit,
             commands::revert_commit,
             commands::reset_to_commit,
+            commands::get_conflict_file_details,
+            commands::resolve_conflict_file,
+            commands::write_conflict_resolved_content,
+            commands::abort_repository_operation,
+            commands::continue_repository_operation,
         ])
         .run(tauri::generate_context!());
 

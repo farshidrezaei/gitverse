@@ -4,8 +4,8 @@ use std::sync::Arc;
 use tauri::AppHandle;
 use tokio::sync::RwLock;
 use crate::domain::{
-    ApplicationError, CommitDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation, RecentRepositoryRecord, RepositoryOverview,
-    StashRecord,
+    ApplicationError, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation, RecentRepositoryRecord,
+    RepositoryOverview, StashRecord,
 };
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
 use crate::infrastructure::storage::SQLiteRepositoryStore;
@@ -362,6 +362,56 @@ impl ApplicationState {
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
         self.git_inspector.reset_to_commit(&target_path, commit_hash, reset_mode).await
+    }
+
+    /// Retrieves 3-way conflict stages and working file content for a conflicted file.
+    pub async fn get_conflict_file_details(
+        &self,
+        directory_path: Option<&str>,
+        file_path: &str,
+    ) -> Result<ConflictFileDetails, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_conflict_file_details(&target_path, file_path).await
+    }
+
+    /// Resolves a conflicted file using a preset strategy ('ours', 'theirs', 'mark_resolved').
+    pub async fn resolve_conflict_file(
+        &self,
+        directory_path: Option<&str>,
+        file_path: &str,
+        resolution_strategy: &str,
+    ) -> Result<(), ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.resolve_conflict_file(&target_path, file_path, resolution_strategy).await
+    }
+
+    /// Saves custom resolved content directly to disk and marks the file as resolved.
+    pub async fn write_conflict_resolved_content(
+        &self,
+        directory_path: Option<&str>,
+        file_path: &str,
+        resolved_content: &str,
+    ) -> Result<(), ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.write_conflict_resolved_content(&target_path, file_path, resolved_content).await
+    }
+
+    /// Aborts active ongoing operation (merge, rebase, cherry-pick, revert).
+    pub async fn abort_repository_operation(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.abort_repository_operation(&target_path).await
+    }
+
+    /// Continues active ongoing operation after all conflicts are resolved.
+    pub async fn continue_repository_operation(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.continue_repository_operation(&target_path).await
     }
 
     async fn resolve_path(&self, directory_path: Option<&str>) -> Result<PathBuf, ApplicationError> {

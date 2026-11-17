@@ -1,5 +1,7 @@
-use std::path::Path;
-use crate::domain::{ApplicationError, RepositoryOverview, StashRecord};
+use std::path::{Path, PathBuf};
+use crate::domain::{
+    ApplicationError, ConflictFileDetails, RepositoryOperationState, RepositoryOverview, StashRecord,
+};
 use super::process::GitProcessExecutor;
 use super::stash::parse_stash_list;
 
@@ -86,9 +88,7 @@ impl GitRepositoryInspector {
                         ahead_count = ahead;
                     }
                     if let Some(behind_str) = parts[1].strip_prefix('-') {
-                        if let Ok(behind) = behind_str.parse::<u32>() {
-                            behind_count = behind;
-                        }
+                        behind_count = behind_str.parse::<u32>().unwrap_or(0);
                     }
                 }
             } else if !line.starts_with('#') {
@@ -123,7 +123,9 @@ impl GitRepositoryInspector {
             .execute_git_command(Some(directory_path), &["status", "--porcelain=v2", "--branch", "-z"])
             .await?;
 
-        Ok(super::status::parse_porcelain_v2_status(&output))
+        let mut status = super::status::parse_porcelain_v2_status(&output);
+        status.operation_state = self.detect_repository_operation_state(directory_path).await.unwrap_or(RepositoryOperationState::None);
+        Ok(status)
     }
 
     /// Stages a specific file.
@@ -572,5 +574,200 @@ impl GitRepositoryInspector {
         self.executor
             .execute_git_command(Some(directory_path), &["reset", mode_flag, commit_hash])
             .await
+    }
+
+    /// Discovers the absolute path of the `.git` directory for repository or worktree.
+    pub async fn get_git_directory(&self, directory_path: &Path) -> Result<PathBuf, ApplicationError> {
+        let output = self.executor
+            .execute_git_command(Some(directory_path), &["rev-parse", "--git-dir"])
+            .await?;
+        let trimmed = output.trim();
+        let path = PathBuf::from(trimmed);
+        if path.is_absolute() {
+            Ok(path)
+        } else {
+            Ok(directory_path.join(path))
+        }
+    }
+
+    /// Detects if Git is currently in an ongoing operation such as merge, rebase, or cherry-pick.
+    pub async fn detect_repository_operation_state(
+        &self,
+        directory_path: &Path,
+    ) -> Result<RepositoryOperationState, ApplicationError> {
+        let git_dir = match self.get_git_directory(directory_path).await {
+            Ok(dir) => dir,
+            Err(_) => return Ok(RepositoryOperationState::None),
+        };
+
+        if git_dir.join("MERGE_HEAD").exists() {
+            Ok(RepositoryOperationState::Merging)
+        } else if git_dir.join("rebase-merge").exists() || git_dir.join("rebase-apply").exists() {
+            Ok(RepositoryOperationState::Rebasing)
+        } else if git_dir.join("CHERRY_PICK_HEAD").exists() {
+            Ok(RepositoryOperationState::CherryPicking)
+        } else if git_dir.join("REVERT_HEAD").exists() {
+            Ok(RepositoryOperationState::Reverting)
+        } else {
+            Ok(RepositoryOperationState::None)
+        }
+    }
+
+    /// Retrieves base (:1:), ours (:2:), theirs (:3:), and current working file content for a conflicted file.
+    pub async fn get_conflict_file_details(
+        &self,
+        directory_path: &Path,
+        file_path: &str,
+    ) -> Result<ConflictFileDetails, ApplicationError> {
+        let base_output = self.executor
+            .execute_git_command(Some(directory_path), &["show", &format!(":1:{}", file_path)])
+            .await
+            .ok();
+
+        let ours_output = self.executor
+            .execute_git_command(Some(directory_path), &["show", &format!(":2:{}", file_path)])
+            .await
+            .ok();
+
+        let theirs_output = self.executor
+            .execute_git_command(Some(directory_path), &["show", &format!(":3:{}", file_path)])
+            .await
+            .ok();
+
+        let full_path = directory_path.join(file_path);
+        let working_file_content = tokio::fs::read_to_string(&full_path)
+            .await
+            .unwrap_or_default();
+
+        Ok(ConflictFileDetails {
+            file_path: file_path.to_string(),
+            base_content: base_output,
+            ours_content: ours_output,
+            theirs_content: theirs_output,
+            working_file_content,
+        })
+    }
+
+    /// Resolves a conflict file using predefined strategies ('ours', 'theirs', or 'mark_resolved').
+    pub async fn resolve_conflict_file(
+        &self,
+        directory_path: &Path,
+        file_path: &str,
+        resolution_strategy: &str,
+    ) -> Result<(), ApplicationError> {
+        match resolution_strategy {
+            "ours" => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["checkout", "--ours", "--", file_path])
+                    .await?;
+                self.executor
+                    .execute_git_command(Some(directory_path), &["add", "--", file_path])
+                    .await?;
+            }
+            "theirs" => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["checkout", "--theirs", "--", file_path])
+                    .await?;
+                self.executor
+                    .execute_git_command(Some(directory_path), &["add", "--", file_path])
+                    .await?;
+            }
+            "mark_resolved" => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["add", "--", file_path])
+                    .await?;
+            }
+            _ => {
+                return Err(ApplicationError::Unexpected(format!(
+                    "Unknown conflict resolution strategy: {}",
+                    resolution_strategy
+                )));
+            }
+        }
+        Ok(())
+    }
+
+    /// Writes resolved content directly to the file on disk and stages it with `git add`.
+    pub async fn write_conflict_resolved_content(
+        &self,
+        directory_path: &Path,
+        file_path: &str,
+        resolved_content: &str,
+    ) -> Result<(), ApplicationError> {
+        let full_path = directory_path.join(file_path);
+        tokio::fs::write(&full_path, resolved_content)
+            .await
+            .map_err(|error| ApplicationError::FilesystemError(error.to_string()))?;
+
+        self.executor
+            .execute_git_command(Some(directory_path), &["add", "--", file_path])
+            .await?;
+        Ok(())
+    }
+
+    /// Aborts any active ongoing operation (merge, rebase, cherry-pick, revert).
+    pub async fn abort_repository_operation(
+        &self,
+        directory_path: &Path,
+    ) -> Result<String, ApplicationError> {
+        let operation_state = self.detect_repository_operation_state(directory_path).await?;
+        match operation_state {
+            RepositoryOperationState::Merging => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["merge", "--abort"])
+                    .await
+            }
+            RepositoryOperationState::Rebasing => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["rebase", "--abort"])
+                    .await
+            }
+            RepositoryOperationState::CherryPicking => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["cherry-pick", "--abort"])
+                    .await
+            }
+            RepositoryOperationState::Reverting => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["revert", "--abort"])
+                    .await
+            }
+            RepositoryOperationState::None => {
+                Err(ApplicationError::Unexpected("No active Git operation to abort".into()))
+            }
+        }
+    }
+
+    /// Continues an ongoing operation after conflicts are resolved.
+    pub async fn continue_repository_operation(
+        &self,
+        directory_path: &Path,
+    ) -> Result<String, ApplicationError> {
+        let operation_state = self.detect_repository_operation_state(directory_path).await?;
+        match operation_state {
+            RepositoryOperationState::Merging => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["commit", "--no-edit"])
+                    .await
+            }
+            RepositoryOperationState::Rebasing => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["rebase", "--continue"])
+                    .await
+            }
+            RepositoryOperationState::CherryPicking => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["cherry-pick", "--continue"])
+                    .await
+            }
+            RepositoryOperationState::Reverting => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["revert", "--continue"])
+                    .await
+            }
+            RepositoryOperationState::None => {
+                Err(ApplicationError::Unexpected("No active Git operation to continue".into()))
+            }
+        }
     }
 }

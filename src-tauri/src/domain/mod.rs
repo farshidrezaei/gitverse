@@ -88,6 +88,28 @@ pub struct FileStatusEntry {
     pub is_staged: bool,
 }
 
+/// Represents Git operations that may be currently in progress (e.g. merge, rebase, cherry-pick).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum RepositoryOperationState {
+    #[default]
+    None,
+    Merging,
+    Rebasing,
+    CherryPicking,
+    Reverting,
+}
+
+/// Detailed 3-way conflict stages and working file content for a conflicted file.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ConflictFileDetails {
+    pub file_path: String,
+    pub base_content: Option<String>,
+    pub ours_content: Option<String>,
+    pub theirs_content: Option<String>,
+    pub working_file_content: String,
+}
+
 /// Complete parsed snapshot of working tree and staging area.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct DetailedRepositoryStatus {
@@ -100,6 +122,7 @@ pub struct DetailedRepositoryStatus {
     pub staged_files: Vec<FileStatusEntry>,
     pub unstaged_files: Vec<FileStatusEntry>,
     pub conflicted_files: Vec<FileStatusEntry>,
+    pub operation_state: RepositoryOperationState,
 }
 
 /// Diff line type representation.

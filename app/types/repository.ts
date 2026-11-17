@@ -42,6 +42,21 @@ export interface FileStatusEntry {
   is_staged: boolean
 }
 
+export type RepositoryOperationState =
+  | 'none'
+  | 'merging'
+  | 'rebasing'
+  | 'cherrypicking'
+  | 'reverting'
+
+export interface ConflictFileDetails {
+  file_path: string
+  base_content: string | null
+  ours_content: string | null
+  theirs_content: string | null
+  working_file_content: string
+}
+
 export interface DetailedRepositoryStatus {
   branch_name: string | null
   head_commit_hash: string | null
@@ -52,6 +67,7 @@ export interface DetailedRepositoryStatus {
   staged_files: FileStatusEntry[]
   unstaged_files: FileStatusEntry[]
   conflicted_files: FileStatusEntry[]
+  operation_state: RepositoryOperationState
 }
 
 export type DiffLineType = 'context' | 'addition' | 'deletion' | 'header'

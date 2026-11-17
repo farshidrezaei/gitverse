@@ -2,8 +2,8 @@ use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use crate::application::ApplicationState;
 use crate::domain::{
-    ApplicationError, CommitDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation, RecentRepositoryRecord, RepositoryOverview,
-    StashRecord,
+    ApplicationError, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation, RecentRepositoryRecord,
+    RepositoryOverview, StashRecord,
 };
 
 /// Tauri IPC command to discover and validate the native Git binary.
@@ -341,5 +341,56 @@ pub async fn reset_to_commit(
 ) -> Result<String, ApplicationError> {
     state.reset_to_commit(directory_path.as_deref(), &commit_hash, &reset_mode).await
 }
+
+/// Tauri IPC command to retrieve 3-way conflict stages and working file content.
+#[tauri::command]
+pub async fn get_conflict_file_details(
+    state: State<'_, ApplicationState>,
+    file_path: String,
+    directory_path: Option<String>,
+) -> Result<ConflictFileDetails, ApplicationError> {
+    state.get_conflict_file_details(directory_path.as_deref(), &file_path).await
+}
+
+/// Tauri IPC command to resolve a conflict file with a preset strategy ('ours', 'theirs', 'mark_resolved').
+#[tauri::command]
+pub async fn resolve_conflict_file(
+    state: State<'_, ApplicationState>,
+    file_path: String,
+    resolution_strategy: String,
+    directory_path: Option<String>,
+) -> Result<(), ApplicationError> {
+    state.resolve_conflict_file(directory_path.as_deref(), &file_path, &resolution_strategy).await
+}
+
+/// Tauri IPC command to save custom resolved file content and stage it.
+#[tauri::command]
+pub async fn write_conflict_resolved_content(
+    state: State<'_, ApplicationState>,
+    file_path: String,
+    resolved_content: String,
+    directory_path: Option<String>,
+) -> Result<(), ApplicationError> {
+    state.write_conflict_resolved_content(directory_path.as_deref(), &file_path, &resolved_content).await
+}
+
+/// Tauri IPC command to abort active ongoing repository operation.
+#[tauri::command]
+pub async fn abort_repository_operation(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.abort_repository_operation(directory_path.as_deref()).await
+}
+
+/// Tauri IPC command to continue active ongoing repository operation after conflicts are resolved.
+#[tauri::command]
+pub async fn continue_repository_operation(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.continue_repository_operation(directory_path.as_deref()).await
+}
+
 
 

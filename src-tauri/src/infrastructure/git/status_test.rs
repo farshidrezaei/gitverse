@@ -46,4 +46,24 @@ u UU N... 100644 100644 100644 100644 039562 039562 039562 conflict.txt\n\
         assert_eq!(parsed.conflicted_files[0].path, "conflict.txt");
         assert_eq!(parsed.conflicted_files[0].status, FileChangeStatus::Conflicted);
     }
+
+    #[test]
+    fn test_repository_operation_state_serialization() {
+        use crate::domain::RepositoryOperationState;
+
+        let states = vec![
+            (RepositoryOperationState::None, "\"none\""),
+            (RepositoryOperationState::Merging, "\"merging\""),
+            (RepositoryOperationState::Rebasing, "\"rebasing\""),
+            (RepositoryOperationState::CherryPicking, "\"cherrypicking\""),
+            (RepositoryOperationState::Reverting, "\"reverting\""),
+        ];
+
+        for (state, expected_json) in states {
+            let serialized = serde_json::to_string(&state).expect("serialize state");
+            assert_eq!(serialized, expected_json);
+            let deserialized: RepositoryOperationState = serde_json::from_str(&serialized).expect("deserialize state");
+            assert_eq!(deserialized, state);
+        }
+    }
 }

@@ -10,6 +10,7 @@ import type {
 } from '~/types/repository'
 import { useStashController } from '~/composables/useStashController'
 import { useCommitOperations } from '~/composables/useCommitOperations'
+import { useConflictController } from '~/composables/useConflictController'
 
 export function useWorkspaceManager() {
   const repositoryWorkspace = useRepositoryWorkspace()
@@ -21,6 +22,7 @@ export function useWorkspaceManager() {
   const remoteController = useRemoteController()
   const stashController = useStashController()
   const commitOperations = useCommitOperations()
+  const conflictController = useConflictController()
 
   // Combined operational and loading states for backward compatibility
   const isLoading = computed(
@@ -32,7 +34,8 @@ export function useWorkspaceManager() {
       stagingController.isOperatingStaging.value ||
       branchController.isOperatingBranches.value ||
       remoteController.isOperatingRemote.value ||
-      commitOperations.isOperatingCommit.value
+      commitOperations.isOperatingCommit.value ||
+      conflictController.isResolvingConflict.value
   )
 
   async function openRepository(directoryPath: string): Promise<RepositoryOverview | null> {
@@ -230,5 +233,15 @@ export function useWorkspaceManager() {
     cherryPickCommit: commitOperations.cherryPickCommit,
     revertCommit: commitOperations.revertCommit,
     resetToCommit: commitOperations.resetToCommit,
+
+    // Conflict & Operation Controls
+    activeConflictFile: conflictController.activeConflictFile,
+    isLoadingConflict: conflictController.isLoadingConflict,
+    isResolvingConflict: conflictController.isResolvingConflict,
+    loadConflictDetails: conflictController.loadConflictDetails,
+    resolveConflict: conflictController.resolveConflict,
+    writeConflictResolvedContent: conflictController.writeConflictResolvedContent,
+    abortOperation: conflictController.abortOperation,
+    continueOperation: conflictController.continueOperation,
   }
 }

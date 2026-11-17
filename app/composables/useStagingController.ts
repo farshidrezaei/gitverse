@@ -70,6 +70,7 @@ export function useStagingController() {
             },
           ],
           conflicted_files: [],
+          operation_state: 'none',
         }
         repositoryStatus.value = mockStatus
         return mockStatus
