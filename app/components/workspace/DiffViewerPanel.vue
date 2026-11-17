@@ -44,14 +44,14 @@ function formatLineContent(content: string, lineType: string): string {
     <!-- Top Header Bar -->
     <div class="flex h-9 shrink-0 items-center justify-between border-b border-default/70 bg-muted/20 px-3">
       <!-- File Information & Status Badges -->
-      <div v-if="selectedTarget" class="flex items-center gap-2 min-w-0">
+      <div v-if="selectedTarget || diff" class="flex items-center gap-2 min-w-0">
         <UIcon name="i-lucide-file-diff" class="h-4 w-4 shrink-0 text-primary" />
-        <span class="font-mono font-semibold text-highlighted text-[11px] truncate" :title="selectedTarget.filePath">
-          {{ selectedTarget.filePath }}
+        <span class="font-mono font-semibold text-highlighted text-[11px] truncate" :title="selectedTarget ? selectedTarget.filePath : diff?.new_path">
+          {{ selectedTarget ? selectedTarget.filePath : diff?.new_path }}
         </span>
 
         <UBadge
-          v-if="selectedTarget.isStaged"
+          v-if="selectedTarget?.isStaged"
           size="xs"
           color="success"
           variant="subtle"
@@ -60,13 +60,22 @@ function formatLineContent(content: string, lineType: string): string {
           {{ t('diff.stagedChanges') }}
         </UBadge>
         <UBadge
-          v-else
+          v-else-if="selectedTarget"
           size="xs"
           color="warning"
           variant="subtle"
           class="shrink-0"
         >
           {{ t('diff.workingTreeChanges') }}
+        </UBadge>
+        <UBadge
+          v-else
+          size="xs"
+          color="primary"
+          variant="subtle"
+          class="shrink-0"
+        >
+          {{ t('commit.details') }}
         </UBadge>
 
         <template v-if="diff && !diff.is_binary">
@@ -98,28 +107,30 @@ function formatLineContent(content: string, lineType: string): string {
       </div>
 
       <!-- Controls: View Mode Switcher & Quick Actions -->
-      <div v-if="selectedTarget" class="flex items-center gap-2">
-        <!-- Quick Stage / Unstage Action -->
-        <UButton
-          v-if="selectedTarget.isStaged"
-          size="xs"
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-minus"
-          :label="t('diff.unstageFile')"
-          @click="$emit('unstage', selectedTarget.filePath)"
-        />
-        <UButton
-          v-else
-          size="xs"
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-plus"
-          :label="t('diff.stageFile')"
-          @click="$emit('stage', selectedTarget.filePath)"
-        />
+      <div v-if="selectedTarget || diff" class="flex items-center gap-2">
+        <!-- Quick Stage / Unstage Action (Working Tree Only) -->
+        <template v-if="selectedTarget">
+          <UButton
+            v-if="selectedTarget.isStaged"
+            size="xs"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-minus"
+            :label="t('diff.unstageFile')"
+            @click="$emit('unstage', selectedTarget.filePath)"
+          />
+          <UButton
+            v-else
+            size="xs"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-plus"
+            :label="t('diff.stageFile')"
+            @click="$emit('stage', selectedTarget.filePath)"
+          />
 
-        <div class="h-3.5 w-px bg-default/80" aria-hidden="true" />
+          <div class="h-3.5 w-px bg-default/80" aria-hidden="true" />
+        </template>
 
         <!-- Segmented Pill Switcher (Inline vs Side-by-Side) -->
         <div class="flex items-center rounded-lg border border-default/70 bg-surface/80 p-0.5 shadow-2xs">

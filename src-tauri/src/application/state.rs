@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tauri::AppHandle;
 use tokio::sync::RwLock;
 use crate::domain::{
-    ApplicationError, DetailedRepositoryStatus, GitBinaryInformation, RecentRepositoryRecord, RepositoryOverview,
+    ApplicationError, CommitDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation, RecentRepositoryRecord, RepositoryOverview,
 };
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
 use crate::infrastructure::storage::SQLiteRepositoryStore;
@@ -220,6 +220,27 @@ impl ApplicationState {
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
         self.git_inspector.push_changes(&target_path, remote_name, branch_name, set_upstream).await
+    }
+
+    /// Fetches full commit details including changed files.
+    pub async fn get_commit_details(
+        &self,
+        directory_path: Option<&str>,
+        commit_hash: &str,
+    ) -> Result<CommitDetails, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_commit_details(&target_path, commit_hash).await
+    }
+
+    /// Fetches unified diff for a single file in a commit or the whole commit.
+    pub async fn get_commit_file_diff(
+        &self,
+        directory_path: Option<&str>,
+        commit_hash: &str,
+        file_path: Option<&str>,
+    ) -> Result<FileDiff, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_commit_file_diff(&target_path, commit_hash, file_path).await
     }
 
     async fn resolve_path(&self, directory_path: Option<&str>) -> Result<PathBuf, ApplicationError> {

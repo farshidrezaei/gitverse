@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use crate::application::ApplicationState;
 use crate::domain::{
-    ApplicationError, DetailedRepositoryStatus, GitBinaryInformation, RecentRepositoryRecord, RepositoryOverview,
+    ApplicationError, CommitDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation, RecentRepositoryRecord, RepositoryOverview,
 };
 
 /// Tauri IPC command to discover and validate the native Git binary.
@@ -218,6 +218,27 @@ pub async fn push_changes(
         branch_name.as_deref(),
         set_upstream.unwrap_or(false),
     ).await
+}
+
+/// Tauri IPC command to retrieve comprehensive commit details with changed files.
+#[tauri::command]
+pub async fn get_commit_details(
+    state: State<'_, ApplicationState>,
+    commit_hash: String,
+    directory_path: Option<String>,
+) -> Result<CommitDetails, ApplicationError> {
+    state.get_commit_details(directory_path.as_deref(), &commit_hash).await
+}
+
+/// Tauri IPC command to retrieve the diff of a specific file or the entire commit.
+#[tauri::command]
+pub async fn get_commit_file_diff(
+    state: State<'_, ApplicationState>,
+    commit_hash: String,
+    file_path: Option<String>,
+    directory_path: Option<String>,
+) -> Result<FileDiff, ApplicationError> {
+    state.get_commit_file_diff(directory_path.as_deref(), &commit_hash, file_path.as_deref()).await
 }
 
 /// Tauri IPC command to fetch recent repositories from local SQLite database.

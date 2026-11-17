@@ -14,15 +14,21 @@ const {
   currentDiff,
   commitGraph,
   selectedCommitHash,
+  selectedCommitDetails,
+  selectedCommitFilePath,
   isLoading,
   isLoadingDiff,
   isLoadingGraph,
+  isLoadingCommitDetails,
   isOperating,
   promptAndOpenRepository,
   fetchStatus,
   fetchReferences,
   fetchCommitGraph,
   fetchFileDiff,
+  fetchCommitDetails,
+  fetchCommitFileDiff,
+  clearCommitSelection,
   checkoutBranch,
   createBranch,
   deleteBranch,
@@ -136,8 +142,25 @@ const isCreateBranchModalOpen = ref(false)
 const commitMessage = ref('')
 const isAmend = ref(false)
 
-function selectCommit(sha: string): void {
-  selectedCommitHash.value = sha
+async function selectCommit(sha: string): Promise<void> {
+  await fetchCommitDetails(sha)
+}
+
+function handleSelectCommitFile(filePath: string): void {
+  if (selectedCommitHash.value) {
+    fetchCommitFileDiff(selectedCommitHash.value, filePath)
+  }
+}
+
+function handleCreateBranchFromCommit(commitSha: string): void {
+  selectedCommitHash.value = commitSha
+  isCreateBranchModalOpen.value = true
+}
+
+async function handleCheckoutCommit(commitSha: string): Promise<void> {
+  if (confirm(`Checkout detached HEAD at commit ${commitSha.substring(0, 8)}?`)) {
+    await checkoutBranch(commitSha)
+  }
 }
 
 function handleDiscard(filePath: string, isUntracked: boolean): void {
@@ -145,6 +168,7 @@ function handleDiscard(filePath: string, isUntracked: boolean): void {
 }
 
 function handleSelectFile(filePath: string, isStaged: boolean): void {
+  clearCommitSelection()
   fetchFileDiff(filePath, isStaged)
 }
 
@@ -376,7 +400,20 @@ async function handlePush(): Promise<void> {
       <!-- PANEL 3: INSET STAGING ISLAND & COMMIT INSPECTOR                  -->
       <!-- ================================================================= -->
       <template #staging>
-        <div class="gv-island-panel flex h-full flex-col overflow-hidden">
+        <!-- Commit Inspector Island -->
+        <WorkspaceCommitInspectorPanel
+          v-if="selectedCommitDetails || isLoadingCommitDetails"
+          :commit-details="selectedCommitDetails"
+          :selected-file-path="selectedCommitFilePath"
+          :is-loading="isLoadingCommitDetails"
+          @select-file="handleSelectCommitFile"
+          @create-branch="handleCreateBranchFromCommit"
+          @checkout-commit="handleCheckoutCommit"
+          @close="clearCommitSelection"
+        />
+
+        <!-- Working Tree Changes Island -->
+        <div v-else class="gv-island-panel flex h-full flex-col overflow-hidden">
           <!-- Staging Header with View Toggle (Flat vs Tree) -->
           <div class="flex h-9 shrink-0 items-center justify-between border-b border-default/70 px-3 bg-muted/20">
             <span class="text-xs font-semibold text-highlighted uppercase tracking-wider">

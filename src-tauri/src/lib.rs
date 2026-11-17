@@ -66,6 +66,8 @@ pub fn run() {
             commands::fetch_remote,
             commands::pull_changes,
             commands::push_changes,
+            commands::get_commit_details,
+            commands::get_commit_file_diff,
             commands::get_recent_repositories,
             commands::remove_recent_repository,
         ])

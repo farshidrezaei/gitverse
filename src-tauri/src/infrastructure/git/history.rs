@@ -1,4 +1,4 @@
-use crate::domain::{GitCommit, GitCommitDecoration, GitReferenceType};
+use crate::domain::{CommitChangedFile, FileChangeStatus, GitCommit, GitCommitDecoration, GitReferenceType};
 
 /// Delimiter constants for machine-readable Git log output.
 pub const COMMIT_RECORD_DELIMITER: char = '\x1e';
@@ -115,4 +115,81 @@ pub fn parse_delimited_git_log(raw_output: &str) -> Vec<GitCommit> {
     }
 
     commits
+}
+
+/// Parse git diff-tree name-status and numstat outputs into structured `CommitChangedFile` list.
+pub fn parse_commit_changed_files(name_status_output: &str, numstat_output: &str) -> Vec<CommitChangedFile> {
+    let name_status_lines: Vec<&str> = name_status_output
+        .lines()
+        .map(|line| line.trim())
+        .filter(|line| !line.is_empty())
+        .collect();
+
+    let numstat_lines: Vec<&str> = numstat_output
+        .lines()
+        .map(|line| line.trim())
+        .filter(|line| !line.is_empty())
+        .collect();
+
+    let mut changed_files = Vec::new();
+
+    for (index, name_line) in name_status_lines.iter().enumerate() {
+        let columns: Vec<&str> = name_line.split('\t').collect();
+        if columns.is_empty() {
+            continue;
+        }
+
+        let raw_status = columns[0].trim();
+        let (status, original_path, path) = if raw_status.starts_with('R') || raw_status.starts_with('C') {
+            if columns.len() >= 3 {
+                let status_variant = if raw_status.starts_with('R') {
+                    FileChangeStatus::Renamed
+                } else {
+                    FileChangeStatus::Copied
+                };
+                (status_variant, Some(columns[1].to_string()), columns[2].to_string())
+            } else if columns.len() == 2 {
+                (FileChangeStatus::Renamed, None, columns[1].to_string())
+            } else {
+                continue;
+            }
+        } else {
+            let status_variant = match raw_status.chars().next() {
+                Some('A') => FileChangeStatus::Added,
+                Some('D') => FileChangeStatus::Deleted,
+                Some('M') => FileChangeStatus::Modified,
+                Some('T') => FileChangeStatus::TypeChanged,
+                _ => FileChangeStatus::Modified,
+            };
+            if columns.len() >= 2 {
+                (status_variant, None, columns[1].to_string())
+            } else {
+                continue;
+            }
+        };
+
+        // Extract additions and deletions from corresponding numstat line if available
+        let (additions, deletions) = if let Some(num_line) = numstat_lines.get(index) {
+            let num_parts: Vec<&str> = num_line.split('\t').collect();
+            if num_parts.len() >= 2 {
+                let adds = num_parts[0].trim().parse::<u32>().unwrap_or(0);
+                let dels = num_parts[1].trim().parse::<u32>().unwrap_or(0);
+                (adds, dels)
+            } else {
+                (0, 0)
+            }
+        } else {
+            (0, 0)
+        };
+
+        changed_files.push(CommitChangedFile {
+            path,
+            original_path,
+            status,
+            additions,
+            deletions,
+        });
+    }
+
+    changed_files
 }

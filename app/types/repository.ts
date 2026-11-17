@@ -160,5 +160,31 @@ export interface RepositoryReferences {
   remotes: RemoteSummary[]
 }
 
+export interface CommitChangedFile {
+  path: string
+  original_path: string | null
+  status: FileChangeStatus
+  additions: number
+  deletions: number
+}
+
+export interface CommitDetails {
+  hash: string
+  parent_hashes: string[]
+  author_name: string
+  author_email: string
+  author_timestamp: number
+  committer_name: string
+  committer_email: string
+  committer_timestamp: number
+  subject: string
+  body: string
+  decorations: GitCommitDecoration[]
+  total_additions: number
+  total_deletions: number
+  changed_files: CommitChangedFile[]
+}
+
+
 
 

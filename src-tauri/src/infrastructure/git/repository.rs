@@ -251,6 +251,91 @@ impl GitRepositoryInspector {
         Ok(super::history::parse_delimited_git_log(&raw_output))
     }
 
+    /// Fetches full commit details including metadata, changed files, and stats.
+    pub async fn get_commit_details(
+        &self,
+        directory_path: &Path,
+        commit_hash: &str,
+    ) -> Result<crate::domain::CommitDetails, ApplicationError> {
+        let format_argument = format!("--format={}", super::history::COMMIT_LOG_FORMAT);
+        let log_output = self.executor
+            .execute_git_command(
+                Some(directory_path),
+                &["log", "-1", &format_argument, commit_hash],
+            )
+            .await?;
+
+        let commits = super::history::parse_delimited_git_log(&log_output);
+        let commit = commits.into_iter().next().ok_or_else(|| {
+            ApplicationError::GitExecutionFailed {
+                exit_code: 1,
+                message: format!("Commit {} not found", commit_hash),
+            }
+        })?;
+
+        // Extract changed files list
+        let name_status_output = self.executor
+            .execute_git_command(
+                Some(directory_path),
+                &["diff-tree", "--root", "--no-commit-id", "-r", "-m", "-M", "--name-status", commit_hash],
+            )
+            .await
+            .unwrap_or_default();
+
+        let numstat_output = self.executor
+            .execute_git_command(
+                Some(directory_path),
+                &["diff-tree", "--root", "--no-commit-id", "-r", "-m", "-M", "--numstat", commit_hash],
+            )
+            .await
+            .unwrap_or_default();
+
+        let changed_files = super::history::parse_commit_changed_files(&name_status_output, &numstat_output);
+        let total_additions = changed_files.iter().map(|file| file.additions).sum();
+        let total_deletions = changed_files.iter().map(|file| file.deletions).sum();
+
+        Ok(crate::domain::CommitDetails {
+            hash: commit.hash,
+            parent_hashes: commit.parent_hashes,
+            author_name: commit.author_name,
+            author_email: commit.author_email,
+            author_timestamp: commit.author_timestamp,
+            committer_name: commit.committer_name,
+            committer_email: commit.committer_email,
+            committer_timestamp: commit.committer_timestamp,
+            subject: commit.subject,
+            body: commit.body,
+            decorations: commit.decorations,
+            total_additions,
+            total_deletions,
+            changed_files,
+        })
+    }
+
+    /// Fetches unified diff for a single file in a commit or the entire commit.
+    pub async fn get_commit_file_diff(
+        &self,
+        directory_path: &Path,
+        commit_hash: &str,
+        file_path: Option<&str>,
+    ) -> Result<crate::domain::FileDiff, ApplicationError> {
+        let mut arguments = vec!["show", "--format="];
+        arguments.push(commit_hash);
+
+        if let Some(target_file) = file_path {
+            arguments.push("--");
+            arguments.push(target_file);
+        }
+
+        let raw_diff = self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
+            .unwrap_or_default();
+
+        let display_path = file_path.unwrap_or(commit_hash);
+        Ok(super::diff::parse_unified_diff(&raw_diff, display_path))
+    }
+
     /// Fetches all repository references: local branches, remote branches, tags, and remotes.
     pub async fn get_repository_references(&self, directory_path: &Path) -> Result<crate::domain::RepositoryReferences, ApplicationError> {
         // 1. Local branches

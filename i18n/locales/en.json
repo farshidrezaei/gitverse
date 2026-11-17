@@ -183,6 +183,21 @@
     "additions": "{count} additions",
     "deletions": "{count} deletions"
   },
+  "commit": {
+    "details": "Commit Details",
+    "author": "Author",
+    "committer": "Committer",
+    "parents": "Parents",
+    "filesChanged": "Files Changed",
+    "copySha": "Copy commit SHA",
+    "copied": "Copied!",
+    "createBranchHere": "Branch from here",
+    "checkoutCommit": "Checkout commit",
+    "backToWorkingTree": "Working Tree",
+    "searchFiles": "Filter changed files...",
+    "noFilesChanged": "No files changed in this commit",
+    "viewCommit": "View Commit"
+  },
   "designSystem": {
     "title": "GitVerse Design System & UI Showcase",
     "subtitle": "Interactive living style guide, component state verification, and color token inspector.",

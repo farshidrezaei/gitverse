@@ -145,4 +145,34 @@ pub struct FileDiff {
     pub total_deletions: u32,
 }
 
+/// Represents a file modified in a specific commit with status and diff counts.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CommitChangedFile {
+    pub path: String,
+    pub original_path: Option<String>,
+    pub status: FileChangeStatus,
+    pub additions: u32,
+    pub deletions: u32,
+}
+
+/// Comprehensive commit inspection details including metadata and changed files list.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CommitDetails {
+    pub hash: String,
+    pub parent_hashes: Vec<String>,
+    pub author_name: String,
+    pub author_email: String,
+    pub author_timestamp: i64,
+    pub committer_name: String,
+    pub committer_email: String,
+    pub committer_timestamp: i64,
+    pub subject: String,
+    pub body: String,
+    pub decorations: Vec<GitCommitDecoration>,
+    pub total_additions: u32,
+    pub total_deletions: u32,
+    pub changed_files: Vec<CommitChangedFile>,
+}
+
+
 

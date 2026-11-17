@@ -183,6 +183,21 @@
     "additions": "{count} مورد افزوده",
     "deletions": "{count} مورد حذف"
   },
+  "commit": {
+    "details": "جزئیات کامیت",
+    "author": "نویسنده",
+    "committer": "ثبت‌کننده",
+    "parents": "کامیت‌های والد",
+    "filesChanged": "فایل‌های تغییر یافته",
+    "copySha": "کپی هش کامیت",
+    "copied": "کپی شد!",
+    "createBranchHere": "ساخت شاخه از اینجا",
+    "checkoutCommit": "سوئیچ به این کامیت",
+    "backToWorkingTree": "تغییرات جاری",
+    "searchFiles": "فیلتر فایل‌های تغییریافته...",
+    "noFilesChanged": "هیچ فایلی در این کامیت تغییر نکرده است",
+    "viewCommit": "مشاهده کامیت"
+  },
   "designSystem": {
     "title": "سیستم دیزاین و شوکیس رابط کاربری گیت‌ورس",
     "subtitle": "راهنمای زنده تعاملی، بررسی وضعیت کامپوننت‌ها و بازرس توکن‌های رنگی.",
