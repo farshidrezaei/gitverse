@@ -1,6 +1,7 @@
 use std::path::Path;
-use crate::domain::{ApplicationError, RepositoryOverview};
+use crate::domain::{ApplicationError, RepositoryOverview, StashRecord};
 use super::process::GitProcessExecutor;
+use super::stash::parse_stash_list;
 
 /// Service responsible for querying Git repository state, references, and working tree status.
 #[derive(Debug, Clone)]
@@ -479,5 +480,58 @@ impl GitRepositoryInspector {
             }
         }
         self.executor.execute_git_command(Some(directory_path), &arguments).await
+    }
+
+    /// Lists all stash records for the given repository.
+    pub async fn list_stashes(&self, directory_path: &Path) -> Result<Vec<StashRecord>, ApplicationError> {
+        let output = self.executor
+            .execute_git_command(Some(directory_path), &["stash", "list", "--format=%gd\x1f%gs\x1f%H\x1f%ct"])
+            .await?;
+        Ok(parse_stash_list(&output))
+    }
+
+    /// Saves the current working directory changes to a new stash entry.
+    pub async fn save_stash(
+        &self,
+        directory_path: &Path,
+        message: Option<&str>,
+        include_untracked: bool,
+    ) -> Result<String, ApplicationError> {
+        let mut arguments = vec!["stash", "push"];
+        if include_untracked {
+            arguments.push("--include-untracked");
+        }
+        if let Some(custom_message) = message {
+            let trimmed_message = custom_message.trim();
+            if !trimmed_message.is_empty() {
+                arguments.push("-m");
+                arguments.push(trimmed_message);
+            }
+        }
+        self.executor.execute_git_command(Some(directory_path), &arguments).await
+    }
+
+    /// Applies a stash entry by its numeric index without removing it from the stash stack.
+    pub async fn apply_stash(&self, directory_path: &Path, stash_index: usize) -> Result<String, ApplicationError> {
+        let stash_identifier = format!("stash@{{{}}}", stash_index);
+        self.executor
+            .execute_git_command(Some(directory_path), &["stash", "apply", &stash_identifier])
+            .await
+    }
+
+    /// Pops a stash entry by its numeric index, applying it and removing it from the stack.
+    pub async fn pop_stash(&self, directory_path: &Path, stash_index: usize) -> Result<String, ApplicationError> {
+        let stash_identifier = format!("stash@{{{}}}", stash_index);
+        self.executor
+            .execute_git_command(Some(directory_path), &["stash", "pop", &stash_identifier])
+            .await
+    }
+
+    /// Drops a stash entry by its numeric index, removing it from the stack.
+    pub async fn drop_stash(&self, directory_path: &Path, stash_index: usize) -> Result<String, ApplicationError> {
+        let stash_identifier = format!("stash@{{{}}}", stash_index);
+        self.executor
+            .execute_git_command(Some(directory_path), &["stash", "drop", &stash_identifier])
+            .await
     }
 }

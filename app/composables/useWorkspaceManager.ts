@@ -8,6 +8,7 @@ import type {
   RepositoryOverview,
   RepositoryReferences,
 } from '~/types/repository'
+import { useStashController } from '~/composables/useStashController'
 
 export function useWorkspaceManager() {
   const repositoryWorkspace = useRepositoryWorkspace()
@@ -17,6 +18,7 @@ export function useWorkspaceManager() {
   const diffViewerController = useDiffViewer()
   const commitInspectorController = useCommitInspector()
   const remoteController = useRemoteController()
+  const stashController = useStashController()
 
   // Combined operational and loading states for backward compatibility
   const isLoading = computed(
@@ -37,6 +39,7 @@ export function useWorkspaceManager() {
       await stagingController.fetchStatus()
       await branchController.fetchReferences()
       await commitGraphController.fetchCommitGraph()
+      await stashController.fetchStashes()
       await stagingController.setupRealtimeListener()
     }
     return overview
@@ -49,6 +52,7 @@ export function useWorkspaceManager() {
     commitGraphController.commitGraph.value = null
     commitGraphController.selectedCommitHash.value = null
     branchController.favoriteBranches.value = []
+    stashController.stashRecords.value = []
     diffViewerController.clearDiff()
     commitInspectorController.clearCommitSelection()
   }
@@ -60,6 +64,7 @@ export function useWorkspaceManager() {
       await stagingController.fetchStatus()
       await branchController.fetchReferences()
       await commitGraphController.fetchCommitGraph()
+      await stashController.fetchStashes()
       await stagingController.setupRealtimeListener()
     }
     return overview
@@ -208,5 +213,14 @@ export function useWorkspaceManager() {
     fetchRemote,
     pullChanges,
     pushChanges,
+
+    // Stashes
+    stashRecords: stashController.stashRecords,
+    isLoadingStashes: stashController.isLoadingStashes,
+    fetchStashes: stashController.fetchStashes,
+    saveStash: stashController.saveStash,
+    applyStash: stashController.applyStash,
+    popStash: stashController.popStash,
+    dropStash: stashController.dropStash,
   }
 }

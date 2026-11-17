@@ -52,6 +52,7 @@ const {
   discardFile,
   discardAllUnstaged,
   commitChanges,
+  fetchStashes,
 } = useWorkspaceManager()
 
 const isCreateBranchModalOpen = ref<boolean>(false)
@@ -66,6 +67,7 @@ onMounted(async () => {
     await fetchStatus()
     await fetchReferences()
     await fetchCommitGraph()
+    await fetchStashes()
   } else {
     await restoreLastOpenedRepository()
   }

@@ -185,6 +185,15 @@ export interface CommitDetails {
   changed_files: CommitChangedFile[]
 }
 
+export interface StashRecord {
+  index: number
+  stash_identifier: string
+  message: string
+  commit_hash: string
+  timestamp_seconds: number
+}
+
+
 
 
 

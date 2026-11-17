@@ -70,6 +70,11 @@ pub fn run() {
             commands::get_commit_file_diff,
             commands::get_recent_repositories,
             commands::remove_recent_repository,
+            commands::get_stash_list,
+            commands::save_stash,
+            commands::apply_stash,
+            commands::pop_stash,
+            commands::drop_stash,
         ])
         .run(tauri::generate_context!());
 

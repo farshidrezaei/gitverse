@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import type { ContextMenuItem } from '@nuxt/ui'
-import type { DetailedRepositoryStatus } from '~/types/repository'
+import type { DetailedRepositoryStatus, StashRecord } from '~/types/repository'
 import type { SelectedDiffTarget } from '~/composables/useStagingController'
 import { buildFileTree } from '~/utils/fileTree'
 import StagingTreeNodeItem from '../StagingTreeNodeItem.vue'
 import FileStatusBadge from '~/components/shared/FileStatusBadge.vue'
+import CreateStashModal from './CreateStashModal.vue'
+import { useStashController } from '~/composables/useStashController'
+import { formatStashDisplayMessage, formatStashRelativeTime } from '~/utils/stash'
 
 interface WorkspaceStagingSidebarProps {
   repositoryStatus: DetailedRepositoryStatus | null
@@ -33,6 +36,36 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+const {
+  stashRecords,
+  isLoadingStashes,
+  saveStash,
+  applyStash,
+  popStash,
+  dropStash,
+} = useStashController()
+
+const { confirmStandard } = useConfirmationDialog()
+
+const isCreateStashModalOpen = ref(false)
+const isStashSectionOpen = ref(true)
+
+function toggleStashSection(): void {
+  isStashSectionOpen.value = !isStashSectionOpen.value
+}
+
+async function handleDropStash(stash: StashRecord): Promise<void> {
+  const isConfirmed = await confirmStandard({
+    title: t('stash.dropConfirmTitle'),
+    description: t('stash.dropConfirmDescription', { stash: stash.stash_identifier }),
+    confirmLabel: t('stash.drop'),
+    variant: 'danger',
+  })
+  if (isConfirmed) {
+    await dropStash(stash.index)
+  }
+}
 
 const stagedTreeNodes = computed(() => {
   return buildFileTree(props.repositoryStatus?.staged_files || [])
@@ -130,6 +163,16 @@ function getFlatFileContextMenuItems(
           :title="t('common.refresh')"
           @click="emit('refresh')"
         />
+        <UTooltip :text="t('stash.createTitle')">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-archive"
+            :aria-label="t('stash.createTitle')"
+            @click="isCreateStashModalOpen = true"
+          />
+        </UTooltip>
         <UButton
           size="xs"
           color="neutral"
@@ -372,6 +415,109 @@ function getFlatFileContextMenuItems(
             Working tree clean
           </div>
         </div>
+
+        <!-- Stashes Section -->
+        <div class="pt-2 border-t border-default/40">
+          <div class="flex items-center justify-between mb-1.5">
+            <button
+              type="button"
+              class="flex items-center gap-1.5 text-xs font-semibold text-highlighted hover:text-default transition-colors select-none"
+              @click="toggleStashSection"
+            >
+              <UIcon
+                :name="isStashSectionOpen ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                class="h-3 w-3 text-muted transition-transform rtl:rotate-180"
+              />
+              <UIcon name="i-lucide-archive" class="h-3.5 w-3.5 text-primary/80" />
+              <span>{{ t('stash.title') }}</span>
+              <span class="text-muted font-normal">({{ stashRecords.length }})</span>
+            </button>
+
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-plus"
+              :label="t('stash.button')"
+              @click="isCreateStashModalOpen = true"
+            />
+          </div>
+
+          <!-- Stash list -->
+          <div
+            v-if="isStashSectionOpen && stashRecords.length > 0"
+            class="space-y-1.5"
+          >
+            <div
+              v-for="stashItem in stashRecords"
+              :key="stashItem.stash_identifier"
+              class="group flex items-center justify-between rounded-lg border border-default/70 p-2 bg-surface/80 hover:bg-muted/10 transition-colors"
+            >
+              <div class="min-w-0 flex-1 me-2">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <UBadge
+                    size="xs"
+                    color="neutral"
+                    variant="subtle"
+                    class="font-mono text-[10px] shrink-0"
+                  >
+                    {{ stashItem.stash_identifier }}
+                  </UBadge>
+                  <span
+                    class="font-mono text-[11px] truncate text-highlighted"
+                    :title="stashItem.message"
+                  >
+                    {{ formatStashDisplayMessage(stashItem.message) }}
+                  </span>
+                  <span class="text-[10px] text-muted shrink-0 ms-auto">
+                    {{ formatStashRelativeTime(stashItem.timestamp_seconds) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Action buttons: Apply, Pop, Drop -->
+              <div class="flex items-center gap-0.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                <UTooltip :text="t('stash.applyTooltip')">
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    icon="i-lucide-play"
+                    :aria-label="t('stash.apply')"
+                    @click="applyStash(stashItem.index)"
+                  />
+                </UTooltip>
+                <UTooltip :text="t('stash.popTooltip')">
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    icon="i-lucide-arrow-up-right"
+                    :aria-label="t('stash.pop')"
+                    @click="popStash(stashItem.index)"
+                  />
+                </UTooltip>
+                <UTooltip :text="t('stash.dropTooltip')">
+                  <UButton
+                    size="xs"
+                    color="error"
+                    variant="ghost"
+                    icon="i-lucide-trash-2"
+                    :aria-label="t('stash.drop')"
+                    @click="handleDropStash(stashItem)"
+                  />
+                </UTooltip>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-else-if="isStashSectionOpen && stashRecords.length === 0"
+            class="text-[11px] text-muted italic px-1 py-0.5"
+          >
+            {{ t('stash.noStashes') }}
+          </div>
+        </div>
       </template>
     </div>
 
@@ -404,5 +550,11 @@ function getFlatFileContextMenuItems(
         />
       </div>
     </div>
+
+    <!-- Create Stash Modal -->
+    <CreateStashModal
+      v-model:open="isCreateStashModalOpen"
+      @save="saveStash"
+    />
   </div>
 </template>

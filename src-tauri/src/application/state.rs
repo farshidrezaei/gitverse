@@ -5,6 +5,7 @@ use tauri::AppHandle;
 use tokio::sync::RwLock;
 use crate::domain::{
     ApplicationError, CommitDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation, RecentRepositoryRecord, RepositoryOverview,
+    StashRecord,
 };
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
 use crate::infrastructure::storage::SQLiteRepositoryStore;
@@ -295,6 +296,41 @@ impl ApplicationState {
         }
 
         Ok(diff)
+    }
+
+    /// Lists stash records for repository.
+    pub async fn get_stash_list(&self, directory_path: Option<&str>) -> Result<Vec<StashRecord>, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.list_stashes(&target_path).await
+    }
+
+    /// Saves working directory changes to a new stash entry.
+    pub async fn save_stash(
+        &self,
+        directory_path: Option<&str>,
+        message: Option<&str>,
+        include_untracked: bool,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.save_stash(&target_path, message, include_untracked).await
+    }
+
+    /// Applies a stash entry without removing it.
+    pub async fn apply_stash(&self, directory_path: Option<&str>, stash_index: usize) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.apply_stash(&target_path, stash_index).await
+    }
+
+    /// Pops a stash entry, applying and dropping it.
+    pub async fn pop_stash(&self, directory_path: Option<&str>, stash_index: usize) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.pop_stash(&target_path, stash_index).await
+    }
+
+    /// Drops a stash entry from the stack.
+    pub async fn drop_stash(&self, directory_path: Option<&str>, stash_index: usize) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.drop_stash(&target_path, stash_index).await
     }
 
     async fn resolve_path(&self, directory_path: Option<&str>) -> Result<PathBuf, ApplicationError> {

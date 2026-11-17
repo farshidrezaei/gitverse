@@ -3,6 +3,7 @@ use tauri::{AppHandle, State};
 use crate::application::ApplicationState;
 use crate::domain::{
     ApplicationError, CommitDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation, RecentRepositoryRecord, RepositoryOverview,
+    StashRecord,
 };
 
 /// Tauri IPC command to discover and validate the native Git binary.
@@ -258,5 +259,55 @@ pub async fn remove_recent_repository(
     directory_path: String,
 ) -> Result<(), ApplicationError> {
     state.remove_recent_repository(&directory_path)
+}
+
+/// Tauri IPC command to list all stash entries for the active repository.
+#[tauri::command]
+pub async fn get_stash_list(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+) -> Result<Vec<StashRecord>, ApplicationError> {
+    state.get_stash_list(directory_path.as_deref()).await
+}
+
+/// Tauri IPC command to save uncommitted changes to a stash entry.
+#[tauri::command]
+pub async fn save_stash(
+    state: State<'_, ApplicationState>,
+    message: Option<String>,
+    include_untracked: bool,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.save_stash(directory_path.as_deref(), message.as_deref(), include_untracked).await
+}
+
+/// Tauri IPC command to apply a stash entry by index without removing it.
+#[tauri::command]
+pub async fn apply_stash(
+    state: State<'_, ApplicationState>,
+    stash_index: usize,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.apply_stash(directory_path.as_deref(), stash_index).await
+}
+
+/// Tauri IPC command to pop a stash entry by index.
+#[tauri::command]
+pub async fn pop_stash(
+    state: State<'_, ApplicationState>,
+    stash_index: usize,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.pop_stash(directory_path.as_deref(), stash_index).await
+}
+
+/// Tauri IPC command to drop a stash entry by index.
+#[tauri::command]
+pub async fn drop_stash(
+    state: State<'_, ApplicationState>,
+    stash_index: usize,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.drop_stash(directory_path.as_deref(), stash_index).await
 }
 

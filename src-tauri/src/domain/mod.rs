@@ -174,5 +174,15 @@ pub struct CommitDetails {
     pub changed_files: Vec<CommitChangedFile>,
 }
 
+/// Represents an entry in the repository stash stack.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct StashRecord {
+    pub index: usize,
+    pub stash_identifier: String,
+    pub message: String,
+    pub commit_hash: String,
+    pub timestamp_seconds: i64,
+}
+
 
 
