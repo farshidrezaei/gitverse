@@ -121,6 +121,7 @@ const branchContextMenuItems = computed<ContextMenuItem[][]>(() => {
     >
       <div
         class="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start transition-all cursor-pointer relative"
+        style="content-visibility: auto; contain-intrinsic-size: 0 28px;"
         :class="[
           node.branch.is_head
             ? 'bg-primary/15 font-semibold text-primary border-s-2 border-primary ps-2'

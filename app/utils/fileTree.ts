@@ -1,32 +1,32 @@
 import type { FileStatusEntry } from '~/types/repository'
 
-export interface FileTreeNode {
+export interface FileTreeNode<T = FileStatusEntry> {
   id: string
   name: string
   fullPath: string
   isDirectory: boolean
-  fileEntry?: FileStatusEntry
-  children: FileTreeNode[]
+  fileEntry?: T
+  children: FileTreeNode<T>[]
 }
 
 /**
- * Builds a nested hierarchical tree structure from a flat array of FileStatusEntry.
+ * Builds a nested hierarchical tree structure from a flat array of items containing a path.
  */
-export function buildFileTree(files: FileStatusEntry[]): FileTreeNode[] {
-  const rootNodes: FileTreeNode[] = []
+export function buildFileTree<T extends { path: string }>(files: T[]): FileTreeNode<T>[] {
+  const rootNodes: FileTreeNode<T>[] = []
 
   for (const file of files) {
     const segments = file.path.split('/').filter(Boolean)
     let currentLevel = rootNodes
     let accumulatedPath = ''
 
-    for (let i = 0; i < segments.length; i++) {
-      const segment = segments[i]
+    for (let index = 0; index < segments.length; index++) {
+      const segment = segments[index]
       if (!segment) continue
       accumulatedPath = accumulatedPath ? `${accumulatedPath}/${segment}` : segment
-      const isLast = i === segments.length - 1
+      const isLast = index === segments.length - 1
 
-      let existingNode = currentLevel.find(node => node.name === segment)
+      let existingNode = currentLevel.find((node) => node.name === segment)
 
       if (!existingNode) {
         existingNode = {
@@ -45,11 +45,11 @@ export function buildFileTree(files: FileStatusEntry[]): FileTreeNode[] {
   }
 
   // Sort nodes: directories first, then alphabetically
-  function sortNodes(nodes: FileTreeNode[]): void {
-    nodes.sort((a, b) => {
-      if (a.isDirectory && !b.isDirectory) return -1
-      if (!a.isDirectory && b.isDirectory) return 1
-      return a.name.localeCompare(b.name)
+  function sortNodes(nodes: FileTreeNode<T>[]): void {
+    nodes.sort((firstNode, secondNode) => {
+      if (firstNode.isDirectory && !secondNode.isDirectory) return -1
+      if (!firstNode.isDirectory && secondNode.isDirectory) return 1
+      return firstNode.name.localeCompare(secondNode.name)
     })
     for (const node of nodes) {
       if (node.isDirectory) {

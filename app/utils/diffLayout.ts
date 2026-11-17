@@ -17,11 +17,19 @@ export interface SideBySideHunk {
   rows: SideBySideRow[]
 }
 
+const sideBySideHunkCache = new WeakMap<DiffHunk, SideBySideHunk>()
+
 /**
  * Transforms unified hunk lines into aligned side-by-side rows.
  * Aligns deletion lines on the left with replacement addition lines on the right.
+ * Uses WeakMap memoization to avoid redundant computations across renders.
  */
 export function buildSideBySideHunk(hunk: DiffHunk): SideBySideHunk {
+  const cached = sideBySideHunkCache.get(hunk)
+  if (cached) {
+    return cached
+  }
+
   const rows: SideBySideRow[] = []
   let rowIndex = 0
 
@@ -102,8 +110,10 @@ export function buildSideBySideHunk(hunk: DiffHunk): SideBySideHunk {
     }
   }
 
-  return {
+  const result: SideBySideHunk = {
     header: hunk.header,
     rows,
   }
+  sideBySideHunkCache.set(hunk, result)
+  return result
 }

@@ -1,0 +1,408 @@
+<script setup lang="ts">
+import type { ContextMenuItem } from '@nuxt/ui'
+import type { DetailedRepositoryStatus } from '~/types/repository'
+import type { SelectedDiffTarget } from '~/composables/useStagingController'
+import { buildFileTree } from '~/utils/fileTree'
+import StagingTreeNodeItem from '../StagingTreeNodeItem.vue'
+import FileStatusBadge from '~/components/shared/FileStatusBadge.vue'
+
+interface WorkspaceStagingSidebarProps {
+  repositoryStatus: DetailedRepositoryStatus | null
+  selectedDiffTarget: SelectedDiffTarget | null
+  stagingViewMode: 'flat' | 'tree'
+  isLoading: boolean
+  commitMessage: string
+  isAmend: boolean
+}
+
+const props = defineProps<WorkspaceStagingSidebarProps>()
+
+const emit = defineEmits<{
+  'update:stagingViewMode': [mode: 'flat' | 'tree']
+  'update:commitMessage': [value: string]
+  'update:isAmend': [value: boolean]
+  stageFile: [filePath: string]
+  unstageFile: [filePath: string]
+  stageAll: []
+  unstageAll: []
+  discardFile: [filePath: string, isUntracked: boolean]
+  discardAllUnstaged: []
+  selectFile: [filePath: string, isStaged: boolean]
+  commit: []
+  refresh: []
+}>()
+
+const { t } = useI18n()
+
+const stagedTreeNodes = computed(() => {
+  return buildFileTree(props.repositoryStatus?.staged_files || [])
+})
+
+const unstagedTreeNodes = computed(() => {
+  return buildFileTree(props.repositoryStatus?.unstaged_files || [])
+})
+
+function getFlatFileContextMenuItems(
+  filePath: string,
+  isStaged: boolean,
+  isUntracked?: boolean
+): ContextMenuItem[][] {
+  return [
+    [
+      isStaged
+        ? {
+            label: t('git.unstage'),
+            icon: 'i-lucide-minus',
+            onSelect: () => emit('unstageFile', filePath),
+          }
+        : {
+            label: t('git.stage'),
+            icon: 'i-lucide-plus',
+            onSelect: () => emit('stageFile', filePath),
+          },
+      ...(isStaged
+        ? []
+        : [
+            {
+              label: t('diff.discardFile'),
+              icon: 'i-lucide-undo-2',
+              color: 'error' as const,
+              onSelect: () => emit('discardFile', filePath, isUntracked || false),
+            },
+          ]),
+    ],
+    [
+      {
+        label: t('git.copyPath'),
+        icon: 'i-lucide-copy',
+        onSelect: async () => {
+          await navigator.clipboard.writeText(filePath)
+        },
+      },
+    ],
+  ]
+}
+</script>
+
+<template>
+  <div class="gv-island-panel flex h-full flex-col overflow-hidden">
+    <!-- Staging Header with View Toggle (Flat vs Tree) -->
+    <div class="flex h-9 shrink-0 items-center justify-between border-b border-default/70 px-3 bg-muted/20">
+      <span class="text-xs font-semibold text-highlighted uppercase tracking-wider">
+        {{ t('navigation.changes') }}
+      </span>
+      <div class="flex items-center gap-1.5">
+        <!-- Segmented Pill Switcher: Flat vs Tree -->
+        <div class="flex items-center rounded-lg border border-default/70 bg-surface/80 p-0.5 shadow-2xs">
+          <button
+            type="button"
+            class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all"
+            :class="props.stagingViewMode === 'flat'
+              ? 'bg-primary text-inverted shadow-xs'
+              : 'text-muted hover:text-highlighted'"
+            :title="t('repository.viewFlat')"
+            @click="emit('update:stagingViewMode', 'flat')"
+          >
+            <UIcon name="i-lucide-list" class="h-3 w-3" />
+            <span>{{ t('repository.viewFlatShort') }}</span>
+          </button>
+          <button
+            type="button"
+            class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all"
+            :class="props.stagingViewMode === 'tree'
+              ? 'bg-primary text-inverted shadow-xs'
+              : 'text-muted hover:text-highlighted'"
+            :title="t('repository.viewTree')"
+            @click="emit('update:stagingViewMode', 'tree')"
+          >
+            <UIcon name="i-lucide-folder-tree" class="h-3 w-3" />
+            <span>{{ t('repository.viewTreeShort') }}</span>
+          </button>
+        </div>
+
+        <div class="h-3.5 w-px bg-default/80" aria-hidden="true" />
+
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-refresh-cw"
+          :title="t('common.refresh')"
+          @click="emit('refresh')"
+        />
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-check-check"
+          :label="t('git.stageAll')"
+          :disabled="!props.repositoryStatus?.unstaged_files?.length"
+          @click="emit('stageAll')"
+        />
+      </div>
+    </div>
+
+    <!-- Scrollable file lists container -->
+    <div class="flex-1 overflow-y-auto p-3 text-xs space-y-4">
+      <!-- Loading skeleton -->
+      <div v-if="props.isLoading && !props.repositoryStatus" class="space-y-4">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-1.5">
+              <span class="h-2 w-2 rounded-full bg-success/40" />
+              <USkeleton class="h-3.5 w-20" />
+            </div>
+          </div>
+          <div class="rounded-lg border border-default/70 p-2 space-y-2 bg-surface/80">
+            <div v-for="skeletonIndex in 2" :key="skeletonIndex" class="flex items-center gap-2">
+              <USkeleton class="h-3 w-4" />
+              <USkeleton class="h-3 w-40" />
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-1.5">
+              <span class="h-2 w-2 rounded-full bg-warning/40" />
+              <USkeleton class="h-3.5 w-24" />
+            </div>
+          </div>
+          <div class="rounded-lg border border-default/70 p-2 space-y-2 bg-surface/80">
+            <div v-for="skeletonIndex in 3" :key="skeletonIndex" class="flex items-center gap-2">
+              <USkeleton class="h-3 w-4" />
+              <USkeleton class="h-3 w-48" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template v-else>
+        <!-- Conflicted Files Alert -->
+        <div v-if="props.repositoryStatus?.conflicted_files?.length" class="space-y-1.5">
+          <div class="flex items-center justify-between mb-1 text-error">
+            <span class="font-bold flex items-center gap-1.5">
+              <UIcon name="i-lucide-alert-triangle" class="h-4 w-4" />
+              Merge Conflicts ({{ props.repositoryStatus.conflicted_files.length }})
+            </span>
+          </div>
+          <div class="rounded-lg border border-error/50 divide-y divide-error/30 bg-error/10">
+            <div
+              v-for="file in props.repositoryStatus.conflicted_files"
+              :key="file.path"
+              class="flex items-center justify-between px-2.5 py-1.5"
+            >
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="font-mono font-bold text-error text-[11px]">!</span>
+                <span class="truncate font-mono text-[11px] text-error font-medium" dir="ltr">{{ file.path }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Staged Section -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-semibold text-highlighted flex items-center gap-1.5">
+              <span class="h-2 w-2 rounded-full bg-success inline-block" />
+              {{ t('git.status.staged') }}
+              <span class="text-muted">({{ props.repositoryStatus?.staged_files?.length || 0 }})</span>
+            </span>
+            <UButton
+              v-if="props.repositoryStatus?.staged_files?.length"
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              :label="t('git.unstageAll')"
+              @click="emit('unstageAll')"
+            />
+          </div>
+
+          <!-- Staged Tree View -->
+          <div
+            v-if="props.stagingViewMode === 'tree' && props.repositoryStatus?.staged_files?.length"
+            class="rounded-lg border border-default/70 p-2 bg-surface/80 space-y-0.5"
+          >
+            <StagingTreeNodeItem
+              v-for="node in stagedTreeNodes"
+              :key="node.id"
+              :node="node"
+              :is-staged="true"
+              :selected-path="props.selectedDiffTarget?.filePath"
+              :selected-is-staged="props.selectedDiffTarget?.isStaged"
+              @stage="emit('stageFile', $event)"
+              @unstage="emit('unstageFile', $event)"
+              @discard="emit('discardFile', $event, false)"
+              @select="emit('selectFile', $event, true)"
+            />
+          </div>
+
+          <!-- Staged Flat View -->
+          <div
+            v-else-if="props.stagingViewMode === 'flat' && props.repositoryStatus?.staged_files?.length"
+            class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80"
+          >
+            <UContextMenu
+              v-for="file in props.repositoryStatus.staged_files"
+              :key="file.path"
+              :items="getFlatFileContextMenuItems(file.path, true)"
+            >
+              <div
+                class="group flex items-center justify-between px-2.5 py-1.5 cursor-pointer transition-colors"
+                :class="props.selectedDiffTarget?.filePath === file.path && props.selectedDiffTarget?.isStaged
+                  ? 'bg-primary/15 text-primary font-medium'
+                  : 'hover:bg-muted/30'"
+                @click="emit('selectFile', file.path, true)"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <FileStatusBadge :status="file.status" size="xs" />
+                  <span class="truncate font-mono text-[11px]" dir="ltr">
+                    {{ file.path }}
+                    <span v-if="file.original_path" class="text-muted text-[10px]">← {{ file.original_path }}</span>
+                  </span>
+                </div>
+                <UButton
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  icon="i-lucide-minus"
+                  class="h-5 w-5 shrink-0 opacity-70 group-hover:opacity-100"
+                  title="Unstage"
+                  @click.stop="emit('unstageFile', file.path)"
+                />
+              </div>
+            </UContextMenu>
+          </div>
+          <div v-else class="text-[11px] text-muted italic px-1">
+            No staged changes
+          </div>
+        </div>
+
+        <!-- Unstaged Section -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-semibold text-highlighted flex items-center gap-1.5">
+              <span class="h-2 w-2 rounded-full bg-warning inline-block" />
+              {{ t('git.status.unstaged') }}
+              <span class="text-muted">({{ props.repositoryStatus?.unstaged_files?.length || 0 }})</span>
+            </span>
+            <div v-if="props.repositoryStatus?.unstaged_files?.length" class="flex items-center gap-1">
+              <UButton
+                size="xs"
+                color="error"
+                variant="ghost"
+                icon="i-lucide-trash"
+                :label="t('git.discardAll')"
+                @click="emit('discardAllUnstaged')"
+              />
+              <UButton
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                :label="t('git.stageAll')"
+                @click="emit('stageAll')"
+              />
+            </div>
+          </div>
+
+          <!-- Unstaged Tree View -->
+          <div
+            v-if="props.stagingViewMode === 'tree' && props.repositoryStatus?.unstaged_files?.length"
+            class="rounded-lg border border-default/70 p-2 bg-surface/80 space-y-0.5"
+          >
+            <StagingTreeNodeItem
+              v-for="node in unstagedTreeNodes"
+              :key="node.id"
+              :node="node"
+              :is-staged="false"
+              :selected-path="props.selectedDiffTarget?.filePath"
+              :selected-is-staged="props.selectedDiffTarget?.isStaged"
+              @stage="emit('stageFile', $event)"
+              @unstage="emit('unstageFile', $event)"
+              @discard="emit('discardFile', $event, false)"
+              @select="emit('selectFile', $event, false)"
+            />
+          </div>
+
+          <!-- Unstaged Flat View -->
+          <div
+            v-else-if="props.stagingViewMode === 'flat' && props.repositoryStatus?.unstaged_files?.length"
+            class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80"
+          >
+            <UContextMenu
+              v-for="file in props.repositoryStatus.unstaged_files"
+              :key="file.path"
+              :items="getFlatFileContextMenuItems(file.path, false, file.status === 'untracked')"
+            >
+              <div
+                class="group flex items-center justify-between px-2.5 py-1.5 cursor-pointer transition-colors"
+                :class="props.selectedDiffTarget?.filePath === file.path && !props.selectedDiffTarget?.isStaged
+                  ? 'bg-primary/15 text-primary font-medium'
+                  : 'hover:bg-muted/30'"
+                @click="emit('selectFile', file.path, false)"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <FileStatusBadge :status="file.status" size="xs" />
+                  <span class="truncate font-mono text-[11px]" dir="ltr">{{ file.path }}</span>
+                </div>
+
+                <div class="flex items-center gap-0.5 opacity-70 group-hover:opacity-100">
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    icon="i-lucide-undo-2"
+                    class="h-5 w-5 shrink-0"
+                    title="Discard changes"
+                    @click.stop="emit('discardFile', file.path, file.status === 'untracked')"
+                  />
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    icon="i-lucide-plus"
+                    class="h-5 w-5 shrink-0"
+                    title="Stage"
+                    @click.stop="emit('stageFile', file.path)"
+                  />
+                </div>
+              </div>
+            </UContextMenu>
+          </div>
+          <div v-else class="text-[11px] text-muted italic px-1">
+            Working tree clean
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- Commit Box (Docked at Bottom) -->
+    <div class="border-t border-default/70 p-3 bg-muted/10 flex flex-col gap-2 shrink-0">
+      <UTextarea
+        :model-value="props.commitMessage"
+        :rows="3"
+        placeholder="Commit subject (e.g. feat: add live status tracker)..."
+        class="w-full font-mono text-xs"
+        @update:model-value="emit('update:commitMessage', $event)"
+      />
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-1.5">
+          <USwitch
+            :model-value="props.isAmend"
+            size="xs"
+            @update:model-value="emit('update:isAmend', $event)"
+          />
+          <span class="text-[11px] text-muted">Amend</span>
+        </div>
+        <UButton
+          color="primary"
+          variant="solid"
+          size="xs"
+          icon="i-lucide-git-commit"
+          :label="t('git.commit')"
+          :disabled="!props.repositoryStatus?.staged_files?.length && !props.isAmend"
+          @click="emit('commit')"
+        />
+      </div>
+    </div>
+  </div>
+</template>

@@ -132,18 +132,6 @@ function handleBarDoubleClick(event: MouseEvent): void {
 
     <!-- Trailing: Settings Trigger & Native Window Controls (No theme/lang toggles) -->
     <div class="flex items-center gap-1.5 shrink-0">
-      <!-- Quick Open Repository Button -->
-      <UTooltip :text="t('repository.openRepository')">
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-folder-open"
-          :aria-label="t('repository.openRepository')"
-          @click="promptAndOpenRepository"
-        />
-      </UTooltip>
-
       <!-- Settings Button -->
       <UTooltip :text="t('settings.title')">
         <UButton

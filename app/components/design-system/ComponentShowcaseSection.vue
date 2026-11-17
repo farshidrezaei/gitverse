@@ -1,9 +1,71 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 const { t } = useI18n()
+const { confirmStandard, confirmHold, confirmKeyword } = useConfirmationDialog()
 
 const searchInput = ref('')
 const branchInput = ref('main')
 const isAmending = ref(false)
+const lastActionStatus = ref<string | null>(null)
+
+async function triggerStandardConfirm(): Promise<void> {
+  const isConfirmed = await confirmStandard({
+    title: 'Discard Changes in src/infrastructure/auth.ts',
+    description:
+      'Are you sure you want to discard unstaged changes in this file? Your local modifications will be replaced with HEAD.',
+    variant: 'danger',
+    confirmLabel: 'Discard Changes',
+    details: [
+      { label: 'File', value: 'src/infrastructure/auth.ts', isMonospace: true },
+      { label: 'Lines Affected', value: '+12 / -4' },
+    ],
+  })
+
+  lastActionStatus.value = isConfirmed
+    ? t('designSystem.confirmedMessage', { type: 'Standard' })
+    : t('designSystem.cancelledMessage')
+}
+
+async function triggerHoldConfirm(): Promise<void> {
+  const isConfirmed = await confirmHold({
+    title: 'Hard Reset to HEAD~1',
+    description:
+      'This will reset your current branch index and working tree. Any changes to tracked files since HEAD~1 will be permanently lost.',
+    variant: 'danger',
+    confirmLabel: 'Reset Working Tree',
+    holdDurationMilliseconds: 3000,
+    details: [
+      { label: 'Target Commit', value: 'c9f81a0', isMonospace: true },
+      { label: 'Branch', value: 'feature/payment-integration' },
+      { label: 'Uncommitted Files', value: '4 files' },
+    ],
+  })
+
+  lastActionStatus.value = isConfirmed
+    ? t('designSystem.confirmedMessage', { type: 'Hold-to-Confirm' })
+    : t('designSystem.cancelledMessage')
+}
+
+async function triggerKeywordConfirm(): Promise<void> {
+  const isConfirmed = await confirmKeyword({
+    title: 'Force Push to Remote (origin/main)',
+    description:
+      'Force pushing rewrites remote history. Any commits on the remote branch not present locally will be lost for all collaborators.',
+    variant: 'danger',
+    confirmLabel: 'Force Push Branch',
+    confirmationKeyword: 'FORCE PUSH',
+    details: [
+      { label: 'Remote', value: 'origin' },
+      { label: 'Branch', value: 'main', isMonospace: true },
+      { label: 'Remote URL', value: 'git@github.com:gitverse/gitverse.git', isMonospace: true },
+    ],
+  })
+
+  lastActionStatus.value = isConfirmed
+    ? t('designSystem.confirmedMessage', { type: 'Type-to-Confirm' })
+    : t('designSystem.cancelledMessage')
+}
 </script>
 
 <template>
@@ -67,6 +129,49 @@ const isAmending = ref(false)
           <UBadge color="success" variant="subtle" icon="i-lucide-check">Staged: 5</UBadge>
           <UBadge color="warning" variant="subtle" icon="i-lucide-circle-dot">Unstaged: 2</UBadge>
           <UBadge color="error" variant="subtle" icon="i-lucide-alert-triangle">Conflict: 1</UBadge>
+        </div>
+      </div>
+
+      <!-- Critical Action Confirmations Showcase -->
+      <div class="flex flex-col gap-2.5 pt-2 border-t border-default/60">
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-muted">
+            {{ t('designSystem.confirmations') }}
+          </h3>
+          <p class="text-xs text-muted mt-0.5">
+            {{ t('designSystem.confirmationsDescription') }}
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <UButton
+            color="error"
+            variant="outline"
+            icon="i-lucide-trash"
+            :label="t('designSystem.demoStandard')"
+            @click="triggerStandardConfirm"
+          />
+          <UButton
+            color="error"
+            variant="soft"
+            icon="i-lucide-rotate-ccw"
+            :label="t('designSystem.demoHold')"
+            @click="triggerHoldConfirm"
+          />
+          <UButton
+            color="error"
+            variant="solid"
+            icon="i-lucide-flame"
+            :label="t('designSystem.demoKeyword')"
+            @click="triggerKeywordConfirm"
+          />
+        </div>
+
+        <div
+          v-if="lastActionStatus"
+          class="text-xs font-medium text-highlighted mt-1 p-2 rounded-lg bg-elevated/60 border border-default/70 w-fit"
+        >
+          {{ lastActionStatus }}
         </div>
       </div>
     </div>

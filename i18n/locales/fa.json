@@ -43,6 +43,15 @@
     "reset": "بازنشانی",
     "apply": "اعمال"
   },
+  "confirmation": {
+    "defaultTitle": "تأیید عملیات",
+    "criticalNotice": "عملیات بحرانی و غیرقابل بازگشت",
+    "criticalDescription": "این عملیات بلافاصله اجرا شده و اثرات آن غیرقابل بازگشت خواهد بود.",
+    "holdToConfirm": "نگه‌دارید تا تأیید شود ({seconds} ثانیه)",
+    "holding": "در حال تأیید... ({seconds} ثانیه)",
+    "confirmed": "تأیید شد",
+    "keywordPrompt": "برای تأیید، عبارت «{keyword}» را تایپ کنید:"
+  },
   "navigation": {
     "workspace": "فضای کاری",
     "repositories": "مخازن",
@@ -69,6 +78,19 @@
     "sourceRef": "مرجع مبدأ",
     "deleteBranch": "حذف شاخه",
     "deleteBranchConfirm": "آیا از حذف شاخه '{name}' اطمینان دارید؟",
+    "deleteBranchTitle": "حذف شاخه: {name}",
+    "deleteBranchDescription": "حذف این شاخه غیرقابل بازگشت است. تمام کامیت‌های اختصاصی این شاخه در دسترس نخواهند بود.",
+    "discard": "دور ریختن تغییرات",
+    "discardAll": "دور ریختن همه تغییرات",
+    "discardFileTitle": "دور ریختن تغییرات فایل",
+    "discardFileDescription": "آیا از دور ریختن تغییرات این فایل اطمینان دارید؟ تغییرات محلی شما بازنشانی شده و قابل بازگشت نخواهد بود.",
+    "discardAllTitle": "دور ریختن تمام تغییرات کاری",
+    "discardAllDescription": "این عملیات تمام فایل‌ها و تغییرات استیج‌نشده را به وضعیت HEAD بازگردانده و تغییرات محلی برای همیشه از بین خواهند رفت.",
+    "checkoutDetachedTitle": "سوئیچ به حالت سر جدا (Detached HEAD)",
+    "checkoutDetachedDescription": "شما در حال تغییر وضعیت به یک کامیت مجزا هستید. کامیت‌های جدید در این وضعیت متعلق به هیچ شاخه‌ای نخواهند بود مگر اینکه شاخه جدیدی ایجاد کنید.",
+    "checkoutCommit": "سوئیچ به کامیت",
+    "file": "فایل",
+    "affectedFiles": "فایل‌های تحت تأثیر",
     "remotes": "مخازن راه دور (Remotes)",
     "tags": "تگ‌ها (Tags)",
     "fetchSuccess": "دریافت اطلاعات از مخزن راه دور با موفقیت انجام شد",
@@ -165,9 +187,14 @@
     "detachedHead": "وضعیت Detached HEAD",
     "viewFlat": "نمایش لیستی (Flat)",
     "viewTree": "نمایش درختی (Tree)",
+    "viewFlatShort": "لیست",
+    "viewTreeShort": "درخت",
     "welcomeTitle": "به گیت‌ورس خوش آمدید",
     "welcomeSubtitle": "یک مخزن گیت محلی را از روی دیسک باز کنید یا از لیست پروژه‌های اخیر انتخاب نمایید.",
-    "selectDirectoryHint": "پوشه یک مخزن گیت موجود را انتخاب کنید"
+    "selectDirectoryHint": "پوشه یک مخزن گیت موجود را انتخاب کنید",
+    "removeRecentTitle": "حذف از لیست اخیر",
+    "removeRecentDescription": "آیا از حذف مخزن «{name}» از لیست اخیر اطمینان دارید؟ فایل‌های روی دیسک پاک نخواهند شد.",
+    "path": "مسیر"
   },
   "theme": {
     "dark": "تیره",
@@ -206,8 +233,10 @@
     "copied": "کپی شد!",
     "createBranchHere": "ساخت شاخه از اینجا",
     "checkoutCommit": "سوئیچ به این کامیت",
+    "checkoutThisCommit": "سوئیچ به این کامیت",
     "backToWorkingTree": "تغییرات جاری",
     "searchFiles": "فیلتر فایل‌های تغییریافته...",
+    "filterFilesPlaceholder": "فیلتر فایل‌های تغییریافته...",
     "noFilesChanged": "هیچ فایلی در این کامیت تغییر نکرده است",
     "viewCommit": "مشاهده کامیت"
   },
@@ -240,6 +269,35 @@
       "lanes": "تخصیص قطعی خطوط برای تصویرسازی شاخه‌های موازی و ادغام‌ها.",
       "typography": "مقیاس فونت دوزبانه با IBM Plex Sans، وزیرمتن و JetBrains Mono.",
       "components": "کامپوننت‌های رسمی Nuxt UI مورد ارزیابی در تمام حالت‌های تعاملی."
-    }
+    },
+    "buttons": "دکمه‌ها و عملیات",
+    "inputs": "ورودی‌ها و کنترل‌های فرم",
+    "badges": "نشان‌های وضعیت و مراجع",
+    "confirmations": "تأییدیه‌های اقدامات حیاتی",
+    "confirmationsDescription": "سیستم ۳ لایه تأیید برای عملیات پرریسک و مخرب گیت.",
+    "demoStandard": "تأیید معمولی (حذف فایل)",
+    "demoHold": "تأیید فشردن و نگه‌داشتن (Hard Reset)",
+    "demoKeyword": "تأیید تایپ عبارت (Force Push)",
+    "confirmedMessage": "عملیات تأیید شد: {type}",
+    "cancelledMessage": "عملیات لغو شد"
+  },
+  "notifications": {
+    "undo": "بازگردانی",
+    "undone": "عملیات با موفقیت بازگردانده شد",
+    "undoFailed": "بازگردانی عملیات با شکست مواجه شد",
+    "redo": "انجام دوباره",
+    "redone": "عملیات دوباره با موفقیت انجام شد",
+    "redoFailed": "تکرار عملیات با شکست مواجه شد",
+    "branchDeleted": "شاخه «{name}» حذف شد",
+    "branchRestored": "شاخه «{name}» بازیابی شد",
+    "fileStaged": "فایل «{path}» به استیج اضافه شد",
+    "fileUnstaged": "فایل «{path}» از استیج خارج شد",
+    "allStaged": "تمام فایل‌ها به استیج اضافه شدند",
+    "allUnstaged": "تمام فایل‌ها از استیج خارج شدند",
+    "fileDiscarded": "تغییرات فایل «{path}» بازنشانی شد",
+    "fileRestored": "تغییرات فایل «{path}» بازیابی شد",
+    "commitSuccess": "کامیت ثبت شد: {hash}",
+    "commitUndone": "کامیت بازگردانی شد و تغییرات در استیج نگه‌داشته شدند",
+    "operationFailed": "عملیات ناموفق بود: {message}"
   }
 }

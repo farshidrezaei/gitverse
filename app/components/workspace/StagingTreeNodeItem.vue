@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ContextMenuItem } from '@nuxt/ui'
 import type { FileTreeNode } from '~/utils/fileTree'
+import FileStatusBadge from '~/components/shared/FileStatusBadge.vue'
 
 const props = defineProps<{
   node: FileTreeNode
@@ -63,28 +64,6 @@ const fileContextMenuItems = computed<ContextMenuItem[][]>(() => {
     ],
   ]
 })
-
-function getStatusBadge(status?: string): { label: string; colorClass: string } {
-  if (!status) return { label: '', colorClass: '' }
-  switch (status) {
-    case 'modified':
-      return { label: 'M', colorClass: 'text-warning' }
-    case 'added':
-      return { label: 'A', colorClass: 'text-success' }
-    case 'deleted':
-      return { label: 'D', colorClass: 'text-error' }
-    case 'renamed':
-      return { label: 'R', colorClass: 'text-primary' }
-    case 'copied':
-      return { label: 'C', colorClass: 'text-info' }
-    case 'untracked':
-      return { label: '?', colorClass: 'text-muted' }
-    case 'conflicted':
-      return { label: '!', colorClass: 'text-error font-extrabold' }
-    default:
-      return { label: status[0]?.toUpperCase() || 'M', colorClass: 'text-toned' }
-  }
-}
 </script>
 
 <template>
@@ -131,18 +110,18 @@ function getStatusBadge(status?: string): { label: string; colorClass: string } 
     >
       <div
         class="group flex items-center justify-between py-1 px-1.5 rounded-md cursor-pointer transition-colors"
+        style="content-visibility: auto; contain-intrinsic-size: 0 24px;"
         :class="selectedPath === node.fullPath && selectedIsStaged === isStaged
           ? 'bg-primary/15 text-primary font-medium'
           : 'hover:bg-muted/40'"
         @click="emit('select', node.fullPath, isStaged)"
       >
         <div class="flex items-center gap-1.5 min-w-0">
-          <span
-            class="font-mono font-bold text-[10px] w-3 text-center shrink-0"
-            :class="getStatusBadge(node.fileEntry?.status).colorClass"
-          >
-            {{ getStatusBadge(node.fileEntry?.status).label }}
-          </span>
+          <FileStatusBadge
+            v-if="node.fileEntry?.status"
+            :status="node.fileEntry.status"
+            size="xs"
+          />
           <UIcon name="i-lucide-file-code" class="h-3.5 w-3.5 shrink-0 text-muted" />
           <span class="truncate font-mono text-[11px]" dir="ltr">
             {{ node.name }}

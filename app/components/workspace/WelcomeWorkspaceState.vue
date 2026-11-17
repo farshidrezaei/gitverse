@@ -5,7 +5,30 @@ const {
   isLoading,
   promptAndOpenRepository,
   openRepository,
+  removeRecentRepository,
 } = useWorkspaceManager()
+const { confirmStandard } = useConfirmationDialog()
+
+async function handleRemoveRecentRepository(
+  event: MouseEvent,
+  repositoryPath: string,
+  repositoryName: string
+): Promise<void> {
+  event.stopPropagation()
+  const isConfirmed = await confirmStandard({
+    title: t('repository.removeRecentTitle', { name: repositoryName }),
+    description: t('repository.removeRecentDescription', { name: repositoryName }),
+    variant: 'danger',
+    confirmLabel: t('common.delete'),
+    details: [
+      { label: t('repository.path'), value: repositoryPath, isMonospace: true },
+    ],
+  })
+
+  if (isConfirmed) {
+    await removeRecentRepository(repositoryPath)
+  }
+}
 </script>
 
 <template>
@@ -62,7 +85,18 @@ const {
                 <span class="font-mono text-[10px] text-muted truncate" dir="ltr">{{ repo.path }}</span>
               </div>
             </div>
-            <UIcon name="i-lucide-chevron-right" class="h-3.5 w-3.5 shrink-0 text-muted group-hover:text-primary rtl:rotate-180 transition-colors" />
+            <div class="flex items-center gap-1 shrink-0">
+              <UButton
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-trash-2"
+                class="opacity-0 group-hover:opacity-100 hover:text-error transition-all"
+                :title="t('common.delete')"
+                @click.stop="handleRemoveRecentRepository($event, repo.path, repo.name)"
+              />
+              <UIcon name="i-lucide-chevron-right" class="h-3.5 w-3.5 shrink-0 text-muted group-hover:text-primary rtl:rotate-180 transition-colors" />
+            </div>
           </button>
         </div>
 

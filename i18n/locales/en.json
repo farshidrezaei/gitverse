@@ -43,6 +43,15 @@
     "reset": "Reset",
     "apply": "Apply"
   },
+  "confirmation": {
+    "defaultTitle": "Confirm Action",
+    "criticalNotice": "Critical & Irreversible Operation",
+    "criticalDescription": "This operation takes effect immediately and cannot be undone.",
+    "holdToConfirm": "Hold to confirm ({seconds}s)",
+    "holding": "Holding... ({seconds}s)",
+    "confirmed": "Confirmed",
+    "keywordPrompt": "Type \"{keyword}\" to confirm:"
+  },
   "navigation": {
     "workspace": "Workspace",
     "repositories": "Repositories",
@@ -69,6 +78,19 @@
     "sourceRef": "Source Reference",
     "deleteBranch": "Delete Branch",
     "deleteBranchConfirm": "Are you sure you want to delete branch '{name}'?",
+    "deleteBranchTitle": "Delete Branch: {name}",
+    "deleteBranchDescription": "Deleting this branch is permanent. Any commits unique to this branch will become unreachable.",
+    "discard": "Discard",
+    "discardAll": "Discard All",
+    "discardFileTitle": "Discard File Changes",
+    "discardFileDescription": "Are you sure you want to discard changes in this file? Local modifications will be reset to HEAD and cannot be recovered.",
+    "discardAllTitle": "Discard All Changes",
+    "discardAllDescription": "This will permanently discard all unstaged changes across all files in your working tree.",
+    "checkoutDetachedTitle": "Checkout Detached HEAD",
+    "checkoutDetachedDescription": "You are about to switch to a detached HEAD state. Commits made here will not belong to any branch unless a new branch is created.",
+    "checkoutCommit": "Checkout Commit",
+    "file": "File",
+    "affectedFiles": "Affected Files",
     "remotes": "Remotes",
     "tags": "Tags",
     "fetchSuccess": "Fetched successfully from remote",
@@ -165,9 +187,14 @@
     "detachedHead": "Detached HEAD",
     "viewFlat": "Flat View",
     "viewTree": "Tree View",
+    "viewFlatShort": "List",
+    "viewTreeShort": "Tree",
     "welcomeTitle": "Welcome to GitVerse",
     "welcomeSubtitle": "Select a local repository from your machine or choose from recent projects to begin working.",
-    "selectDirectoryHint": "Choose any existing Git repository folder on disk"
+    "selectDirectoryHint": "Choose any existing Git repository folder on disk",
+    "removeRecentTitle": "Remove from Recent",
+    "removeRecentDescription": "Are you sure you want to remove '{name}' from the recent list? Files on disk will not be deleted.",
+    "path": "Path"
   },
   "theme": {
     "dark": "Dark",
@@ -206,8 +233,10 @@
     "copied": "Copied!",
     "createBranchHere": "Branch from here",
     "checkoutCommit": "Checkout commit",
+    "checkoutThisCommit": "Checkout commit",
     "backToWorkingTree": "Working Tree",
     "searchFiles": "Filter changed files...",
+    "filterFilesPlaceholder": "Filter changed files...",
     "noFilesChanged": "No files changed in this commit",
     "viewCommit": "View Commit"
   },
@@ -240,6 +269,35 @@
       "lanes": "Deterministic lane assignments for parallel branch and merge visualization.",
       "typography": "Type scale with bilingual IBM Plex Sans, Vazirmatn, and JetBrains Mono.",
       "components": "Nuxt UI components tested across all interaction states."
-    }
+    },
+    "buttons": "Buttons & Actions",
+    "inputs": "Form Inputs & Controls",
+    "badges": "Status Badges & References",
+    "confirmations": "Critical Action Confirmations",
+    "confirmationsDescription": "Three-tier confirmation system for destructive and high-risk Git operations.",
+    "demoStandard": "Standard Confirm (Discard File)",
+    "demoHold": "Hold-to-Confirm (Hard Reset)",
+    "demoKeyword": "Type-to-Confirm (Force Push)",
+    "confirmedMessage": "Action confirmed: {type}",
+    "cancelledMessage": "Action was cancelled"
+  },
+  "notifications": {
+    "undo": "Undo",
+    "undone": "Action undone successfully",
+    "undoFailed": "Failed to undo action",
+    "redo": "Redo",
+    "redone": "Action redone successfully",
+    "redoFailed": "Failed to redo action",
+    "branchDeleted": "Branch '{name}' deleted",
+    "branchRestored": "Branch '{name}' restored",
+    "fileStaged": "File '{path}' staged",
+    "fileUnstaged": "File '{path}' unstaged",
+    "allStaged": "All files staged",
+    "allUnstaged": "All files unstaged",
+    "fileDiscarded": "Changes in '{path}' discarded",
+    "fileRestored": "Changes in '{path}' restored",
+    "commitSuccess": "Commit created: {hash}",
+    "commitUndone": "Commit undone, changes preserved in staging",
+    "operationFailed": "Operation failed: {message}"
   }
 }

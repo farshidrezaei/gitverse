@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tauri::AppHandle;
@@ -8,6 +9,8 @@ use crate::domain::{
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
 use crate::infrastructure::storage::SQLiteRepositoryStore;
 
+const MAX_CACHE_ENTRIES: usize = 250;
+
 /// Global application state shared across Tauri commands.
 pub struct ApplicationState {
     pub current_repository: Arc<RwLock<Option<RepositoryOverview>>>,
@@ -15,6 +18,8 @@ pub struct ApplicationState {
     pub git_executor: Arc<GitProcessExecutor>,
     pub git_inspector: Arc<GitRepositoryInspector>,
     pub watcher_manager: Arc<RepositoryWatcherManager>,
+    commit_details_cache: Arc<RwLock<HashMap<String, CommitDetails>>>,
+    commit_file_diff_cache: Arc<RwLock<HashMap<String, FileDiff>>>,
 }
 
 impl ApplicationState {
@@ -30,6 +35,8 @@ impl ApplicationState {
             git_executor,
             git_inspector,
             watcher_manager,
+            commit_details_cache: Arc::new(RwLock::new(HashMap::new())),
+            commit_file_diff_cache: Arc::new(RwLock::new(HashMap::new())),
         })
     }
 
@@ -66,6 +73,10 @@ impl ApplicationState {
         self.watcher_manager.stop_watching();
         let mut active = self.current_repository.write().await;
         *active = None;
+        let mut details_cache = self.commit_details_cache.write().await;
+        details_cache.clear();
+        let mut diff_cache = self.commit_file_diff_cache.write().await;
+        diff_cache.clear();
     }
 
     /// Gets detailed repository status (staged, unstaged, conflicted files).
@@ -222,17 +233,36 @@ impl ApplicationState {
         self.git_inspector.push_changes(&target_path, remote_name, branch_name, set_upstream).await
     }
 
-    /// Fetches full commit details including changed files.
+    /// Fetches full commit details including changed files. Uses in-memory cache to eliminate duplicate Git invocations.
     pub async fn get_commit_details(
         &self,
         directory_path: Option<&str>,
         commit_hash: &str,
     ) -> Result<CommitDetails, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.get_commit_details(&target_path, commit_hash).await
+        let cache_key = format!("{}:{}", target_path.to_string_lossy(), commit_hash);
+
+        {
+            let cache = self.commit_details_cache.read().await;
+            if let Some(details) = cache.get(&cache_key) {
+                return Ok(details.clone());
+            }
+        }
+
+        let details = self.git_inspector.get_commit_details(&target_path, commit_hash).await?;
+
+        {
+            let mut cache = self.commit_details_cache.write().await;
+            if cache.len() >= MAX_CACHE_ENTRIES {
+                cache.clear();
+            }
+            cache.insert(cache_key, details.clone());
+        }
+
+        Ok(details)
     }
 
-    /// Fetches unified diff for a single file in a commit or the whole commit.
+    /// Fetches unified diff for a single file in a commit or the whole commit with caching.
     pub async fn get_commit_file_diff(
         &self,
         directory_path: Option<&str>,
@@ -240,7 +270,31 @@ impl ApplicationState {
         file_path: Option<&str>,
     ) -> Result<FileDiff, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.get_commit_file_diff(&target_path, commit_hash, file_path).await
+        let cache_key = format!(
+            "{}:{}:{}",
+            target_path.to_string_lossy(),
+            commit_hash,
+            file_path.unwrap_or("")
+        );
+
+        {
+            let cache = self.commit_file_diff_cache.read().await;
+            if let Some(diff) = cache.get(&cache_key) {
+                return Ok(diff.clone());
+            }
+        }
+
+        let diff = self.git_inspector.get_commit_file_diff(&target_path, commit_hash, file_path).await?;
+
+        {
+            let mut cache = self.commit_file_diff_cache.write().await;
+            if cache.len() >= MAX_CACHE_ENTRIES {
+                cache.clear();
+            }
+            cache.insert(cache_key, diff.clone());
+        }
+
+        Ok(diff)
     }
 
     async fn resolve_path(&self, directory_path: Option<&str>) -> Result<PathBuf, ApplicationError> {
