@@ -155,6 +155,21 @@
     "laneColors": "رنگ‌های خطوط گراف",
     "resetDefaults": "بازگشت به پالت پیش‌فرض"
   },
+  "diff": {
+    "viewInline": "یکپارچه (Inline)",
+    "viewSideBySide": "کنار هم (Side-by-Side)",
+    "noFileSelected": "هیچ فایلی انتخاب نشده است",
+    "selectFilePrompt": "یک فایل تغییر یافته را از پنل تغییرات برای بررسی دیف انتخاب کنید",
+    "binaryFile": "فایل باینری قابل نمایش نیست",
+    "noChanges": "هیچ تغییری در این فایل شناسایی نشد",
+    "stagedChanges": "تغییرات ثبت‌شده (Staged)",
+    "workingTreeChanges": "تغییرات فضای کاری (Working Tree)",
+    "stageFile": "افزودن به استیج",
+    "unstageFile": "حذف از استیج",
+    "discardFile": "لغو تغییرات",
+    "additions": "{count} مورد افزوده",
+    "deletions": "{count} مورد حذف"
+  },
   "designSystem": {
     "title": "سیستم دیزاین و شوکیس رابط کاربری گیت‌ورس",
     "subtitle": "راهنمای زنده تعاملی، بررسی وضعیت کامپوننت‌ها و بازرس توکن‌های رنگی.",

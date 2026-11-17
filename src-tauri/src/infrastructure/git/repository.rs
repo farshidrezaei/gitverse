@@ -182,4 +182,37 @@ impl GitRepositoryInspector {
             .execute_git_command(Some(directory_path), &arguments)
             .await
     }
+
+    /// Retrieves structured diff for a specific file (staged or unstaged).
+    pub async fn get_file_diff(&self, directory_path: &Path, file_path: &str, is_staged: bool) -> Result<crate::domain::FileDiff, ApplicationError> {
+        let raw_diff = if is_staged {
+            self.executor
+                .execute_git_command(Some(directory_path), &["diff", "--cached", "--", file_path])
+                .await?
+        } else {
+            // Check if file is untracked to generate diff against /dev/null
+            let untracked_diff = self.executor
+                .execute_git_command(Some(directory_path), &["diff", "--", file_path])
+                .await?;
+
+            if untracked_diff.trim().is_empty() {
+                // If it's untracked, use git diff --no-index /dev/null <file_path> or read file
+                let no_index_result = self.executor
+                    .execute_git_command(Some(directory_path), &["diff", "--no-index", "--", "/dev/null", file_path])
+                    .await;
+                match no_index_result {
+                    Ok(out) => out,
+                    Err(ApplicationError::GitExecutionFailed { exit_code: 1, message }) => {
+                        // git diff returns 1 when differences exist
+                        message
+                    }
+                    Err(e) => return Err(e),
+                }
+            } else {
+                untracked_diff
+            }
+        };
+
+        Ok(super::diff::parse_unified_diff(&raw_diff, file_path))
+    }
 }

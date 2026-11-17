@@ -4,12 +4,15 @@ import type { FileTreeNode } from '~/utils/fileTree'
 defineProps<{
   node: FileTreeNode
   isStaged: boolean
+  selectedPath?: string | null
+  selectedIsStaged?: boolean | null
 }>()
 
 const emit = defineEmits<{
   stage: [path: string]
   unstage: [path: string]
   discard: [path: string, isUntracked: boolean]
+  select: [path: string, isStaged: boolean]
 }>()
 
 const isOpen = ref(true)
@@ -69,16 +72,23 @@ function getStatusBadge(status?: string): { label: string; colorClass: string } 
         :key="child.id"
         :node="child"
         :is-staged="isStaged"
+        :selected-path="selectedPath"
+        :selected-is-staged="selectedIsStaged"
         @stage="emit('stage', $event)"
         @unstage="emit('unstage', $event)"
         @discard="(path, isUntracked) => emit('discard', path, isUntracked)"
+        @select="(path, staged) => emit('select', path, staged)"
       />
     </div>
 
     <!-- File Item Row -->
     <div
       v-else-if="!node.isDirectory"
-      class="group flex items-center justify-between py-1 px-1.5 rounded-md hover:bg-muted/40 transition-colors"
+      class="group flex items-center justify-between py-1 px-1.5 rounded-md cursor-pointer transition-colors"
+      :class="selectedPath === node.fullPath && selectedIsStaged === isStaged
+        ? 'bg-primary/15 text-primary font-medium'
+        : 'hover:bg-muted/40'"
+      @click="emit('select', node.fullPath, isStaged)"
     >
       <div class="flex items-center gap-1.5 min-w-0">
         <span

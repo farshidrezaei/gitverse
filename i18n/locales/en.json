@@ -155,6 +155,21 @@
     "laneColors": "Graph Lane Colors",
     "resetDefaults": "Reset to Default Palette"
   },
+  "diff": {
+    "viewInline": "Inline",
+    "viewSideBySide": "Side-by-Side",
+    "noFileSelected": "No file selected",
+    "selectFilePrompt": "Select a changed file from the changes panel to view its diff",
+    "binaryFile": "Binary file not shown",
+    "noChanges": "No changes detected in this file",
+    "stagedChanges": "Staged Changes",
+    "workingTreeChanges": "Working Tree Changes",
+    "stageFile": "Stage File",
+    "unstageFile": "Unstage File",
+    "discardFile": "Discard Changes",
+    "additions": "{count} additions",
+    "deletions": "{count} deletions"
+  },
   "designSystem": {
     "title": "GitVerse Design System & UI Showcase",
     "subtitle": "Interactive living style guide, component state verification, and color token inspector.",

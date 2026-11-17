@@ -5,6 +5,7 @@ node_modules/
 # Nuxt / Frontend & Docs build artifacts
 .nuxt/
 .output/
+.nuxtrc
 dist
 dist/
 

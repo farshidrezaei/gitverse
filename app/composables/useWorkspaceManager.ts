@@ -1,16 +1,25 @@
 import type {
   DetailedRepositoryStatus,
+  FileDiff,
   GitBinaryInformation,
   RecentRepositoryRecord,
   RepositoryOverview,
 } from '~/types/repository'
+
+export interface SelectedDiffTarget {
+  filePath: string
+  isStaged: boolean
+}
 
 export function useWorkspaceManager() {
   const currentRepository = useState<RepositoryOverview | null>('workspace-current-repository', () => null)
   const repositoryStatus = useState<DetailedRepositoryStatus | null>('workspace-repository-status', () => null)
   const recentRepositories = useState<RecentRepositoryRecord[]>('workspace-recent-repositories', () => [])
   const gitBinary = useState<GitBinaryInformation | null>('workspace-git-binary', () => null)
+  const selectedDiffTarget = useState<SelectedDiffTarget | null>('workspace-selected-diff-target', () => null)
+  const currentDiff = useState<FileDiff | null>('workspace-current-diff', () => null)
   const isLoading = ref<boolean>(false)
+  const isLoadingDiff = ref<boolean>(false)
   const lastError = ref<string | null>(null)
 
   let unlistenStatusWatcher: (() => void) | null = null
@@ -45,6 +54,9 @@ export function useWorkspaceManager() {
             currentRepository.value.current_branch_name = status.branch_name
           }
         }
+        if (selectedDiffTarget.value) {
+          await fetchFileDiff(selectedDiffTarget.value.filePath, selectedDiffTarget.value.isStaged)
+        }
         return status
       } else {
         // Mock status in dev preview
@@ -65,6 +77,9 @@ export function useWorkspaceManager() {
           conflicted_files: [],
         }
         repositoryStatus.value = mock
+        if (selectedDiffTarget.value) {
+          await fetchFileDiff(selectedDiffTarget.value.filePath, selectedDiffTarget.value.isStaged)
+        }
         return mock
       }
     } catch (error: any) {
@@ -132,7 +147,7 @@ export function useWorkspaceManager() {
     await fetchStatus()
   }
 
-  async function discardFile(filePath: string, isUntracked: boolean): Promise<void> {
+  async function discardFile(filePath: string, isUntracked: boolean = false): Promise<void> {
     if (!currentRepository.value) return
     if (await isTauriEnvironment()) {
       const { invoke } = await import('@tauri-apps/api/core')
@@ -279,12 +294,78 @@ export function useWorkspaceManager() {
     }
   }
 
+  async function fetchFileDiff(filePath: string, isStaged: boolean): Promise<FileDiff | null> {
+    selectedDiffTarget.value = { filePath, isStaged }
+    if (!currentRepository.value) {
+      currentDiff.value = null
+      return null
+    }
+
+    isLoadingDiff.value = true
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        const diff = await invoke<FileDiff>('get_file_diff', {
+          filePath,
+          isStaged,
+          directoryPath: currentRepository.value.path,
+        })
+        currentDiff.value = diff
+        return diff
+      } else {
+        // Mock diff for web environment preview
+        const mockDiff: FileDiff = {
+          old_path: isStaged ? null : filePath,
+          new_path: filePath,
+          is_binary: false,
+          is_new_file: false,
+          is_deleted_file: false,
+          total_additions: 3,
+          total_deletions: 1,
+          hunks: [
+            {
+              header: '@@ -1,7 +1,9 @@',
+              old_start: 1,
+              old_lines: 7,
+              new_start: 1,
+              new_lines: 9,
+              lines: [
+                { line_type: 'context', old_line_number: 1, new_line_number: 1, content: '// Sample file for preview' },
+                { line_type: 'deletion', old_line_number: 2, new_line_number: null, content: '-export const isFeatureEnabled = false' },
+                { line_type: 'addition', old_line_number: null, new_line_number: 2, content: '+export const isFeatureEnabled = true' },
+                { line_type: 'addition', old_line_number: null, new_line_number: 3, content: '+export const mode = "modern"' },
+                { line_type: 'addition', old_line_number: null, new_line_number: 4, content: '+export const version = 2' },
+                { line_type: 'context', old_line_number: 3, new_line_number: 5, content: '' },
+                { line_type: 'context', old_line_number: 4, new_line_number: 6, content: 'export function execute() {' },
+              ],
+            },
+          ],
+        }
+        currentDiff.value = mockDiff
+        return mockDiff
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch file diff:', error)
+      lastError.value = error?.message || 'Failed to fetch diff'
+      currentDiff.value = null
+      return null
+    } finally {
+      isLoadingDiff.value = false
+    }
+  }
+
+  function clearDiffSelection(): void {
+    selectedDiffTarget.value = null
+    currentDiff.value = null
+  }
+
   async function closeRepository(): Promise<void> {
     if (await isTauriEnvironment()) {
       const { invoke } = await import('@tauri-apps/api/core')
       await invoke('close_repository')
     }
     currentRepository.value = null
+    clearDiffSelection()
   }
 
   return {
@@ -292,10 +373,15 @@ export function useWorkspaceManager() {
     repositoryStatus,
     recentRepositories,
     gitBinary,
+    selectedDiffTarget,
+    currentDiff,
     isLoading,
+    isLoadingDiff,
     lastError,
     discoverGit,
     fetchStatus,
+    fetchFileDiff,
+    clearDiffSelection,
     fetchRecentRepositories,
     openRepository,
     promptAndOpenRepository,

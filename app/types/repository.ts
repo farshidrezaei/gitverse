@@ -53,3 +53,33 @@ export interface DetailedRepositoryStatus {
   unstaged_files: FileStatusEntry[]
   conflicted_files: FileStatusEntry[]
 }
+
+export type DiffLineType = 'context' | 'addition' | 'deletion' | 'header'
+
+export interface DiffLine {
+  line_type: DiffLineType
+  old_line_number: number | null
+  new_line_number: number | null
+  content: string
+}
+
+export interface DiffHunk {
+  header: string
+  old_start: number
+  old_lines: number
+  new_start: number
+  new_lines: number
+  lines: DiffLine[]
+}
+
+export interface FileDiff {
+  old_path: string | null
+  new_path: string
+  is_binary: boolean
+  is_new_file: boolean
+  is_deleted_file: boolean
+  hunks: DiffHunk[]
+  total_additions: number
+  total_deletions: number
+}
+

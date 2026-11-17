@@ -56,6 +56,7 @@ pub fn run() {
             commands::unstage_all,
             commands::discard_file_changes,
             commands::commit,
+            commands::get_file_diff,
             commands::get_recent_repositories,
             commands::remove_recent_repository,
         ])

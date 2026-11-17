@@ -9,8 +9,12 @@ const stagingViewMode = ref<'tree' | 'flat'>('flat')
 const {
   currentRepository,
   repositoryStatus,
+  selectedDiffTarget,
+  currentDiff,
+  isLoadingDiff,
   promptAndOpenRepository,
   fetchStatus,
+  fetchFileDiff,
   stageFile,
   unstageFile,
   stageAll,
@@ -207,6 +211,13 @@ const searchCommitQuery = ref('')
 
 function selectCommit(sha: string): void {
   selectedCommitSha.value = sha
+}
+function handleDiscard(filePath: string, isUntracked: boolean): void {
+  discardFile(filePath, isUntracked)
+}
+
+function handleSelectFile(filePath: string, isStaged: boolean): void {
+  fetchFileDiff(filePath, isStaged)
 }
 </script>
 
@@ -448,47 +459,14 @@ function selectCommit(sha: string): void {
 
           <!-- Bottom Island: Diff & Patch Viewer -->
           <template #diff>
-            <div class="gv-island-panel flex h-full flex-col overflow-hidden font-mono text-xs" dir="ltr">
-              <!-- Diff Header Bar -->
-              <div class="flex h-8 shrink-0 items-center justify-between border-b border-default/70 bg-muted/20 px-3 text-muted">
-                <div class="flex items-center gap-2">
-                  <UIcon name="i-lucide-file-diff" class="h-3.5 w-3.5" />
-                  <span class="font-medium text-highlighted font-sans">
-                    src-tauri/src/infrastructure/process_runner.rs
-                  </span>
-                  <UBadge size="xs" color="success" variant="subtle">+48</UBadge>
-                  <UBadge size="xs" color="error" variant="subtle">-3</UBadge>
-                </div>
-                <div class="flex items-center gap-1 font-sans">
-                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-columns-2" label="Side-by-Side" />
-                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-rows-2" label="Inline" />
-                </div>
-              </div>
-
-              <!-- Diff Content -->
-              <div class="flex-1 overflow-y-auto p-2 bg-[var(--gv-surface)]">
-                <div class="rounded-lg border border-default/70 overflow-hidden">
-                  <div class="bg-[var(--gv-diff-hunk-bg)] text-[var(--gv-diff-hunk-text)] px-3 py-1 font-semibold">
-                    @@ -24,7 +24,11 @@ pub struct SafeProcessRunner {
-                  </div>
-                  <div class="px-3 py-0.5 text-muted">
-                    &nbsp;&nbsp;pub executable_path: PathBuf,
-                  </div>
-                  <div class="bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] px-3 py-0.5 border-s-2 border-[var(--gv-diff-remove-border)]">
-                    - pub timeout_duration: Option&lt;Duration&gt;,
-                  </div>
-                  <div class="bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] px-3 py-0.5 border-s-2 border-[var(--gv-diff-add-border)]">
-                    + pub timeout_duration: Duration,
-                  </div>
-                  <div class="bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] px-3 py-0.5 border-s-2 border-[var(--gv-diff-add-border)]">
-                    + pub cancellation_token: Option&lt;CancellationToken&gt;,
-                  </div>
-                  <div class="px-3 py-0.5 text-muted">
-                    &nbsp;&nbsp;pub working_directory: PathBuf,
-                  </div>
-                </div>
-              </div>
-            </div>
+            <WorkspaceDiffViewerPanel
+              :diff="currentDiff"
+              :selected-target="selectedDiffTarget"
+              :is-loading="isLoadingDiff"
+              @stage="stageFile"
+              @unstage="unstageFile"
+              @discard="handleDiscard"
+            ></WorkspaceDiffViewerPanel>
           </template>
         </USplitter>
       </template>
@@ -605,9 +583,12 @@ function selectCommit(sha: string): void {
                   :key="node.id"
                   :node="node"
                   :is-staged="true"
+                  :selected-path="selectedDiffTarget?.filePath"
+                  :selected-is-staged="selectedDiffTarget?.isStaged"
                   @stage="stageFile"
                   @unstage="unstageFile"
                   @discard="discardFile"
+                  @select="handleSelectFile"
                 />
               </div>
 
@@ -619,7 +600,11 @@ function selectCommit(sha: string): void {
                 <div
                   v-for="file in repositoryStatus.staged_files"
                   :key="file.path"
-                  class="group flex items-center justify-between px-2.5 py-1.5 hover:bg-muted/30 transition-colors"
+                  class="group flex items-center justify-between px-2.5 py-1.5 cursor-pointer transition-colors"
+                  :class="selectedDiffTarget?.filePath === file.path && selectedDiffTarget?.isStaged
+                    ? 'bg-primary/15 text-primary font-medium'
+                    : 'hover:bg-muted/30'"
+                  @click="fetchFileDiff(file.path, true)"
                 >
                   <div class="flex items-center gap-2 min-w-0">
                     <span
@@ -640,7 +625,7 @@ function selectCommit(sha: string): void {
                     icon="i-lucide-minus"
                     class="h-5 w-5 shrink-0 opacity-70 group-hover:opacity-100"
                     title="Unstage"
-                    @click="unstageFile(file.path)"
+                    @click.stop="unstageFile(file.path)"
                   />
                 </div>
               </div>
@@ -677,9 +662,12 @@ function selectCommit(sha: string): void {
                   :key="node.id"
                   :node="node"
                   :is-staged="false"
+                  :selected-path="selectedDiffTarget?.filePath"
+                  :selected-is-staged="selectedDiffTarget?.isStaged"
                   @stage="stageFile"
                   @unstage="unstageFile"
                   @discard="discardFile"
+                  @select="handleSelectFile"
                 />
               </div>
 
@@ -691,7 +679,11 @@ function selectCommit(sha: string): void {
                 <div
                   v-for="file in repositoryStatus.unstaged_files"
                   :key="file.path"
-                  class="group flex items-center justify-between px-2.5 py-1.5 hover:bg-muted/30 transition-colors"
+                  class="group flex items-center justify-between px-2.5 py-1.5 cursor-pointer transition-colors"
+                  :class="selectedDiffTarget?.filePath === file.path && !selectedDiffTarget?.isStaged
+                    ? 'bg-primary/15 text-primary font-medium'
+                    : 'hover:bg-muted/30'"
+                  @click="fetchFileDiff(file.path, false)"
                 >
                   <div class="flex items-center gap-2 min-w-0">
                     <span
@@ -711,7 +703,7 @@ function selectCommit(sha: string): void {
                       icon="i-lucide-undo-2"
                       class="h-5 w-5 shrink-0"
                       title="Discard changes"
-                      @click="discardFile(file.path, file.status === 'untracked')"
+                      @click.stop="discardFile(file.path, file.status === 'untracked')"
                     />
                     <UButton
                       size="xs"
@@ -720,7 +712,7 @@ function selectCommit(sha: string): void {
                       icon="i-lucide-plus"
                       class="h-5 w-5 shrink-0"
                       title="Stage"
-                      @click="stageFile(file.path)"
+                      @click.stop="stageFile(file.path)"
                     />
                   </div>
                 </div>

@@ -111,6 +111,17 @@ pub async fn commit(
     state.commit(directory_path.as_deref(), &message, is_amend).await
 }
 
+/// Tauri IPC command to get structured file diff.
+#[tauri::command]
+pub async fn get_file_diff(
+    state: State<'_, ApplicationState>,
+    file_path: String,
+    is_staged: bool,
+    directory_path: Option<String>,
+) -> Result<crate::domain::FileDiff, ApplicationError> {
+    state.get_file_diff(directory_path.as_deref(), &file_path, is_staged).await
+}
+
 /// Tauri IPC command to fetch recent repositories from local SQLite database.
 #[tauri::command]
 pub async fn get_recent_repositories(

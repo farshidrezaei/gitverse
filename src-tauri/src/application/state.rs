@@ -120,6 +120,12 @@ impl ApplicationState {
         self.git_inspector.commit(&target_path, message, is_amend).await
     }
 
+    /// Retrieves structured diff for a file.
+    pub async fn get_file_diff(&self, directory_path: Option<&str>, file_path: &str, is_staged: bool) -> Result<crate::domain::FileDiff, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_file_diff(&target_path, file_path, is_staged).await
+    }
+
     async fn resolve_path(&self, directory_path: Option<&str>) -> Result<PathBuf, ApplicationError> {
         if let Some(p) = directory_path {
             Ok(PathBuf::from(p))

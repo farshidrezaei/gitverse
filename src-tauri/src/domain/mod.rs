@@ -97,3 +97,47 @@ pub struct DetailedRepositoryStatus {
     pub conflicted_files: Vec<FileStatusEntry>,
 }
 
+/// Diff line type representation.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum DiffLineType {
+    Context,
+    Addition,
+    Deletion,
+    Header,
+}
+
+/// Individual line in a diff hunk.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DiffLine {
+    pub line_type: DiffLineType,
+    pub old_line_number: Option<u32>,
+    pub new_line_number: Option<u32>,
+    pub content: String,
+}
+
+/// A contiguous block (hunk) of changes in a file diff.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DiffHunk {
+    pub header: String,
+    pub old_start: u32,
+    pub old_lines: u32,
+    pub new_start: u32,
+    pub new_lines: u32,
+    pub lines: Vec<DiffLine>,
+}
+
+/// Structured diff result for a file.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FileDiff {
+    pub old_path: Option<String>,
+    pub new_path: String,
+    pub is_binary: bool,
+    pub is_new_file: bool,
+    pub is_deleted_file: bool,
+    pub hunks: Vec<DiffHunk>,
+    pub total_additions: u32,
+    pub total_deletions: u32,
+}
+
+
