@@ -351,7 +351,7 @@ impl GitRepositoryInspector {
 
         // 2. Remote tracking branches
         let remote_branch_format = format!(
-            "%(refname:short){del}%(objectname)",
+            "%(refname:short){del}%(objectname){del}%(symref)",
             del = super::branch::REF_FIELD_DELIMITER
         );
         let raw_remote_branches = self.executor

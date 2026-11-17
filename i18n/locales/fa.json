@@ -72,6 +72,8 @@
     "pullSuccess": "تغییرات با موفقیت پول شد",
     "pushSuccess": "تغییرات با موفقیت پوش شد",
     "checkout": "سوئیچ به این شاخه",
+    "currentBranch": "شاخه جاری",
+    "doubleClickToCheckout": "برای سوئیچ دوبار کلیک کنید",
     "starBranch": "نشان کردن شاخه",
     "unstarBranch": "حذف از نشان‌شده‌ها",
     "copyBranchName": "کپی نام شاخه",

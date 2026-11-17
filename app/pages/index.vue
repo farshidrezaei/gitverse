@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ContextMenuItem, SplitterItem } from '@nuxt/ui'
+import type { BranchSummary, RemoteBranchSummary } from '~/types/repository'
 import WelcomeWorkspaceState from '~/components/workspace/WelcomeWorkspaceState.vue'
 import WorkspaceStagingTreeNodeItem from '~/components/workspace/StagingTreeNodeItem.vue'
 import { buildFileTree } from '~/utils/fileTree'
@@ -240,7 +241,17 @@ async function handleCreateBranch(branchName: string, checkout: boolean): Promis
   }
 }
 
+const selectedBranchName = ref<string | null>(null)
+
+async function handleSelectBranch(branch: BranchSummary | RemoteBranchSummary): Promise<void> {
+  selectedBranchName.value = branch.name
+  if (branch.head_commit_hash) {
+    await fetchCommitDetails(branch.head_commit_hash)
+  }
+}
+
 async function handleCheckout(branchName: string): Promise<void> {
+  selectedBranchName.value = branchName
   await checkoutBranch(branchName)
 }
 
@@ -344,16 +355,36 @@ async function handlePush(): Promise<void> {
                   <div
                     v-for="branch in favoriteBranchSummaries"
                     :key="branch.name"
-                    class="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start transition-colors cursor-pointer"
-                    :class="branch.is_head ? 'bg-primary/15 font-semibold text-primary' : 'text-toned hover:bg-primary/10'"
-                    @click="handleCheckout(branch.name)"
+                    class="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start transition-all cursor-pointer relative"
+                    :class="[
+                      branch.is_head
+                        ? 'bg-primary/15 font-semibold text-primary border-s-2 border-primary ps-2'
+                        : selectedBranchName === branch.name
+                          ? 'bg-muted/40 text-highlighted ring-1 ring-primary/40 font-medium'
+                          : 'text-toned hover:bg-primary/10'
+                    ]"
+                    :title="branch.is_head ? `${branch.name} (${t('git.currentBranch')})` : `${branch.name} (${t('git.doubleClickToCheckout')})`"
+                    @click="handleSelectBranch(branch)"
+                    @dblclick="handleCheckout(branch.name)"
                   >
                     <div class="flex items-center gap-1.5 min-w-0">
                       <UIcon
                         :name="branch.is_head ? 'i-lucide-check-circle-2' : 'i-lucide-git-branch'"
                         class="h-3.5 w-3.5 shrink-0"
+                        :class="branch.is_head ? 'text-primary' : selectedBranchName === branch.name ? 'text-highlighted' : 'text-muted'"
                       />
                       <span class="truncate font-mono text-[11px]">{{ branch.name }}</span>
+
+                      <!-- Head Branch Pill Badge -->
+                      <UBadge
+                        v-if="branch.is_head"
+                        size="xs"
+                        color="primary"
+                        variant="subtle"
+                        class="font-mono text-[9px] px-1 py-0 leading-none shrink-0"
+                      >
+                        HEAD
+                      </UBadge>
                     </div>
                     <div class="flex items-center gap-1 text-[10px]">
                       <span v-if="branch.ahead_count > 0" class="text-success font-mono">↑{{ branch.ahead_count }}</span>
@@ -383,6 +414,8 @@ async function handlePush(): Promise<void> {
                     v-for="node in branchTreeNodes"
                     :key="node.id"
                     :node="node"
+                    :selected-branch-name="selectedBranchName"
+                    @select-branch="handleSelectBranch"
                     @checkout="handleCheckout"
                     @create-branch="handleCreateBranchFromBranch"
                     @delete="handleDeleteBranch"
@@ -401,6 +434,8 @@ async function handlePush(): Promise<void> {
                     v-for="node in remoteBranchTreeNodes"
                     :key="node.id"
                     :node="node"
+                    :selected-branch-name="selectedBranchName"
+                    @select-branch="handleSelectBranch"
                     @checkout="handleCheckout"
                   />
                 </div>

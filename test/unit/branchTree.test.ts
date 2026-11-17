@@ -75,4 +75,18 @@ describe('branchTree - buildRemoteBranchTree', () => {
     expect(tree[0]?.children[1]?.name).toBe('main')
     expect(tree[0]?.children[1]?.isFolder).toBe(false)
   })
+
+  it('correctly ensures folder status even if an origin entry exists before sub-branches', () => {
+    const remoteBranches: RemoteBranchSummary[] = [
+      { name: 'origin', remote_name: 'origin', head_commit_hash: '000' },
+      { name: 'origin/main', remote_name: 'origin', head_commit_hash: 'aaa' },
+      { name: 'origin/dev', remote_name: 'origin', head_commit_hash: 'bbb' },
+    ]
+
+    const tree = buildRemoteBranchTree(remoteBranches)
+    expect(tree).toHaveLength(1)
+    expect(tree[0]?.name).toBe('origin')
+    expect(tree[0]?.isFolder).toBe(true)
+    expect(tree[0]?.children.length).toBeGreaterThanOrEqual(2)
+  })
 })

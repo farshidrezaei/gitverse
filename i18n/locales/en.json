@@ -72,6 +72,8 @@
     "pullSuccess": "Pulled changes successfully",
     "pushSuccess": "Pushed changes successfully",
     "checkout": "Checkout",
+    "currentBranch": "Current Branch",
+    "doubleClickToCheckout": "Double-click to checkout",
     "starBranch": "Star Branch",
     "unstarBranch": "Unstar Branch",
     "copyBranchName": "Copy Branch Name",

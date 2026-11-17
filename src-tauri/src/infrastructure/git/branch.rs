@@ -75,8 +75,14 @@ pub fn parse_remote_branches(raw: &str) -> Vec<RemoteBranchSummary> {
         }
 
         let name = fields[0].trim().to_string();
-        if name.is_empty() || name.ends_with("/HEAD") {
+        if name.is_empty() || name.ends_with("/HEAD") || !name.contains('/') {
             continue;
+        }
+
+        if let Some(symref) = fields.get(2) {
+            if !symref.trim().is_empty() {
+                continue;
+            }
         }
 
         let remote_name = name.split('/').next().unwrap_or("origin").to_string();

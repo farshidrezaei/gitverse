@@ -40,7 +40,7 @@ mod tests {
     #[test]
     fn test_parse_remote_branches_filters_head() {
         let raw = format!(
-            "origin/HEAD{del}8f2a1b9\norigin/main{del}8f2a1b9\nupstream/feature{del}4d7e2c0\n",
+            "origin/HEAD{del}8f2a1b9\norigin{del}8f2a1b9{del}refs/remotes/origin/main\norigin/main{del}8f2a1b9{del}\nupstream/feature{del}4d7e2c0{del}\n",
             del = REF_FIELD_DELIMITER
         );
 

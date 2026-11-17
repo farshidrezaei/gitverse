@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import type { ContextMenuItem } from '@nuxt/ui'
 import type { BranchTreeNode } from '~/utils/branchTree'
+import type { BranchSummary } from '~/types/repository'
 
 const props = defineProps<{
   node: BranchTreeNode
+  selectedBranchName?: string | null
 }>()
 
 const emit = defineEmits<{
   checkout: [branchName: string]
+  selectBranch: [branch: BranchSummary]
   createBranch: [sourceBranchName: string]
   delete: [branchName: string]
 }>()
@@ -23,6 +26,7 @@ function toggleOpen(): void {
 }
 
 const isStarred = computed(() => isFavoriteBranch(props.node.fullBranchName))
+const isSelected = computed(() => props.selectedBranchName === props.node.fullBranchName)
 
 const branchContextMenuItems = computed<ContextMenuItem[][]>(() => {
   if (props.node.isFolder || !props.node.branch) return []
@@ -102,6 +106,8 @@ const branchContextMenuItems = computed<ContextMenuItem[][]>(() => {
         v-for="child in node.children"
         :key="child.id"
         :node="child"
+        :selected-branch-name="selectedBranchName"
+        @select-branch="emit('selectBranch', $event)"
         @checkout="emit('checkout', $event)"
         @create-branch="emit('createBranch', $event)"
         @delete="emit('delete', $event)"
@@ -114,19 +120,37 @@ const branchContextMenuItems = computed<ContextMenuItem[][]>(() => {
       :items="branchContextMenuItems"
     >
       <div
-        class="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start transition-colors cursor-pointer"
-        :class="node.branch.is_head
-          ? 'bg-primary/15 font-semibold text-primary'
-          : 'text-toned hover:bg-primary/10'"
-        :title="node.fullBranchName"
-        @click="emit('checkout', node.fullBranchName)"
+        class="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start transition-all cursor-pointer relative"
+        :class="[
+          node.branch.is_head
+            ? 'bg-primary/15 font-semibold text-primary border-s-2 border-primary ps-2'
+            : isSelected
+              ? 'bg-muted/40 text-highlighted ring-1 ring-primary/40 font-medium'
+              : 'text-toned hover:bg-primary/10 hover:text-highlighted'
+        ]"
+        :title="node.branch.is_head ? `${node.fullBranchName} (${t('git.currentBranch')})` : `${node.fullBranchName} (${t('git.doubleClickToCheckout')})`"
+        @click="emit('selectBranch', node.branch)"
+        @dblclick="emit('checkout', node.fullBranchName)"
       >
         <div class="flex items-center gap-1.5 min-w-0">
           <UIcon
             :name="node.branch.is_head ? 'i-lucide-check-circle-2' : 'i-lucide-git-branch'"
             class="h-3.5 w-3.5 shrink-0"
+            :class="node.branch.is_head ? 'text-primary' : isSelected ? 'text-highlighted' : 'text-muted'"
           />
           <span class="truncate font-mono text-[11px]">{{ node.name }}</span>
+
+          <!-- Head Branch Pill Badge -->
+          <UBadge
+            v-if="node.branch.is_head"
+            size="xs"
+            color="primary"
+            variant="subtle"
+            class="font-mono text-[9px] px-1 py-0 leading-none shrink-0"
+          >
+            HEAD
+          </UBadge>
+
           <!-- Starred Indicator Badge -->
           <UIcon
             v-if="isStarred"

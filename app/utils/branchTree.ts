@@ -40,6 +40,8 @@ export function buildBranchTree(branches: BranchSummary[]): BranchTreeNode[] {
           hasHeadBranch: isLast ? branch.is_head : false,
         }
         currentLevel.push(existingNode)
+      } else if (!isLast) {
+        existingNode.isFolder = true
       }
 
       if (isLast && branch.is_head) {
@@ -49,6 +51,17 @@ export function buildBranchTree(branches: BranchSummary[]): BranchTreeNode[] {
       currentLevel = existingNode.children
     }
   }
+
+  // Ensure any node with children is marked as a folder
+  function ensureFolderStatus(nodes: BranchTreeNode[]): void {
+    for (const node of nodes) {
+      if (node.children.length > 0) {
+        node.isFolder = true
+        ensureFolderStatus(node.children)
+      }
+    }
+  }
+  ensureFolderStatus(rootNodes)
 
   // Update hasHeadBranch recursively for parent folder nodes
   function computeHeadStatus(nodes: BranchTreeNode[]): boolean {
@@ -121,11 +134,24 @@ export function buildRemoteBranchTree(remoteBranches: RemoteBranchSummary[]): Re
           children: [],
         }
         currentLevel.push(existingNode)
+      } else if (!isLast) {
+        existingNode.isFolder = true
       }
 
       currentLevel = existingNode.children
     }
   }
+
+  // Ensure any node with children is marked as a folder
+  function ensureRemoteFolderStatus(nodes: RemoteBranchTreeNode[]): void {
+    for (const node of nodes) {
+      if (node.children.length > 0) {
+        node.isFolder = true
+        ensureRemoteFolderStatus(node.children)
+      }
+    }
+  }
+  ensureRemoteFolderStatus(rootNodes)
 
   // Sort nodes: folders first, then alphabetical
   function sortNodes(nodes: RemoteBranchTreeNode[]): void {
