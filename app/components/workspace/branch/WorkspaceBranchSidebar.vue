@@ -56,6 +56,10 @@ const favoriteBranchSummaries = computed(() => {
     props.favoriteBranches.includes(branch.name)
   )
 })
+
+const existingBranchNames = computed(() => {
+  return props.references?.branches.map((branch) => branch.name) || []
+})
 </script>
 
 <template>
@@ -231,6 +235,7 @@ const favoriteBranchSummaries = computed(() => {
     <RenameBranchModal
       v-model:open="isRenameModalOpen"
       :current-branch-name="branchToRename"
+      :existing-branch-names="existingBranchNames"
       @rename="handleRenameBranch"
     />
   </div>

@@ -306,7 +306,17 @@
     "renameErrorEmpty": "نام شاخه نمی‌تواند خالی باشد.",
     "renameErrorSame": "نام جدید باید با نام فعلی متفاوت باشد.",
     "renameErrorSpaces": "نام شاخه نباید فاصله داشته باشد.",
-    "renameErrorInvalid": "نام شاخه حاوی کاراکترهای غیرمجاز است."
+    "renameErrorInvalid": "نام شاخه حاوی کاراکترهای غیرمجاز است.",
+    "validationEmpty": "نام شاخه نمی‌تواند خالی باشد.",
+    "validationSameAsCurrent": "نام جدید باید با نام فعلی متفاوت باشد.",
+    "validationAlreadyExists": "شاخه‌ای با این نام از قبل در مخزن وجود دارد.",
+    "validationNoSpaces": "نام شاخه نباید فاصله داشته باشد.",
+    "validationNoLeadingTrailingSlash": "نام شاخه نمی‌تواند با اسلش (/) شروع یا تمام شود.",
+    "validationNoLeadingTrailingDash": "نام شاخه نمی‌تواند با خط تیره (-) شروع یا تمام شود.",
+    "validationNoLeadingTrailingDot": "نام شاخه نمی‌تواند با نقطه (.) شروع یا تمام شود.",
+    "validationNoConsecutiveSeparators": "نام شاخه نباید حاوی اسلش متوالی (//) یا دو نقطه (..) باشد.",
+    "validationCannotEndWithLock": "نام شاخه نمی‌تواند با lock. پایان یابد.",
+    "validationInvalidCharacters": "نام شاخه حاوی کاراکترهای غیرمجاز است."
   },
   "conflict": {
     "title": "تعارض‌های مرج (Merge Conflicts)",

@@ -348,129 +348,163 @@ async function handlePush(): Promise<void> {
     <!-- Zero Repository Open State: Show Welcome screen with recent repos -->
     <WelcomeWorkspaceState v-if="!currentRepository" />
 
-    <!-- Active Repository: Multi-pane Inset Workbench -->
-    <USplitter
-      v-else
-      id="gitverse-workbench-splitter"
-      auto-save-id="gitverse-workbench-layout"
-      :items="mainSplitterItems"
-      class="h-full w-full"
-      :ui="{
-        handle: 'w-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-col-resize',
-      }"
-    >
-      <!-- PANEL 1: INSET SIDEBAR ISLAND (Branches, Tags, Remotes) -->
-      <template #sidebar>
-        <WorkspaceBranchSidebar
-          :references="repositoryReferences"
-          :favorite-branches="favoriteBranches"
-          :selected-branch-name="selectedBranchName"
-          :is-loading="isLoading"
-          @select-branch="handleSelectBranch"
-          @checkout="handleCheckout"
-          @create-branch-from-branch="handleCreateBranchFromBranch"
-          @delete-branch="handleDeleteBranch"
-          @open-create-branch-modal="isCreateBranchModalOpen = true"
-          @toggle-favorite-branch="toggleFavoriteBranch"
-        />
-      </template>
+    <!-- Active Repository: Tab Bar + Content Area -->
+    <div v-else class="flex h-full w-full flex-col overflow-hidden">
+      <!-- Workspace Tab Strip -->
+      <WorkspaceTabBar
+        :tabs="tabs"
+        :active-tab-id="activeTabId"
+        @select-tab="activateTab"
+        @close-tab="closeTab"
+        @close-other-tabs="closeOtherTabs"
+        @close-all-diff-tabs="closeAllDiffTabs"
+        @pin-tab="pinTab"
+      />
 
-      <!-- PANEL 2: INSET CENTER ISLANDS (Commit Graph + Diff Viewer) -->
-      <template #center>
-        <USplitter
-          id="center-vertical-splitter"
-          orientation="vertical"
-          auto-save-id="gitverse-center-vertical-layout"
-          :items="centerSplitterItems"
+      <!-- Content Area -->
+      <div class="relative flex-1 overflow-hidden">
+        <!-- Main Workspace Workbench Island (Preserved with v-show for instantaneous tab switching) -->
+        <div
+          v-show="activeTab?.type === 'workspace'"
           class="h-full w-full"
-          :ui="{
-            handle: 'h-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-row-resize',
-          }"
         >
-          <!-- Top Island: Commit Graph & History -->
-          <template #graph>
-            <WorkspaceCommitGraphViewport
-              :graph="commitGraph"
-              :selected-commit-hash="selectedCommitHash"
-              :is-loading="isLoadingGraph"
-              :is-operating="isOperating"
-              :active-reference="activeGraphReference"
-              @select-commit="selectCommit"
-              @refresh="handleRefreshGraph"
-              @reset-graph-filter="handleResetGraphFilter"
-              @push="handlePush"
-              @pull="handlePull"
-              @fetch="handleFetch"
-              @create-branch="isCreateBranchModalOpen = true"
-              @create-branch-at-commit="handleCreateBranchFromCommit"
-              @checkout-commit="handleCheckoutCommit"
-              @cherry-pick-commit="cherryPickCommit"
-              @revert-commit="revertCommit"
-              @reset-to-commit="resetToCommit"
-            />
-          </template>
+          <USplitter
+            id="gitverse-workbench-splitter"
+            auto-save-id="gitverse-workbench-layout"
+            :items="mainSplitterItems"
+            class="h-full w-full"
+            :ui="{
+              handle: 'w-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-col-resize',
+            }"
+          >
+            <!-- PANEL 1: INSET SIDEBAR ISLAND (Branches, Tags, Remotes) -->
+            <template #sidebar>
+              <WorkspaceBranchSidebar
+                :references="repositoryReferences"
+                :favorite-branches="favoriteBranches"
+                :selected-branch-name="selectedBranchName"
+                :is-loading="isLoading"
+                @select-branch="handleSelectBranch"
+                @checkout="handleCheckout"
+                @create-branch-from-branch="handleCreateBranchFromBranch"
+                @delete-branch="handleDeleteBranch"
+                @open-create-branch-modal="isCreateBranchModalOpen = true"
+                @toggle-favorite-branch="toggleFavoriteBranch"
+              />
+            </template>
 
-          <!-- Bottom Island: Diff & Patch Viewer -->
-          <template #diff>
-            <WorkspaceDiffViewerPanel
-              :diff="currentDiff"
-              :selected-target="selectedDiffTarget"
-              :is-loading="isLoadingDiff"
-              @stage="stageFile"
-              @unstage="unstageFile"
-              @discard="handleDiscard"
-            />
-          </template>
-        </USplitter>
-      </template>
+            <!-- PANEL 2: INSET CENTER ISLANDS (Commit Graph + Diff Viewer) -->
+            <template #center>
+              <USplitter
+                id="center-vertical-splitter"
+                orientation="vertical"
+                auto-save-id="gitverse-center-vertical-layout"
+                :items="centerSplitterItems"
+                class="h-full w-full"
+                :ui="{
+                  handle: 'h-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-row-resize',
+                }"
+              >
+                <!-- Top Island: Commit Graph & History -->
+                <template #graph>
+                  <WorkspaceCommitGraphViewport
+                    :graph="commitGraph"
+                    :selected-commit-hash="selectedCommitHash"
+                    :is-loading="isLoadingGraph"
+                    :is-operating="isOperating"
+                    :active-reference="activeGraphReference"
+                    @select-commit="selectCommit"
+                    @refresh="handleRefreshGraph"
+                    @reset-graph-filter="handleResetGraphFilter"
+                    @push="handlePush"
+                    @pull="handlePull"
+                    @fetch="handleFetch"
+                    @create-branch="isCreateBranchModalOpen = true"
+                    @create-branch-at-commit="handleCreateBranchFromCommit"
+                    @checkout-commit="handleCheckoutCommit"
+                    @cherry-pick-commit="cherryPickCommit"
+                    @revert-commit="revertCommit"
+                    @reset-to-commit="resetToCommit"
+                  />
+                </template>
 
-      <!-- PANEL 3: INSET STAGING ISLAND & COMMIT INSPECTOR -->
-      <template #staging>
-        <!-- Commit Inspector Island -->
-        <WorkspaceCommitInspectorPanel
-          v-if="selectedCommitDetails || isLoadingCommitDetails"
-          :commit-details="selectedCommitDetails"
-          :selected-file-path="selectedCommitFilePath"
-          :is-loading="isLoadingCommitDetails"
-          @select-file="handleSelectCommitFile"
-          @create-branch="handleCreateBranchFromCommit"
-          @checkout-commit="handleCheckoutCommit"
-          @cherry-pick="cherryPickCommit"
-          @revert="revertCommit"
-          @reset="resetToCommit"
-          @close="clearCommitSelection"
+                <!-- Bottom Island: Diff & Patch Viewer -->
+                <template #diff>
+                  <WorkspaceDiffViewerPanel
+                    :diff="currentDiff"
+                    :selected-target="selectedDiffTarget"
+                    :is-loading="isLoadingDiff"
+                    @stage="stageFile"
+                    @unstage="unstageFile"
+                    @discard="handleDiscard"
+                  />
+                </template>
+              </USplitter>
+            </template>
+
+            <!-- PANEL 3: INSET STAGING ISLAND & COMMIT INSPECTOR -->
+            <template #staging>
+              <!-- Commit Inspector Island -->
+              <WorkspaceCommitInspectorPanel
+                v-if="selectedCommitDetails || isLoadingCommitDetails"
+                :commit-details="selectedCommitDetails"
+                :selected-file-path="selectedCommitFilePath"
+                :is-loading="isLoadingCommitDetails"
+                @select-file="handleSelectCommitFile"
+                @open-diff-tab="handleOpenCommitDiffTab"
+                @create-branch="handleCreateBranchFromCommit"
+                @checkout-commit="handleCheckoutCommit"
+                @cherry-pick="cherryPickCommit"
+                @revert="revertCommit"
+                @reset="resetToCommit"
+                @close="clearCommitSelection"
+              />
+
+              <!-- Working Tree Changes Island -->
+              <WorkspaceStagingSidebar
+                v-else
+                :repository-status="repositoryStatus"
+                :selected-diff-target="selectedDiffTarget"
+                :staging-view-mode="stagingViewMode"
+                :is-loading="isLoading"
+                :commit-message="commitMessage"
+                :is-amend="isAmend"
+                @update:staging-view-mode="stagingViewMode = $event"
+                @update:commit-message="commitMessage = $event"
+                @update:is-amend="isAmend = $event"
+                @stage-file="stageFile"
+                @unstage-file="unstageFile"
+                @stage-all="stageAll"
+                @unstage-all="unstageAll"
+                @discard-file="handleDiscard"
+                @discard-all-unstaged="handleDiscardAllUnstaged"
+                @select-file="handleSelectFile"
+                @open-diff-tab="handleOpenStagingDiffTab"
+                @commit="handleCommit"
+                @refresh="fetchStatus"
+              />
+            </template>
+          </USplitter>
+        </div>
+
+        <!-- Full-Page Dedicated Diff Tab -->
+        <WorkspaceDiffTabContent
+          v-if="activeTab?.type === 'diff'"
+          :tab="(activeTab as WorkspaceDiffTab)"
+          @stage="stageFile"
+          @unstage="unstageFile"
+          @discard="handleDiscard"
+          @close="closeTab"
         />
-
-        <!-- Working Tree Changes Island -->
-        <WorkspaceStagingSidebar
-          v-else
-          :repository-status="repositoryStatus"
-          :selected-diff-target="selectedDiffTarget"
-          :staging-view-mode="stagingViewMode"
-          :is-loading="isLoading"
-          :commit-message="commitMessage"
-          :is-amend="isAmend"
-          @update:staging-view-mode="stagingViewMode = $event"
-          @update:commit-message="commitMessage = $event"
-          @update:is-amend="isAmend = $event"
-          @stage-file="stageFile"
-          @unstage-file="unstageFile"
-          @stage-all="stageAll"
-          @unstage-all="unstageAll"
-          @discard-file="handleDiscard"
-          @discard-all-unstaged="handleDiscardAllUnstaged"
-          @select-file="handleSelectFile"
-          @commit="handleCommit"
-          @refresh="fetchStatus"
-        />
-      </template>
-    </USplitter>
+      </div>
+    </div>
 
     <!-- Branch creation modal -->
     <CreateBranchModal
       v-model:open="isCreateBranchModalOpen"
       :source-branch="currentRepository?.current_branch_name"
       :source-commit-sha="selectedCommitHash"
+      :existing-branch-names="repositoryReferences?.branches.map((b) => b.name) || []"
       @create="handleCreateBranch"
     />
   </div>

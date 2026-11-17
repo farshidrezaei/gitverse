@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { MergeBranchOutcome, RebaseBranchOutcome } from '~/types/repository'
+import { validateGitBranchName } from '~/utils/branchValidation'
 
 describe('branch operations models and contracts', () => {
   it('correctly validates clean merge branch outcome', () => {
@@ -43,19 +44,49 @@ describe('branch operations models and contracts', () => {
     expect(conflictedRebase.has_conflicts).toBe(true)
   })
 
-  it('correctly validates branch name format for renaming', () => {
-    const isValidBranchName = (name: string, current: string): boolean => {
-      const trimmed = name.trim()
-      if (!trimmed || trimmed === current) return false
-      if (/\s/.test(trimmed)) return false
-      return /^[a-zA-Z0-9._\-/]+$/.test(trimmed)
-    }
+  it('correctly validates branch name format and uniqueness', () => {
+    const existing = ['main', 'develop', 'feature/login']
 
-    expect(isValidBranchName('feature/login-v2', 'feature/login')).toBe(true)
-    expect(isValidBranchName('main-patch', 'main')).toBe(true)
-    expect(isValidBranchName('feature/login', 'feature/login')).toBe(false) // same name
-    expect(isValidBranchName('   ', 'main')).toBe(false) // empty
-    expect(isValidBranchName('invalid branch name', 'main')).toBe(false) // spaces
-    expect(isValidBranchName('invalid~name^', 'main')).toBe(false) // invalid chars
+    // Valid branch names
+    expect(validateGitBranchName('feature/login-v2', { currentBranchName: 'feature/login', existingBranchNames: existing }).isValid).toBe(true)
+    expect(validateGitBranchName('bugfix_123', { existingBranchNames: existing }).isValid).toBe(true)
+    expect(validateGitBranchName('v1.0.0-release', { existingBranchNames: existing }).isValid).toBe(true)
+
+    // Uniqueness: already exists
+    const duplicate = validateGitBranchName('develop', { existingBranchNames: existing })
+    expect(duplicate.isValid).toBe(false)
+    expect(duplicate.errorKey).toBe('branch.validationAlreadyExists')
+
+    // Same as current
+    const same = validateGitBranchName('feature/login', { currentBranchName: 'feature/login', existingBranchNames: existing })
+    expect(same.isValid).toBe(false)
+    expect(same.errorKey).toBe('branch.validationSameAsCurrent')
+
+    // Empty
+    expect(validateGitBranchName('   ').isValid).toBe(false)
+
+    // Spaces
+    const spaces = validateGitBranchName('feature new')
+    expect(spaces.isValid).toBe(false)
+    expect(spaces.errorKey).toBe('branch.validationNoSpaces')
+
+    // Leading / trailing slashes or dashes
+    expect(validateGitBranchName('/feature').isValid).toBe(false)
+    expect(validateGitBranchName('feature/').isValid).toBe(false)
+    expect(validateGitBranchName('-feature').isValid).toBe(false)
+    expect(validateGitBranchName('feature-').isValid).toBe(false)
+    expect(validateGitBranchName('.feature').isValid).toBe(false)
+
+    // Consecutive separators
+    expect(validateGitBranchName('feature//test').isValid).toBe(false)
+    expect(validateGitBranchName('feature..test').isValid).toBe(false)
+
+    // Lock file
+    expect(validateGitBranchName('feature.lock').isValid).toBe(false)
+
+    // Invalid chars
+    expect(validateGitBranchName('feature~1').isValid).toBe(false)
+    expect(validateGitBranchName('feature^2').isValid).toBe(false)
+    expect(validateGitBranchName('feature:test').isValid).toBe(false)
   })
 })

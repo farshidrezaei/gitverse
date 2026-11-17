@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { validateGitBranchName } from '~/utils/branchValidation'
+
 const props = defineProps<{
   open: boolean
   currentBranchName: string
+  existingBranchNames?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -27,23 +30,16 @@ watch(
 )
 
 function validateBranchName(name: string): boolean {
-  const trimmed = name.trim()
-  if (!trimmed) {
-    errorMessage.value = t('branch.renameErrorEmpty')
+  const validationResult = validateGitBranchName(name, {
+    currentBranchName: props.currentBranchName,
+    existingBranchNames: props.existingBranchNames,
+  })
+
+  if (!validationResult.isValid && validationResult.errorKey) {
+    errorMessage.value = t(validationResult.errorKey)
     return false
   }
-  if (trimmed === props.currentBranchName) {
-    errorMessage.value = t('branch.renameErrorSame')
-    return false
-  }
-  if (/\s/.test(trimmed)) {
-    errorMessage.value = t('branch.renameErrorSpaces')
-    return false
-  }
-  if (!/^[a-zA-Z0-9._\-/]+$/.test(trimmed)) {
-    errorMessage.value = t('branch.renameErrorInvalid')
-    return false
-  }
+
   errorMessage.value = null
   return true
 }

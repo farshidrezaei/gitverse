@@ -306,7 +306,17 @@
     "renameErrorEmpty": "Branch name cannot be empty.",
     "renameErrorSame": "New branch name must be different from current name.",
     "renameErrorSpaces": "Branch name cannot contain spaces.",
-    "renameErrorInvalid": "Branch name contains invalid characters."
+    "renameErrorInvalid": "Branch name contains invalid characters.",
+    "validationEmpty": "Branch name cannot be empty.",
+    "validationSameAsCurrent": "New branch name must be different from current name.",
+    "validationAlreadyExists": "A branch with this name already exists in the repository.",
+    "validationNoSpaces": "Branch name cannot contain spaces.",
+    "validationNoLeadingTrailingSlash": "Branch name cannot start or end with a slash.",
+    "validationNoLeadingTrailingDash": "Branch name cannot start or end with a hyphen.",
+    "validationNoLeadingTrailingDot": "Branch name cannot start or end with a dot.",
+    "validationNoConsecutiveSeparators": "Branch name cannot contain consecutive slashes (//) or dots (..).",
+    "validationCannotEndWithLock": "Branch name cannot end with .lock.",
+    "validationInvalidCharacters": "Branch name contains invalid characters."
   },
   "conflict": {
     "title": "Merge Conflicts",

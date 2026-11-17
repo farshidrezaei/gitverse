@@ -5,9 +5,16 @@ import type {
   OpenDiffTabOptions,
 } from '~/types/workspaceTab'
 
+function safeState<T>(key: string, initialValue: () => T) {
+  if (tryUseNuxtApp()) {
+    return useState<T>(key, initialValue)
+  }
+  return ref(initialValue())
+}
+
 export function useWorkspaceTabController() {
-  const tabs = useState<WorkspaceTab[]>('workspace-tabs-list', () => [])
-  const activeTabId = useState<string>('workspace-active-tab-id', () => 'workspace-main')
+  const tabs = safeState<WorkspaceTab[]>('workspace-tabs-list', () => [])
+  const activeTabId = safeState<string>('workspace-active-tab-id', () => 'workspace-main')
 
   const activeTab = computed<WorkspaceTab | undefined>(() => {
     return tabs.value.find(tab => tab.id === activeTabId.value) || tabs.value[0]

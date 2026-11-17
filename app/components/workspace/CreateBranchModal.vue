@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { validateGitBranchName } from '~/utils/branchValidation'
+
 const props = defineProps<{
   open: boolean
   sourceBranch?: string | null
   sourceCommitSha?: string | null
+  existingBranchNames?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -30,18 +33,15 @@ watch(
 )
 
 function validateBranchName(name: string): boolean {
-  if (!name.trim()) {
-    errorMessage.value = 'Branch name cannot be empty.'
+  const result = validateGitBranchName(name, {
+    existingBranchNames: props.existingBranchNames,
+  })
+
+  if (!result.isValid && result.errorKey) {
+    errorMessage.value = t(result.errorKey)
     return false
   }
-  if (/\s/.test(name)) {
-    errorMessage.value = 'Branch name cannot contain spaces.'
-    return false
-  }
-  if (!/^[a-zA-Z0-9._\-/]+$/.test(name)) {
-    errorMessage.value = 'Branch name contains invalid characters.'
-    return false
-  }
+
   errorMessage.value = null
   return true
 }
