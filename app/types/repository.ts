@@ -127,4 +127,38 @@ export interface CommitGraphHistoryResponse {
   has_more_commits: boolean
 }
 
+export interface BranchSummary {
+  name: string
+  is_head: boolean
+  upstream_name: string | null
+  ahead_count: number
+  behind_count: number
+  head_commit_hash: string | null
+}
+
+export interface RemoteBranchSummary {
+  name: string
+  remote_name: string
+  head_commit_hash: string | null
+}
+
+export interface TagSummary {
+  name: string
+  commit_hash: string
+}
+
+export interface RemoteSummary {
+  name: string
+  fetch_url: string | null
+  push_url: string | null
+}
+
+export interface RepositoryReferences {
+  branches: BranchSummary[]
+  remote_branches: RemoteBranchSummary[]
+  tags: TagSummary[]
+  remotes: RemoteSummary[]
+}
+
+
 

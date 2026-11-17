@@ -6,11 +6,16 @@ const props = defineProps<{
   graph: CommitGraphHistoryResponse | null
   selectedCommitHash: string | null
   isLoading: boolean
+  isOperating?: boolean
 }>()
 
 const emit = defineEmits<{
   selectCommit: [commitHash: string]
   refresh: []
+  push: []
+  pull: []
+  fetch: []
+  createBranch: []
 }>()
 
 const { t } = useI18n()
@@ -130,7 +135,7 @@ function handleRowClick(commitHash: string): void {
     <!-- Graph Operation & Filter Toolbar -->
     <div class="flex h-10 shrink-0 items-center justify-between border-b border-default/70 bg-muted/20 px-3 gap-2">
       <div class="flex items-center gap-1.5">
-        <span class="text-xs font-semibold text-highlighted uppercase tracking-wider flex items-center gap-1.5">
+        <span class="text-xs font-semibold text-highlighted uppercase tracking-wider flex items-center gap-1.5 me-1">
           <UIcon name="i-lucide-git-commit-horizontal" class="h-4 w-4 text-primary" />
           {{ t('navigation.graph') }}
         </span>
@@ -139,10 +144,49 @@ function handleRowClick(commitHash: string): void {
           size="xs"
           color="neutral"
           variant="subtle"
-          class="font-mono text-[10px]"
+          class="font-mono text-[10px] me-2"
         >
           {{ graph.total_commits_count }}
         </UBadge>
+
+        <div class="h-3.5 w-px bg-default/80 me-1" aria-hidden="true" />
+
+        <!-- Remote Git Actions -->
+        <UButton
+          size="xs"
+          color="primary"
+          variant="solid"
+          icon="i-lucide-arrow-up-circle"
+          :loading="isOperating"
+          :label="t('git.push')"
+          @click="emit('push')"
+        />
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-arrow-down-circle"
+          :loading="isOperating"
+          :label="t('git.pull')"
+          @click="emit('pull')"
+        />
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-refresh-cw"
+          :loading="isOperating"
+          :label="t('git.fetch')"
+          @click="emit('fetch')"
+        />
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-git-branch-plus"
+          :label="t('git.createBranch')"
+          @click="emit('createBranch')"
+        />
       </div>
 
       <div class="flex items-center gap-2">

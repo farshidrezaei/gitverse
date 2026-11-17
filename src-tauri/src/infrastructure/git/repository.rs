@@ -250,4 +250,149 @@ impl GitRepositoryInspector {
 
         Ok(super::history::parse_delimited_git_log(&raw_output))
     }
+
+    /// Fetches all repository references: local branches, remote branches, tags, and remotes.
+    pub async fn get_repository_references(&self, directory_path: &Path) -> Result<crate::domain::RepositoryReferences, ApplicationError> {
+        // 1. Local branches
+        let branch_format = format!(
+            "%(refname:short){del}%(HEAD){del}%(upstream:short){del}%(upstream:track,nobracket){del}%(objectname)",
+            del = super::branch::REF_FIELD_DELIMITER
+        );
+        let raw_branches = self.executor
+            .execute_git_command(Some(directory_path), &["for-each-ref", &format!("--format={}", branch_format), "refs/heads/"])
+            .await
+            .unwrap_or_default();
+        let branches = super::branch::parse_local_branches(&raw_branches);
+
+        // 2. Remote tracking branches
+        let remote_branch_format = format!(
+            "%(refname:short){del}%(objectname)",
+            del = super::branch::REF_FIELD_DELIMITER
+        );
+        let raw_remote_branches = self.executor
+            .execute_git_command(Some(directory_path), &["for-each-ref", &format!("--format={}", remote_branch_format), "refs/remotes/"])
+            .await
+            .unwrap_or_default();
+        let remote_branches = super::branch::parse_remote_branches(&raw_remote_branches);
+
+        // 3. Tags
+        let raw_tags = self.executor
+            .execute_git_command(Some(directory_path), &["tag", "-l", &format!("--format=%(refname:short){}%(objectname)", super::branch::REF_FIELD_DELIMITER)])
+            .await
+            .unwrap_or_default();
+        let tags = super::branch::parse_tags(&raw_tags);
+
+        // 4. Remotes
+        let raw_remotes = self.executor
+            .execute_git_command(Some(directory_path), &["remote", "-v"])
+            .await
+            .unwrap_or_default();
+        let remotes = super::branch::parse_remotes(&raw_remotes);
+
+        Ok(crate::domain::RepositoryReferences {
+            branches,
+            remote_branches,
+            tags,
+            remotes,
+        })
+    }
+
+    /// Switches/checkouts to a specified branch.
+    pub async fn checkout_branch(
+        &self,
+        directory_path: &Path,
+        branch_name: &str,
+        create_if_missing: bool,
+        start_point: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let mut arguments = vec!["checkout"];
+        if create_if_missing {
+            arguments.push("-b");
+        }
+        arguments.push(branch_name);
+        if let Some(sp) = start_point {
+            arguments.push(sp);
+        }
+
+        self.executor.execute_git_command(Some(directory_path), &arguments).await
+    }
+
+    /// Creates a new branch from current HEAD or specified commit.
+    pub async fn create_branch(
+        &self,
+        directory_path: &Path,
+        branch_name: &str,
+        start_point: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let mut arguments = vec!["branch", branch_name];
+        if let Some(sp) = start_point {
+            arguments.push(sp);
+        }
+
+        self.executor.execute_git_command(Some(directory_path), &arguments).await
+    }
+
+    /// Deletes a local branch (safe by default with -d, or forced with -D).
+    pub async fn delete_branch(
+        &self,
+        directory_path: &Path,
+        branch_name: &str,
+        force: bool,
+    ) -> Result<String, ApplicationError> {
+        let flag = if force { "-D" } else { "-d" };
+        self.executor
+            .execute_git_command(Some(directory_path), &["branch", flag, branch_name])
+            .await
+    }
+
+    /// Executes `git fetch`.
+    pub async fn fetch_remote(
+        &self,
+        directory_path: &Path,
+        remote_name: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let mut arguments = vec!["fetch", "--prune"];
+        if let Some(name) = remote_name {
+            arguments.push(name);
+        }
+        self.executor.execute_git_command(Some(directory_path), &arguments).await
+    }
+
+    /// Executes `git pull`.
+    pub async fn pull_changes(
+        &self,
+        directory_path: &Path,
+        remote_name: Option<&str>,
+        branch_name: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let mut arguments = vec!["pull"];
+        if let Some(remote) = remote_name {
+            arguments.push(remote);
+            if let Some(branch) = branch_name {
+                arguments.push(branch);
+            }
+        }
+        self.executor.execute_git_command(Some(directory_path), &arguments).await
+    }
+
+    /// Executes `git push`.
+    pub async fn push_changes(
+        &self,
+        directory_path: &Path,
+        remote_name: Option<&str>,
+        branch_name: Option<&str>,
+        set_upstream: bool,
+    ) -> Result<String, ApplicationError> {
+        let mut arguments = vec!["push"];
+        if set_upstream {
+            arguments.push("-u");
+        }
+        if let Some(remote) = remote_name {
+            arguments.push(remote);
+            if let Some(branch) = branch_name {
+                arguments.push(branch);
+            }
+        }
+        self.executor.execute_git_command(Some(directory_path), &arguments).await
+    }
 }

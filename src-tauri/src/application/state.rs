@@ -146,6 +146,82 @@ impl ApplicationState {
         Ok(graph)
     }
 
+    /// Fetches all repository references: branches, remotes, and tags.
+    pub async fn get_repository_references(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<crate::domain::RepositoryReferences, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_repository_references(&target_path).await
+    }
+
+    /// Checks out or creates and checkouts a branch.
+    pub async fn checkout_branch(
+        &self,
+        directory_path: Option<&str>,
+        branch_name: &str,
+        create_if_missing: bool,
+        start_point: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.checkout_branch(&target_path, branch_name, create_if_missing, start_point).await
+    }
+
+    /// Creates a branch without switching to it.
+    pub async fn create_branch(
+        &self,
+        directory_path: Option<&str>,
+        branch_name: &str,
+        start_point: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.create_branch(&target_path, branch_name, start_point).await
+    }
+
+    /// Deletes a local branch.
+    pub async fn delete_branch(
+        &self,
+        directory_path: Option<&str>,
+        branch_name: &str,
+        force: bool,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.delete_branch(&target_path, branch_name, force).await
+    }
+
+    /// Fetches changes from remote.
+    pub async fn fetch_remote(
+        &self,
+        directory_path: Option<&str>,
+        remote_name: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.fetch_remote(&target_path, remote_name).await
+    }
+
+    /// Pulls changes from upstream.
+    pub async fn pull_changes(
+        &self,
+        directory_path: Option<&str>,
+        remote_name: Option<&str>,
+        branch_name: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.pull_changes(&target_path, remote_name, branch_name).await
+    }
+
+    /// Pushes commits to remote.
+    pub async fn push_changes(
+        &self,
+        directory_path: Option<&str>,
+        remote_name: Option<&str>,
+        branch_name: Option<&str>,
+        set_upstream: bool,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.push_changes(&target_path, remote_name, branch_name, set_upstream).await
+    }
+
     async fn resolve_path(&self, directory_path: Option<&str>) -> Result<PathBuf, ApplicationError> {
         if let Some(p) = directory_path {
             Ok(PathBuf::from(p))

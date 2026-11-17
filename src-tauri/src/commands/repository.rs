@@ -134,6 +134,92 @@ pub async fn get_commit_graph(
     state.get_commit_graph(directory_path.as_deref(), skip, limit, branch_or_reference).await
 }
 
+/// Tauri IPC command to fetch repository references (branches, remotes, tags).
+#[tauri::command]
+pub async fn get_repository_references(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+) -> Result<crate::domain::RepositoryReferences, ApplicationError> {
+    state.get_repository_references(directory_path.as_deref()).await
+}
+
+/// Tauri IPC command to checkout or switch branches.
+#[tauri::command]
+pub async fn checkout_branch(
+    state: State<'_, ApplicationState>,
+    branch_name: String,
+    create_if_missing: Option<bool>,
+    start_point: Option<String>,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.checkout_branch(
+        directory_path.as_deref(),
+        &branch_name,
+        create_if_missing.unwrap_or(false),
+        start_point.as_deref(),
+    ).await
+}
+
+/// Tauri IPC command to create a new branch.
+#[tauri::command]
+pub async fn create_branch(
+    state: State<'_, ApplicationState>,
+    branch_name: String,
+    start_point: Option<String>,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.create_branch(directory_path.as_deref(), &branch_name, start_point.as_deref()).await
+}
+
+/// Tauri IPC command to delete a branch.
+#[tauri::command]
+pub async fn delete_branch(
+    state: State<'_, ApplicationState>,
+    branch_name: String,
+    force: Option<bool>,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.delete_branch(directory_path.as_deref(), &branch_name, force.unwrap_or(false)).await
+}
+
+/// Tauri IPC command to fetch changes from remote.
+#[tauri::command]
+pub async fn fetch_remote(
+    state: State<'_, ApplicationState>,
+    remote_name: Option<String>,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.fetch_remote(directory_path.as_deref(), remote_name.as_deref()).await
+}
+
+/// Tauri IPC command to pull changes.
+#[tauri::command]
+pub async fn pull_changes(
+    state: State<'_, ApplicationState>,
+    remote_name: Option<String>,
+    branch_name: Option<String>,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.pull_changes(directory_path.as_deref(), remote_name.as_deref(), branch_name.as_deref()).await
+}
+
+/// Tauri IPC command to push commits.
+#[tauri::command]
+pub async fn push_changes(
+    state: State<'_, ApplicationState>,
+    remote_name: Option<String>,
+    branch_name: Option<String>,
+    set_upstream: Option<bool>,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.push_changes(
+        directory_path.as_deref(),
+        remote_name.as_deref(),
+        branch_name.as_deref(),
+        set_upstream.unwrap_or(false),
+    ).await
+}
+
 /// Tauri IPC command to fetch recent repositories from local SQLite database.
 #[tauri::command]
 pub async fn get_recent_repositories(

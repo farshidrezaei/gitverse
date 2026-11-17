@@ -9,16 +9,25 @@ const stagingViewMode = ref<'tree' | 'flat'>('flat')
 const {
   currentRepository,
   repositoryStatus,
+  repositoryReferences,
   selectedDiffTarget,
   currentDiff,
   commitGraph,
   selectedCommitHash,
   isLoadingDiff,
   isLoadingGraph,
+  isOperating,
   promptAndOpenRepository,
   fetchStatus,
+  fetchReferences,
   fetchCommitGraph,
   fetchFileDiff,
+  checkoutBranch,
+  createBranch,
+  deleteBranch,
+  fetchRemote,
+  pullChanges,
+  pushChanges,
   stageFile,
   unstageFile,
   stageAll,
@@ -30,6 +39,7 @@ const {
 onMounted(async () => {
   if (currentRepository.value) {
     await fetchStatus()
+    await fetchReferences()
     await fetchCommitGraph()
   }
 })
@@ -121,36 +131,51 @@ const centerSplitterItems = ref<SplitterItem[]>([
   },
 ])
 
-// Mock Repository Data
-const branches = ref([
-  { name: 'main', isHead: true, ahead: 2, behind: 0 },
-  { name: 'feature/graph-engine', isHead: false, ahead: 4, behind: 1 },
-  { name: 'feature/safe-runner', isHead: false, ahead: 1, behind: 0 },
-  { name: 'fix/keychain-leak', isHead: false, ahead: 0, behind: 0 },
-])
-
-const remotes = ref([
-  { name: 'origin/main' },
-  { name: 'origin/feature/graph-engine' },
-])
-
-const tags = ref([
-  { name: 'v0.1.0-alpha' },
-  { name: 'v0.0.9' },
-])
-
+const isCreateBranchModalOpen = ref(false)
 const commitMessage = ref('')
 const isAmend = ref(false)
 
 function selectCommit(sha: string): void {
   selectedCommitHash.value = sha
 }
+
 function handleDiscard(filePath: string, isUntracked: boolean): void {
   discardFile(filePath, isUntracked)
 }
 
 function handleSelectFile(filePath: string, isStaged: boolean): void {
   fetchFileDiff(filePath, isStaged)
+}
+
+async function handleCreateBranch(branchName: string, checkout: boolean): Promise<void> {
+  const success = checkout
+    ? await checkoutBranch(branchName, true)
+    : await createBranch(branchName)
+  if (success) {
+    isCreateBranchModalOpen.value = false
+  }
+}
+
+async function handleCheckout(branchName: string): Promise<void> {
+  await checkoutBranch(branchName)
+}
+
+async function handleDeleteBranch(branchName: string): Promise<void> {
+  if (confirm(t('git.deleteBranchConfirm', { name: branchName }))) {
+    await deleteBranch(branchName)
+  }
+}
+
+async function handleFetch(): Promise<void> {
+  await fetchRemote()
+}
+
+async function handlePull(): Promise<void> {
+  await pullChanges()
+}
+
+async function handlePush(): Promise<void> {
+  await pushChanges(undefined, undefined, true)
 }
 </script>
 
@@ -186,6 +211,8 @@ function handleSelectFile(filePath: string, isStaged: boolean): void {
               variant="ghost"
               icon="i-lucide-plus"
               class="h-6 w-6"
+              :title="t('git.createBranch')"
+              @click="isCreateBranchModalOpen = true"
             />
           </div>
 
@@ -195,66 +222,75 @@ function handleSelectFile(filePath: string, isStaged: boolean): void {
             <div class="mb-3">
               <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
                 <span>{{ t('git.branches') }}</span>
-                <span class="text-[10px]">{{ branches.length }}</span>
+                <span class="text-[10px]">{{ repositoryReferences?.branches?.length || 0 }}</span>
               </div>
               <div class="flex flex-col gap-0.5 mt-1">
-                <button
-                  v-for="branch in branches"
+                <div
+                  v-for="branch in repositoryReferences?.branches || []"
                   :key="branch.name"
-                  type="button"
-                  class="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start transition-colors hover:bg-primary/10"
-                  :class="branch.isHead ? 'bg-primary/15 font-semibold text-primary' : 'text-toned'"
+                  class="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start transition-colors cursor-pointer"
+                  :class="branch.is_head ? 'bg-primary/15 font-semibold text-primary' : 'text-toned hover:bg-primary/10'"
+                  @click="handleCheckout(branch.name)"
                 >
                   <div class="flex items-center gap-1.5 min-w-0">
                     <UIcon
-                      :name="branch.isHead ? 'i-lucide-check-circle-2' : 'i-lucide-git-branch'"
+                      :name="branch.is_head ? 'i-lucide-check-circle-2' : 'i-lucide-git-branch'"
                       class="h-3.5 w-3.5 shrink-0"
                     />
-                    <span class="truncate">{{ branch.name }}</span>
+                    <span class="truncate font-mono text-[11px]">{{ branch.name }}</span>
                   </div>
-                  <div v-if="branch.ahead > 0 || branch.behind > 0" class="flex items-center gap-1 text-[10px]">
-                    <span v-if="branch.ahead > 0" class="text-success font-mono">↑{{ branch.ahead }}</span>
-                    <span v-if="branch.behind > 0" class="text-warning font-mono">↓{{ branch.behind }}</span>
+                  <div class="flex items-center gap-1 text-[10px]">
+                    <span v-if="branch.ahead_count > 0" class="text-success font-mono">↑{{ branch.ahead_count }}</span>
+                    <span v-if="branch.behind_count > 0" class="text-warning font-mono">↓{{ branch.behind_count }}</span>
+                    <UButton
+                      v-if="!branch.is_head"
+                      size="xs"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-trash-2"
+                      class="h-4 w-4 opacity-0 group-hover:opacity-80 hover:text-error"
+                      title="Delete branch"
+                      @click.stop="handleDeleteBranch(branch.name)"
+                    />
                   </div>
-                </button>
+                </div>
               </div>
             </div>
 
             <!-- Remote Branches -->
-            <div class="mb-3">
+            <div v-if="repositoryReferences?.remote_branches?.length" class="mb-3">
               <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
                 <span>{{ t('navigation.remotes') }}</span>
-                <span class="text-[10px]">{{ remotes.length }}</span>
+                <span class="text-[10px]">{{ repositoryReferences.remote_branches.length }}</span>
               </div>
               <div class="flex flex-col gap-0.5 mt-1">
-                <button
-                  v-for="remote in remotes"
-                  :key="remote.name"
-                  type="button"
-                  class="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-start text-toned transition-colors hover:bg-primary/10"
+                <div
+                  v-for="remoteBranch in repositoryReferences.remote_branches"
+                  :key="remoteBranch.name"
+                  class="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-start text-toned text-[11px] font-mono hover:bg-primary/10 cursor-pointer"
+                  @click="handleCheckout(remoteBranch.name)"
                 >
                   <UIcon name="i-lucide-cloud" class="h-3.5 w-3.5 shrink-0 text-muted" />
-                  <span class="truncate">{{ remote.name }}</span>
-                </button>
+                  <span class="truncate">{{ remoteBranch.name }}</span>
+                </div>
               </div>
             </div>
 
             <!-- Tags -->
-            <div>
+            <div v-if="repositoryReferences?.tags?.length">
               <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
-                <span>Tags</span>
-                <span class="text-[10px]">{{ tags.length }}</span>
+                <span>{{ t('git.tags') }}</span>
+                <span class="text-[10px]">{{ repositoryReferences.tags.length }}</span>
               </div>
               <div class="flex flex-col gap-0.5 mt-1">
-                <button
-                  v-for="tag in tags"
+                <div
+                  v-for="tag in repositoryReferences.tags"
                   :key="tag.name"
-                  type="button"
-                  class="flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-start text-toned transition-colors hover:bg-primary/10"
+                  class="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-start text-toned text-[11px] font-mono hover:bg-primary/10"
                 >
                   <UIcon name="i-lucide-tag" class="h-3.5 w-3.5 shrink-0 text-muted" />
                   <span class="truncate">{{ tag.name }}</span>
-                </button>
+                </div>
               </div>
             </div>
           </div>
@@ -281,8 +317,13 @@ function handleSelectFile(filePath: string, isStaged: boolean): void {
               :graph="commitGraph"
               :selected-commit-hash="selectedCommitHash"
               :is-loading="isLoadingGraph"
+              :is-operating="isOperating"
               @select-commit="selectCommit"
               @refresh="fetchCommitGraph"
+              @push="handlePush"
+              @pull="handlePull"
+              @fetch="handleFetch"
+              @create-branch="isCreateBranchModalOpen = true"
             ></WorkspaceCommitGraphViewport>
           </template>
 
@@ -579,5 +620,12 @@ function handleSelectFile(filePath: string, isStaged: boolean): void {
         </div>
       </template>
     </USplitter>
+
+    <WorkspaceCreateBranchModal
+      v-model:open="isCreateBranchModalOpen"
+      :source-branch="currentRepository?.current_branch_name"
+      :source-commit-sha="selectedCommitHash"
+      @create="handleCreateBranch"
+    />
   </div>
 </template>

@@ -59,6 +59,13 @@ pub fn run() {
             commands::commit,
             commands::get_file_diff,
             commands::get_commit_graph,
+            commands::get_repository_references,
+            commands::checkout_branch,
+            commands::create_branch,
+            commands::delete_branch,
+            commands::fetch_remote,
+            commands::pull_changes,
+            commands::push_changes,
             commands::get_recent_repositories,
             commands::remove_recent_repository,
         ])

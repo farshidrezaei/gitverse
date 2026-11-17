@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+pub mod branch;
 pub mod graph;
+pub use branch::*;
 pub use graph::*;
 
 /// Domain errors representing failures across Git and workspace operations.

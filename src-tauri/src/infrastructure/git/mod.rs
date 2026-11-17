@@ -1,3 +1,4 @@
+pub mod branch;
 pub mod diff;
 pub mod history;
 pub mod process;
@@ -6,11 +7,15 @@ pub mod status;
 pub mod watcher;
 
 #[cfg(test)]
+mod branch_test;
+#[cfg(test)]
 mod status_test;
 #[cfg(test)]
 mod diff_test;
 #[cfg(test)]
 mod history_test;
+
+pub use branch::{parse_local_branches, parse_remote_branches, parse_remotes, parse_tags};
 
 pub use diff::parse_unified_diff;
 pub use history::parse_delimited_git_log;

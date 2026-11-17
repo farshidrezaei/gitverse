@@ -5,6 +5,7 @@ import type {
   GitBinaryInformation,
   RecentRepositoryRecord,
   RepositoryOverview,
+  RepositoryReferences,
 } from '~/types/repository'
 
 export interface SelectedDiffTarget {
@@ -15,6 +16,7 @@ export interface SelectedDiffTarget {
 export function useWorkspaceManager() {
   const currentRepository = useState<RepositoryOverview | null>('workspace-current-repository', () => null)
   const repositoryStatus = useState<DetailedRepositoryStatus | null>('workspace-repository-status', () => null)
+  const repositoryReferences = useState<RepositoryReferences | null>('workspace-references', () => null)
   const recentRepositories = useState<RecentRepositoryRecord[]>('workspace-recent-repositories', () => [])
   const gitBinary = useState<GitBinaryInformation | null>('workspace-git-binary', () => null)
   const selectedDiffTarget = useState<SelectedDiffTarget | null>('workspace-selected-diff-target', () => null)
@@ -24,6 +26,7 @@ export function useWorkspaceManager() {
   const isLoading = ref<boolean>(false)
   const isLoadingDiff = ref<boolean>(false)
   const isLoadingGraph = ref<boolean>(false)
+  const isOperating = ref<boolean>(false)
   const lastError = ref<string | null>(null)
 
   let unlistenStatusWatcher: (() => void) | null = null
@@ -249,6 +252,7 @@ export function useWorkspaceManager() {
         currentRepository.value = overview
         await fetchRecentRepositories()
         await fetchStatus()
+        await fetchReferences()
         await fetchCommitGraph()
         await setupRealtimeListener()
         return overview
@@ -266,6 +270,7 @@ export function useWorkspaceManager() {
           behind_count: 0,
         }
         currentRepository.value = overview
+        await fetchReferences()
         await fetchCommitGraph()
         return overview
       }
@@ -449,6 +454,202 @@ export function useWorkspaceManager() {
     }
   }
 
+  async function fetchReferences(): Promise<RepositoryReferences | null> {
+    if (!currentRepository.value) {
+      repositoryReferences.value = null
+      return null
+    }
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        const refs = await invoke<RepositoryReferences>('get_repository_references', {
+          directoryPath: currentRepository.value.path,
+        })
+        repositoryReferences.value = refs
+        return refs
+      } else {
+        // Web mock
+        const mockRefs: RepositoryReferences = {
+          branches: [
+            { name: 'master', is_head: true, upstream_name: 'origin/master', ahead_count: 0, behind_count: 0, head_commit_hash: '5897482' },
+            { name: 'feature/diff-viewer', is_head: false, upstream_name: null, ahead_count: 0, behind_count: 0, head_commit_hash: 'a991385' },
+          ],
+          remote_branches: [
+            { name: 'origin/master', remote_name: 'origin', head_commit_hash: '5897482' },
+          ],
+          tags: [
+            { name: 'v0.1.0-alpha', commit_hash: '5897482' },
+          ],
+          remotes: [
+            { name: 'origin', fetch_url: 'https://github.com/user/gitverse.git', push_url: 'https://github.com/user/gitverse.git' },
+          ],
+        }
+        repositoryReferences.value = mockRefs
+        return mockRefs
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch references:', error)
+      lastError.value = error?.message || 'Failed to fetch references'
+      return null
+    }
+  }
+
+  async function checkoutBranch(branchName: string, createIfMissing = false, startPoint?: string): Promise<boolean> {
+    if (!currentRepository.value) return false
+    isOperating.value = true
+    lastError.value = null
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        await invoke('checkout_branch', {
+          branchName,
+          createIfMissing,
+          startPoint: startPoint || null,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+      await fetchStatus()
+      await fetchReferences()
+      await fetchCommitGraph()
+      return true
+    } catch (error: any) {
+      lastError.value = error?.message || `Failed to checkout ${branchName}`
+      return false
+    } finally {
+      isOperating.value = false
+    }
+  }
+
+  async function createBranch(branchName: string, startPoint?: string): Promise<boolean> {
+    if (!currentRepository.value) return false
+    isOperating.value = true
+    lastError.value = null
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        await invoke('create_branch', {
+          branchName,
+          startPoint: startPoint || null,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+      await fetchReferences()
+      await fetchCommitGraph()
+      return true
+    } catch (error: any) {
+      lastError.value = error?.message || `Failed to create branch ${branchName}`
+      return false
+    } finally {
+      isOperating.value = false
+    }
+  }
+
+  async function deleteBranch(branchName: string, force = false): Promise<boolean> {
+    if (!currentRepository.value) return false
+    isOperating.value = true
+    lastError.value = null
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        await invoke('delete_branch', {
+          branchName,
+          force,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+      await fetchReferences()
+      await fetchCommitGraph()
+      return true
+    } catch (error: any) {
+      lastError.value = error?.message || `Failed to delete branch ${branchName}`
+      return false
+    } finally {
+      isOperating.value = false
+    }
+  }
+
+  async function fetchRemote(remoteName?: string): Promise<boolean> {
+    if (!currentRepository.value) return false
+    isOperating.value = true
+    lastError.value = null
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        await invoke('fetch_remote', {
+          remoteName: remoteName || null,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+      await fetchStatus()
+      await fetchReferences()
+      await fetchCommitGraph()
+      return true
+    } catch (error: any) {
+      lastError.value = error?.message || 'Fetch failed'
+      return false
+    } finally {
+      isOperating.value = false
+    }
+  }
+
+  async function pullChanges(remoteName?: string, branchName?: string): Promise<boolean> {
+    if (!currentRepository.value) return false
+    isOperating.value = true
+    lastError.value = null
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        await invoke('pull_changes', {
+          remoteName: remoteName || null,
+          branchName: branchName || null,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+      await fetchStatus()
+      await fetchReferences()
+      await fetchCommitGraph()
+      return true
+    } catch (error: any) {
+      lastError.value = error?.message || 'Pull failed'
+      return false
+    } finally {
+      isOperating.value = false
+    }
+  }
+
+  async function pushChanges(remoteName?: string, branchName?: string, setUpstream = false): Promise<boolean> {
+    if (!currentRepository.value) return false
+    isOperating.value = true
+    lastError.value = null
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        await invoke('push_changes', {
+          remoteName: remoteName || null,
+          branchName: branchName || null,
+          setUpstream,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+      await fetchStatus()
+      await fetchReferences()
+      await fetchCommitGraph()
+      return true
+    } catch (error: any) {
+      lastError.value = error?.message || 'Push failed'
+      return false
+    } finally {
+      isOperating.value = false
+    }
+  }
+
   function clearDiffSelection(): void {
     selectedDiffTarget.value = null
     currentDiff.value = null
@@ -460,6 +661,7 @@ export function useWorkspaceManager() {
       await invoke('close_repository')
     }
     currentRepository.value = null
+    repositoryReferences.value = null
     commitGraph.value = null
     selectedCommitHash.value = null
     clearDiffSelection()
@@ -468,6 +670,7 @@ export function useWorkspaceManager() {
   return {
     currentRepository,
     repositoryStatus,
+    repositoryReferences,
     recentRepositories,
     gitBinary,
     selectedDiffTarget,
@@ -477,11 +680,19 @@ export function useWorkspaceManager() {
     isLoading,
     isLoadingDiff,
     isLoadingGraph,
+    isOperating,
     lastError,
     discoverGit,
     fetchStatus,
+    fetchReferences,
     fetchCommitGraph,
     fetchFileDiff,
+    checkoutBranch,
+    createBranch,
+    deleteBranch,
+    fetchRemote,
+    pullChanges,
+    pushChanges,
     clearDiffSelection,
     fetchRecentRepositories,
     openRepository,
