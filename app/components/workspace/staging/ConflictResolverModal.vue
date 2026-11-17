@@ -103,9 +103,10 @@ function handleClose(): void {
       overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity',
       content: 'sm:max-w-6xl w-[94vw] p-0 border border-default/70 bg-[var(--gv-surface)] shadow-2xl rounded-2xl overflow-hidden flex flex-col max-h-[90vh]',
     }"
-    @update:open="handleClose"
+    @update:open="emit('update:open', $event)"
   >
-    <div class="flex flex-col h-full overflow-hidden">
+    <template #content>
+      <div class="flex flex-col h-full overflow-hidden">
       <!-- Modal Header -->
       <div class="flex items-center justify-between border-b border-default/70 px-4 py-3 bg-muted/20">
         <div class="flex items-center gap-2.5 min-w-0">
@@ -438,5 +439,6 @@ function handleClose(): void {
         </div>
       </div>
     </div>
-  </UModal>
+  </template>
+</UModal>
 </template>
