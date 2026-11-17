@@ -1,0 +1,118 @@
+use crate::domain::{GitCommit, GitCommitDecoration, GitReferenceType};
+
+/// Delimiter constants for machine-readable Git log output.
+pub const COMMIT_RECORD_DELIMITER: char = '\x1e';
+pub const COMMIT_FIELD_DELIMITER: char = '\x1f';
+pub const COMMIT_LOG_FORMAT: &str = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ce%x1f%ct%x1f%s%x1f%b%x1f%D%x1e";
+
+/// Parse a decoration item from Git's `%D` placeholder.
+pub fn parse_commit_decorations(decorations_text: &str) -> Vec<GitCommitDecoration> {
+    let mut decorations = Vec::new();
+    let trimmed = decorations_text.trim();
+    if trimmed.is_empty() {
+        return decorations;
+    }
+
+    for part in trimmed.split(',') {
+        let entry = part.trim();
+        if entry.is_empty() {
+            continue;
+        }
+
+        if let Some(branch_target) = entry.strip_prefix("HEAD -> ") {
+            decorations.push(GitCommitDecoration {
+                name: "HEAD".to_string(),
+                reference_type: GitReferenceType::Head,
+                is_head: true,
+            });
+            decorations.push(GitCommitDecoration {
+                name: branch_target.trim().to_string(),
+                reference_type: GitReferenceType::LocalBranch,
+                is_head: true,
+            });
+        } else if entry == "HEAD" {
+            decorations.push(GitCommitDecoration {
+                name: "HEAD".to_string(),
+                reference_type: GitReferenceType::Head,
+                is_head: true,
+            });
+        } else if let Some(tag_name) = entry.strip_prefix("tag: ") {
+            decorations.push(GitCommitDecoration {
+                name: tag_name.trim().to_string(),
+                reference_type: GitReferenceType::Tag,
+                is_head: false,
+            });
+        } else if entry.contains('/') {
+            decorations.push(GitCommitDecoration {
+                name: entry.to_string(),
+                reference_type: GitReferenceType::RemoteBranch,
+                is_head: false,
+            });
+        } else {
+            decorations.push(GitCommitDecoration {
+                name: entry.to_string(),
+                reference_type: GitReferenceType::LocalBranch,
+                is_head: false,
+            });
+        }
+    }
+
+    decorations
+}
+
+/// Parse delimited Git log output into a sequence of `GitCommit` items.
+pub fn parse_delimited_git_log(raw_output: &str) -> Vec<GitCommit> {
+    let mut commits = Vec::new();
+
+    for record in raw_output.split(COMMIT_RECORD_DELIMITER) {
+        let trimmed_record = record.trim();
+        if trimmed_record.is_empty() {
+            continue;
+        }
+
+        let fields: Vec<&str> = trimmed_record.split(COMMIT_FIELD_DELIMITER).collect();
+        if fields.len() < 11 {
+            // Insufficient fields for a complete commit record
+            continue;
+        }
+
+        let hash = fields[0].trim().to_string();
+        if hash.is_empty() {
+            continue;
+        }
+
+        let parent_hashes = fields[1]
+            .split_whitespace()
+            .map(|parent| parent.trim().to_string())
+            .filter(|parent| !parent.is_empty())
+            .collect();
+
+        let author_name = fields[2].trim().to_string();
+        let author_email = fields[3].trim().to_string();
+        let author_timestamp = fields[4].trim().parse::<i64>().unwrap_or(0);
+
+        let committer_name = fields[5].trim().to_string();
+        let committer_email = fields[6].trim().to_string();
+        let committer_timestamp = fields[7].trim().parse::<i64>().unwrap_or(0);
+
+        let subject = fields[8].trim().to_string();
+        let body = fields[9].trim().to_string();
+        let decorations = parse_commit_decorations(fields[10]);
+
+        commits.push(GitCommit {
+            hash,
+            parent_hashes,
+            author_name,
+            author_email,
+            author_timestamp,
+            committer_name,
+            committer_email,
+            committer_timestamp,
+            subject,
+            body,
+            decorations,
+        });
+    }
+
+    commits
+}

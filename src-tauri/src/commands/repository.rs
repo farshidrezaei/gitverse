@@ -122,6 +122,18 @@ pub async fn get_file_diff(
     state.get_file_diff(directory_path.as_deref(), &file_path, is_staged).await
 }
 
+/// Tauri IPC command to extract Git commit history and compute deterministic DAG layout.
+#[tauri::command]
+pub async fn get_commit_graph(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+    skip: Option<usize>,
+    limit: Option<usize>,
+    branch_or_reference: Option<String>,
+) -> Result<crate::domain::CommitGraphHistoryResponse, ApplicationError> {
+    state.get_commit_graph(directory_path.as_deref(), skip, limit, branch_or_reference).await
+}
+
 /// Tauri IPC command to fetch recent repositories from local SQLite database.
 #[tauri::command]
 pub async fn get_recent_repositories(

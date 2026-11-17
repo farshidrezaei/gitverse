@@ -126,6 +126,26 @@ impl ApplicationState {
         self.git_inspector.get_file_diff(&target_path, file_path, is_staged).await
     }
 
+    /// Extracts commit history and builds deterministic commit graph DAG.
+    pub async fn get_commit_graph(
+        &self,
+        directory_path: Option<&str>,
+        skip: Option<usize>,
+        limit: Option<usize>,
+        branch_or_reference: Option<String>,
+    ) -> Result<crate::domain::CommitGraphHistoryResponse, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        let skip_count = skip.unwrap_or(0);
+        let limit_count = limit.unwrap_or(100);
+
+        let commits = self.git_inspector
+            .get_commit_history(&target_path, skip_count, limit_count, branch_or_reference.as_deref())
+            .await?;
+
+        let graph = crate::services::CommitGraphEngine::build_graph(commits);
+        Ok(graph)
+    }
+
     async fn resolve_path(&self, directory_path: Option<&str>) -> Result<PathBuf, ApplicationError> {
         if let Some(p) = directory_path {
             Ok(PathBuf::from(p))

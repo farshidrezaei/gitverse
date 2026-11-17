@@ -11,9 +11,13 @@ const {
   repositoryStatus,
   selectedDiffTarget,
   currentDiff,
+  commitGraph,
+  selectedCommitHash,
   isLoadingDiff,
+  isLoadingGraph,
   promptAndOpenRepository,
   fetchStatus,
+  fetchCommitGraph,
   fetchFileDiff,
   stageFile,
   unstageFile,
@@ -26,6 +30,7 @@ const {
 onMounted(async () => {
   if (currentRepository.value) {
     await fetchStatus()
+    await fetchCommitGraph()
   }
 })
 
@@ -134,83 +139,11 @@ const tags = ref([
   { name: 'v0.0.9' },
 ])
 
-// Mock Commit DAG nodes
-const commits = ref([
-  {
-    sha: '8f2a1b9',
-    subject: 'feat(graph): implement deterministic DAG lane assignment algorithm',
-    author: 'Farshid',
-    time: '12m ago',
-    lane: 0,
-    isHead: true,
-    branchBadge: 'main',
-  },
-  {
-    sha: '4d7e2c0',
-    subject: 'merge: integrate feature/safe-runner into main',
-    author: 'Farshid',
-    time: '1h ago',
-    lane: 0,
-    isHead: false,
-    isMerge: true,
-  },
-  {
-    sha: '1a9f3d4',
-    subject: 'feat(cli): add safe process runner with argument arrays',
-    author: 'Farshid',
-    time: '2h ago',
-    lane: 1,
-    isHead: false,
-    branchBadge: 'feature/safe-runner',
-  },
-  {
-    sha: '3c8e5f1',
-    subject: 'perf(graph): virtualize SVG commit node rendering',
-    author: 'Farshid',
-    time: '4h ago',
-    lane: 2,
-    isHead: false,
-    branchBadge: 'feature/graph-engine',
-  },
-  {
-    sha: '9b2c7e8',
-    subject: 'fix(security): prevent credential leaks in diagnostic exports',
-    author: 'Farshid',
-    time: '1d ago',
-    lane: 3,
-    isHead: false,
-  },
-  {
-    sha: '09b9058',
-    subject: 'chore(baseline): initialize gitverse project with notifytrap architecture standards',
-    author: 'Farshid',
-    time: '2d ago',
-    lane: 0,
-    isHead: false,
-    tagBadge: 'v0.1.0-alpha',
-  },
-])
-
-const selectedCommitSha = ref('8f2a1b9')
-
-// Staging changes
-const stagedFiles = ref([
-  { path: 'src-tauri/src/infrastructure/process_runner.rs', status: 'added', statusLabel: 'A' },
-  { path: 'app/assets/css/main.css', status: 'modified', statusLabel: 'M' },
-])
-
-const unstagedFiles = ref([
-  { path: 'src-tauri/src/services/diff_engine.rs', status: 'modified', statusLabel: 'M' },
-  { path: 'docs/ARCHITECTURE.md', status: 'modified', statusLabel: 'M' },
-  { path: 'scratch/benchmarks.txt', status: 'untracked', statusLabel: '?' },
-])
-
 const commitMessage = ref('')
 const isAmend = ref(false)
-const searchCommitQuery = ref('')
 
 function selectCommit(sha: string): void {
-  selectedCommitSha.value = sha
+  selectedCommitHash.value = sha
 }
 function handleDiscard(filePath: string, isUntracked: boolean): void {
   discardFile(filePath, isUntracked)
@@ -344,117 +277,13 @@ function handleSelectFile(filePath: string, isStaged: boolean): void {
         >
           <!-- Top Island: Commit Graph & History -->
           <template #graph>
-            <div class="gv-island-panel flex h-full flex-col overflow-hidden">
-              <!-- Git Operation Toolbar -->
-              <div class="flex h-10 shrink-0 items-center justify-between border-b border-default/70 bg-muted/20 px-3 gap-2">
-                <div class="flex items-center gap-1.5">
-                  <UButton size="xs" color="primary" variant="solid" icon="i-lucide-arrow-up-circle">
-                    {{ t('git.push') }}
-                  </UButton>
-                  <UButton size="xs" color="neutral" variant="outline" icon="i-lucide-arrow-down-circle">
-                    {{ t('git.pull') }}
-                  </UButton>
-                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-refresh-cw">
-                    {{ t('git.fetch') }}
-                  </UButton>
-                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-git-branch">
-                    {{ t('git.branch') }}
-                  </UButton>
-                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-archive">
-                    {{ t('git.stash') }}
-                  </UButton>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <UInput
-                    v-model="searchCommitQuery"
-                    size="xs"
-                    icon="i-lucide-search"
-                    placeholder="Search commits or SHAs..."
-                    class="w-48 sm:w-64"
-                  />
-                </div>
-              </div>
-
-              <!-- Interactive Commit Graph DAG Viewport -->
-              <div class="flex-1 overflow-y-auto">
-                <table class="w-full text-start text-xs border-collapse">
-                  <thead class="sticky top-0 bg-muted/40 backdrop-blur-md border-b border-default/70 text-[11px] text-muted">
-                    <tr>
-                      <th class="py-1.5 ps-3 pe-2 text-start font-medium w-16">Graph</th>
-                      <th class="py-1.5 px-2 text-start font-medium">Description</th>
-                      <th class="py-1.5 px-2 text-start font-medium w-28">Author</th>
-                      <th class="py-1.5 px-2 text-start font-medium w-20">Date</th>
-                      <th class="py-1.5 pe-3 ps-2 text-end font-medium w-20">SHA</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-default/40 font-mono text-[12px]">
-                    <tr
-                      v-for="commit in commits"
-                      :key="commit.sha"
-                      class="cursor-pointer transition-colors hover:bg-primary/10"
-                      :class="selectedCommitSha === commit.sha ? 'bg-primary/15' : ''"
-                      @click="selectCommit(commit.sha)"
-                    >
-                      <!-- Lane Dot / DAG Node -->
-                      <td class="py-2 ps-3 pe-2 whitespace-nowrap">
-                        <div class="flex items-center gap-1.5">
-                          <span
-                            class="h-3 w-3 rounded-full border-2 border-surface inline-block shadow-xs"
-                            :style="{ backgroundColor: `var(--gv-lane-${commit.lane})` }"
-                          />
-                          <span
-                            v-if="commit.isMerge"
-                            class="h-2 w-2 rounded-full inline-block opacity-70"
-                            :style="{ backgroundColor: `var(--gv-lane-${commit.lane + 1})` }"
-                          />
-                        </div>
-                      </td>
-
-                      <!-- Commit Description -->
-                      <td class="py-2 px-2 font-sans font-medium text-highlighted">
-                        <div class="flex items-center gap-2">
-                          <UBadge
-                            v-if="commit.branchBadge"
-                            size="xs"
-                            color="primary"
-                            variant="subtle"
-                            class="font-mono text-[10px]"
-                          >
-                            {{ commit.branchBadge }}
-                          </UBadge>
-                          <UBadge
-                            v-if="commit.tagBadge"
-                            size="xs"
-                            color="secondary"
-                            variant="subtle"
-                            class="font-mono text-[10px]"
-                          >
-                            {{ commit.tagBadge }}
-                          </UBadge>
-                          <span class="truncate">{{ commit.subject }}</span>
-                        </div>
-                      </td>
-
-                      <!-- Author -->
-                      <td class="py-2 px-2 font-sans text-toned whitespace-nowrap">
-                        {{ commit.author }}
-                      </td>
-
-                      <!-- Time -->
-                      <td class="py-2 px-2 font-sans text-muted whitespace-nowrap text-[11px]">
-                        {{ commit.time }}
-                      </td>
-
-                      <!-- SHA -->
-                      <td class="py-2 pe-3 ps-2 text-end text-muted whitespace-nowrap">
-                        {{ commit.sha }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <WorkspaceCommitGraphViewport
+              :graph="commitGraph"
+              :selected-commit-hash="selectedCommitHash"
+              :is-loading="isLoadingGraph"
+              @select-commit="selectCommit"
+              @refresh="fetchCommitGraph"
+            ></WorkspaceCommitGraphViewport>
           </template>
 
           <!-- Bottom Island: Diff & Patch Viewer -->

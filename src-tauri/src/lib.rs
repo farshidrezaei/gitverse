@@ -2,6 +2,7 @@ pub mod application;
 pub mod commands;
 pub mod domain;
 pub mod infrastructure;
+pub mod services;
 
 #[cfg(test)]
 mod lib_test;
@@ -57,6 +58,7 @@ pub fn run() {
             commands::discard_file_changes,
             commands::commit,
             commands::get_file_diff,
+            commands::get_commit_graph,
             commands::get_recent_repositories,
             commands::remove_recent_repository,
         ])

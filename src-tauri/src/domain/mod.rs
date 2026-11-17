@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+pub mod graph;
+pub use graph::*;
+
 /// Domain errors representing failures across Git and workspace operations.
 #[derive(Debug, Error, Serialize, Deserialize)]
 #[serde(tag = "type", content = "message")]

@@ -83,3 +83,48 @@ export interface FileDiff {
   total_deletions: number
 }
 
+export type GitReferenceType = 'localbranch' | 'remotebranch' | 'tag' | 'head'
+
+export interface GitCommitDecoration {
+  name: string
+  reference_type: GitReferenceType
+  is_head: boolean
+}
+
+export interface GitCommit {
+  hash: string
+  parent_hashes: string[]
+  author_name: string
+  author_email: string
+  author_timestamp: number
+  committer_name: string
+  committer_email: string
+  committer_timestamp: number
+  subject: string
+  body: string
+  decorations: GitCommitDecoration[]
+}
+
+export interface GraphEdge {
+  parent_hash: string
+  from_lane: number
+  to_lane: number
+  is_merge_edge: boolean
+}
+
+export interface CommitGraphNode {
+  commit: GitCommit
+  lane: number
+  edges: GraphEdge[]
+  is_head: boolean
+  is_merge: boolean
+}
+
+export interface CommitGraphHistoryResponse {
+  nodes: CommitGraphNode[]
+  max_lane_index: number
+  total_commits_count: number | null
+  has_more_commits: boolean
+}
+
+

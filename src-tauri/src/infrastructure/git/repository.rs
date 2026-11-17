@@ -215,4 +215,39 @@ impl GitRepositoryInspector {
 
         Ok(super::diff::parse_unified_diff(&raw_diff, file_path))
     }
+
+    /// Extracts commit history using machine-readable delimited output.
+    pub async fn get_commit_history(
+        &self,
+        directory_path: &Path,
+        skip: usize,
+        limit: usize,
+        branch_or_reference: Option<&str>,
+    ) -> Result<Vec<crate::domain::GitCommit>, ApplicationError> {
+        let skip_argument = format!("--skip={}", skip);
+        let limit_argument = format!("-n{}", limit);
+        let format_argument = format!("--format={}", super::history::COMMIT_LOG_FORMAT);
+
+        let mut arguments: Vec<&str> = vec![
+            "log",
+            "--topo-order",
+            &skip_argument,
+            &limit_argument,
+            &format_argument,
+        ];
+
+        let reference_target = branch_or_reference.unwrap_or("--all");
+        arguments.push(reference_target);
+
+        let raw_output = match self.executor.execute_git_command(Some(directory_path), &arguments).await {
+            Ok(output) => output,
+            Err(ApplicationError::GitExecutionFailed { exit_code: 128, .. }) => {
+                // Repository might be empty (zero commits)
+                return Ok(Vec::new());
+            }
+            Err(error) => return Err(error),
+        };
+
+        Ok(super::history::parse_delimited_git_log(&raw_output))
+    }
 }
