@@ -319,7 +319,7 @@ impl GitRepositoryInspector {
         commit_hash: &str,
         file_path: Option<&str>,
     ) -> Result<crate::domain::FileDiff, ApplicationError> {
-        let mut arguments = vec!["show", "--format="];
+        let mut arguments = vec!["show", "-m", "--first-parent", "--format="];
         arguments.push(commit_hash);
 
         if let Some(target_file) = file_path {
