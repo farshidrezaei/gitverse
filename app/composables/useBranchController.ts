@@ -327,6 +327,48 @@ export function useBranchController() {
     }
   }
 
+  async function renameBranch(oldName: string, newName: string): Promise<boolean> {
+    if (!currentRepository.value) {
+      return false
+    }
+
+    const trimmedNewName = newName.trim()
+    if (!trimmedNewName || trimmedNewName === oldName) {
+      return false
+    }
+
+    try {
+      isOperatingBranches.value = true
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        await invoke('rename_branch', {
+          oldName,
+          newName: trimmedNewName,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+
+      notifySuccess(t('branch.renameSuccess', { oldName, newName: trimmedNewName }))
+
+      // Update favorites if renamed
+      if (favoriteBranches.value.includes(oldName)) {
+        toggleFavoriteBranch(oldName)
+        toggleFavoriteBranch(trimmedNewName)
+      }
+
+      await fetchReferences()
+      await fetchStatus()
+      await fetchCommitGraph()
+      return true
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : `Failed to rename branch ${oldName}`
+      notifyError(t('common.error'), errorMessage)
+      return false
+    } finally {
+      isOperatingBranches.value = false
+    }
+  }
+
   return {
     repositoryReferences,
     favoriteBranches,
@@ -341,5 +383,6 @@ export function useBranchController() {
     deleteBranch,
     mergeBranch,
     rebaseBranch,
+    renameBranch,
   }
 }

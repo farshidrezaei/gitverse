@@ -183,6 +183,17 @@ pub async fn delete_branch(
     state.delete_branch(directory_path.as_deref(), &branch_name, force.unwrap_or(false)).await
 }
 
+/// Tauri IPC command to rename a branch.
+#[tauri::command]
+pub async fn rename_branch(
+    state: State<'_, ApplicationState>,
+    old_name: String,
+    new_name: String,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.rename_branch(directory_path.as_deref(), &old_name, &new_name).await
+}
+
 /// Tauri IPC command to fetch changes from remote.
 #[tauri::command]
 pub async fn fetch_remote(

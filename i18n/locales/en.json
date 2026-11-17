@@ -296,7 +296,17 @@
     "rebaseConfirmDescription": "Are you sure you want to rebase '{current}' on top of '{upstream}'? This will rewrite local commit history.",
     "rebaseAction": "Rebase Branch",
     "rebaseSuccess": "Rebased '{current}' onto '{upstream}' successfully",
-    "rebaseConflict": "Rebase paused due to conflicts with '{upstream}'. Please resolve conflicts in the sidebar."
+    "rebaseConflict": "Rebase paused due to conflicts with '{upstream}'. Please resolve conflicts in the sidebar.",
+    "renameBranch": "Rename Branch...",
+    "renameTitle": "Rename Branch",
+    "currentNameLabel": "Current Branch Name",
+    "newNameLabel": "New Branch Name",
+    "renameAction": "Rename Branch",
+    "renameSuccess": "Renamed branch '{oldName}' to '{newName}' successfully",
+    "renameErrorEmpty": "Branch name cannot be empty.",
+    "renameErrorSame": "New branch name must be different from current name.",
+    "renameErrorSpaces": "Branch name cannot contain spaces.",
+    "renameErrorInvalid": "Branch name contains invalid characters."
   },
   "conflict": {
     "title": "Merge Conflicts",
@@ -394,5 +404,16 @@
     "commitSuccess": "Commit created: {hash}",
     "commitUndone": "Commit undone, changes preserved in staging",
     "operationFailed": "Operation failed: {message}"
+  },
+  "tabs": {
+    "workspace": "Workspace",
+    "close": "Close Tab",
+    "closeOthers": "Close Other Tabs",
+    "closeAll": "Close All Tabs",
+    "closeAllDiffs": "Close All Diff Tabs",
+    "pin": "Keep Open",
+    "staged": "Staged",
+    "unstaged": "Unstaged",
+    "commit": "Commit"
   }
 }

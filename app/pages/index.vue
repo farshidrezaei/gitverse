@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { SplitterItem } from '@nuxt/ui'
-import type { BranchSummary, RemoteBranchSummary } from '~/types/repository'
+import type { BranchSummary, RemoteBranchSummary, FileChangeStatus } from '~/types/repository'
+import type { WorkspaceDiffTab } from '~/types/workspaceTab'
+import WorkspaceTabBar from '~/components/workspace/tabs/WorkspaceTabBar.vue'
+import WorkspaceDiffTabContent from '~/components/workspace/tabs/WorkspaceDiffTabContent.vue'
 import WorkspaceBranchSidebar from '~/components/workspace/branch/WorkspaceBranchSidebar.vue'
 import WorkspaceStagingSidebar from '~/components/workspace/staging/WorkspaceStagingSidebar.vue'
 import WorkspaceCommitGraphViewport from '~/components/workspace/CommitGraphViewport.vue'
@@ -8,6 +11,7 @@ import WorkspaceDiffViewerPanel from '~/components/workspace/DiffViewerPanel.vue
 import WorkspaceCommitInspectorPanel from '~/components/workspace/CommitInspectorPanel.vue'
 import WelcomeWorkspaceState from '~/components/workspace/WelcomeWorkspaceState.vue'
 import CreateBranchModal from '~/components/workspace/CreateBranchModal.vue'
+import { useWorkspaceTabController } from '~/composables/useWorkspaceTabController'
 
 const { t } = useI18n()
 const { confirmStandard, confirmHold, confirmKeyword } = useConfirmationDialog()
@@ -58,13 +62,51 @@ const {
   resetToCommit,
 } = useWorkspaceManager()
 
+const {
+  tabs,
+  activeTabId,
+  activeTab,
+  initializeWorkspaceTab,
+  openDiffTab,
+  pinTab,
+  closeTab,
+  closeAllDiffTabs,
+  closeOtherTabs,
+  activateTab,
+  resetTabs,
+} = useWorkspaceTabController()
+
 const isCreateBranchModalOpen = ref<boolean>(false)
 const commitMessage = ref<string>('')
 const isAmend = ref<boolean>(false)
 const selectedBranchName = ref<string | null>(null)
 const activeGraphReference = ref<string | null>(null)
 
+watch(
+  currentRepository,
+  (repository) => {
+    if (repository) {
+      initializeWorkspaceTab(repository.path, repository.name)
+    } else {
+      resetTabs()
+    }
+  },
+  { immediate: true },
+)
+
+function handleKeyboardShortcuts(event: KeyboardEvent): void {
+  const isModifierKeyActive = event.ctrlKey || event.metaKey
+  if (isModifierKeyActive && event.key.toLowerCase() === 'w') {
+    if (activeTab.value?.isClosable) {
+      event.preventDefault()
+      closeTab(activeTabId.value)
+    }
+  }
+}
+
 onMounted(async () => {
+  window.addEventListener('keydown', handleKeyboardShortcuts)
+
   if (currentRepository.value) {
     loadFavoriteBranches()
     await fetchStatus()
@@ -74,6 +116,10 @@ onMounted(async () => {
   } else {
     await restoreLastOpenedRepository()
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyboardShortcuts)
 })
 
 // Main horizontal layout with floating inset panels (Island-style)
@@ -199,6 +245,29 @@ async function handleDiscardAllUnstaged(): Promise<void> {
 function handleSelectFile(filePath: string, isStaged: boolean): void {
   clearCommitSelection()
   void fetchFileDiff(filePath, isStaged)
+}
+
+function handleOpenStagingDiffTab(
+  filePath: string,
+  isStaged: boolean,
+  changeStatus?: FileChangeStatus,
+): void {
+  openDiffTab({
+    filePath,
+    isStaged,
+    changeStatus,
+    isPinned: true,
+  })
+}
+
+function handleOpenCommitDiffTab(filePath: string): void {
+  if (selectedCommitHash.value) {
+    openDiffTab({
+      filePath,
+      commitHash: selectedCommitHash.value,
+      isPinned: true,
+    })
+  }
 }
 
 async function handleCommit(): Promise<void> {

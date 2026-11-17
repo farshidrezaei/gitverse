@@ -17,6 +17,7 @@ const props = defineProps<CommitFileTreeNodeItemProps>()
 
 const emit = defineEmits<{
   selectFile: [filePath: string]
+  openDiffTab: [filePath: string]
 }>()
 
 const { t } = useI18n()
@@ -77,6 +78,7 @@ const fileContextMenuItems = computed<ContextMenuItem[][]>(() => {
         :node="child"
         :selected-file-path="props.selectedFilePath"
         @select-file="emit('selectFile', $event)"
+        @open-diff-tab="emit('openDiffTab', $event)"
       />
     </div>
 
@@ -91,6 +93,7 @@ const fileContextMenuItems = computed<ContextMenuItem[][]>(() => {
           ? 'bg-primary/15 text-primary font-medium'
           : 'hover:bg-muted/40'"
         @click="emit('selectFile', node.fullPath)"
+        @dblclick="emit('openDiffTab', node.fullPath)"
       >
         <div class="flex items-center gap-1.5 min-w-0 flex-1 me-2">
           <FileStatusBadge

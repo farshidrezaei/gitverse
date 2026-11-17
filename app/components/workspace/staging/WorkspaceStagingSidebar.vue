@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ContextMenuItem } from '@nuxt/ui'
-import type { DetailedRepositoryStatus, StashRecord } from '~/types/repository'
+import type { DetailedRepositoryStatus, StashRecord, FileChangeStatus } from '~/types/repository'
 import type { SelectedDiffTarget } from '~/composables/useStagingController'
 import { buildFileTree } from '~/utils/fileTree'
 import StagingTreeNodeItem from '../StagingTreeNodeItem.vue'
@@ -33,6 +33,7 @@ const emit = defineEmits<{
   discardFile: [filePath: string, isUntracked: boolean]
   discardAllUnstaged: []
   selectFile: [filePath: string, isStaged: boolean]
+  openDiffTab: [filePath: string, isStaged: boolean, changeStatus?: FileChangeStatus]
   commit: []
   refresh: []
 }>()
@@ -409,6 +410,7 @@ function getFlatFileContextMenuItems(
               @unstage="emit('unstageFile', $event)"
               @discard="emit('discardFile', $event, false)"
               @select="emit('selectFile', $event, true)"
+              @open-diff-tab="(path) => emit('openDiffTab', path, true)"
             />
           </div>
 
@@ -428,6 +430,7 @@ function getFlatFileContextMenuItems(
                   ? 'bg-primary/15 text-primary font-medium'
                   : 'hover:bg-muted/30'"
                 @click="emit('selectFile', file.path, true)"
+                @dblclick="emit('openDiffTab', file.path, true, file.status)"
               >
                 <div class="flex items-center gap-2 min-w-0">
                   <FileStatusBadge :status="file.status" size="xs" />
@@ -496,6 +499,7 @@ function getFlatFileContextMenuItems(
               @unstage="emit('unstageFile', $event)"
               @discard="emit('discardFile', $event, false)"
               @select="emit('selectFile', $event, false)"
+              @open-diff-tab="(path) => emit('openDiffTab', path, false)"
             />
           </div>
 
@@ -515,6 +519,7 @@ function getFlatFileContextMenuItems(
                   ? 'bg-primary/15 text-primary font-medium'
                   : 'hover:bg-muted/30'"
                 @click="emit('selectFile', file.path, false)"
+                @dblclick="emit('openDiffTab', file.path, false, file.status)"
               >
                 <div class="flex items-center gap-2 min-w-0">
                   <FileStatusBadge :status="file.status" size="xs" />

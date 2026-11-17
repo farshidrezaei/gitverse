@@ -434,6 +434,18 @@ impl GitRepositoryInspector {
             .await
     }
 
+    /// Renames a local branch from old_name to new_name.
+    pub async fn rename_branch(
+        &self,
+        directory_path: &Path,
+        old_name: &str,
+        new_name: &str,
+    ) -> Result<String, ApplicationError> {
+        self.executor
+            .execute_git_command(Some(directory_path), &["branch", "-m", old_name, new_name])
+            .await
+    }
+
     /// Executes `git fetch`.
     pub async fn fetch_remote(
         &self,

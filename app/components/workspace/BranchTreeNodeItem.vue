@@ -13,6 +13,7 @@ const emit = defineEmits<{
   selectBranch: [branch: BranchSummary]
   createBranch: [sourceBranchName: string]
   delete: [branchName: string]
+  rename: [branchName: string]
 }>()
 
 const { t } = useI18n()
@@ -67,6 +68,11 @@ const branchContextMenuItems = computed<ContextMenuItem[][]>(() => {
         label: t('git.createBranch'),
         icon: 'i-lucide-git-branch-plus',
         onSelect: () => emit('createBranch', props.node.fullBranchName),
+      },
+      {
+        label: t('branch.renameBranch'),
+        icon: 'i-lucide-pencil-line',
+        onSelect: () => emit('rename', props.node.fullBranchName),
       },
       {
         label: isStarred.value ? t('git.unstarBranch') : t('git.starBranch'),
@@ -135,6 +141,7 @@ const branchContextMenuItems = computed<ContextMenuItem[][]>(() => {
         @checkout="emit('checkout', $event)"
         @create-branch="emit('createBranch', $event)"
         @delete="emit('delete', $event)"
+        @rename="emit('rename', $event)"
       />
     </div>
 

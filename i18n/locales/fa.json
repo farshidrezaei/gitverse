@@ -296,7 +296,17 @@
     "rebaseConfirmDescription": "آیا از ریبیس شاخه «{current}» بر روی «{upstream}» اطمینان دارید؟ این عملیات تاریخچه محلی کامیت‌ها را بازنویسی می‌کند.",
     "rebaseAction": "ریبیس شاخه",
     "rebaseSuccess": "شاخه «{current}» با موفقیت روی «{upstream}» ریبیس شد",
-    "rebaseConflict": "ریبیس به دلیل وجود تداخل با «{upstream}» متوقف شد. لطفاً تعارض‌ها را در سایدبار حل کنید."
+    "rebaseConflict": "ریبیس به دلیل وجود تداخل با «{upstream}» متوقف شد. لطفاً تعارض‌ها را در سایدبار حل کنید.",
+    "renameBranch": "تغییر نام شاخه...",
+    "renameTitle": "تغییر نام شاخه",
+    "currentNameLabel": "نام فعلی شاخه",
+    "newNameLabel": "نام جدید شاخه",
+    "renameAction": "تغییر نام",
+    "renameSuccess": "نام شاخه با موفقیت از «{oldName}» به «{newName}» تغییر یافت",
+    "renameErrorEmpty": "نام شاخه نمی‌تواند خالی باشد.",
+    "renameErrorSame": "نام جدید باید با نام فعلی متفاوت باشد.",
+    "renameErrorSpaces": "نام شاخه نباید فاصله داشته باشد.",
+    "renameErrorInvalid": "نام شاخه حاوی کاراکترهای غیرمجاز است."
   },
   "conflict": {
     "title": "تعارض‌های مرج (Merge Conflicts)",
@@ -394,5 +404,16 @@
     "commitSuccess": "کامیت ثبت شد: {hash}",
     "commitUndone": "کامیت بازگردانی شد و تغییرات در استیج نگه‌داشته شدند",
     "operationFailed": "عملیات ناموفق بود: {message}"
+  },
+  "tabs": {
+    "workspace": "میز کار",
+    "close": "بستن تب",
+    "closeOthers": "بستن تب‌های دیگر",
+    "closeAll": "بستن همه تب‌ها",
+    "closeAllDiffs": "بستن همه تب‌های دیف",
+    "pin": "پین کردن تب",
+    "staged": "استیج‌شده",
+    "unstaged": "تغییرات کاری",
+    "commit": "کامیت"
   }
 }

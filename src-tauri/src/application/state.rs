@@ -201,6 +201,17 @@ impl ApplicationState {
         self.git_inspector.delete_branch(&target_path, branch_name, force).await
     }
 
+    /// Renames a local branch.
+    pub async fn rename_branch(
+        &self,
+        directory_path: Option<&str>,
+        old_name: &str,
+        new_name: &str,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.rename_branch(&target_path, old_name, new_name).await
+    }
+
     /// Fetches changes from remote.
     pub async fn fetch_remote(
         &self,

@@ -191,6 +191,7 @@ export function useWorkspaceManager() {
     checkoutBranch,
     createBranch,
     deleteBranch,
+    renameBranch: branchController.renameBranch,
     mergeBranch: branchController.mergeBranch,
     rebaseBranch: branchController.rebaseBranch,
     loadFavoriteBranches: branchController.loadFavoriteBranches,

@@ -15,6 +15,7 @@ const emit = defineEmits<{
   unstage: [path: string]
   discard: [path: string, isUntracked: boolean]
   select: [path: string, isStaged: boolean]
+  openDiffTab: [path: string, isStaged: boolean]
 }>()
 
 const { t } = useI18n()
@@ -100,6 +101,7 @@ const fileContextMenuItems = computed<ContextMenuItem[][]>(() => {
         @unstage="emit('unstage', $event)"
         @discard="(path, isUntracked) => emit('discard', path, isUntracked)"
         @select="(path, staged) => emit('select', path, staged)"
+        @open-diff-tab="(path, staged) => emit('openDiffTab', path, staged)"
       />
     </div>
 
@@ -115,6 +117,7 @@ const fileContextMenuItems = computed<ContextMenuItem[][]>(() => {
           ? 'bg-primary/15 text-primary font-medium'
           : 'hover:bg-muted/40'"
         @click="emit('select', node.fullPath, isStaged)"
+        @dblclick="emit('openDiffTab', node.fullPath, isStaged)"
       >
         <div class="flex items-center gap-1.5 min-w-0">
           <FileStatusBadge

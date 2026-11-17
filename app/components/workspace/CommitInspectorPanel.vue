@@ -11,6 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   selectFile: [filePath: string]
+  openDiffTab: [filePath: string]
   createBranch: [commitSha: string]
   checkoutCommit: [commitSha: string]
   cherryPick: [commitSha: string]
@@ -62,6 +63,7 @@ const { t } = useI18n()
         :files="props.commitDetails.changed_files"
         :selected-file-path="props.selectedFilePath"
         @select-file="emit('selectFile', $event)"
+        @open-diff-tab="emit('openDiffTab', $event)"
       />
     </template>
   </div>

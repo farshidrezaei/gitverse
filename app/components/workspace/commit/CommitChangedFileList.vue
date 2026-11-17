@@ -14,6 +14,7 @@ const props = defineProps<CommitChangedFileListProps>()
 
 const emit = defineEmits<{
   selectFile: [filePath: string]
+  openDiffTab: [filePath: string]
 }>()
 
 const { t } = useI18n()
@@ -116,6 +117,7 @@ function getFlatFileContextMenuItems(filePath: string): ContextMenuItem[][] {
           :node="node"
           :selected-file-path="props.selectedFilePath"
           @select-file="emit('selectFile', $event)"
+          @open-diff-tab="emit('openDiffTab', $event)"
         />
       </div>
 
@@ -136,6 +138,7 @@ function getFlatFileContextMenuItems(filePath: string): ContextMenuItem[][] {
               'bg-primary/10 text-primary font-medium': props.selectedFilePath === file.path,
             }"
             @click="emit('selectFile', file.path)"
+            @dblclick="emit('openDiffTab', file.path)"
           >
             <div class="flex items-center gap-2 min-w-0 flex-1 me-2">
               <FileStatusBadge :status="file.status" size="xs" />

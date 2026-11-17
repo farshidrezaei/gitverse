@@ -42,4 +42,20 @@ describe('branch operations models and contracts', () => {
     expect(conflictedRebase.is_successful).toBe(false)
     expect(conflictedRebase.has_conflicts).toBe(true)
   })
+
+  it('correctly validates branch name format for renaming', () => {
+    const isValidBranchName = (name: string, current: string): boolean => {
+      const trimmed = name.trim()
+      if (!trimmed || trimmed === current) return false
+      if (/\s/.test(trimmed)) return false
+      return /^[a-zA-Z0-9._\-/]+$/.test(trimmed)
+    }
+
+    expect(isValidBranchName('feature/login-v2', 'feature/login')).toBe(true)
+    expect(isValidBranchName('main-patch', 'main')).toBe(true)
+    expect(isValidBranchName('feature/login', 'feature/login')).toBe(false) // same name
+    expect(isValidBranchName('   ', 'main')).toBe(false) // empty
+    expect(isValidBranchName('invalid branch name', 'main')).toBe(false) // spaces
+    expect(isValidBranchName('invalid~name^', 'main')).toBe(false) // invalid chars
+  })
 })

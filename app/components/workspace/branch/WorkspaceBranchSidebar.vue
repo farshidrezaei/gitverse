@@ -7,6 +7,7 @@ import type {
 import { buildBranchTree, buildRemoteBranchTree } from '~/utils/branchTree'
 import BranchTreeNodeItem from '../BranchTreeNodeItem.vue'
 import RemoteBranchTreeNodeItem from '../RemoteBranchTreeNodeItem.vue'
+import RenameBranchModal from '../RenameBranchModal.vue'
 
 interface WorkspaceBranchSidebarProps {
   references: RepositoryReferences | null
@@ -27,6 +28,19 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const { renameBranch } = useWorkspaceManager()
+
+const isRenameModalOpen = ref(false)
+const branchToRename = ref('')
+
+function openRenameBranchModal(branchName: string): void {
+  branchToRename.value = branchName
+  isRenameModalOpen.value = true
+}
+
+async function handleRenameBranch(oldName: string, newName: string): Promise<void> {
+  await renameBranch(oldName, newName)
+}
 
 const branchTreeNodes = computed(() => {
   return buildBranchTree(props.references?.branches || [])
@@ -170,6 +184,7 @@ const favoriteBranchSummaries = computed(() => {
               @checkout="emit('checkout', $event)"
               @create-branch="emit('createBranchFromBranch', $event)"
               @delete="emit('deleteBranch', $event)"
+              @rename="openRenameBranchModal"
             />
           </div>
         </div>
@@ -211,5 +226,12 @@ const favoriteBranchSummaries = computed(() => {
         </div>
       </template>
     </div>
+
+    <!-- Rename Branch Modal -->
+    <RenameBranchModal
+      v-model:open="isRenameModalOpen"
+      :current-branch-name="branchToRename"
+      @rename="handleRenameBranch"
+    />
   </div>
 </template>
