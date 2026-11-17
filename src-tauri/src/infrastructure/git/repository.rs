@@ -534,4 +534,43 @@ impl GitRepositoryInspector {
             .execute_git_command(Some(directory_path), &["stash", "drop", &stash_identifier])
             .await
     }
+
+    /// Cherry-picks a commit onto the current branch.
+    pub async fn cherry_pick_commit(
+        &self,
+        directory_path: &Path,
+        commit_hash: &str,
+    ) -> Result<String, ApplicationError> {
+        self.executor
+            .execute_git_command(Some(directory_path), &["cherry-pick", commit_hash])
+            .await
+    }
+
+    /// Reverts a commit by creating an inverse commit.
+    pub async fn revert_commit(
+        &self,
+        directory_path: &Path,
+        commit_hash: &str,
+    ) -> Result<String, ApplicationError> {
+        self.executor
+            .execute_git_command(Some(directory_path), &["revert", "--no-edit", commit_hash])
+            .await
+    }
+
+    /// Resets the current branch to a specific commit using soft, mixed, or hard mode.
+    pub async fn reset_to_commit(
+        &self,
+        directory_path: &Path,
+        commit_hash: &str,
+        reset_mode: &str,
+    ) -> Result<String, ApplicationError> {
+        let mode_flag = match reset_mode {
+            "soft" => "--soft",
+            "hard" => "--hard",
+            _ => "--mixed",
+        };
+        self.executor
+            .execute_git_command(Some(directory_path), &["reset", mode_flag, commit_hash])
+            .await
+    }
 }

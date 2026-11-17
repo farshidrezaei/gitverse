@@ -41,7 +41,8 @@
     "empty": "موردی یافت نشد",
     "error": "خطایی رخ داد",
     "reset": "بازنشانی",
-    "apply": "اعمال"
+    "apply": "اعمال",
+    "actions": "عملیات"
   },
   "confirmation": {
     "defaultTitle": "تأیید عملیات",
@@ -238,7 +239,22 @@
     "searchFiles": "فیلتر فایل‌های تغییریافته...",
     "filterFilesPlaceholder": "فیلتر فایل‌های تغییریافته...",
     "noFilesChanged": "هیچ فایلی در این کامیت تغییر نکرده است",
-    "viewCommit": "مشاهده کامیت"
+    "viewCommit": "مشاهده کامیت",
+    "cherryPick": "چری‌پیک این کامیت (Cherry-pick)",
+    "cherryPickSuccess": "کامیت با موفقیت چری‌پیک شد",
+    "cherryPickFailed": "خطا در چری‌پیک کامیت (ممکن است تعارض رخ داده باشد)",
+    "revert": "بازگردانی کامیت (Revert)",
+    "revertSuccess": "کامیت با موفقیت بازگردانی شد",
+    "revertFailed": "خطا در بازگردانی کامیت",
+    "resetToHere": "ریست شاخه جاری به این کامیت",
+    "resetSoft": "ریست Soft (حفظ استیج و تغییرات)",
+    "resetMixed": "ریست Mixed (حفظ تغییرات، حذف از استیج)",
+    "resetHard": "ریست Hard (حذف کامل تغییرات)",
+    "resetHardConfirmTitle": "هشدار ریست سخت (Hard Reset)",
+    "resetHardConfirmDescription": "آیا از ریست سخت به کامیت {hash} اطمینان دارید؟ تمام تغییرات ثبت‌نشده برای همیشه پاک خواهند شد.",
+    "resetHardConfirmButton": "انجام ریست سخت",
+    "resetSuccess": "شاخه با موفقیت ریست شد ({mode})",
+    "resetFailed": "خطا در ریست شاخه به این کامیت"
   },
   "stash": {
     "title": "استش‌ها (Stashes)",

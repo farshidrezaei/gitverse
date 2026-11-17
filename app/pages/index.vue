@@ -53,6 +53,9 @@ const {
   discardAllUnstaged,
   commitChanges,
   fetchStashes,
+  cherryPickCommit,
+  revertCommit,
+  resetToCommit,
 } = useWorkspaceManager()
 
 const isCreateBranchModalOpen = ref<boolean>(false)
@@ -332,6 +335,9 @@ async function handlePush(): Promise<void> {
               @create-branch="isCreateBranchModalOpen = true"
               @create-branch-at-commit="handleCreateBranchFromCommit"
               @checkout-commit="handleCheckoutCommit"
+              @cherry-pick-commit="cherryPickCommit"
+              @revert-commit="revertCommit"
+              @reset-to-commit="resetToCommit"
             />
           </template>
 
@@ -360,6 +366,9 @@ async function handlePush(): Promise<void> {
           @select-file="handleSelectCommitFile"
           @create-branch="handleCreateBranchFromCommit"
           @checkout-commit="handleCheckoutCommit"
+          @cherry-pick="cherryPickCommit"
+          @revert="revertCommit"
+          @reset="resetToCommit"
           @close="clearCommitSelection"
         />
 

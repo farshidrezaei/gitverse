@@ -9,6 +9,7 @@ import type {
   RepositoryReferences,
 } from '~/types/repository'
 import { useStashController } from '~/composables/useStashController'
+import { useCommitOperations } from '~/composables/useCommitOperations'
 
 export function useWorkspaceManager() {
   const repositoryWorkspace = useRepositoryWorkspace()
@@ -19,6 +20,7 @@ export function useWorkspaceManager() {
   const commitInspectorController = useCommitInspector()
   const remoteController = useRemoteController()
   const stashController = useStashController()
+  const commitOperations = useCommitOperations()
 
   // Combined operational and loading states for backward compatibility
   const isLoading = computed(
@@ -29,7 +31,8 @@ export function useWorkspaceManager() {
       repositoryWorkspace.isOperating.value ||
       stagingController.isOperatingStaging.value ||
       branchController.isOperatingBranches.value ||
-      remoteController.isOperatingRemote.value
+      remoteController.isOperatingRemote.value ||
+      commitOperations.isOperatingCommit.value
   )
 
   async function openRepository(directoryPath: string): Promise<RepositoryOverview | null> {
@@ -222,5 +225,10 @@ export function useWorkspaceManager() {
     applyStash: stashController.applyStash,
     popStash: stashController.popStash,
     dropStash: stashController.dropStash,
+
+    // Commit Operations
+    cherryPickCommit: commitOperations.cherryPickCommit,
+    revertCommit: commitOperations.revertCommit,
+    resetToCommit: commitOperations.resetToCommit,
   }
 }

@@ -333,6 +333,37 @@ impl ApplicationState {
         self.git_inspector.drop_stash(&target_path, stash_index).await
     }
 
+    /// Cherry-picks a commit onto current branch.
+    pub async fn cherry_pick_commit(
+        &self,
+        directory_path: Option<&str>,
+        commit_hash: &str,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.cherry_pick_commit(&target_path, commit_hash).await
+    }
+
+    /// Reverts a commit by creating an inverse commit.
+    pub async fn revert_commit(
+        &self,
+        directory_path: Option<&str>,
+        commit_hash: &str,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.revert_commit(&target_path, commit_hash).await
+    }
+
+    /// Resets the current branch to a specific commit.
+    pub async fn reset_to_commit(
+        &self,
+        directory_path: Option<&str>,
+        commit_hash: &str,
+        reset_mode: &str,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.reset_to_commit(&target_path, commit_hash, reset_mode).await
+    }
+
     async fn resolve_path(&self, directory_path: Option<&str>) -> Result<PathBuf, ApplicationError> {
         if let Some(p) = directory_path {
             Ok(PathBuf::from(p))

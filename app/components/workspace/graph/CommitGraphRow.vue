@@ -18,6 +18,9 @@ const emit = defineEmits<{
   selectCommit: [commitHash: string]
   createBranchAtCommit: [commitSha: string]
   checkoutCommit: [commitSha: string]
+  cherryPickCommit: [commitHash: string]
+  revertCommit: [commitHash: string]
+  resetToCommit: [commitHash: string, mode: 'soft' | 'mixed' | 'hard']
 }>()
 
 const { t } = useI18n()
@@ -39,6 +42,37 @@ function getCommitContextMenuItems(commit: GitCommit): ContextMenuItem[][] {
         label: t('commit.checkoutCommit'),
         icon: 'i-lucide-log-in',
         onSelect: () => emit('checkoutCommit', commit.hash),
+      },
+    ],
+    [
+      {
+        label: t('commit.cherryPick'),
+        icon: 'i-lucide-git-cherry-pick',
+        onSelect: () => emit('cherryPickCommit', commit.hash),
+      },
+      {
+        label: t('commit.revert'),
+        icon: 'i-lucide-undo-2',
+        onSelect: () => emit('revertCommit', commit.hash),
+      },
+      {
+        label: t('commit.resetToHere'),
+        icon: 'i-lucide-history',
+        children: [
+          {
+            label: t('commit.resetSoft'),
+            onSelect: () => emit('resetToCommit', commit.hash, 'soft'),
+          },
+          {
+            label: t('commit.resetMixed'),
+            onSelect: () => emit('resetToCommit', commit.hash, 'mixed'),
+          },
+          {
+            label: t('commit.resetHard'),
+            color: 'error' as const,
+            onSelect: () => emit('resetToCommit', commit.hash, 'hard'),
+          },
+        ],
       },
     ],
     [

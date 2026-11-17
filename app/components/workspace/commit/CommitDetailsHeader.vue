@@ -11,10 +11,46 @@ const props = defineProps<CommitDetailsHeaderProps>()
 const emit = defineEmits<{
   createBranch: [commitSha: string]
   checkoutCommit: [commitSha: string]
+  cherryPick: [commitSha: string]
+  revert: [commitSha: string]
+  reset: [commitSha: string, mode: 'soft' | 'mixed' | 'hard']
   close: []
 }>()
 
 const { t } = useI18n()
+
+const moreActions = computed(() => [
+  [
+    {
+      label: t('commit.cherryPick'),
+      icon: 'i-lucide-git-cherry-pick',
+      onSelect: () => emit('cherryPick', props.commitDetails.hash),
+    },
+    {
+      label: t('commit.revert'),
+      icon: 'i-lucide-undo-2',
+      onSelect: () => emit('revert', props.commitDetails.hash),
+    },
+  ],
+  [
+    {
+      label: t('commit.resetSoft'),
+      icon: 'i-lucide-history',
+      onSelect: () => emit('reset', props.commitDetails.hash, 'soft'),
+    },
+    {
+      label: t('commit.resetMixed'),
+      icon: 'i-lucide-history',
+      onSelect: () => emit('reset', props.commitDetails.hash, 'mixed'),
+    },
+    {
+      label: t('commit.resetHard'),
+      icon: 'i-lucide-history',
+      color: 'error' as const,
+      onSelect: () => emit('reset', props.commitDetails.hash, 'hard'),
+    },
+  ],
+])
 
 function formatRelativeTime(timestampInSeconds: number): string {
   const diffMilliseconds = Date.now() - timestampInSeconds * 1000
@@ -73,6 +109,15 @@ function formatRelativeTime(timestampInSeconds: number): string {
             @click="emit('checkoutCommit', props.commitDetails.hash)"
           />
         </UTooltip>
+        <UDropdownMenu :items="moreActions">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-ellipsis"
+            :aria-label="t('common.actions')"
+          />
+        </UDropdownMenu>
       </div>
     </div>
 

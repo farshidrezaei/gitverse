@@ -41,7 +41,8 @@
     "empty": "No items found",
     "error": "An error occurred",
     "reset": "Reset",
-    "apply": "Apply"
+    "apply": "Apply",
+    "actions": "Actions"
   },
   "confirmation": {
     "defaultTitle": "Confirm Action",
@@ -238,7 +239,22 @@
     "searchFiles": "Filter changed files...",
     "filterFilesPlaceholder": "Filter changed files...",
     "noFilesChanged": "No files changed in this commit",
-    "viewCommit": "View Commit"
+    "viewCommit": "View Commit",
+    "cherryPick": "Cherry-pick this commit",
+    "cherryPickSuccess": "Commit cherry-picked successfully",
+    "cherryPickFailed": "Failed to cherry-pick commit (conflict or working tree not clean)",
+    "revert": "Revert commit",
+    "revertSuccess": "Commit reverted successfully",
+    "revertFailed": "Failed to revert commit",
+    "resetToHere": "Reset current branch here",
+    "resetSoft": "Soft reset (keep index & working tree)",
+    "resetMixed": "Mixed reset (keep working tree, unstage index)",
+    "resetHard": "Hard reset (discard all changes)",
+    "resetHardConfirmTitle": "Hard Reset Warning",
+    "resetHardConfirmDescription": "Are you sure you want to hard reset to {hash}? All uncommitted changes will be permanently discarded.",
+    "resetHardConfirmButton": "Hard Reset",
+    "resetSuccess": "Branch reset ({mode}) successfully",
+    "resetFailed": "Failed to reset branch to commit"
   },
   "stash": {
     "title": "Stashes",

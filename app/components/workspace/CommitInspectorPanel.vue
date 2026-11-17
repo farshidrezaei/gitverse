@@ -13,6 +13,9 @@ const emit = defineEmits<{
   selectFile: [filePath: string]
   createBranch: [commitSha: string]
   checkoutCommit: [commitSha: string]
+  cherryPick: [commitSha: string]
+  revert: [commitSha: string]
+  reset: [commitSha: string, mode: 'soft' | 'mixed' | 'hard']
   close: []
 }>()
 
@@ -49,6 +52,9 @@ const { t } = useI18n()
         :commit-details="props.commitDetails"
         @create-branch="emit('createBranch', $event)"
         @checkout-commit="emit('checkoutCommit', $event)"
+        @cherry-pick="emit('cherryPick', $event)"
+        @revert="emit('revert', $event)"
+        @reset="(hash, mode) => emit('reset', hash, mode)"
         @close="emit('close')"
       />
 

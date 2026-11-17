@@ -21,6 +21,9 @@ const emit = defineEmits<{
   createBranch: []
   createBranchAtCommit: [commitSha: string]
   checkoutCommit: [commitSha: string]
+  cherryPickCommit: [commitHash: string]
+  revertCommit: [commitHash: string]
+  resetToCommit: [commitHash: string, mode: 'soft' | 'mixed' | 'hard']
   resetGraphFilter: []
 }>()
 
@@ -205,6 +208,9 @@ watch(
               @select-commit="emit('selectCommit', $event)"
               @create-branch-at-commit="emit('createBranchAtCommit', $event)"
               @checkout-commit="emit('checkoutCommit', $event)"
+              @cherry-pick-commit="emit('cherryPickCommit', $event)"
+              @revert-commit="emit('revertCommit', $event)"
+              @reset-to-commit="(hash, mode) => emit('resetToCommit', hash, mode)"
             />
           </div>
         </div>

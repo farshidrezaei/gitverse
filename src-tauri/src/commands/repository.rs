@@ -311,3 +311,35 @@ pub async fn drop_stash(
     state.drop_stash(directory_path.as_deref(), stash_index).await
 }
 
+/// Tauri IPC command to cherry-pick a commit.
+#[tauri::command]
+pub async fn cherry_pick_commit(
+    state: State<'_, ApplicationState>,
+    commit_hash: String,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.cherry_pick_commit(directory_path.as_deref(), &commit_hash).await
+}
+
+/// Tauri IPC command to revert a commit.
+#[tauri::command]
+pub async fn revert_commit(
+    state: State<'_, ApplicationState>,
+    commit_hash: String,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.revert_commit(directory_path.as_deref(), &commit_hash).await
+}
+
+/// Tauri IPC command to reset current branch to a commit.
+#[tauri::command]
+pub async fn reset_to_commit(
+    state: State<'_, ApplicationState>,
+    commit_hash: String,
+    reset_mode: String,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.reset_to_commit(directory_path.as_deref(), &commit_hash, &reset_mode).await
+}
+
+
