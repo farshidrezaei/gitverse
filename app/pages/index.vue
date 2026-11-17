@@ -503,28 +503,22 @@ function selectCommit(sha: string): void {
             <span class="text-xs font-semibold text-highlighted uppercase tracking-wider">
               {{ t('navigation.changes') }}
             </span>
-            <div class="flex items-center gap-1">
-              <!-- View Mode Toggle: Flat vs Tree -->
-              <div class="flex items-center rounded-lg border border-default/60 p-0.5 bg-muted/30">
-                <button
-                  type="button"
-                  class="p-1 rounded text-muted hover:text-highlighted transition-colors"
-                  :class="stagingViewMode === 'flat' ? 'bg-primary/20 text-primary font-bold' : ''"
-                  :title="t('repository.viewFlat')"
-                  @click="stagingViewMode = 'flat'"
-                >
-                  <UIcon name="i-lucide-list" class="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  class="p-1 rounded text-muted hover:text-highlighted transition-colors"
-                  :class="stagingViewMode === 'tree' ? 'bg-primary/20 text-primary font-bold' : ''"
-                  :title="t('repository.viewTree')"
-                  @click="stagingViewMode = 'tree'"
-                >
-                  <UIcon name="i-lucide-folder-tree" class="h-3.5 w-3.5" />
-                </button>
-              </div>
+            <div class="flex items-center gap-1.5">
+              <!-- Modern Segmented Toggle: Flat vs Tree -->
+              <UToggleGroup
+                v-model="stagingViewMode"
+                size="xs"
+                variant="ghost"
+                active-variant="subtle"
+                color="neutral"
+                active-color="primary"
+                :items="[
+                  { value: 'flat', icon: 'i-lucide-list', 'aria-label': t('repository.viewFlat'), title: t('repository.viewFlat') },
+                  { value: 'tree', icon: 'i-lucide-folder-tree', 'aria-label': t('repository.viewTree'), title: t('repository.viewTree') },
+                ]"
+              />
+
+              <div class="h-3.5 w-px bg-default/80" aria-hidden="true" />
 
               <UButton
                 size="xs"
