@@ -504,19 +504,33 @@ function selectCommit(sha: string): void {
               {{ t('navigation.changes') }}
             </span>
             <div class="flex items-center gap-1.5">
-              <!-- Modern Segmented Toggle: Flat vs Tree -->
-              <UToggleGroup
-                v-model="stagingViewMode"
-                size="xs"
-                variant="ghost"
-                active-variant="subtle"
-                color="neutral"
-                active-color="primary"
-                :items="[
-                  { value: 'flat', icon: 'i-lucide-list', 'aria-label': t('repository.viewFlat'), title: t('repository.viewFlat') },
-                  { value: 'tree', icon: 'i-lucide-folder-tree', 'aria-label': t('repository.viewTree'), title: t('repository.viewTree') },
-                ]"
-              />
+              <!-- Premium Segmented Pill Switcher: Flat vs Tree -->
+              <div class="flex items-center rounded-lg border border-default/70 bg-surface/80 p-0.5 shadow-2xs">
+                <button
+                  type="button"
+                  class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all"
+                  :class="stagingViewMode === 'flat'
+                    ? 'bg-primary text-inverted shadow-xs'
+                    : 'text-muted hover:text-highlighted'"
+                  :title="t('repository.viewFlat')"
+                  @click="stagingViewMode = 'flat'"
+                >
+                  <UIcon name="i-lucide-list" class="h-3 w-3" />
+                  <span>List</span>
+                </button>
+                <button
+                  type="button"
+                  class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all"
+                  :class="stagingViewMode === 'tree'
+                    ? 'bg-primary text-inverted shadow-xs'
+                    : 'text-muted hover:text-highlighted'"
+                  :title="t('repository.viewTree')"
+                  @click="stagingViewMode = 'tree'"
+                >
+                  <UIcon name="i-lucide-folder-tree" class="h-3 w-3" />
+                  <span>Tree</span>
+                </button>
+              </div>
 
               <div class="h-3.5 w-px bg-default/80" aria-hidden="true" />
 
