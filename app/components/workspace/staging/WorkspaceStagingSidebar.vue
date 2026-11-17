@@ -305,7 +305,7 @@ function getFlatFileContextMenuItems(
                 color="error"
                 variant="ghost"
                 :label="t('conflict.abortOperation')"
-                @click="abortOperation"
+                @click="abortOperation()"
               />
               <UButton
                 size="xs"
@@ -313,7 +313,7 @@ function getFlatFileContextMenuItems(
                 variant="solid"
                 :label="t('conflict.continueOperation')"
                 :disabled="Boolean(props.repositoryStatus?.conflicted_files?.length)"
-                @click="continueOperation"
+                @click="continueOperation()"
               />
             </div>
           </div>

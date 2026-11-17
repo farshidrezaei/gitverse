@@ -16,7 +16,13 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { isFavoriteBranch, toggleFavoriteBranch } = useWorkspaceManager()
+const {
+  isFavoriteBranch,
+  toggleFavoriteBranch,
+  currentBranchName,
+  mergeBranch,
+  rebaseBranch,
+} = useWorkspaceManager()
 
 // Default folder open if it contains the HEAD branch
 const isOpen = ref<boolean>(props.node.hasHeadBranch || true)
@@ -38,6 +44,24 @@ const branchContextMenuItems = computed<ContextMenuItem[][]>(() => {
         icon: 'i-lucide-check',
         disabled: props.node.branch.is_head,
         onSelect: () => emit('checkout', props.node.fullBranchName),
+      },
+      {
+        label: t('branch.mergeIntoCurrent', {
+          source: props.node.fullBranchName,
+          target: currentBranchName.value,
+        }),
+        icon: 'i-lucide-git-merge',
+        disabled: props.node.branch.is_head,
+        onSelect: () => mergeBranch(props.node.fullBranchName),
+      },
+      {
+        label: t('branch.rebaseCurrentOnto', {
+          current: currentBranchName.value,
+          upstream: props.node.fullBranchName,
+        }),
+        icon: 'i-lucide-git-pull-request-arrow',
+        disabled: props.node.branch.is_head,
+        onSelect: () => rebaseBranch(props.node.fullBranchName),
       },
       {
         label: t('git.createBranch'),

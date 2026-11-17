@@ -108,4 +108,44 @@ impl GitProcessExecutor {
 
         Ok(String::from_utf8_lossy(&execution_result.stdout).to_string())
     }
+
+    /// Executes a Git command and returns exit code, stdout, and stderr without erroring on non-zero exit code.
+    pub async fn execute_git_command_with_status(
+        &self,
+        working_directory: Option<&Path>,
+        arguments: &[&str],
+    ) -> Result<(i32, String, String), ApplicationError> {
+        let mut command = Command::new(&self.executable_path);
+
+        if let Some(directory) = working_directory {
+            command.current_dir(directory);
+        }
+
+        for argument in arguments {
+            command.arg(argument);
+        }
+
+        command.env("LC_ALL", "C");
+
+        let execution_result = tokio::time::timeout(DEFAULT_COMMAND_TIMEOUT, command.output())
+            .await
+            .map_err(|_| {
+                ApplicationError::TimeoutOrCancelled(format!(
+                    "Command 'git {:?}' timed out after {:?}",
+                    arguments, DEFAULT_COMMAND_TIMEOUT
+                ))
+            })?
+            .map_err(|error| {
+                ApplicationError::FilesystemError(format!(
+                    "Failed to spawn process {:?}: {}",
+                    self.executable_path, error
+                ))
+            })?;
+
+        let exit_code = execution_result.status.code().unwrap_or(-1);
+        let stdout = String::from_utf8_lossy(&execution_result.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&execution_result.stderr).to_string();
+
+        Ok((exit_code, stdout, stderr))
+    }
 }

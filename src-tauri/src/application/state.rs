@@ -4,8 +4,8 @@ use std::sync::Arc;
 use tauri::AppHandle;
 use tokio::sync::RwLock;
 use crate::domain::{
-    ApplicationError, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation, RecentRepositoryRecord,
-    RepositoryOverview, StashRecord,
+    ApplicationError, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation,
+    MergeBranchOutcome, RebaseBranchOutcome, RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
 use crate::infrastructure::storage::SQLiteRepositoryStore;
@@ -396,13 +396,35 @@ impl ApplicationState {
         self.git_inspector.write_conflict_resolved_content(&target_path, file_path, resolved_content).await
     }
 
+    /// Merges branch into current HEAD branch.
+    pub async fn merge_branch(
+        &self,
+        directory_path: Option<&str>,
+        branch_name: &str,
+        no_fast_forward: bool,
+    ) -> Result<MergeBranchOutcome, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.merge_branch(&target_path, branch_name, no_fast_forward).await
+    }
+
+    /// Rebases current HEAD branch onto upstream branch.
+    pub async fn rebase_branch(
+        &self,
+        directory_path: Option<&str>,
+        upstream_branch: &str,
+    ) -> Result<RebaseBranchOutcome, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.rebase_branch(&target_path, upstream_branch).await
+    }
+
     /// Aborts active ongoing operation (merge, rebase, cherry-pick, revert).
     pub async fn abort_repository_operation(
         &self,
         directory_path: Option<&str>,
+        create_backup: Option<bool>,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.abort_repository_operation(&target_path).await
+        self.git_inspector.abort_repository_operation(&target_path, create_backup.unwrap_or(false)).await
     }
 
     /// Continues active ongoing operation after all conflicts are resolved.

@@ -2,8 +2,8 @@ use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use crate::application::ApplicationState;
 use crate::domain::{
-    ApplicationError, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation, RecentRepositoryRecord,
-    RepositoryOverview, StashRecord,
+    ApplicationError, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation,
+    MergeBranchOutcome, RebaseBranchOutcome, RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
 
 /// Tauri IPC command to discover and validate the native Git binary.
@@ -374,13 +374,43 @@ pub async fn write_conflict_resolved_content(
     state.write_conflict_resolved_content(directory_path.as_deref(), &file_path, &resolved_content).await
 }
 
+/// Tauri IPC command to merge a branch into current branch.
+#[tauri::command]
+pub async fn merge_branch(
+    state: State<'_, ApplicationState>,
+    branch_name: String,
+    no_fast_forward: Option<bool>,
+    directory_path: Option<String>,
+) -> Result<MergeBranchOutcome, ApplicationError> {
+    state
+        .merge_branch(
+            directory_path.as_deref(),
+            &branch_name,
+            no_fast_forward.unwrap_or(false),
+        )
+        .await
+}
+
+/// Tauri IPC command to rebase current branch onto an upstream branch.
+#[tauri::command]
+pub async fn rebase_branch(
+    state: State<'_, ApplicationState>,
+    upstream_branch: String,
+    directory_path: Option<String>,
+) -> Result<RebaseBranchOutcome, ApplicationError> {
+    state
+        .rebase_branch(directory_path.as_deref(), &upstream_branch)
+        .await
+}
+
 /// Tauri IPC command to abort active ongoing repository operation.
 #[tauri::command]
 pub async fn abort_repository_operation(
     state: State<'_, ApplicationState>,
+    create_backup: Option<bool>,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.abort_repository_operation(directory_path.as_deref()).await
+    state.abort_repository_operation(directory_path.as_deref(), create_backup).await
 }
 
 /// Tauri IPC command to continue active ongoing repository operation after conflicts are resolved.

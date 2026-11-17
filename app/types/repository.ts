@@ -209,6 +209,18 @@ export interface StashRecord {
   timestamp_seconds: number
 }
 
+export interface MergeBranchOutcome {
+  is_successful: boolean
+  has_conflicts: boolean
+  message: string
+}
+
+export interface RebaseBranchOutcome {
+  is_successful: boolean
+  has_conflicts: boolean
+  message: string
+}
+
 
 
 

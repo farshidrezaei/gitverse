@@ -284,6 +284,20 @@
     "droppedSuccess": "استش با موفقیت حذف شد",
     "dropFailed": "خطا در حذف استش"
   },
+  "branch": {
+    "mergeIntoCurrent": "ادغام «{source}» در «{target}»",
+    "rebaseCurrentOnto": "ریبیس «{current}» روی «{upstream}»",
+    "mergeConfirmTitle": "ادغام شاخه: {source} به {target}",
+    "mergeConfirmDescription": "آیا از ادغام تغییرات شاخه «{source}» در شاخه فعال فعلی «{target}» اطمینان دارید؟",
+    "mergeAction": "ادغام شاخه",
+    "mergeSuccess": "شاخه «{source}» با موفقیت در «{target}» ادغام شد",
+    "mergeConflict": "هنگام ادغام «{source}» تداخل رخ داد. لطفاً تعارض‌ها را در سایدبار حل کنید.",
+    "rebaseConfirmTitle": "ریبیس شاخه: {current} روی {upstream}",
+    "rebaseConfirmDescription": "آیا از ریبیس شاخه «{current}» بر روی «{upstream}» اطمینان دارید؟ این عملیات تاریخچه محلی کامیت‌ها را بازنویسی می‌کند.",
+    "rebaseAction": "ریبیس شاخه",
+    "rebaseSuccess": "شاخه «{current}» با موفقیت روی «{upstream}» ریبیس شد",
+    "rebaseConflict": "ریبیس به دلیل وجود تداخل با «{upstream}» متوقف شد. لطفاً تعارض‌ها را در سایدبار حل کنید."
+  },
   "conflict": {
     "title": "تعارض‌های مرج (Merge Conflicts)",
     "operationMerge": "مرج در حال انجام",

@@ -1,4 +1,10 @@
-import type { RepositoryReferences } from '~/types/repository'
+import type { MergeBranchOutcome, RebaseBranchOutcome, RepositoryReferences } from '~/types/repository'
+import { useRepositoryWorkspace } from '~/composables/useRepositoryWorkspace'
+import { useActionHistory } from '~/composables/useActionHistory'
+import { useNotificationService } from '~/composables/useNotificationService'
+import { useConfirmationDialog } from '~/composables/useConfirmationDialog'
+import { useStagingController } from '~/composables/useStagingController'
+import { useCommitGraph } from '~/composables/useCommitGraph'
 
 export function useBranchController() {
   const { currentRepository } = useRepositoryWorkspace()
@@ -11,7 +17,18 @@ export function useBranchController() {
 
   const { pushAction } = useActionHistory()
   const { notifySuccess, notifyError, notifyUndoable } = useNotificationService()
+  const { confirmStandard } = useConfirmationDialog()
+  const { repositoryStatus, fetchStatus } = useStagingController()
+  const { fetchCommitGraph } = useCommitGraph()
   const { t } = useI18n()
+
+  const currentBranchName = computed(() => {
+    return (
+      repositoryStatus.value?.branch_name ||
+      repositoryReferences.value?.branches.find((branch) => branch.is_head)?.name ||
+      'HEAD'
+    )
+  })
 
   async function isTauriEnvironment(): Promise<boolean> {
     return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
@@ -217,10 +234,104 @@ export function useBranchController() {
     }
   }
 
+  async function mergeBranch(branchName: string, noFastForward = false): Promise<boolean> {
+    if (!currentRepository.value) {
+      return false
+    }
+
+    const targetBranch = currentBranchName.value
+    const isConfirmed = await confirmStandard({
+      title: t('branch.mergeConfirmTitle', { source: branchName, target: targetBranch }),
+      description: t('branch.mergeConfirmDescription', { source: branchName, target: targetBranch }),
+      confirmLabel: t('branch.mergeAction'),
+      variant: 'primary',
+    })
+    if (!isConfirmed) {
+      return false
+    }
+
+    try {
+      isOperatingBranches.value = true
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        const outcome = await invoke<MergeBranchOutcome>('merge_branch', {
+          branchName,
+          noFastForward,
+          directoryPath: currentRepository.value.path,
+        })
+
+        if (outcome.is_successful) {
+          notifySuccess(t('branch.mergeSuccess', { source: branchName, target: targetBranch }))
+        } else if (outcome.has_conflicts) {
+          notifyError(t('branch.mergeConflict', { source: branchName }))
+        }
+      }
+
+      await fetchStatus()
+      await fetchReferences()
+      await fetchCommitGraph()
+      return true
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : `Failed to merge ${branchName}`
+      notifyError(t('common.error'), errorMessage)
+      await fetchStatus()
+      return false
+    } finally {
+      isOperatingBranches.value = false
+    }
+  }
+
+  async function rebaseBranch(upstreamBranch: string): Promise<boolean> {
+    if (!currentRepository.value) {
+      return false
+    }
+
+    const currentBranch = currentBranchName.value
+    const isConfirmed = await confirmStandard({
+      title: t('branch.rebaseConfirmTitle', { current: currentBranch, upstream: upstreamBranch }),
+      description: t('branch.rebaseConfirmDescription', { current: currentBranch, upstream: upstreamBranch }),
+      confirmLabel: t('branch.rebaseAction'),
+      variant: 'warning',
+    })
+    if (!isConfirmed) {
+      return false
+    }
+
+    try {
+      isOperatingBranches.value = true
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        const outcome = await invoke<RebaseBranchOutcome>('rebase_branch', {
+          upstreamBranch,
+          directoryPath: currentRepository.value.path,
+        })
+
+        if (outcome.is_successful) {
+          notifySuccess(t('branch.rebaseSuccess', { current: currentBranch, upstream: upstreamBranch }))
+        } else if (outcome.has_conflicts) {
+          notifyError(t('branch.rebaseConflict', { upstream: upstreamBranch }))
+        }
+      }
+
+      await fetchStatus()
+      await fetchReferences()
+      await fetchCommitGraph()
+      return true
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : `Failed to rebase onto ${upstreamBranch}`
+      notifyError(t('common.error'), errorMessage)
+      await fetchStatus()
+      return false
+    } finally {
+      isOperatingBranches.value = false
+    }
+  }
+
   return {
     repositoryReferences,
     favoriteBranches,
     isOperatingBranches,
+    currentBranchName,
     loadFavoriteBranches,
     toggleFavoriteBranch,
     isFavoriteBranch,
@@ -228,5 +339,7 @@ export function useBranchController() {
     checkoutBranch,
     createBranch,
     deleteBranch,
+    mergeBranch,
+    rebaseBranch,
   }
 }

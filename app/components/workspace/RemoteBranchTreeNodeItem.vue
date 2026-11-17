@@ -14,6 +14,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const { currentBranchName, mergeBranch, rebaseBranch } = useWorkspaceManager()
 const isOpen = ref(true)
 
 function toggleOpen(): void {
@@ -32,6 +33,24 @@ const remoteContextMenuItems = computed<ContextMenuItem[][]>(() => {
         icon: 'i-lucide-check',
         onSelect: () => emit('checkout', props.node.fullBranchName),
       },
+      {
+        label: t('branch.mergeIntoCurrent', {
+          source: props.node.fullBranchName,
+          target: currentBranchName.value,
+        }),
+        icon: 'i-lucide-git-merge',
+        onSelect: () => mergeBranch(props.node.fullBranchName),
+      },
+      {
+        label: t('branch.rebaseCurrentOnto', {
+          current: currentBranchName.value,
+          upstream: props.node.fullBranchName,
+        }),
+        icon: 'i-lucide-git-pull-request-arrow',
+        onSelect: () => rebaseBranch(props.node.fullBranchName),
+      },
+    ],
+    [
       {
         label: t('git.copyBranchName'),
         icon: 'i-lucide-copy',

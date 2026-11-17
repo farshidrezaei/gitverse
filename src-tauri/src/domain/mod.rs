@@ -208,5 +208,21 @@ pub struct StashRecord {
     pub timestamp_seconds: i64,
 }
 
+/// Represents the outcome of merging a branch.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct MergeBranchOutcome {
+    pub is_successful: bool,
+    pub has_conflicts: bool,
+    pub message: String,
+}
+
+/// Represents the outcome of rebasing on top of an upstream branch.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RebaseBranchOutcome {
+    pub is_successful: bool,
+    pub has_conflicts: bool,
+    pub message: String,
+}
+
 
 

@@ -284,6 +284,20 @@
     "droppedSuccess": "Stash dropped successfully",
     "dropFailed": "Failed to drop stash"
   },
+  "branch": {
+    "mergeIntoCurrent": "Merge '{source}' into '{target}'",
+    "rebaseCurrentOnto": "Rebase '{current}' onto '{upstream}'",
+    "mergeConfirmTitle": "Merge '{source}' into '{target}'",
+    "mergeConfirmDescription": "Are you sure you want to merge changes from '{source}' into your current branch '{target}'?",
+    "mergeAction": "Merge Branch",
+    "mergeSuccess": "Merged '{source}' into '{target}' successfully",
+    "mergeConflict": "Merge conflicts encountered with '{source}'. Please resolve conflicts in the sidebar.",
+    "rebaseConfirmTitle": "Rebase '{current}' onto '{upstream}'",
+    "rebaseConfirmDescription": "Are you sure you want to rebase '{current}' on top of '{upstream}'? This will rewrite local commit history.",
+    "rebaseAction": "Rebase Branch",
+    "rebaseSuccess": "Rebased '{current}' onto '{upstream}' successfully",
+    "rebaseConflict": "Rebase paused due to conflicts with '{upstream}'. Please resolve conflicts in the sidebar."
+  },
   "conflict": {
     "title": "Merge Conflicts",
     "operationMerge": "Merge in progress",

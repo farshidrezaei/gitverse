@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use crate::domain::{
-    ApplicationError, ConflictFileDetails, RepositoryOperationState, RepositoryOverview, StashRecord,
+    ApplicationError, ConflictFileDetails, MergeBranchOutcome, RebaseBranchOutcome,
+    RepositoryOperationState, RepositoryOverview, StashRecord,
 };
 use super::process::GitProcessExecutor;
 use super::stash::parse_stash_list;
@@ -706,10 +707,111 @@ impl GitRepositoryInspector {
     }
 
     /// Aborts any active ongoing operation (merge, rebase, cherry-pick, revert).
+    /// Merges the specified branch into the current HEAD branch.
+    pub async fn merge_branch(
+        &self,
+        directory_path: &Path,
+        branch_name: &str,
+        no_fast_forward: bool,
+    ) -> Result<MergeBranchOutcome, ApplicationError> {
+        let mut arguments = vec!["merge"];
+        if no_fast_forward {
+            arguments.push("--no-ff");
+        }
+        arguments.push(branch_name);
+
+        let (exit_code, stdout, stderr) = self
+            .executor
+            .execute_git_command_with_status(Some(directory_path), &arguments)
+            .await?;
+
+        if exit_code == 0 {
+            Ok(MergeBranchOutcome {
+                is_successful: true,
+                has_conflicts: false,
+                message: stdout.trim().to_string(),
+            })
+        } else {
+            let operation_state = self.detect_repository_operation_state(directory_path).await?;
+            let has_conflicts = operation_state == RepositoryOperationState::Merging
+                || stdout.contains("CONFLICT")
+                || stderr.contains("CONFLICT");
+
+            if has_conflicts {
+                Ok(MergeBranchOutcome {
+                    is_successful: false,
+                    has_conflicts: true,
+                    message: format!("{}\n{}", stdout.trim(), stderr.trim()).trim().to_string(),
+                })
+            } else {
+                let error_message = if !stderr.trim().is_empty() {
+                    stderr.trim().to_string()
+                } else {
+                    stdout.trim().to_string()
+                };
+                Err(ApplicationError::GitExecutionFailed {
+                    exit_code,
+                    message: error_message,
+                })
+            }
+        }
+    }
+
+    /// Rebases current HEAD branch onto the specified upstream branch.
+    pub async fn rebase_branch(
+        &self,
+        directory_path: &Path,
+        upstream_branch: &str,
+    ) -> Result<RebaseBranchOutcome, ApplicationError> {
+        let (exit_code, stdout, stderr) = self
+            .executor
+            .execute_git_command_with_status(Some(directory_path), &["rebase", upstream_branch])
+            .await?;
+
+        if exit_code == 0 {
+            Ok(RebaseBranchOutcome {
+                is_successful: true,
+                has_conflicts: false,
+                message: stdout.trim().to_string(),
+            })
+        } else {
+            let operation_state = self.detect_repository_operation_state(directory_path).await?;
+            let has_conflicts = operation_state == RepositoryOperationState::Rebasing
+                || stdout.contains("CONFLICT")
+                || stderr.contains("CONFLICT");
+
+            if has_conflicts {
+                Ok(RebaseBranchOutcome {
+                    is_successful: false,
+                    has_conflicts: true,
+                    message: format!("{}\n{}", stdout.trim(), stderr.trim()).trim().to_string(),
+                })
+            } else {
+                let error_message = if !stderr.trim().is_empty() {
+                    stderr.trim().to_string()
+                } else {
+                    stdout.trim().to_string()
+                };
+                Err(ApplicationError::GitExecutionFailed {
+                    exit_code,
+                    message: error_message,
+                })
+            }
+        }
+    }
+
+    /// Aborts an active ongoing operation (merge, rebase, cherry-pick, revert).
+    /// If create_backup is true, creates a timestamped backup directory in `.git/gitverse_backups/`
+    /// containing all currently conflicted or modified files before executing the abort.
     pub async fn abort_repository_operation(
         &self,
         directory_path: &Path,
+        create_backup: bool,
     ) -> Result<String, ApplicationError> {
+        if create_backup {
+            let _ = self.create_pre_abort_backup(directory_path).await;
+        }
+
         let operation_state = self.detect_repository_operation_state(directory_path).await?;
         match operation_state {
             RepositoryOperationState::Merging => {
@@ -736,6 +838,30 @@ impl GitRepositoryInspector {
                 Err(ApplicationError::Unexpected("No active Git operation to abort".into()))
             }
         }
+    }
+
+    /// Creates a timestamped backup of conflicted/modified files to preserve manual work before aborting.
+    async fn create_pre_abort_backup(&self, directory_path: &Path) -> Result<PathBuf, ApplicationError> {
+        let git_dir = self.get_git_directory(directory_path).await?;
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|duration| duration.as_secs())
+            .unwrap_or(0);
+
+        let backup_directory = git_dir.join("gitverse_backups").join(format!("backup_{}", timestamp));
+        let _ = tokio::fs::create_dir_all(&backup_directory).await;
+
+        let status = self.get_detailed_status(directory_path).await?;
+        for file in status.conflicted_files.iter().chain(status.unstaged_files.iter()) {
+            let source = directory_path.join(&file.path);
+            let destination = backup_directory.join(&file.path);
+            if let Some(parent) = destination.parent() {
+                let _ = tokio::fs::create_dir_all(parent).await;
+            }
+            let _ = tokio::fs::copy(&source, &destination).await;
+        }
+
+        Ok(backup_directory)
     }
 
     /// Continues an ongoing operation after conflicts are resolved.

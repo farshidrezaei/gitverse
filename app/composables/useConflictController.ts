@@ -116,7 +116,7 @@ export function useConflictController() {
     }
   }
 
-  async function abortOperation(): Promise<boolean> {
+  async function abortOperation(createBackup = true): Promise<boolean> {
     if (!currentRepository.value) {
       return false
     }
@@ -136,6 +136,7 @@ export function useConflictController() {
       if (await isTauriEnvironment()) {
         const { invoke } = await import('@tauri-apps/api/core')
         await invoke('abort_repository_operation', {
+          createBackup,
           directoryPath: currentRepository.value.path,
         })
       }

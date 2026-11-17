@@ -186,10 +186,13 @@ export function useWorkspaceManager() {
     // Branches & References
     repositoryReferences: branchController.repositoryReferences,
     favoriteBranches: branchController.favoriteBranches,
+    currentBranchName: branchController.currentBranchName,
     fetchReferences: branchController.fetchReferences,
     checkoutBranch,
     createBranch,
     deleteBranch,
+    mergeBranch: branchController.mergeBranch,
+    rebaseBranch: branchController.rebaseBranch,
     loadFavoriteBranches: branchController.loadFavoriteBranches,
     toggleFavoriteBranch: branchController.toggleFavoriteBranch,
     isFavoriteBranch: branchController.isFavoriteBranch,

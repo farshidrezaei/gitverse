@@ -83,6 +83,8 @@ pub fn run() {
             commands::write_conflict_resolved_content,
             commands::abort_repository_operation,
             commands::continue_repository_operation,
+            commands::merge_branch,
+            commands::rebase_branch,
         ])
         .run(tauri::generate_context!());
 
