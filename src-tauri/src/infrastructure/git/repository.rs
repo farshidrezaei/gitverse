@@ -108,4 +108,78 @@ impl GitRepositoryInspector {
             behind_count,
         })
     }
+
+    /// Fetches detailed status (staged, unstaged, conflicted files) using porcelain v2.
+    pub async fn get_detailed_status(&self, directory_path: &Path) -> Result<crate::domain::DetailedRepositoryStatus, ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        let output = self.executor
+            .execute_git_command(Some(directory_path), &["status", "--porcelain=v2", "--branch", "-z"])
+            .await?;
+
+        Ok(super::status::parse_porcelain_v2_status(&output))
+    }
+
+    /// Stages a specific file.
+    pub async fn stage_file(&self, directory_path: &Path, file_path: &str) -> Result<(), ApplicationError> {
+        self.executor
+            .execute_git_command(Some(directory_path), &["add", "--", file_path])
+            .await?;
+        Ok(())
+    }
+
+    /// Unstages a specific file.
+    pub async fn unstage_file(&self, directory_path: &Path, file_path: &str) -> Result<(), ApplicationError> {
+        self.executor
+            .execute_git_command(Some(directory_path), &["restore", "--staged", "--", file_path])
+            .await?;
+        Ok(())
+    }
+
+    /// Stages all changes (tracked and untracked).
+    pub async fn stage_all(&self, directory_path: &Path) -> Result<(), ApplicationError> {
+        self.executor
+            .execute_git_command(Some(directory_path), &["add", "-A"])
+            .await?;
+        Ok(())
+    }
+
+    /// Unstages all staged changes.
+    pub async fn unstage_all(&self, directory_path: &Path) -> Result<(), ApplicationError> {
+        self.executor
+            .execute_git_command(Some(directory_path), &["restore", "--staged", "."])
+            .await?;
+        Ok(())
+    }
+
+    /// Discards working tree changes for a specific file.
+    pub async fn discard_file_changes(&self, directory_path: &Path, file_path: &str, is_untracked: bool) -> Result<(), ApplicationError> {
+        if is_untracked {
+            self.executor
+                .execute_git_command(Some(directory_path), &["clean", "-f", "--", file_path])
+                .await?;
+        } else {
+            self.executor
+                .execute_git_command(Some(directory_path), &["restore", "--", file_path])
+                .await?;
+        }
+        Ok(())
+    }
+
+    /// Commits staged changes with a commit message and optional amend flag.
+    pub async fn commit(&self, directory_path: &Path, message: &str, is_amend: bool) -> Result<String, ApplicationError> {
+        let mut arguments = vec!["commit", "-m", message];
+        if is_amend {
+            arguments.push("--amend");
+        }
+
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
+    }
 }

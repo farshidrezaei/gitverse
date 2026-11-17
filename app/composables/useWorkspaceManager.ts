@@ -1,4 +1,5 @@
 import type {
+  DetailedRepositoryStatus,
   GitBinaryInformation,
   RecentRepositoryRecord,
   RepositoryOverview,
@@ -6,13 +7,161 @@ import type {
 
 export function useWorkspaceManager() {
   const currentRepository = useState<RepositoryOverview | null>('workspace-current-repository', () => null)
+  const repositoryStatus = useState<DetailedRepositoryStatus | null>('workspace-repository-status', () => null)
   const recentRepositories = useState<RecentRepositoryRecord[]>('workspace-recent-repositories', () => [])
   const gitBinary = useState<GitBinaryInformation | null>('workspace-git-binary', () => null)
   const isLoading = ref<boolean>(false)
   const lastError = ref<string | null>(null)
 
+  let unlistenStatusWatcher: (() => void) | null = null
+
   async function isTauriEnvironment(): Promise<boolean> {
     return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+  }
+
+  async function fetchStatus(): Promise<DetailedRepositoryStatus | null> {
+    if (!currentRepository.value) {
+      repositoryStatus.value = null
+      return null
+    }
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        const status = await invoke<DetailedRepositoryStatus>('get_repository_status', {
+          directoryPath: currentRepository.value.path,
+        })
+        repositoryStatus.value = status
+
+        // Keep current repository sync counts updated
+        if (currentRepository.value) {
+          currentRepository.value.ahead_count = status.ahead_count
+          currentRepository.value.behind_count = status.behind_count
+          currentRepository.value.working_tree_is_clean =
+            status.staged_files.length === 0 &&
+            status.unstaged_files.length === 0 &&
+            status.conflicted_files.length === 0
+          if (status.branch_name) {
+            currentRepository.value.current_branch_name = status.branch_name
+          }
+        }
+        return status
+      } else {
+        // Mock status in dev preview
+        const mock: DetailedRepositoryStatus = {
+          branch_name: currentRepository.value.current_branch_name || 'master',
+          head_commit_hash: 'dab7678166d',
+          upstream_branch_name: 'origin/master',
+          ahead_count: 0,
+          behind_count: 0,
+          is_detached_head: false,
+          staged_files: [
+            { path: 'src-tauri/Cargo.toml', original_path: null, status: 'modified', is_staged: true },
+          ],
+          unstaged_files: [
+            { path: 'app/pages/index.vue', original_path: null, status: 'modified', is_staged: false },
+            { path: 'scratch/notes.txt', original_path: null, status: 'untracked', is_staged: false },
+          ],
+          conflicted_files: [],
+        }
+        repositoryStatus.value = mock
+        return mock
+      }
+    } catch (error: any) {
+      lastError.value = error?.message || 'Failed to fetch status'
+      return null
+    }
+  }
+
+  async function setupRealtimeListener(): Promise<void> {
+    if (await isTauriEnvironment()) {
+      const { listen } = await import('@tauri-apps/api/event')
+      if (unlistenStatusWatcher) {
+        unlistenStatusWatcher()
+      }
+      const unlisten = await listen('repository://status-changed', async () => {
+        await fetchStatus()
+      })
+      unlistenStatusWatcher = unlisten
+    }
+  }
+
+  async function stageFile(filePath: string): Promise<void> {
+    if (!currentRepository.value) return
+    if (await isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core')
+      await invoke('stage_file', {
+        filePath,
+        directoryPath: currentRepository.value.path,
+      })
+    }
+    await fetchStatus()
+  }
+
+  async function unstageFile(filePath: string): Promise<void> {
+    if (!currentRepository.value) return
+    if (await isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core')
+      await invoke('unstage_file', {
+        filePath,
+        directoryPath: currentRepository.value.path,
+      })
+    }
+    await fetchStatus()
+  }
+
+  async function stageAll(): Promise<void> {
+    if (!currentRepository.value) return
+    if (await isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core')
+      await invoke('stage_all', {
+        directoryPath: currentRepository.value.path,
+      })
+    }
+    await fetchStatus()
+  }
+
+  async function unstageAll(): Promise<void> {
+    if (!currentRepository.value) return
+    if (await isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core')
+      await invoke('unstage_all', {
+        directoryPath: currentRepository.value.path,
+      })
+    }
+    await fetchStatus()
+  }
+
+  async function discardFile(filePath: string, isUntracked: boolean): Promise<void> {
+    if (!currentRepository.value) return
+    if (await isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core')
+      await invoke('discard_file_changes', {
+        filePath,
+        isUntracked,
+        directoryPath: currentRepository.value.path,
+      })
+    }
+    await fetchStatus()
+  }
+
+  async function commitChanges(message: string, isAmend: boolean): Promise<boolean> {
+    if (!currentRepository.value || !message.trim()) return false
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        await invoke('commit', {
+          message,
+          isAmend,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+      await fetchStatus()
+      return true
+    } catch (error: any) {
+      lastError.value = error?.message || 'Commit failed'
+      return false
+    }
   }
 
   async function discoverGit(customPath?: string): Promise<GitBinaryInformation | null> {
@@ -79,6 +228,8 @@ export function useWorkspaceManager() {
         })
         currentRepository.value = overview
         await fetchRecentRepositories()
+        await fetchStatus()
+        await setupRealtimeListener()
         return overview
       } else {
         // Web preview mock
@@ -138,14 +289,22 @@ export function useWorkspaceManager() {
 
   return {
     currentRepository,
+    repositoryStatus,
     recentRepositories,
     gitBinary,
     isLoading,
     lastError,
     discoverGit,
+    fetchStatus,
     fetchRecentRepositories,
     openRepository,
     promptAndOpenRepository,
     closeRepository,
+    stageFile,
+    unstageFile,
+    stageAll,
+    unstageAll,
+    discardFile,
+    commitChanges,
   }
 }

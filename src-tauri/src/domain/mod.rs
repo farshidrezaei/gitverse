@@ -59,3 +59,41 @@ pub struct RecentRepositoryRecord {
     pub last_opened_timestamp: i64,
     pub is_pinned: bool,
 }
+
+/// Representation of a single file's change status in the working tree or staging index.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum FileChangeStatus {
+    Modified,
+    Added,
+    Deleted,
+    Renamed,
+    Copied,
+    TypeChanged,
+    Untracked,
+    Conflicted,
+}
+
+/// Detailed file status entry.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FileStatusEntry {
+    pub path: String,
+    pub original_path: Option<String>,
+    pub status: FileChangeStatus,
+    pub is_staged: bool,
+}
+
+/// Complete parsed snapshot of working tree and staging area.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub struct DetailedRepositoryStatus {
+    pub branch_name: Option<String>,
+    pub head_commit_hash: Option<String>,
+    pub upstream_branch_name: Option<String>,
+    pub ahead_count: u32,
+    pub behind_count: u32,
+    pub is_detached_head: bool,
+    pub staged_files: Vec<FileStatusEntry>,
+    pub unstaged_files: Vec<FileStatusEntry>,
+    pub conflicted_files: Vec<FileStatusEntry>,
+}
+

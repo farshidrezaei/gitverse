@@ -3,7 +3,54 @@ import type { SplitterItem } from '@nuxt/ui'
 import WelcomeWorkspaceState from '~/components/workspace/WelcomeWorkspaceState.vue'
 
 const { t } = useI18n()
-const { currentRepository, promptAndOpenRepository } = useWorkspaceManager()
+const {
+  currentRepository,
+  repositoryStatus,
+  promptAndOpenRepository,
+  fetchStatus,
+  stageFile,
+  unstageFile,
+  stageAll,
+  unstageAll,
+  discardFile,
+  commitChanges,
+} = useWorkspaceManager()
+
+onMounted(async () => {
+  if (currentRepository.value) {
+    await fetchStatus()
+  }
+})
+
+function getStatusBadge(status: string): { label: string; colorClass: string } {
+  switch (status) {
+    case 'modified':
+      return { label: 'M', colorClass: 'text-warning' }
+    case 'added':
+      return { label: 'A', colorClass: 'text-success' }
+    case 'deleted':
+      return { label: 'D', colorClass: 'text-error' }
+    case 'renamed':
+      return { label: 'R', colorClass: 'text-primary' }
+    case 'copied':
+      return { label: 'C', colorClass: 'text-info' }
+    case 'untracked':
+      return { label: '?', colorClass: 'text-muted' }
+    case 'conflicted':
+      return { label: '!', colorClass: 'text-error font-extrabold' }
+    default:
+      return { label: status[0]?.toUpperCase() || 'M', colorClass: 'text-toned' }
+  }
+}
+
+async function handleCommit(): Promise<void> {
+  if (!commitMessage.value.trim()) return
+  const success = await commitChanges(commitMessage.value, isAmend.value)
+  if (success) {
+    commitMessage.value = ''
+    isAmend.value = false
+  }
+}
 
 // Main horizontal layout with floating inset panels (Island-style)
 const mainSplitterItems = ref<SplitterItem[]>([
@@ -446,33 +493,101 @@ function selectCommit(sha: string): void {
               {{ t('navigation.changes') }}
             </span>
             <div class="flex items-center gap-1">
-              <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-check-check" :label="t('git.stageAll')" />
+              <UButton
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-refresh-cw"
+                :title="t('common.refresh')"
+                @click="fetchStatus"
+              />
+              <UButton
+                size="xs"
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-check-check"
+                :label="t('git.stageAll')"
+                :disabled="!repositoryStatus?.unstaged_files?.length"
+                @click="stageAll"
+              />
             </div>
           </div>
 
           <div class="flex-1 overflow-y-auto p-3 text-xs space-y-4">
+            <!-- Conflicted Files Alert (Merge Conflict State) -->
+            <div v-if="repositoryStatus?.conflicted_files?.length" class="space-y-1.5">
+              <div class="flex items-center justify-between mb-1 text-error">
+                <span class="font-bold flex items-center gap-1.5">
+                  <UIcon name="i-lucide-alert-triangle" class="h-4 w-4" />
+                  Merge Conflicts ({{ repositoryStatus.conflicted_files.length }})
+                </span>
+              </div>
+              <div class="rounded-lg border border-error/50 divide-y divide-error/30 bg-error/10">
+                <div
+                  v-for="file in repositoryStatus.conflicted_files"
+                  :key="file.path"
+                  class="flex items-center justify-between px-2.5 py-1.5"
+                >
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="font-mono font-bold text-error text-[11px]">!</span>
+                    <span class="truncate font-mono text-[11px] text-error font-medium" dir="ltr">{{ file.path }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Staged Section -->
             <div>
               <div class="flex items-center justify-between mb-1.5">
                 <span class="font-semibold text-highlighted flex items-center gap-1.5">
                   <span class="h-2 w-2 rounded-full bg-success inline-block" />
                   {{ t('git.status.staged') }}
-                  <span class="text-muted">({{ stagedFiles.length }})</span>
+                  <span class="text-muted">({{ repositoryStatus?.staged_files?.length || 0 }})</span>
                 </span>
-                <UButton size="xs" color="neutral" variant="ghost" :label="t('git.unstageAll')" />
+                <UButton
+                  v-if="repositoryStatus?.staged_files?.length"
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  :label="t('git.unstageAll')"
+                  @click="unstageAll"
+                />
               </div>
-              <div class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80">
+
+              <div
+                v-if="repositoryStatus?.staged_files?.length"
+                class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80"
+              >
                 <div
-                  v-for="file in stagedFiles"
+                  v-for="file in repositoryStatus.staged_files"
                   :key="file.path"
-                  class="flex items-center justify-between px-2.5 py-1.5 hover:bg-muted/30 transition-colors"
+                  class="group flex items-center justify-between px-2.5 py-1.5 hover:bg-muted/30 transition-colors"
                 >
                   <div class="flex items-center gap-2 min-w-0">
-                    <span class="font-mono font-bold text-success text-[11px]">{{ file.statusLabel }}</span>
-                    <span class="truncate font-mono text-[11px]" dir="ltr">{{ file.path }}</span>
+                    <span
+                      class="font-mono font-bold text-[11px]"
+                      :class="getStatusBadge(file.status).colorClass"
+                    >
+                      {{ getStatusBadge(file.status).label }}
+                    </span>
+                    <span class="truncate font-mono text-[11px]" dir="ltr">
+                      {{ file.path }}
+                      <span v-if="file.original_path" class="text-muted text-[10px]">← {{ file.original_path }}</span>
+                    </span>
                   </div>
-                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-minus" class="h-5 w-5 shrink-0" />
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    icon="i-lucide-minus"
+                    class="h-5 w-5 shrink-0 opacity-70 group-hover:opacity-100"
+                    title="Unstage"
+                    @click="unstageFile(file.path)"
+                  />
                 </div>
+              </div>
+              <div v-else class="text-[11px] text-muted italic px-1">
+                No staged changes
               </div>
             </div>
 
@@ -482,27 +597,61 @@ function selectCommit(sha: string): void {
                 <span class="font-semibold text-highlighted flex items-center gap-1.5">
                   <span class="h-2 w-2 rounded-full bg-warning inline-block" />
                   {{ t('git.status.unstaged') }}
-                  <span class="text-muted">({{ unstagedFiles.length }})</span>
+                  <span class="text-muted">({{ repositoryStatus?.unstaged_files?.length || 0 }})</span>
                 </span>
-                <UButton size="xs" color="neutral" variant="ghost" :label="t('git.stageAll')" />
+                <UButton
+                  v-if="repositoryStatus?.unstaged_files?.length"
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  :label="t('git.stageAll')"
+                  @click="stageAll"
+                />
               </div>
-              <div class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80">
+
+              <div
+                v-if="repositoryStatus?.unstaged_files?.length"
+                class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80"
+              >
                 <div
-                  v-for="file in unstagedFiles"
+                  v-for="file in repositoryStatus.unstaged_files"
                   :key="file.path"
-                  class="flex items-center justify-between px-2.5 py-1.5 hover:bg-muted/30 transition-colors"
+                  class="group flex items-center justify-between px-2.5 py-1.5 hover:bg-muted/30 transition-colors"
                 >
                   <div class="flex items-center gap-2 min-w-0">
                     <span
                       class="font-mono font-bold text-[11px]"
-                      :class="file.status === 'untracked' ? 'text-muted' : 'text-warning'"
+                      :class="getStatusBadge(file.status).colorClass"
                     >
-                      {{ file.statusLabel }}
+                      {{ getStatusBadge(file.status).label }}
                     </span>
                     <span class="truncate font-mono text-[11px]" dir="ltr">{{ file.path }}</span>
                   </div>
-                  <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-plus" class="h-5 w-5 shrink-0" />
+
+                  <div class="flex items-center gap-0.5 opacity-70 group-hover:opacity-100">
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-undo-2"
+                      class="h-5 w-5 shrink-0"
+                      title="Discard changes"
+                      @click="discardFile(file.path, file.status === 'untracked')"
+                    />
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-plus"
+                      class="h-5 w-5 shrink-0"
+                      title="Stage"
+                      @click="stageFile(file.path)"
+                    />
+                  </div>
                 </div>
+              </div>
+              <div v-else class="text-[11px] text-muted italic px-1">
+                Working tree clean
               </div>
             </div>
           </div>
@@ -512,7 +661,7 @@ function selectCommit(sha: string): void {
             <UTextarea
               v-model="commitMessage"
               :rows="3"
-              placeholder="Commit subject (e.g. feat: implement safe git runner)..."
+              placeholder="Commit subject (e.g. feat: add live status tracker)..."
               class="w-full font-mono text-xs"
             />
             <div class="flex items-center justify-between">
@@ -526,7 +675,8 @@ function selectCommit(sha: string): void {
                 size="xs"
                 icon="i-lucide-git-commit"
                 :label="t('git.commit')"
-                :disabled="stagedFiles.length === 0"
+                :disabled="!repositoryStatus?.staged_files?.length && !isAmend"
+                @click="handleCommit"
               />
             </div>
           </div>

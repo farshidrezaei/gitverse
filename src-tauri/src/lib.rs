@@ -49,6 +49,13 @@ pub fn run() {
             commands::open_repository,
             commands::get_current_repository,
             commands::close_repository,
+            commands::get_repository_status,
+            commands::stage_file,
+            commands::unstage_file,
+            commands::stage_all,
+            commands::unstage_all,
+            commands::discard_file_changes,
+            commands::commit,
             commands::get_recent_repositories,
             commands::remove_recent_repository,
         ])
