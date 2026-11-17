@@ -8,6 +8,7 @@ const props = defineProps<{
   selectedCommitHash: string | null
   isLoading: boolean
   isOperating?: boolean
+  activeReference?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -19,6 +20,7 @@ const emit = defineEmits<{
   createBranch: []
   createBranchAtCommit: [commitSha: string]
   checkoutCommit: [commitSha: string]
+  resetGraphFilter: []
 }>()
 
 const { t } = useI18n()
@@ -169,6 +171,20 @@ function getCommitContextMenuItems(commit: GitCommit): ContextMenuItem[][] {
 function handleRowClick(commitHash: string): void {
   emit('selectCommit', commitHash)
 }
+
+watch(
+  () => props.selectedCommitHash,
+  (newHash) => {
+    if (!newHash) return
+    nextTick(() => {
+      const targetRow = document.querySelector(`[data-commit-hash="${newHash}"]`)
+      if (targetRow) {
+        targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    })
+  },
+  { flush: 'post' }
+)
 </script>
 
 <template>
@@ -180,6 +196,30 @@ function handleRowClick(commitHash: string): void {
           <UIcon name="i-lucide-git-commit-horizontal" class="h-4 w-4 text-primary" />
           {{ t('navigation.graph') }}
         </span>
+
+        <!-- Active Branch Filter Chip or All Branches Indicator -->
+        <UBadge
+          v-if="activeReference"
+          size="xs"
+          color="primary"
+          variant="subtle"
+          class="font-mono text-[10px] flex items-center gap-1 py-0.5 me-1"
+        >
+          <UIcon name="i-lucide-git-branch" class="h-3 w-3 shrink-0" />
+          <span class="max-w-[120px] truncate" :title="activeReference">{{ activeReference }}</span>
+          <button
+            type="button"
+            class="text-muted hover:text-highlighted ms-0.5 p-0.5 rounded cursor-pointer transition-colors leading-none"
+            :title="t('git.showAllBranches')"
+            @click="emit('resetGraphFilter')"
+          >
+            <UIcon name="i-lucide-x" class="h-2.5 w-2.5" />
+          </button>
+        </UBadge>
+        <span v-else class="text-[10px] text-muted font-medium me-1">
+          {{ t('git.allBranches') }}
+        </span>
+
         <UBadge
           v-if="graph?.total_commits_count !== undefined"
           size="xs"
@@ -343,6 +383,7 @@ function handleRowClick(commitHash: string): void {
                   ? 'bg-primary/15 hover:bg-primary/20'
                   : 'hover:bg-muted/40'"
                 :style="{ height: `${ROW_HEIGHT}px` }"
+                :data-commit-hash="node.commit.hash"
                 @click="handleRowClick(node.commit.hash)"
               >
               <!-- Cell 1: SVG Graph DAG Track -->

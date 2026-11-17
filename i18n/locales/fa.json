@@ -59,6 +59,9 @@
   "git": {
     "branch": "شاخه",
     "branches": "شاخه‌ها",
+    "allBranches": "همه شاخه‌ها",
+    "showAllBranches": "نمایش همه شاخه‌ها",
+    "previewingBranch": "پیش‌نمایش: {branch}",
     "createBranch": "ایجاد شاخه جدید",
     "branchName": "نام شاخه",
     "branchNamePlaceholder": "مثلاً feature/new-workflow",

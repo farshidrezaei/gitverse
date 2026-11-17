@@ -59,6 +59,9 @@
   "git": {
     "branch": "Branch",
     "branches": "Branches",
+    "allBranches": "All Branches",
+    "showAllBranches": "Show all branches",
+    "previewingBranch": "Previewing: {branch}",
     "createBranch": "Create Branch",
     "branchName": "Branch Name",
     "branchNamePlaceholder": "e.g. feature/new-workflow",

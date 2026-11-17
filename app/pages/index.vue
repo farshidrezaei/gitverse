@@ -242,15 +242,29 @@ async function handleCreateBranch(branchName: string, checkout: boolean): Promis
 }
 
 const selectedBranchName = ref<string | null>(null)
+const activeGraphReference = ref<string | null>(null)
 
 async function handleSelectBranch(branch: BranchSummary | RemoteBranchSummary): Promise<void> {
   selectedBranchName.value = branch.name
+  activeGraphReference.value = branch.name
+  await fetchCommitGraph(0, 100, branch.name)
   if (branch.head_commit_hash) {
     await fetchCommitDetails(branch.head_commit_hash)
   }
 }
 
+async function handleResetGraphFilter(): Promise<void> {
+  activeGraphReference.value = null
+  selectedBranchName.value = null
+  await fetchCommitGraph(0, 100)
+}
+
+async function handleRefreshGraph(): Promise<void> {
+  await fetchCommitGraph(0, 100, activeGraphReference.value || undefined)
+}
+
 async function handleCheckout(branchName: string): Promise<void> {
+  activeGraphReference.value = null
   selectedBranchName.value = branchName
   await checkoutBranch(branchName)
 }
@@ -484,8 +498,10 @@ async function handlePush(): Promise<void> {
               :selected-commit-hash="selectedCommitHash"
               :is-loading="isLoadingGraph"
               :is-operating="isOperating"
+              :active-reference="activeGraphReference"
               @select-commit="selectCommit"
-              @refresh="fetchCommitGraph"
+              @refresh="handleRefreshGraph"
+              @reset-graph-filter="handleResetGraphFilter"
               @push="handlePush"
               @pull="handlePull"
               @fetch="handleFetch"
