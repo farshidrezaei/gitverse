@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { ConflictFileDetails } from '~/types/repository'
-import { combineOursAndTheirs, countConflictMarkers, hasConflictMarkers } from '~/utils/conflict'
+import {
+  combineOursAndTheirs,
+  computeConflictLineComparison,
+  countConflictMarkers,
+  hasConflictMarkers,
+} from '~/utils/conflict'
 
 interface ConflictResolverModalProps {
   open: boolean
@@ -19,6 +24,7 @@ const { t } = useI18n()
 
 const activeTab = ref<'diff' | 'editor'>('diff')
 const editableContent = ref<string>('')
+const isBaseVisible = ref<boolean>(false)
 
 watch(
   () => props.conflictDetails,
@@ -39,6 +45,27 @@ const stillHasConflictMarkers = computed(() => {
   return hasConflictMarkers(editableContent.value)
 })
 
+const oursLineComparisons = computed(() => {
+  return computeConflictLineComparison(
+    props.conflictDetails?.ours_content || '',
+    props.conflictDetails?.base_content || ''
+  )
+})
+
+const theirsLineComparisons = computed(() => {
+  return computeConflictLineComparison(
+    props.conflictDetails?.theirs_content || '',
+    props.conflictDetails?.base_content || ''
+  )
+})
+
+const baseLines = computed(() => {
+  if (!props.conflictDetails?.base_content) {
+    return []
+  }
+  return props.conflictDetails.base_content.split(/\r?\n/)
+})
+
 function handleAcceptOurs(): void {
   emit('resolve', 'ours')
   emit('update:open', false)
@@ -50,7 +77,9 @@ function handleAcceptTheirs(): void {
 }
 
 function handleAcceptBoth(): void {
-  if (!props.conflictDetails) return
+  if (!props.conflictDetails) {
+    return
+  }
   const ours = props.conflictDetails.ours_content || ''
   const theirs = props.conflictDetails.theirs_content || ''
   editableContent.value = combineOursAndTheirs(ours, theirs)
@@ -72,7 +101,7 @@ function handleClose(): void {
     :open="open"
     :ui="{
       overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity',
-      content: 'sm:max-w-4xl p-0 border border-default/70 bg-[var(--gv-surface)] shadow-2xl rounded-2xl overflow-hidden flex flex-col max-h-[85vh]',
+      content: 'sm:max-w-6xl w-[94vw] p-0 border border-default/70 bg-[var(--gv-surface)] shadow-2xl rounded-2xl overflow-hidden flex flex-col max-h-[90vh]',
     }"
     @update:open="handleClose"
   >
@@ -93,8 +122,36 @@ function handleClose(): void {
           </div>
         </div>
 
-        <!-- View mode tabs -->
-        <div class="flex items-center gap-2 shrink-0">
+        <!-- View mode tabs & Controls -->
+        <div class="flex items-center gap-3 shrink-0">
+          <!-- 3-Color Diff Legend -->
+          <div v-if="activeTab === 'diff'" class="hidden md:flex items-center gap-2 text-[10px] text-muted">
+            <span class="flex items-center gap-1 font-mono">
+              <span class="inline-block h-2 w-2 rounded-xs bg-[var(--gv-diff-add-text)]" />
+              {{ t('conflict.legendAdded') }}
+            </span>
+            <span class="flex items-center gap-1 font-mono">
+              <span class="inline-block h-2 w-2 rounded-xs bg-[var(--gv-diff-modify-text)]" />
+              {{ t('conflict.legendModified') }}
+            </span>
+            <span class="flex items-center gap-1 font-mono">
+              <span class="inline-block h-2 w-2 rounded-xs bg-[var(--gv-diff-remove-text)]" />
+              {{ t('conflict.legendDeleted') }}
+            </span>
+          </div>
+
+          <!-- Base Version Toggle -->
+          <UButton
+            v-if="activeTab === 'diff' && props.conflictDetails?.base_content"
+            size="xs"
+            :color="isBaseVisible ? 'primary' : 'neutral'"
+            :variant="isBaseVisible ? 'solid' : 'outline'"
+            icon="i-lucide-git-commit"
+            :label="t('conflict.toggleBase')"
+            @click="isBaseVisible = !isBaseVisible"
+          />
+
+          <!-- Tab Switcher -->
           <div class="flex items-center rounded-lg border border-default/70 bg-surface/80 p-0.5 shadow-2xs">
             <button
               type="button"
@@ -136,10 +193,14 @@ function handleClose(): void {
       </div>
 
       <!-- Modal Body -->
-      <div class="flex-1 overflow-y-auto p-4 min-h-[360px]">
-        <!-- Side-by-Side View -->
-        <div v-if="activeTab === 'diff'" class="grid grid-cols-2 gap-3 h-full min-h-[340px]">
-          <!-- Ours / Current -->
+      <div class="flex-1 overflow-y-auto p-4 min-h-[420px]">
+        <!-- Side-by-Side 3-Color View -->
+        <div
+          v-if="activeTab === 'diff'"
+          class="grid gap-3 h-full min-h-[400px]"
+          :class="isBaseVisible ? 'grid-cols-3' : 'grid-cols-2'"
+        >
+          <!-- Pane 1: Ours / Current -->
           <div class="flex flex-col border border-default/70 rounded-xl overflow-hidden bg-surface/60">
             <div class="flex items-center justify-between border-b border-default/70 px-3 py-2 bg-primary/10">
               <span class="text-xs font-semibold text-primary flex items-center gap-1.5">
@@ -154,10 +215,85 @@ function handleClose(): void {
                 @click="handleAcceptOurs"
               />
             </div>
-            <pre class="flex-1 p-3 font-mono text-xs overflow-auto text-highlighted whitespace-pre-wrap select-text leading-relaxed" dir="ltr">{{ props.conflictDetails?.ours_content || t('common.empty') }}</pre>
+
+            <!-- Ours Line By Line with 3-Color & Intra-line Diff -->
+            <div class="flex-1 overflow-auto divide-y divide-default/15 font-mono text-xs select-text" dir="ltr">
+              <div
+                v-for="(line, lineIndex) in oursLineComparisons"
+                :key="`ours-line-${lineIndex}`"
+                class="flex items-stretch min-h-[22px] leading-relaxed"
+                :class="{
+                  'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': line.status === 'modification',
+                  'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': line.status === 'addition',
+                  'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': line.status === 'deletion',
+                  'text-highlighted border-s-2 border-transparent': line.status === 'context',
+                }"
+              >
+                <!-- Line Number -->
+                <div class="w-10 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/20 text-[10px]">
+                  {{ line.lineNumber || '' }}
+                </div>
+                <!-- Gutter Sign -->
+                <div class="w-5 shrink-0 text-center select-none font-bold">
+                  <span v-if="line.status === 'modification'">~</span>
+                  <span v-else-if="line.status === 'addition'">+</span>
+                  <span v-else-if="line.status === 'deletion'">-</span>
+                  <span v-else>&nbsp;</span>
+                </div>
+                <!-- Spans with Intra-line Highlighting -->
+                <div class="flex-1 px-1.5 whitespace-pre truncate">
+                  <template v-if="line.spans && line.spans.length">
+                    <span
+                      v-for="(span, spanIndex) in line.spans"
+                      :key="`span-ours-${lineIndex}-${spanIndex}`"
+                      :class="{
+                        'bg-[var(--gv-diff-modify-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'modification',
+                        'bg-[var(--gv-diff-add-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'addition',
+                        'bg-[var(--gv-diff-remove-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'deletion',
+                      }"
+                    >{{ span.text }}</span>
+                  </template>
+                  <template v-else>
+                    {{ line.content }}
+                  </template>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Theirs / Incoming -->
+          <!-- Pane 2: Base / Ancestor (Optional) -->
+          <div
+            v-if="isBaseVisible"
+            class="flex flex-col border border-default/70 rounded-xl overflow-hidden bg-surface/60"
+          >
+            <div class="flex items-center justify-between border-b border-default/70 px-3 py-2 bg-muted/20">
+              <span class="text-xs font-semibold text-muted flex items-center gap-1.5">
+                <UIcon name="i-lucide-git-commit" class="h-3.5 w-3.5" />
+                {{ t('conflict.baseTitle') }}
+              </span>
+            </div>
+
+            <!-- Base Lines List -->
+            <div class="flex-1 overflow-auto divide-y divide-default/15 font-mono text-xs select-text" dir="ltr">
+              <div
+                v-for="(line, lineIndex) in baseLines"
+                :key="`base-line-${lineIndex}`"
+                class="flex items-stretch min-h-[22px] leading-relaxed text-muted border-s-2 border-transparent"
+              >
+                <div class="w-10 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/20 text-[10px]">
+                  {{ lineIndex + 1 }}
+                </div>
+                <div class="w-5 shrink-0 text-center select-none font-bold text-muted/40">
+                  &nbsp;
+                </div>
+                <div class="flex-1 px-1.5 whitespace-pre truncate">
+                  {{ line }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane 3: Theirs / Incoming -->
           <div class="flex flex-col border border-default/70 rounded-xl overflow-hidden bg-surface/60">
             <div class="flex items-center justify-between border-b border-default/70 px-3 py-2 bg-warning/10">
               <span class="text-xs font-semibold text-warning flex items-center gap-1.5">
@@ -172,12 +308,55 @@ function handleClose(): void {
                 @click="handleAcceptTheirs"
               />
             </div>
-            <pre class="flex-1 p-3 font-mono text-xs overflow-auto text-highlighted whitespace-pre-wrap select-text leading-relaxed" dir="ltr">{{ props.conflictDetails?.theirs_content || t('common.empty') }}</pre>
+
+            <!-- Theirs Line By Line with 3-Color & Intra-line Diff -->
+            <div class="flex-1 overflow-auto divide-y divide-default/15 font-mono text-xs select-text" dir="ltr">
+              <div
+                v-for="(line, lineIndex) in theirsLineComparisons"
+                :key="`theirs-line-${lineIndex}`"
+                class="flex items-stretch min-h-[22px] leading-relaxed"
+                :class="{
+                  'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': line.status === 'modification',
+                  'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': line.status === 'addition',
+                  'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': line.status === 'deletion',
+                  'text-highlighted border-s-2 border-transparent': line.status === 'context',
+                }"
+              >
+                <!-- Line Number -->
+                <div class="w-10 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/20 text-[10px]">
+                  {{ line.lineNumber || '' }}
+                </div>
+                <!-- Gutter Sign -->
+                <div class="w-5 shrink-0 text-center select-none font-bold">
+                  <span v-if="line.status === 'modification'">~</span>
+                  <span v-else-if="line.status === 'addition'">+</span>
+                  <span v-else-if="line.status === 'deletion'">-</span>
+                  <span v-else>&nbsp;</span>
+                </div>
+                <!-- Spans with Intra-line Highlighting -->
+                <div class="flex-1 px-1.5 whitespace-pre truncate">
+                  <template v-if="line.spans && line.spans.length">
+                    <span
+                      v-for="(span, spanIndex) in line.spans"
+                      :key="`span-theirs-${lineIndex}-${spanIndex}`"
+                      :class="{
+                        'bg-[var(--gv-diff-modify-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'modification',
+                        'bg-[var(--gv-diff-add-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'addition',
+                        'bg-[var(--gv-diff-remove-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'deletion',
+                      }"
+                    >{{ span.text }}</span>
+                  </template>
+                  <template v-else>
+                    {{ line.content }}
+                  </template>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Result Editor View -->
-        <div v-else class="flex flex-col h-full min-h-[340px] space-y-2">
+        <div v-else class="flex flex-col h-full min-h-[400px] space-y-2">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <span class="text-xs font-semibold text-highlighted">
@@ -213,7 +392,7 @@ function handleClose(): void {
 
           <textarea
             v-model="editableContent"
-            rows="16"
+            rows="18"
             class="w-full flex-1 p-3 font-mono text-xs rounded-xl border border-default/70 bg-surface/90 text-highlighted focus:outline-none focus:ring-1 focus:ring-primary select-text leading-relaxed resize-none"
             dir="ltr"
           />

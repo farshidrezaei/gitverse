@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSideBySideHunk } from '../../app/utils/diffLayout'
+import { buildSideBySideHunk, computeIntraLineDiff } from '../../app/utils/diffLayout'
 import type { DiffHunk } from '../../app/types/repository'
 
 describe('diffLayout - buildSideBySideHunk', () => {
@@ -34,11 +34,13 @@ describe('diffLayout - buildSideBySideHunk', () => {
       lineNumber: 1,
       content: 'const a = 1;',
       lineType: 'context',
+      spans: [{ text: 'const a = 1;', isChanged: false }],
     })
     expect(result.rows[0]?.right).toEqual({
       lineNumber: 1,
       content: 'const a = 1;',
       lineType: 'context',
+      spans: [{ text: 'const a = 1;', isChanged: false }],
     })
   })
 
@@ -74,28 +76,54 @@ describe('diffLayout - buildSideBySideHunk', () => {
     const result = buildSideBySideHunk(hunk)
     expect(result.rows).toHaveLength(2)
 
-    // Row 0: first deletion pairs with first addition
+    // Row 0: first deletion pairs with first addition -> becomes modification (Blue 3-color mode)
     expect(result.rows[0]?.left).toEqual({
       lineNumber: 10,
       content: 'let isOld = true;',
-      lineType: 'deletion',
+      lineType: 'modification',
+      spans: [
+        { text: 'let is', isChanged: false },
+        { text: 'Old', isChanged: true },
+        { text: ' = true;', isChanged: false },
+      ],
     })
     expect(result.rows[0]?.right).toEqual({
       lineNumber: 10,
       content: 'let isNew = true;',
-      lineType: 'addition',
+      lineType: 'modification',
+      spans: [
+        { text: 'let is', isChanged: false },
+        { text: 'New', isChanged: true },
+        { text: ' = true;', isChanged: false },
+      ],
     })
 
-    // Row 1: second deletion pairs with empty placeholder
+    // Row 1: second deletion pairs with empty placeholder -> pure deletion (Red)
     expect(result.rows[1]?.left).toEqual({
       lineNumber: 11,
       content: 'let isLegacy = false;',
       lineType: 'deletion',
+      spans: [{ text: 'let isLegacy = false;', isChanged: true }],
     })
     expect(result.rows[1]?.right).toEqual({
       lineNumber: null,
       content: '',
       lineType: 'empty',
     })
+  })
+
+  it('correctly computes intra-line diff for arbitrary text changes', () => {
+    const diff = computeIntraLineDiff('const count = 10;', 'const count = 25;')
+
+    expect(diff.oldSpans).toEqual([
+      { text: 'const count = ', isChanged: false },
+      { text: '10', isChanged: true },
+      { text: ';', isChanged: false },
+    ])
+    expect(diff.newSpans).toEqual([
+      { text: 'const count = ', isChanged: false },
+      { text: '25', isChanged: true },
+      { text: ';', isChanged: false },
+    ])
   })
 })

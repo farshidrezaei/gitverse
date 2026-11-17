@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { FileDiff } from '~/types/repository'
+import type { DiffLine, FileDiff } from '~/types/repository'
+import { computeIntraLineDiff, type DiffTextSpan } from '~/utils/diffLayout'
 
 interface DiffUnifiedViewProps {
   diff: FileDiff
@@ -29,6 +30,26 @@ function formatLineContent(content: string, lineType: string): string {
     return content.slice(1)
   }
   return content
+}
+
+function getHunkLineSpans(lines: DiffLine[]): Map<number, DiffTextSpan[]> {
+  const spansMap = new Map<number, DiffTextSpan[]>()
+  for (let index = 0; index < lines.length; index += 1) {
+    const current = lines[index]
+    const next = lines[index + 1]
+    if (
+      current?.line_type === 'deletion' &&
+      next?.line_type === 'addition' &&
+      !spansMap.has(index)
+    ) {
+      const cleanOld = formatLineContent(current.content, current.line_type)
+      const cleanNew = formatLineContent(next.content, next.line_type)
+      const { oldSpans, newSpans } = computeIntraLineDiff(cleanOld, cleanNew)
+      spansMap.set(index, oldSpans)
+      spansMap.set(index + 1, newSpans)
+    }
+  }
+  return spansMap
 }
 
 // Compute truncated hunks if total lines exceed limit
@@ -101,7 +122,19 @@ const displayedHunks = computed(() => {
 
         <!-- Line Content -->
         <div class="flex-1 pe-4 whitespace-pre font-mono select-text overflow-x-visible">
-          {{ formatLineContent(line.content, line.line_type) }}
+          <template v-if="getHunkLineSpans(hunk.lines).get(lineIndex)">
+            <span
+              v-for="(span, spanIndex) in getHunkLineSpans(hunk.lines).get(lineIndex)"
+              :key="`span-${lineIndex}-${spanIndex}`"
+              :class="{
+                'bg-[var(--gv-diff-remove-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.line_type === 'deletion',
+                'bg-[var(--gv-diff-add-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.line_type === 'addition',
+              }"
+            >{{ span.text }}</span>
+          </template>
+          <template v-else>
+            {{ formatLineContent(line.content, line.line_type) }}
+          </template>
         </div>
       </div>
     </div>

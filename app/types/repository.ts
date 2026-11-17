@@ -70,7 +70,7 @@ export interface DetailedRepositoryStatus {
   operation_state: RepositoryOperationState
 }
 
-export type DiffLineType = 'context' | 'addition' | 'deletion' | 'header'
+export type DiffLineType = 'context' | 'addition' | 'deletion' | 'header' | 'modification'
 
 export interface DiffLine {
   line_type: DiffLineType

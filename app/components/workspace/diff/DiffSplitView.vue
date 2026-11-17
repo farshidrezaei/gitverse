@@ -74,6 +74,7 @@ const displayedHunks = computed(() => {
           class="flex items-stretch overflow-hidden"
           :class="{
             'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': row.left.lineType === 'deletion',
+            'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': row.left.lineType === 'modification',
             'bg-muted/10 opacity-40': row.left.lineType === 'empty',
             'text-highlighted border-s-2 border-transparent': row.left.lineType === 'context',
           }"
@@ -86,12 +87,25 @@ const displayedHunks = computed(() => {
           <!-- Old Gutter Prefix -->
           <div class="w-4 shrink-0 text-center select-none font-bold font-mono">
             <span v-if="row.left.lineType === 'deletion'">-</span>
+            <span v-else-if="row.left.lineType === 'modification'">~</span>
             <span v-else-if="row.left.lineType === 'context'">&nbsp;</span>
           </div>
 
           <!-- Old Content -->
           <div class="flex-1 pe-2 whitespace-pre font-mono select-text truncate">
-            {{ row.left.content }}
+            <template v-if="row.left.spans && row.left.spans.length">
+              <span
+                v-for="(span, spanIndex) in row.left.spans"
+                :key="`left-span-${spanIndex}`"
+                :class="{
+                  'bg-[var(--gv-diff-modify-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && row.left.lineType === 'modification',
+                  'bg-[var(--gv-diff-remove-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && row.left.lineType === 'deletion',
+                }"
+              >{{ span.text }}</span>
+            </template>
+            <template v-else>
+              {{ row.left.content }}
+            </template>
           </div>
         </div>
 
@@ -100,6 +114,7 @@ const displayedHunks = computed(() => {
           class="flex items-stretch overflow-hidden"
           :class="{
             'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': row.right.lineType === 'addition',
+            'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': row.right.lineType === 'modification',
             'bg-muted/10 opacity-40': row.right.lineType === 'empty',
             'text-highlighted border-s-2 border-transparent': row.right.lineType === 'context',
           }"
@@ -112,12 +127,25 @@ const displayedHunks = computed(() => {
           <!-- New Gutter Prefix -->
           <div class="w-4 shrink-0 text-center select-none font-bold font-mono">
             <span v-if="row.right.lineType === 'addition'">+</span>
+            <span v-else-if="row.right.lineType === 'modification'">~</span>
             <span v-else-if="row.right.lineType === 'context'">&nbsp;</span>
           </div>
 
           <!-- New Content -->
           <div class="flex-1 pe-2 whitespace-pre font-mono select-text truncate">
-            {{ row.right.content }}
+            <template v-if="row.right.spans && row.right.spans.length">
+              <span
+                v-for="(span, spanIndex) in row.right.spans"
+                :key="`right-span-${spanIndex}`"
+                :class="{
+                  'bg-[var(--gv-diff-modify-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && row.right.lineType === 'modification',
+                  'bg-[var(--gv-diff-add-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && row.right.lineType === 'addition',
+                }"
+              >{{ span.text }}</span>
+            </template>
+            <template v-else>
+              {{ row.right.content }}
+            </template>
           </div>
         </div>
       </div>

@@ -133,6 +133,7 @@ pub enum DiffLineType {
     Addition,
     Deletion,
     Header,
+    Modification,
 }
 
 /// Individual line in a diff hunk.

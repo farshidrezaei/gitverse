@@ -1,9 +1,15 @@
 import type { DiffHunk, DiffLine, DiffLineType } from '~/types/repository'
 
+export interface DiffTextSpan {
+  text: string
+  isChanged: boolean
+}
+
 export interface SideBySideLineCell {
   lineNumber: number | null
   content: string
   lineType: DiffLineType | 'empty'
+  spans?: DiffTextSpan[]
 }
 
 export interface SideBySideRow {
@@ -20,8 +26,63 @@ export interface SideBySideHunk {
 const sideBySideHunkCache = new WeakMap<DiffHunk, SideBySideHunk>()
 
 /**
+ * Computes intra-line character/token differences between old and new line content.
+ * Identifies common prefix and suffix to isolate changed substrings.
+ */
+export function computeIntraLineDiff(
+  oldContent: string,
+  newContent: string
+): { oldSpans: DiffTextSpan[]; newSpans: DiffTextSpan[] } {
+  if (oldContent === newContent) {
+    return {
+      oldSpans: [{ text: oldContent, isChanged: false }],
+      newSpans: [{ text: newContent, isChanged: false }],
+    }
+  }
+
+  let prefixLength = 0
+  const maxPrefix = Math.min(oldContent.length, newContent.length)
+  while (prefixLength < maxPrefix && oldContent[prefixLength] === newContent[prefixLength]) {
+    prefixLength += 1
+  }
+
+  let suffixLength = 0
+  const maxSuffix = Math.min(oldContent.length - prefixLength, newContent.length - prefixLength)
+  while (
+    suffixLength < maxSuffix &&
+    oldContent[oldContent.length - 1 - suffixLength] === newContent[newContent.length - 1 - suffixLength]
+  ) {
+    suffixLength += 1
+  }
+
+  const buildSpans = (text: string): DiffTextSpan[] => {
+    const spans: DiffTextSpan[] = []
+    const prefix = text.slice(0, prefixLength)
+    const middle = text.slice(prefixLength, text.length - suffixLength)
+    const suffix = suffixLength > 0 ? text.slice(text.length - suffixLength) : ''
+
+    if (prefix) {
+      spans.push({ text: prefix, isChanged: false })
+    }
+    if (middle) {
+      spans.push({ text: middle, isChanged: true })
+    }
+    if (suffix) {
+      spans.push({ text: suffix, isChanged: false })
+    }
+    return spans
+  }
+
+  return {
+    oldSpans: buildSpans(oldContent),
+    newSpans: buildSpans(newContent),
+  }
+}
+
+/**
  * Transforms unified hunk lines into aligned side-by-side rows.
  * Aligns deletion lines on the left with replacement addition lines on the right.
+ * Distinguishes modified lines (blue with word diff) from pure additions (green) and deletions (red).
  * Uses WeakMap memoization to avoid redundant computations across renders.
  */
 export function buildSideBySideHunk(hunk: DiffHunk): SideBySideHunk {
@@ -44,17 +105,23 @@ export function buildSideBySideHunk(hunk: DiffHunk): SideBySideHunk {
     }
 
     if (currentLine.line_type === 'context' || currentLine.line_type === 'header') {
+      const cleanContent = currentLine.content.startsWith(' ')
+        ? currentLine.content.slice(1)
+        : currentLine.content
+
       rows.push({
         id: `row-${rowIndex++}`,
         left: {
           lineNumber: currentLine.old_line_number,
-          content: currentLine.content.startsWith(' ') ? currentLine.content.slice(1) : currentLine.content,
+          content: cleanContent,
           lineType: 'context',
+          spans: [{ text: cleanContent, isChanged: false }],
         },
         right: {
           lineNumber: currentLine.new_line_number,
-          content: currentLine.content.startsWith(' ') ? currentLine.content.slice(1) : currentLine.content,
+          content: cleanContent,
           lineType: 'context',
+          spans: [{ text: cleanContent, isChanged: false }],
         },
       })
       lineIndex += 1
@@ -82,31 +149,73 @@ export function buildSideBySideHunk(hunk: DiffHunk): SideBySideHunk {
       const deletion = deletions[index]
       const addition = additions[index]
 
-      rows.push({
-        id: `row-${rowIndex++}`,
-        left: deletion
-          ? {
-              lineNumber: deletion.old_line_number,
-              content: deletion.content.startsWith('-') ? deletion.content.slice(1) : deletion.content,
-              lineType: 'deletion',
-            }
-          : {
-              lineNumber: null,
-              content: '',
-              lineType: 'empty',
-            },
-        right: addition
-          ? {
-              lineNumber: addition.new_line_number,
-              content: addition.content.startsWith('+') ? addition.content.slice(1) : addition.content,
-              lineType: 'addition',
-            }
-          : {
-              lineNumber: null,
-              content: '',
-              lineType: 'empty',
-            },
-      })
+      if (deletion && addition) {
+        // Paired line: this is an in-place modification (Blue 3-color mode)
+        const cleanOldContent = deletion.content.startsWith('-')
+          ? deletion.content.slice(1)
+          : deletion.content
+        const cleanNewContent = addition.content.startsWith('+')
+          ? addition.content.slice(1)
+          : addition.content
+
+        const { oldSpans, newSpans } = computeIntraLineDiff(cleanOldContent, cleanNewContent)
+
+        rows.push({
+          id: `row-${rowIndex++}`,
+          left: {
+            lineNumber: deletion.old_line_number,
+            content: cleanOldContent,
+            lineType: 'modification',
+            spans: oldSpans,
+          },
+          right: {
+            lineNumber: addition.new_line_number,
+            content: cleanNewContent,
+            lineType: 'modification',
+            spans: newSpans,
+          },
+        })
+      } else if (deletion) {
+        // Pure deletion (Red)
+        const cleanOldContent = deletion.content.startsWith('-')
+          ? deletion.content.slice(1)
+          : deletion.content
+
+        rows.push({
+          id: `row-${rowIndex++}`,
+          left: {
+            lineNumber: deletion.old_line_number,
+            content: cleanOldContent,
+            lineType: 'deletion',
+            spans: [{ text: cleanOldContent, isChanged: true }],
+          },
+          right: {
+            lineNumber: null,
+            content: '',
+            lineType: 'empty',
+          },
+        })
+      } else if (addition) {
+        // Pure addition (Green)
+        const cleanNewContent = addition.content.startsWith('+')
+          ? addition.content.slice(1)
+          : addition.content
+
+        rows.push({
+          id: `row-${rowIndex++}`,
+          left: {
+            lineNumber: null,
+            content: '',
+            lineType: 'empty',
+          },
+          right: {
+            lineNumber: addition.new_line_number,
+            content: cleanNewContent,
+            lineType: 'addition',
+            spans: [{ text: cleanNewContent, isChanged: true }],
+          },
+        })
+      }
     }
   }
 
