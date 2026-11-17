@@ -15,6 +15,15 @@ useHead(() => ({
 onMounted(async () => {
   await restorePersistedLocale()
   restorePersistedTheme()
+
+  // Prevent default browser context menu in desktop shell, preserving input editing
+  window.addEventListener('contextmenu', (event: MouseEvent) => {
+    const target = event.target as HTMLElement | null
+    if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') {
+      return
+    }
+    event.preventDefault()
+  })
 })
 </script>
 

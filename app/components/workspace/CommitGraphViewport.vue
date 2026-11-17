@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { CommitGraphHistoryResponse, CommitGraphNode } from '~/types/repository'
+import type { ContextMenuItem } from '@nuxt/ui'
+import type { CommitGraphHistoryResponse, CommitGraphNode, GitCommit } from '~/types/repository'
 import { formatRelativeTime } from '~/utils/dateFormat'
 
 const props = defineProps<{
@@ -16,6 +17,8 @@ const emit = defineEmits<{
   pull: []
   fetch: []
   createBranch: []
+  createBranchAtCommit: [commitSha: string]
+  checkoutCommit: [commitSha: string]
 }>()
 
 const { t } = useI18n()
@@ -124,6 +127,44 @@ const computedEdges = computed<ComputedEdgePath[]>(() => {
 
   return edges
 })
+
+function getCommitContextMenuItems(commit: GitCommit): ContextMenuItem[][] {
+  return [
+    [
+      {
+        label: t('commit.details'),
+        icon: 'i-lucide-file-search',
+        onSelect: () => emit('selectCommit', commit.hash),
+      },
+      {
+        label: t('commit.createBranchHere'),
+        icon: 'i-lucide-git-branch-plus',
+        onSelect: () => emit('createBranchAtCommit', commit.hash),
+      },
+      {
+        label: t('commit.checkoutCommit'),
+        icon: 'i-lucide-log-in',
+        onSelect: () => emit('checkoutCommit', commit.hash),
+      },
+    ],
+    [
+      {
+        label: t('commit.copySha'),
+        icon: 'i-lucide-copy',
+        onSelect: async () => {
+          await navigator.clipboard.writeText(commit.hash)
+        },
+      },
+      {
+        label: t('commit.copySubject'),
+        icon: 'i-lucide-clipboard-copy',
+        onSelect: async () => {
+          await navigator.clipboard.writeText(commit.subject)
+        },
+      },
+    ],
+  ]
+}
 
 function handleRowClick(commitHash: string): void {
   emit('selectCommit', commitHash)
@@ -291,16 +332,19 @@ function handleRowClick(commitHash: string): void {
           </thead>
 
           <tbody class="divide-y divide-default/30 font-sans text-xs relative">
-            <tr
+            <UContextMenu
               v-for="(node, index) in filteredNodes"
               :key="node.commit.hash"
-              class="cursor-pointer transition-colors"
-              :class="selectedCommitHash === node.commit.hash
-                ? 'bg-primary/15 hover:bg-primary/20'
-                : 'hover:bg-muted/40'"
-              :style="{ height: `${ROW_HEIGHT}px` }"
-              @click="handleRowClick(node.commit.hash)"
+              :items="getCommitContextMenuItems(node.commit)"
             >
+              <tr
+                class="cursor-pointer transition-colors"
+                :class="selectedCommitHash === node.commit.hash
+                  ? 'bg-primary/15 hover:bg-primary/20'
+                  : 'hover:bg-muted/40'"
+                :style="{ height: `${ROW_HEIGHT}px` }"
+                @click="handleRowClick(node.commit.hash)"
+              >
               <!-- Cell 1: SVG Graph DAG Track -->
               <td class="p-0 relative" :style="{ width: `${graphWidth}px`, minWidth: `${graphWidth}px` }">
                 <!-- Render SVG segment for this row -->
@@ -435,6 +479,7 @@ function handleRowClick(commitHash: string): void {
                 {{ node.commit.hash.slice(0, 7) }}
               </td>
             </tr>
+            </UContextMenu>
           </tbody>
         </table>
       </div>

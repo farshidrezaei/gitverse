@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SplitterItem } from '@nuxt/ui'
+import type { ContextMenuItem, SplitterItem } from '@nuxt/ui'
 import WelcomeWorkspaceState from '~/components/workspace/WelcomeWorkspaceState.vue'
 import WorkspaceStagingTreeNodeItem from '~/components/workspace/StagingTreeNodeItem.vue'
 import { buildFileTree } from '~/utils/fileTree'
@@ -17,6 +17,7 @@ const {
   selectedCommitHash,
   selectedCommitDetails,
   selectedCommitFilePath,
+  favoriteBranches,
   isLoading,
   isLoadingDiff,
   isLoadingGraph,
@@ -30,6 +31,8 @@ const {
   fetchCommitDetails,
   fetchCommitFileDiff,
   clearCommitSelection,
+  toggleFavoriteBranch,
+  loadFavoriteBranches,
   checkoutBranch,
   createBranch,
   deleteBranch,
@@ -46,6 +49,7 @@ const {
 
 onMounted(async () => {
   if (currentRepository.value) {
+    loadFavoriteBranches()
     await fetchStatus()
     await fetchReferences()
     await fetchCommitGraph()
@@ -88,6 +92,48 @@ const branchTreeNodes = computed(() => {
 const remoteBranchTreeNodes = computed(() => {
   return buildRemoteBranchTree(repositoryReferences.value?.remote_branches || [])
 })
+
+const favoriteBranchSummaries = computed(() => {
+  if (!repositoryReferences.value?.branches) return []
+  return repositoryReferences.value.branches.filter(branch => favoriteBranches.value.includes(branch.name))
+})
+
+function getFlatFileContextMenuItems(filePath: string, isStaged: boolean, isUntracked?: boolean): ContextMenuItem[][] {
+  return [
+    [
+      isStaged
+        ? {
+            label: t('git.unstage'),
+            icon: 'i-lucide-minus',
+            onSelect: () => unstageFile(filePath),
+          }
+        : {
+            label: t('git.stage'),
+            icon: 'i-lucide-plus',
+            onSelect: () => stageFile(filePath),
+          },
+      ...(isStaged
+        ? []
+        : [
+            {
+              label: t('diff.discardFile'),
+              icon: 'i-lucide-undo-2',
+              color: 'error' as const,
+              onSelect: () => discardFile(filePath, isUntracked),
+            },
+          ]),
+    ],
+    [
+      {
+        label: t('git.copyPath'),
+        icon: 'i-lucide-copy',
+        onSelect: async () => {
+          await navigator.clipboard.writeText(filePath)
+        },
+      },
+    ],
+  ]
+}
 
 async function handleCommit(): Promise<void> {
   if (!commitMessage.value.trim()) return
@@ -163,6 +209,10 @@ function handleSelectCommitFile(filePath: string): void {
 
 function handleCreateBranchFromCommit(commitSha: string): void {
   selectedCommitHash.value = commitSha
+  isCreateBranchModalOpen.value = true
+}
+
+function handleCreateBranchFromBranch(sourceBranchName: string): void {
   isCreateBranchModalOpen.value = true
 }
 
@@ -281,6 +331,47 @@ async function handlePush(): Promise<void> {
             </div>
 
             <template v-else>
+              <!-- Starred / Favorite Branches Section -->
+              <div v-if="favoriteBranchSummaries.length > 0" class="mb-3">
+                <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-warning uppercase tracking-wider">
+                  <span class="flex items-center gap-1.5">
+                    <UIcon name="i-lucide-star" class="h-3 w-3 fill-warning text-warning" />
+                    {{ t('navigation.favorites') }}
+                  </span>
+                  <span class="text-[10px]">{{ favoriteBranchSummaries.length }}</span>
+                </div>
+                <div class="flex flex-col gap-0.5 mt-1">
+                  <div
+                    v-for="branch in favoriteBranchSummaries"
+                    :key="branch.name"
+                    class="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start transition-colors cursor-pointer"
+                    :class="branch.is_head ? 'bg-primary/15 font-semibold text-primary' : 'text-toned hover:bg-primary/10'"
+                    @click="handleCheckout(branch.name)"
+                  >
+                    <div class="flex items-center gap-1.5 min-w-0">
+                      <UIcon
+                        :name="branch.is_head ? 'i-lucide-check-circle-2' : 'i-lucide-git-branch'"
+                        class="h-3.5 w-3.5 shrink-0"
+                      />
+                      <span class="truncate font-mono text-[11px]">{{ branch.name }}</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-[10px]">
+                      <span v-if="branch.ahead_count > 0" class="text-success font-mono">↑{{ branch.ahead_count }}</span>
+                      <span v-if="branch.behind_count > 0" class="text-warning font-mono">↓{{ branch.behind_count }}</span>
+                      <UButton
+                        size="xs"
+                        color="neutral"
+                        variant="ghost"
+                        icon="i-lucide-star-off"
+                        class="h-4 w-4 opacity-0 group-hover:opacity-80 hover:text-warning"
+                        :title="t('git.unstarBranch')"
+                        @click.stop="toggleFavoriteBranch(branch.name)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Local Branches Tree -->
               <div class="mb-3">
                 <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
@@ -293,6 +384,7 @@ async function handlePush(): Promise<void> {
                     :key="node.id"
                     :node="node"
                     @checkout="handleCheckout"
+                    @create-branch="handleCreateBranchFromBranch"
                     @delete="handleDeleteBranch"
                   />
                 </div>
@@ -363,6 +455,8 @@ async function handlePush(): Promise<void> {
               @pull="handlePull"
               @fetch="handleFetch"
               @create-branch="isCreateBranchModalOpen = true"
+              @create-branch-at-commit="handleCreateBranchFromCommit"
+              @checkout-commit="handleCheckoutCommit"
             ></WorkspaceCommitGraphViewport>
           </template>
 
@@ -552,37 +646,41 @@ async function handlePush(): Promise<void> {
                 v-else-if="stagingViewMode === 'flat' && repositoryStatus?.staged_files?.length"
                 class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80"
               >
-                <div
+                <UContextMenu
                   v-for="file in repositoryStatus.staged_files"
                   :key="file.path"
-                  class="group flex items-center justify-between px-2.5 py-1.5 cursor-pointer transition-colors"
-                  :class="selectedDiffTarget?.filePath === file.path && selectedDiffTarget?.isStaged
-                    ? 'bg-primary/15 text-primary font-medium'
-                    : 'hover:bg-muted/30'"
-                  @click="fetchFileDiff(file.path, true)"
+                  :items="getFlatFileContextMenuItems(file.path, true)"
                 >
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span
-                      class="font-mono font-bold text-[11px]"
-                      :class="getStatusBadge(file.status).colorClass"
-                    >
-                      {{ getStatusBadge(file.status).label }}
-                    </span>
-                    <span class="truncate font-mono text-[11px]" dir="ltr">
-                      {{ file.path }}
-                      <span v-if="file.original_path" class="text-muted text-[10px]">← {{ file.original_path }}</span>
-                    </span>
+                  <div
+                    class="group flex items-center justify-between px-2.5 py-1.5 cursor-pointer transition-colors"
+                    :class="selectedDiffTarget?.filePath === file.path && selectedDiffTarget?.isStaged
+                      ? 'bg-primary/15 text-primary font-medium'
+                      : 'hover:bg-muted/30'"
+                    @click="fetchFileDiff(file.path, true)"
+                  >
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span
+                        class="font-mono font-bold text-[11px]"
+                        :class="getStatusBadge(file.status).colorClass"
+                      >
+                        {{ getStatusBadge(file.status).label }}
+                      </span>
+                      <span class="truncate font-mono text-[11px]" dir="ltr">
+                        {{ file.path }}
+                        <span v-if="file.original_path" class="text-muted text-[10px]">← {{ file.original_path }}</span>
+                      </span>
+                    </div>
+                    <UButton
+                      size="xs"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-minus"
+                      class="h-5 w-5 shrink-0 opacity-70 group-hover:opacity-100"
+                      title="Unstage"
+                      @click.stop="unstageFile(file.path)"
+                    />
                   </div>
-                  <UButton
-                    size="xs"
-                    color="neutral"
-                    variant="ghost"
-                    icon="i-lucide-minus"
-                    class="h-5 w-5 shrink-0 opacity-70 group-hover:opacity-100"
-                    title="Unstage"
-                    @click.stop="unstageFile(file.path)"
-                  />
-                </div>
+                </UContextMenu>
               </div>
               <div v-else class="text-[11px] text-muted italic px-1">
                 No staged changes
@@ -631,46 +729,50 @@ async function handlePush(): Promise<void> {
                 v-else-if="stagingViewMode === 'flat' && repositoryStatus?.unstaged_files?.length"
                 class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80"
               >
-                <div
+                <UContextMenu
                   v-for="file in repositoryStatus.unstaged_files"
                   :key="file.path"
-                  class="group flex items-center justify-between px-2.5 py-1.5 cursor-pointer transition-colors"
-                  :class="selectedDiffTarget?.filePath === file.path && !selectedDiffTarget?.isStaged
-                    ? 'bg-primary/15 text-primary font-medium'
-                    : 'hover:bg-muted/30'"
-                  @click="fetchFileDiff(file.path, false)"
+                  :items="getFlatFileContextMenuItems(file.path, false, file.status === 'untracked')"
                 >
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span
-                      class="font-mono font-bold text-[11px]"
-                      :class="getStatusBadge(file.status).colorClass"
-                    >
-                      {{ getStatusBadge(file.status).label }}
-                    </span>
-                    <span class="truncate font-mono text-[11px]" dir="ltr">{{ file.path }}</span>
-                  </div>
+                  <div
+                    class="group flex items-center justify-between px-2.5 py-1.5 cursor-pointer transition-colors"
+                    :class="selectedDiffTarget?.filePath === file.path && !selectedDiffTarget?.isStaged
+                      ? 'bg-primary/15 text-primary font-medium'
+                      : 'hover:bg-muted/30'"
+                    @click="fetchFileDiff(file.path, false)"
+                  >
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span
+                        class="font-mono font-bold text-[11px]"
+                        :class="getStatusBadge(file.status).colorClass"
+                      >
+                        {{ getStatusBadge(file.status).label }}
+                      </span>
+                      <span class="truncate font-mono text-[11px]" dir="ltr">{{ file.path }}</span>
+                    </div>
 
-                  <div class="flex items-center gap-0.5 opacity-70 group-hover:opacity-100">
-                    <UButton
-                      size="xs"
-                      color="neutral"
-                      variant="ghost"
-                      icon="i-lucide-undo-2"
-                      class="h-5 w-5 shrink-0"
-                      title="Discard changes"
-                      @click.stop="discardFile(file.path, file.status === 'untracked')"
-                    />
-                    <UButton
-                      size="xs"
-                      color="neutral"
-                      variant="ghost"
-                      icon="i-lucide-plus"
-                      class="h-5 w-5 shrink-0"
-                      title="Stage"
-                      @click.stop="stageFile(file.path)"
-                    />
+                    <div class="flex items-center gap-0.5 opacity-70 group-hover:opacity-100">
+                      <UButton
+                        size="xs"
+                        color="neutral"
+                        variant="ghost"
+                        icon="i-lucide-undo-2"
+                        class="h-5 w-5 shrink-0"
+                        title="Discard changes"
+                        @click.stop="discardFile(file.path, file.status === 'untracked')"
+                      />
+                      <UButton
+                        size="xs"
+                        color="neutral"
+                        variant="ghost"
+                        icon="i-lucide-plus"
+                        class="h-5 w-5 shrink-0"
+                        title="Stage"
+                        @click.stop="stageFile(file.path)"
+                      />
+                    </div>
                   </div>
-                </div>
+                </UContextMenu>
               </div>
               <div v-else class="text-[11px] text-muted italic px-1">
                 Working tree clean

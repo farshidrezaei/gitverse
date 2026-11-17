@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import type { ContextMenuItem } from '@nuxt/ui'
 import type { FileTreeNode } from '~/utils/fileTree'
 
-defineProps<{
+const props = defineProps<{
   node: FileTreeNode
   isStaged: boolean
   selectedPath?: string | null
@@ -15,11 +16,53 @@ const emit = defineEmits<{
   select: [path: string, isStaged: boolean]
 }>()
 
+const { t } = useI18n()
 const isOpen = ref(true)
 
 function toggleOpen(): void {
   isOpen.value = !isOpen.value
 }
+
+const fileContextMenuItems = computed<ContextMenuItem[][]>(() => {
+  if (props.node.isDirectory) return []
+
+  const isStaged = props.isStaged
+
+  return [
+    [
+      isStaged
+        ? {
+            label: t('git.unstage'),
+            icon: 'i-lucide-minus',
+            onSelect: () => emit('unstage', props.node.fullPath),
+          }
+        : {
+            label: t('git.stage'),
+            icon: 'i-lucide-plus',
+            onSelect: () => emit('stage', props.node.fullPath),
+          },
+      ...(isStaged
+        ? []
+        : [
+            {
+              label: t('diff.discardFile'),
+              icon: 'i-lucide-undo-2',
+              color: 'error' as const,
+              onSelect: () => emit('discard', props.node.fullPath, props.node.fileEntry?.status === 'untracked'),
+            },
+          ]),
+    ],
+    [
+      {
+        label: t('git.copyPath'),
+        icon: 'i-lucide-copy',
+        onSelect: async () => {
+          await navigator.clipboard.writeText(props.node.fullPath)
+        },
+      },
+    ],
+  ]
+})
 
 function getStatusBadge(status?: string): { label: string; colorClass: string } {
   if (!status) return { label: '', colorClass: '' }
@@ -81,62 +124,66 @@ function getStatusBadge(status?: string): { label: string; colorClass: string } 
       />
     </div>
 
-    <!-- File Item Row -->
-    <div
+    <!-- File Item Row Wrapped in Context Menu -->
+    <UContextMenu
       v-else-if="!node.isDirectory"
-      class="group flex items-center justify-between py-1 px-1.5 rounded-md cursor-pointer transition-colors"
-      :class="selectedPath === node.fullPath && selectedIsStaged === isStaged
-        ? 'bg-primary/15 text-primary font-medium'
-        : 'hover:bg-muted/40'"
-      @click="emit('select', node.fullPath, isStaged)"
+      :items="fileContextMenuItems"
     >
-      <div class="flex items-center gap-1.5 min-w-0">
-        <span
-          class="font-mono font-bold text-[10px] w-3 text-center shrink-0"
-          :class="getStatusBadge(node.fileEntry?.status).colorClass"
-        >
-          {{ getStatusBadge(node.fileEntry?.status).label }}
-        </span>
-        <UIcon name="i-lucide-file-code" class="h-3.5 w-3.5 shrink-0 text-muted" />
-        <span class="truncate font-mono text-[11px]" dir="ltr">
-          {{ node.name }}
-        </span>
-      </div>
+      <div
+        class="group flex items-center justify-between py-1 px-1.5 rounded-md cursor-pointer transition-colors"
+        :class="selectedPath === node.fullPath && selectedIsStaged === isStaged
+          ? 'bg-primary/15 text-primary font-medium'
+          : 'hover:bg-muted/40'"
+        @click="emit('select', node.fullPath, isStaged)"
+      >
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span
+            class="font-mono font-bold text-[10px] w-3 text-center shrink-0"
+            :class="getStatusBadge(node.fileEntry?.status).colorClass"
+          >
+            {{ getStatusBadge(node.fileEntry?.status).label }}
+          </span>
+          <UIcon name="i-lucide-file-code" class="h-3.5 w-3.5 shrink-0 text-muted" />
+          <span class="truncate font-mono text-[11px]" dir="ltr">
+            {{ node.name }}
+          </span>
+        </div>
 
-      <!-- Action buttons -->
-      <div class="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
-        <template v-if="isStaged">
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-minus"
-            class="h-5 w-5 shrink-0"
-            title="Unstage"
-            @click.stop="emit('unstage', node.fullPath)"
-          />
-        </template>
-        <template v-else>
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-undo-2"
-            class="h-5 w-5 shrink-0"
-            title="Discard changes"
-            @click.stop="emit('discard', node.fullPath, node.fileEntry?.status === 'untracked')"
-          />
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-plus"
-            class="h-5 w-5 shrink-0"
-            title="Stage"
-            @click.stop="emit('stage', node.fullPath)"
-          />
-        </template>
+        <!-- Action buttons -->
+        <div class="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+          <template v-if="isStaged">
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-minus"
+              class="h-5 w-5 shrink-0"
+              title="Unstage"
+              @click.stop="emit('unstage', node.fullPath)"
+            />
+          </template>
+          <template v-else>
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-undo-2"
+              class="h-5 w-5 shrink-0"
+              title="Discard changes"
+              @click.stop="emit('discard', node.fullPath, node.fileEntry?.status === 'untracked')"
+            />
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-plus"
+              class="h-5 w-5 shrink-0"
+              title="Stage"
+              @click.stop="emit('stage', node.fullPath)"
+            />
+          </template>
+        </div>
       </div>
-    </div>
+    </UContextMenu>
   </div>
 </template>

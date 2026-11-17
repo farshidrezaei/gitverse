@@ -28,6 +28,7 @@ export function useWorkspaceManager() {
   const selectedCommitHash = useState<string | null>('workspace-selected-commit-hash', () => null)
   const selectedCommitDetails = useState<CommitDetails | null>('workspace-selected-commit-details', () => null)
   const selectedCommitFilePath = useState<string | null>('workspace-selected-commit-file-path', () => null)
+  const favoriteBranches = useState<string[]>('workspace-favorite-branches', () => [])
   const isLoading = ref<boolean>(false)
   const isLoadingDiff = ref<boolean>(false)
   const isLoadingGraph = ref<boolean>(false)
@@ -256,6 +257,7 @@ export function useWorkspaceManager() {
           directoryPath,
         })
         currentRepository.value = overview
+        loadFavoriteBranches()
         await fetchRecentRepositories()
         await fetchStatus()
         await fetchReferences()
@@ -656,6 +658,43 @@ export function useWorkspaceManager() {
     }
   }
 
+  function getFavoritesStorageKey(): string {
+    return `gitverse-favorites-${currentRepository.value?.path || 'default'}`
+  }
+
+  function loadFavoriteBranches(): void {
+    if (import.meta.client && currentRepository.value) {
+      try {
+        const stored = localStorage.getItem(getFavoritesStorageKey())
+        favoriteBranches.value = stored ? JSON.parse(stored) : []
+      } catch (error) {
+        console.error('Failed to load favorite branches:', error)
+        favoriteBranches.value = []
+      }
+    }
+  }
+
+  function toggleFavoriteBranch(branchName: string): void {
+    const set = new Set(favoriteBranches.value)
+    if (set.has(branchName)) {
+      set.delete(branchName)
+    } else {
+      set.add(branchName)
+    }
+    favoriteBranches.value = Array.from(set)
+    if (import.meta.client) {
+      try {
+        localStorage.setItem(getFavoritesStorageKey(), JSON.stringify(favoriteBranches.value))
+      } catch (error) {
+        console.error('Failed to save favorite branches:', error)
+      }
+    }
+  }
+
+  function isFavoriteBranch(branchName: string): boolean {
+    return favoriteBranches.value.includes(branchName)
+  }
+
   function clearDiffSelection(): void {
     selectedDiffTarget.value = null
     currentDiff.value = null
@@ -789,6 +828,7 @@ export function useWorkspaceManager() {
     repositoryReferences.value = null
     commitGraph.value = null
     selectedCommitHash.value = null
+    favoriteBranches.value = []
     clearDiffSelection()
     clearCommitSelection()
   }
@@ -805,6 +845,7 @@ export function useWorkspaceManager() {
     selectedCommitHash,
     selectedCommitDetails,
     selectedCommitFilePath,
+    favoriteBranches,
     isLoading,
     isLoadingDiff,
     isLoadingGraph,
@@ -819,6 +860,9 @@ export function useWorkspaceManager() {
     fetchCommitDetails,
     fetchCommitFileDiff,
     clearCommitSelection,
+    toggleFavoriteBranch,
+    isFavoriteBranch,
+    loadFavoriteBranches,
     checkoutBranch,
     createBranch,
     deleteBranch,
