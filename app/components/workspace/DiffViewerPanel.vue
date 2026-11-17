@@ -214,7 +214,7 @@ function formatLineContent(content: string, lineType: string): string {
       </div>
 
       <!-- No Target Selected State -->
-      <div v-else-if="!selectedTarget" class="flex h-full flex-col items-center justify-center gap-2 p-6 text-muted">
+      <div v-else-if="!selectedTarget && !diff" class="flex h-full flex-col items-center justify-center gap-2 p-6 text-muted">
         <div class="rounded-full bg-muted/20 p-3">
           <UIcon name="i-lucide-file-diff" class="h-8 w-8 text-muted/70" />
         </div>
@@ -231,7 +231,7 @@ function formatLineContent(content: string, lineType: string): string {
         </div>
         <div class="text-center font-sans">
           <p class="font-medium text-highlighted text-xs">{{ t('diff.binaryFile') }}</p>
-          <p class="text-[11px] text-muted mt-0.5 font-mono">{{ selectedTarget.filePath }}</p>
+          <p class="text-[11px] text-muted mt-0.5 font-mono">{{ selectedTarget ? selectedTarget.filePath : diff.new_path }}</p>
         </div>
       </div>
 
@@ -242,7 +242,7 @@ function formatLineContent(content: string, lineType: string): string {
         </div>
         <div class="text-center font-sans">
           <p class="font-medium text-highlighted text-xs">{{ t('diff.noChanges') }}</p>
-          <p class="text-[11px] text-muted mt-0.5 font-mono">{{ selectedTarget.filePath }}</p>
+          <p class="text-[11px] text-muted mt-0.5 font-mono">{{ selectedTarget ? selectedTarget.filePath : diff?.new_path }}</p>
         </div>
       </div>
 
