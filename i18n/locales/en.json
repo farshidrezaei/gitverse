@@ -138,6 +138,8 @@
     "dirtyWorkingTree": "{count} uncommitted changes",
     "emptyRepository": "Empty repository (no commits yet)",
     "detachedHead": "Detached HEAD",
+    "viewFlat": "Flat View",
+    "viewTree": "Tree View",
     "welcomeTitle": "Welcome to GitVerse",
     "welcomeSubtitle": "Select a local repository from your machine or choose from recent projects to begin working.",
     "selectDirectoryHint": "Choose any existing Git repository folder on disk"

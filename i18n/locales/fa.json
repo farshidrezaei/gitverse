@@ -138,6 +138,8 @@
     "dirtyWorkingTree": "{count} تغییر ثبت‌نشده",
     "emptyRepository": "مخزن خالی است (بدون کامیت)",
     "detachedHead": "وضعیت Detached HEAD",
+    "viewFlat": "نمایش لیستی (Flat)",
+    "viewTree": "نمایش درختی (Tree)",
     "welcomeTitle": "به گیت‌ورس خوش آمدید",
     "welcomeSubtitle": "یک مخزن گیت محلی را از روی دیسک باز کنید یا از لیست پروژه‌های اخیر انتخاب نمایید.",
     "selectDirectoryHint": "پوشه یک مخزن گیت موجود را انتخاب کنید"

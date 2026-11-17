@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { SplitterItem } from '@nuxt/ui'
 import WelcomeWorkspaceState from '~/components/workspace/WelcomeWorkspaceState.vue'
+import WorkspaceStagingTreeNodeItem from '~/components/workspace/StagingTreeNodeItem.vue'
+import { buildFileTree } from '~/utils/fileTree'
 
 const { t } = useI18n()
+const stagingViewMode = ref<'tree' | 'flat'>('flat')
 const {
   currentRepository,
   repositoryStatus,
@@ -42,6 +45,14 @@ function getStatusBadge(status: string): { label: string; colorClass: string } {
       return { label: status[0]?.toUpperCase() || 'M', colorClass: 'text-toned' }
   }
 }
+
+const stagedTreeNodes = computed(() => {
+  return buildFileTree(repositoryStatus.value?.staged_files || [])
+})
+
+const unstagedTreeNodes = computed(() => {
+  return buildFileTree(repositoryStatus.value?.unstaged_files || [])
+})
 
 async function handleCommit(): Promise<void> {
   if (!commitMessage.value.trim()) return
@@ -487,12 +498,34 @@ function selectCommit(sha: string): void {
       <!-- ================================================================= -->
       <template #staging>
         <div class="gv-island-panel flex h-full flex-col overflow-hidden">
-          <!-- Staging Header -->
+          <!-- Staging Header with View Toggle (Flat vs Tree) -->
           <div class="flex h-9 shrink-0 items-center justify-between border-b border-default/70 px-3 bg-muted/20">
             <span class="text-xs font-semibold text-highlighted uppercase tracking-wider">
               {{ t('navigation.changes') }}
             </span>
             <div class="flex items-center gap-1">
+              <!-- View Mode Toggle: Flat vs Tree -->
+              <div class="flex items-center rounded-lg border border-default/60 p-0.5 bg-muted/30">
+                <button
+                  type="button"
+                  class="p-1 rounded text-muted hover:text-highlighted transition-colors"
+                  :class="stagingViewMode === 'flat' ? 'bg-primary/20 text-primary font-bold' : ''"
+                  :title="t('repository.viewFlat')"
+                  @click="stagingViewMode = 'flat'"
+                >
+                  <UIcon name="i-lucide-list" class="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  class="p-1 rounded text-muted hover:text-highlighted transition-colors"
+                  :class="stagingViewMode === 'tree' ? 'bg-primary/20 text-primary font-bold' : ''"
+                  :title="t('repository.viewTree')"
+                  @click="stagingViewMode = 'tree'"
+                >
+                  <UIcon name="i-lucide-folder-tree" class="h-3.5 w-3.5" />
+                </button>
+              </div>
+
               <UButton
                 size="xs"
                 color="neutral"
@@ -554,8 +587,25 @@ function selectCommit(sha: string): void {
                 />
               </div>
 
+              <!-- Staged Tree View -->
               <div
-                v-if="repositoryStatus?.staged_files?.length"
+                v-if="stagingViewMode === 'tree' && repositoryStatus?.staged_files?.length"
+                class="rounded-lg border border-default/70 p-2 bg-surface/80 space-y-0.5"
+              >
+                <WorkspaceStagingTreeNodeItem
+                  v-for="node in stagedTreeNodes"
+                  :key="node.id"
+                  :node="node"
+                  :is-staged="true"
+                  @stage="stageFile"
+                  @unstage="unstageFile"
+                  @discard="discardFile"
+                />
+              </div>
+
+              <!-- Staged Flat View -->
+              <div
+                v-else-if="stagingViewMode === 'flat' && repositoryStatus?.staged_files?.length"
                 class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80"
               >
                 <div
@@ -609,8 +659,25 @@ function selectCommit(sha: string): void {
                 />
               </div>
 
+              <!-- Unstaged Tree View -->
               <div
-                v-if="repositoryStatus?.unstaged_files?.length"
+                v-if="stagingViewMode === 'tree' && repositoryStatus?.unstaged_files?.length"
+                class="rounded-lg border border-default/70 p-2 bg-surface/80 space-y-0.5"
+              >
+                <WorkspaceStagingTreeNodeItem
+                  v-for="node in unstagedTreeNodes"
+                  :key="node.id"
+                  :node="node"
+                  :is-staged="false"
+                  @stage="stageFile"
+                  @unstage="unstageFile"
+                  @discard="discardFile"
+                />
+              </div>
+
+              <!-- Unstaged Flat View -->
+              <div
+                v-else-if="stagingViewMode === 'flat' && repositoryStatus?.unstaged_files?.length"
                 class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80"
               >
                 <div
