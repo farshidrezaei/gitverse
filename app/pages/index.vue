@@ -7,6 +7,7 @@ import { buildFileTree } from '~/utils/fileTree'
 import { buildBranchTree, buildRemoteBranchTree } from '~/utils/branchTree'
 
 const { t } = useI18n()
+const STAGING_VIEW_MODE_STORAGE_KEY = 'gitverse_staging_view_mode'
 const stagingViewMode = ref<'tree' | 'flat'>('flat')
 const {
   currentRepository,
@@ -25,6 +26,7 @@ const {
   isLoadingCommitDetails,
   isOperating,
   promptAndOpenRepository,
+  restoreLastOpenedRepository,
   fetchStatus,
   fetchReferences,
   fetchCommitGraph,
@@ -49,11 +51,34 @@ const {
 } = useWorkspaceManager()
 
 onMounted(async () => {
+  if (import.meta.client) {
+    try {
+      const savedMode = localStorage.getItem(STAGING_VIEW_MODE_STORAGE_KEY)
+      if (savedMode === 'tree' || savedMode === 'flat') {
+        stagingViewMode.value = savedMode
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   if (currentRepository.value) {
     loadFavoriteBranches()
     await fetchStatus()
     await fetchReferences()
     await fetchCommitGraph()
+  } else {
+    await restoreLastOpenedRepository()
+  }
+})
+
+watch(stagingViewMode, (newMode) => {
+  if (import.meta.client) {
+    try {
+      localStorage.setItem(STAGING_VIEW_MODE_STORAGE_KEY, newMode)
+    } catch {
+      // ignore
+    }
   }
 })
 

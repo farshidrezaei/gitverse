@@ -16,6 +16,8 @@ export interface SelectedDiffTarget {
   isStaged: boolean
 }
 
+const LAST_OPENED_REPO_STORAGE_KEY = 'gitverse_last_opened_repository_path'
+
 export function useWorkspaceManager() {
   const currentRepository = useState<RepositoryOverview | null>('workspace-current-repository', () => null)
   const repositoryStatus = useState<DetailedRepositoryStatus | null>('workspace-repository-status', () => null)
@@ -263,6 +265,13 @@ export function useWorkspaceManager() {
         await fetchReferences()
         await fetchCommitGraph()
         await setupRealtimeListener()
+        if (import.meta.client) {
+          try {
+            localStorage.setItem(LAST_OPENED_REPO_STORAGE_KEY, directoryPath)
+          } catch (error) {
+            console.error('Failed to save last opened repo:', error)
+          }
+        }
         return overview
       } else {
         // Web preview mock
@@ -280,6 +289,13 @@ export function useWorkspaceManager() {
         currentRepository.value = overview
         await fetchReferences()
         await fetchCommitGraph()
+        if (import.meta.client) {
+          try {
+            localStorage.setItem(LAST_OPENED_REPO_STORAGE_KEY, directoryPath)
+          } catch (error) {
+            console.error('Failed to save last opened repo:', error)
+          }
+        }
         return overview
       }
     } catch (error: any) {
@@ -824,6 +840,13 @@ export function useWorkspaceManager() {
       const { invoke } = await import('@tauri-apps/api/core')
       await invoke('close_repository')
     }
+    if (import.meta.client) {
+      try {
+        localStorage.removeItem(LAST_OPENED_REPO_STORAGE_KEY)
+      } catch {
+        // ignore
+      }
+    }
     currentRepository.value = null
     repositoryReferences.value = null
     commitGraph.value = null
@@ -831,6 +854,43 @@ export function useWorkspaceManager() {
     favoriteBranches.value = []
     clearDiffSelection()
     clearCommitSelection()
+  }
+
+  async function restoreLastOpenedRepository(): Promise<RepositoryOverview | null> {
+    if (!import.meta.client) return null
+
+    let savedPath: string | null = null
+    try {
+      savedPath = localStorage.getItem(LAST_OPENED_REPO_STORAGE_KEY)
+    } catch {
+      // ignore
+    }
+
+    if (savedPath) {
+      try {
+        const overview = await openRepository(savedPath)
+        if (overview) return overview
+      } catch (error) {
+        console.warn('Failed to restore last opened repo from saved path:', savedPath, error)
+        try {
+          localStorage.removeItem(LAST_OPENED_REPO_STORAGE_KEY)
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    // Fallback: check SQLite recents
+    try {
+      const recents = await fetchRecentRepositories()
+      if (recents.length > 0 && recents[0]?.path) {
+        return await openRepository(recents[0].path)
+      }
+    } catch (error) {
+      console.warn('Failed to restore repository from recents:', error)
+    }
+
+    return null
   }
 
   return {
@@ -874,6 +934,7 @@ export function useWorkspaceManager() {
     openRepository,
     promptAndOpenRepository,
     closeRepository,
+    restoreLastOpenedRepository,
     stageFile,
     unstageFile,
     stageAll,

@@ -17,8 +17,32 @@ defineEmits<{
 
 const { t } = useI18n()
 
+const DIFF_VIEW_MODE_STORAGE_KEY = 'gitverse_diff_view_mode'
 type DiffViewMode = 'inline' | 'side-by-side'
 const viewMode = ref<DiffViewMode>('inline')
+
+onMounted(() => {
+  if (import.meta.client) {
+    try {
+      const savedMode = localStorage.getItem(DIFF_VIEW_MODE_STORAGE_KEY)
+      if (savedMode === 'inline' || savedMode === 'side-by-side') {
+        viewMode.value = savedMode
+      }
+    } catch {
+      // ignore
+    }
+  }
+})
+
+watch(viewMode, (newMode) => {
+  if (import.meta.client) {
+    try {
+      localStorage.setItem(DIFF_VIEW_MODE_STORAGE_KEY, newMode)
+    } catch {
+      // ignore
+    }
+  }
+})
 
 const sideBySideHunks = computed(() => {
   if (!props.diff || !props.diff.hunks) return []
