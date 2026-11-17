@@ -46,6 +46,7 @@
   "navigation": {
     "workspace": "فضای کاری",
     "repositories": "مخازن",
+    "references": "شاخه‌ها و مراجع",
     "changes": "تغییرات",
     "history": "تاریخچه",
     "graph": "گراف کامیت",

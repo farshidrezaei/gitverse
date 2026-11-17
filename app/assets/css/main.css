@@ -541,6 +541,14 @@ html[data-primary="indigo"] {
   box-shadow: var(--gv-shadow-md);
 }
 
+/* Modal overlay: solid darkening without eye-straining blur filters */
+[data-slot="overlay"],
+div[data-state][class*="backdrop-blur"],
+div[data-state][class*="overlay"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -46,6 +46,7 @@
   "navigation": {
     "workspace": "Workspace",
     "repositories": "Repositories",
+    "references": "References",
     "changes": "Changes",
     "history": "History",
     "graph": "Commit Graph",

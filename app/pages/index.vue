@@ -14,6 +14,7 @@ const {
   currentDiff,
   commitGraph,
   selectedCommitHash,
+  isLoading,
   isLoadingDiff,
   isLoadingGraph,
   isOperating,
@@ -203,7 +204,7 @@ async function handlePush(): Promise<void> {
           <!-- Sidebar Header -->
           <div class="flex h-9 shrink-0 items-center justify-between border-b border-default/70 px-3 bg-muted/20">
             <span class="text-xs font-semibold text-highlighted uppercase tracking-wider">
-              {{ t('navigation.repositories') }}
+              {{ t('navigation.references') }}
             </span>
             <UButton
               size="xs"
@@ -218,81 +219,111 @@ async function handlePush(): Promise<void> {
 
           <!-- Branch & Reference Tree -->
           <div class="flex-1 overflow-y-auto p-2 text-xs">
-            <!-- Local Branches -->
-            <div class="mb-3">
-              <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
-                <span>{{ t('git.branches') }}</span>
-                <span class="text-[10px]">{{ repositoryReferences?.branches?.length || 0 }}</span>
-              </div>
-              <div class="flex flex-col gap-0.5 mt-1">
-                <div
-                  v-for="branch in repositoryReferences?.branches || []"
-                  :key="branch.name"
-                  class="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start transition-colors cursor-pointer"
-                  :class="branch.is_head ? 'bg-primary/15 font-semibold text-primary' : 'text-toned hover:bg-primary/10'"
-                  @click="handleCheckout(branch.name)"
-                >
-                  <div class="flex items-center gap-1.5 min-w-0">
-                    <UIcon
-                      :name="branch.is_head ? 'i-lucide-check-circle-2' : 'i-lucide-git-branch'"
-                      class="h-3.5 w-3.5 shrink-0"
-                    />
-                    <span class="truncate font-mono text-[11px]">{{ branch.name }}</span>
+            <!-- References Skeleton Loading -->
+            <div v-if="isLoading && !repositoryReferences" class="space-y-4 p-1">
+              <div>
+                <div class="flex items-center justify-between px-2 py-1">
+                  <USkeleton class="h-3 w-16" />
+                  <USkeleton class="h-3 w-4" />
+                </div>
+                <div class="space-y-1 mt-1.5">
+                  <div v-for="skeletonIndex in 3" :key="skeletonIndex" class="flex items-center gap-2 rounded-lg px-2 py-1.5">
+                    <USkeleton class="h-3.5 w-3.5 rounded-full shrink-0" />
+                    <USkeleton class="h-3 w-28" />
                   </div>
-                  <div class="flex items-center gap-1 text-[10px]">
-                    <span v-if="branch.ahead_count > 0" class="text-success font-mono">↑{{ branch.ahead_count }}</span>
-                    <span v-if="branch.behind_count > 0" class="text-warning font-mono">↓{{ branch.behind_count }}</span>
-                    <UButton
-                      v-if="!branch.is_head"
-                      size="xs"
-                      color="neutral"
-                      variant="ghost"
-                      icon="i-lucide-trash-2"
-                      class="h-4 w-4 opacity-0 group-hover:opacity-80 hover:text-error"
-                      title="Delete branch"
-                      @click.stop="handleDeleteBranch(branch.name)"
-                    />
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between px-2 py-1">
+                  <USkeleton class="h-3 w-14" />
+                  <USkeleton class="h-3 w-4" />
+                </div>
+                <div class="space-y-1 mt-1.5">
+                  <div v-for="skeletonIndex in 2" :key="skeletonIndex" class="flex items-center gap-2 rounded-lg px-2 py-1.5">
+                    <USkeleton class="h-3.5 w-3.5 rounded shrink-0" />
+                    <USkeleton class="h-3 w-24" />
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Remote Branches -->
-            <div v-if="repositoryReferences?.remote_branches?.length" class="mb-3">
-              <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
-                <span>{{ t('navigation.remotes') }}</span>
-                <span class="text-[10px]">{{ repositoryReferences.remote_branches.length }}</span>
-              </div>
-              <div class="flex flex-col gap-0.5 mt-1">
-                <div
-                  v-for="remoteBranch in repositoryReferences.remote_branches"
-                  :key="remoteBranch.name"
-                  class="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-start text-toned text-[11px] font-mono hover:bg-primary/10 cursor-pointer"
-                  @click="handleCheckout(remoteBranch.name)"
-                >
-                  <UIcon name="i-lucide-cloud" class="h-3.5 w-3.5 shrink-0 text-muted" />
-                  <span class="truncate">{{ remoteBranch.name }}</span>
+            <template v-else>
+              <!-- Local Branches -->
+              <div class="mb-3">
+                <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
+                  <span>{{ t('git.branches') }}</span>
+                  <span class="text-[10px]">{{ repositoryReferences?.branches?.length || 0 }}</span>
+                </div>
+                <div class="flex flex-col gap-0.5 mt-1">
+                  <div
+                    v-for="branch in repositoryReferences?.branches || []"
+                    :key="branch.name"
+                    class="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-start transition-colors cursor-pointer"
+                    :class="branch.is_head ? 'bg-primary/15 font-semibold text-primary' : 'text-toned hover:bg-primary/10'"
+                    @click="handleCheckout(branch.name)"
+                  >
+                    <div class="flex items-center gap-1.5 min-w-0">
+                      <UIcon
+                        :name="branch.is_head ? 'i-lucide-check-circle-2' : 'i-lucide-git-branch'"
+                        class="h-3.5 w-3.5 shrink-0"
+                      />
+                      <span class="truncate font-mono text-[11px]">{{ branch.name }}</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-[10px]">
+                      <span v-if="branch.ahead_count > 0" class="text-success font-mono">↑{{ branch.ahead_count }}</span>
+                      <span v-if="branch.behind_count > 0" class="text-warning font-mono">↓{{ branch.behind_count }}</span>
+                      <UButton
+                        v-if="!branch.is_head"
+                        size="xs"
+                        color="neutral"
+                        variant="ghost"
+                        icon="i-lucide-trash-2"
+                        class="h-4 w-4 opacity-0 group-hover:opacity-80 hover:text-error"
+                        title="Delete branch"
+                        @click.stop="handleDeleteBranch(branch.name)"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Tags -->
-            <div v-if="repositoryReferences?.tags?.length">
-              <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
-                <span>{{ t('git.tags') }}</span>
-                <span class="text-[10px]">{{ repositoryReferences.tags.length }}</span>
-              </div>
-              <div class="flex flex-col gap-0.5 mt-1">
-                <div
-                  v-for="tag in repositoryReferences.tags"
-                  :key="tag.name"
-                  class="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-start text-toned text-[11px] font-mono hover:bg-primary/10"
-                >
-                  <UIcon name="i-lucide-tag" class="h-3.5 w-3.5 shrink-0 text-muted" />
-                  <span class="truncate">{{ tag.name }}</span>
+              <!-- Remote Branches -->
+              <div v-if="repositoryReferences?.remote_branches?.length" class="mb-3">
+                <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
+                  <span>{{ t('navigation.remotes') }}</span>
+                  <span class="text-[10px]">{{ repositoryReferences.remote_branches.length }}</span>
+                </div>
+                <div class="flex flex-col gap-0.5 mt-1">
+                  <div
+                    v-for="remoteBranch in repositoryReferences.remote_branches"
+                    :key="remoteBranch.name"
+                    class="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-start text-toned text-[11px] font-mono hover:bg-primary/10 cursor-pointer"
+                    @click="handleCheckout(remoteBranch.name)"
+                  >
+                    <UIcon name="i-lucide-cloud" class="h-3.5 w-3.5 shrink-0 text-muted" />
+                    <span class="truncate">{{ remoteBranch.name }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+
+              <!-- Tags -->
+              <div v-if="repositoryReferences?.tags?.length">
+                <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
+                  <span>{{ t('git.tags') }}</span>
+                  <span class="text-[10px]">{{ repositoryReferences.tags.length }}</span>
+                </div>
+                <div class="flex flex-col gap-0.5 mt-1">
+                  <div
+                    v-for="tag in repositoryReferences.tags"
+                    :key="tag.name"
+                    class="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-start text-toned text-[11px] font-mono hover:bg-primary/10"
+                  >
+                    <UIcon name="i-lucide-tag" class="h-3.5 w-3.5 shrink-0 text-muted" />
+                    <span class="truncate">{{ tag.name }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
           </div>
         </div>
       </template>
@@ -403,8 +434,41 @@ async function handlePush(): Promise<void> {
           </div>
 
           <div class="flex-1 overflow-y-auto p-3 text-xs space-y-4">
-            <!-- Conflicted Files Alert (Merge Conflict State) -->
-            <div v-if="repositoryStatus?.conflicted_files?.length" class="space-y-1.5">
+            <!-- Changes Skeleton Loading -->
+            <div v-if="isLoading && !repositoryStatus" class="space-y-4">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="h-2 w-2 rounded-full bg-success/40" />
+                    <USkeleton class="h-3.5 w-20" />
+                  </div>
+                </div>
+                <div class="rounded-lg border border-default/70 p-2 space-y-2 bg-surface/80">
+                  <div v-for="skeletonIndex in 2" :key="skeletonIndex" class="flex items-center gap-2">
+                    <USkeleton class="h-3 w-4" />
+                    <USkeleton class="h-3 w-40" />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="h-2 w-2 rounded-full bg-warning/40" />
+                    <USkeleton class="h-3.5 w-24" />
+                  </div>
+                </div>
+                <div class="rounded-lg border border-default/70 p-2 space-y-2 bg-surface/80">
+                  <div v-for="skeletonIndex in 3" :key="skeletonIndex" class="flex items-center gap-2">
+                    <USkeleton class="h-3 w-4" />
+                    <USkeleton class="h-3 w-48" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <template v-else>
+              <!-- Conflicted Files Alert (Merge Conflict State) -->
+              <div v-if="repositoryStatus?.conflicted_files?.length" class="space-y-1.5">
               <div class="flex items-center justify-between mb-1 text-error">
                 <span class="font-bold flex items-center gap-1.5">
                   <UIcon name="i-lucide-alert-triangle" class="h-4 w-4" />
@@ -591,6 +655,7 @@ async function handlePush(): Promise<void> {
                 Working tree clean
               </div>
             </div>
+            </template>
           </div>
 
           <!-- Commit Box (Docked at Bottom) -->

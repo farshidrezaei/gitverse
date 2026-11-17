@@ -65,6 +65,7 @@ function handleClose(): void {
   <UModal
     :open="open"
     :ui="{
+      overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity',
       content: 'sm:max-w-md p-0 border border-default/70 bg-[var(--gv-surface)] shadow-2xl rounded-2xl overflow-hidden',
     }"
     @update:open="emit('update:open', $event)"
@@ -117,14 +118,11 @@ function handleClose(): void {
           </div>
 
           <!-- Checkout Checkbox -->
-          <label class="flex items-center gap-2.5 cursor-pointer text-xs">
-            <input
-              v-model="shouldCheckout"
-              type="checkbox"
-              class="rounded border-default text-primary focus:ring-primary h-4 w-4"
-            />
-            <span class="text-toned font-medium">{{ t('git.checkoutNewBranch') }}</span>
-          </label>
+          <UCheckbox
+            v-model="shouldCheckout"
+            :label="t('git.checkoutNewBranch')"
+            size="sm"
+          />
         </div>
 
         <!-- Action Footer -->

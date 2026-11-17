@@ -28,7 +28,7 @@ const categories = computed<Array<{ id: SettingsCategory; labelKey: string; icon
     }"
   >
     <template #content="{ close }">
-      <div class="flex flex-col w-full max-h-[85vh] rounded-2xl border border-[var(--gv-border)] bg-[var(--gv-surface)] backdrop-blur-2xl shadow-2xl overflow-hidden text-xs">
+      <div class="flex flex-col w-full max-h-[85vh] rounded-2xl border border-[var(--gv-border)] bg-[var(--gv-surface)] shadow-2xl overflow-hidden text-xs">
         <!-- Unified Modal Header -->
         <div class="flex h-12 shrink-0 items-center justify-between px-4 border-b border-[var(--gv-border)] bg-[var(--gv-sidebar)] select-none">
           <div class="flex items-center gap-2">

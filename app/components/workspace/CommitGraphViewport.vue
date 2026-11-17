@@ -212,10 +212,58 @@ function handleRowClick(commitHash: string): void {
 
     <!-- Main Commit Table with Integrated SVG Graph Column -->
     <div class="flex-1 overflow-auto relative">
-      <!-- Loading State -->
-      <div v-if="isLoading && (!graph || graph.nodes.length === 0)" class="flex h-full items-center justify-center gap-2 text-muted">
-        <UIcon name="i-lucide-loader-circle" class="h-6 w-6 animate-spin text-primary" />
-        <span class="text-xs">{{ t('common.loading') }}</span>
+      <!-- High-Fidelity Zero-CLS Skeleton Loading State -->
+      <div v-if="isLoading && (!graph || graph.nodes.length === 0)" class="min-w-full inline-block align-top">
+        <table class="w-full text-start text-xs border-collapse">
+          <thead class="sticky top-0 z-20 bg-muted/90 border-b border-default/70 text-[11px] text-muted select-none">
+            <tr>
+              <th class="py-1.5 px-2 text-start font-medium" style="width: 70px; min-width: 70px;">Graph</th>
+              <th class="py-1.5 px-2 text-start font-medium">Description</th>
+              <th class="py-1.5 px-2 text-start font-medium w-32">Author</th>
+              <th class="py-1.5 px-2 text-start font-medium w-24">Date</th>
+              <th class="py-1.5 pe-3 ps-2 text-end font-medium w-20">SHA</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-default/30 font-sans text-xs">
+            <tr
+              v-for="index in 8"
+              :key="`graph-skeleton-${index}`"
+              :style="{ height: `${ROW_HEIGHT}px` }"
+              class="animate-pulse"
+            >
+              <!-- Skeleton Track & Node -->
+              <td class="p-0 relative" style="width: 70px; min-width: 70px;">
+                <div class="flex items-center ps-4 h-full">
+                  <div class="h-2.5 w-2.5 rounded-full bg-muted/50" />
+                </div>
+              </td>
+              <!-- Skeleton Subject & Badges -->
+              <td class="py-1 px-2">
+                <div class="flex items-center gap-2">
+                  <USkeleton class="h-4 w-14 rounded-md" />
+                  <USkeleton
+                    class="h-3.5 rounded"
+                    :class="[
+                      index % 3 === 0 ? 'w-3/4' : index % 2 === 0 ? 'w-1/2' : 'w-2/3',
+                    ]"
+                  />
+                </div>
+              </td>
+              <!-- Skeleton Author -->
+              <td class="py-1 px-2">
+                <USkeleton class="h-3.5 w-20 rounded" />
+              </td>
+              <!-- Skeleton Date -->
+              <td class="py-1 px-2">
+                <USkeleton class="h-3.5 w-14 rounded" />
+              </td>
+              <!-- Skeleton SHA -->
+              <td class="py-1 pe-3 ps-2 text-end">
+                <USkeleton class="h-3.5 w-12 rounded ms-auto" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- Empty State -->
