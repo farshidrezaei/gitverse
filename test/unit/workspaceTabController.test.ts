@@ -178,4 +178,35 @@ describe('useWorkspaceTabController', () => {
     expect(diffTabs.value.length).toBe(1)
     expect(diffTabs.value[0]?.filePath).toBe('repo1_file.rs')
   })
+
+  it('persists tabs and active path to storage and clears when all tabs are closed', () => {
+    const {
+      openRepositoryTab,
+      closeRepositoryTab,
+      resetTabs,
+    } = useWorkspaceTabController()
+
+    window.localStorage.clear()
+
+    openRepositoryTab('/path/to/project_alpha', 'project_alpha')
+    expect(window.localStorage.getItem('gitverse_last_opened_repository_path')).toBe('/path/to/project_alpha')
+    expect(window.localStorage.getItem('gitverse_open_repository_tabs')).toContain('project_alpha')
+
+    openRepositoryTab('/path/to/project_beta', 'project_beta')
+    expect(window.localStorage.getItem('gitverse_last_opened_repository_path')).toBe('/path/to/project_beta')
+    expect(window.localStorage.getItem('gitverse_open_repository_tabs')).toContain('project_beta')
+
+    closeRepositoryTab('/path/to/project_beta')
+    expect(window.localStorage.getItem('gitverse_last_opened_repository_path')).toBe('/path/to/project_alpha')
+
+    closeRepositoryTab('/path/to/project_alpha')
+    expect(window.localStorage.getItem('gitverse_last_opened_repository_path')).toBeNull()
+    expect(window.localStorage.getItem('gitverse_open_repository_tabs')).toBeNull()
+
+    openRepositoryTab('/path/to/project_gamma', 'project_gamma')
+    expect(window.localStorage.getItem('gitverse_last_opened_repository_path')).toBe('/path/to/project_gamma')
+    resetTabs()
+    expect(window.localStorage.getItem('gitverse_last_opened_repository_path')).toBeNull()
+    expect(window.localStorage.getItem('gitverse_open_repository_tabs')).toBeNull()
+  })
 })

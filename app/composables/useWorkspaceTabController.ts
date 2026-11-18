@@ -4,6 +4,9 @@ import type {
   OpenDiffTabOptions,
 } from '~/types/workspaceTab'
 
+export const LAST_OPENED_REPOSITORY_STORAGE_KEY = 'gitverse_last_opened_repository_path'
+export const OPEN_REPOSITORY_TABS_STORAGE_KEY = 'gitverse_open_repository_tabs'
+
 function safeState<T>(key: string, initialValue: () => T) {
   if (tryUseNuxtApp()) {
     return useState<T>(key, initialValue)
@@ -56,6 +59,26 @@ export function useWorkspaceTabController() {
     return parts[parts.length - 1] || filePath
   }
 
+  function persistTabsToStorage(): void {
+    if (typeof window === 'undefined') return
+    try {
+      if (repositoryTabs.value.length === 0) {
+        window.localStorage.removeItem(OPEN_REPOSITORY_TABS_STORAGE_KEY)
+        window.localStorage.removeItem(LAST_OPENED_REPOSITORY_STORAGE_KEY)
+      } else {
+        window.localStorage.setItem(
+          OPEN_REPOSITORY_TABS_STORAGE_KEY,
+          JSON.stringify(repositoryTabs.value.map(tab => ({ path: tab.repositoryPath, name: tab.repositoryName }))),
+        )
+        if (activeRepositoryPath.value) {
+          window.localStorage.setItem(LAST_OPENED_REPOSITORY_STORAGE_KEY, activeRepositoryPath.value)
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   function openRepositoryTab(repositoryPath: string, repositoryName: string): WorkspaceRepositoryTab {
     const tabIdentifier = getRepositoryTabIdentifier(repositoryPath)
     const existingIndex = repositoryTabs.value.findIndex(tab => tab.repositoryPath === repositoryPath)
@@ -65,6 +88,7 @@ export function useWorkspaceTabController() {
       existingTab.repositoryName = repositoryName
       activeRepositoryPath.value = repositoryPath
       activeDiffTabId.value = null // Reset active diff view to workbench
+      persistTabsToStorage()
       return existingTab
     }
 
@@ -78,6 +102,7 @@ export function useWorkspaceTabController() {
     repositoryTabs.value.push(newTab)
     activeRepositoryPath.value = repositoryPath
     activeDiffTabId.value = null
+    persistTabsToStorage()
     return newTab
   }
 
@@ -97,6 +122,8 @@ export function useWorkspaceTabController() {
       activeRepositoryPath.value = nextTab ? nextTab.repositoryPath : ''
       activeDiffTabId.value = null
     }
+
+    persistTabsToStorage()
   }
 
   function closeOtherRepositoryTabs(repositoryPath: string): void {
@@ -104,6 +131,7 @@ export function useWorkspaceTabController() {
     diffTabs.value = diffTabs.value.filter(tab => tab.repositoryPath === repositoryPath)
     activeRepositoryPath.value = repositoryPath
     activeDiffTabId.value = null
+    persistTabsToStorage()
   }
 
   function openDiffTab(options: OpenDiffTabOptions, shouldActivate = true): WorkspaceDiffTab {
@@ -222,6 +250,7 @@ export function useWorkspaceTabController() {
   function activateRepositoryTab(repositoryPath: string): void {
     activeRepositoryPath.value = repositoryPath
     activeDiffTabId.value = null
+    persistTabsToStorage()
   }
 
   function resetTabs(): void {
@@ -229,6 +258,7 @@ export function useWorkspaceTabController() {
     diffTabs.value = []
     activeRepositoryPath.value = ''
     activeDiffTabId.value = null
+    persistTabsToStorage()
   }
 
   return {

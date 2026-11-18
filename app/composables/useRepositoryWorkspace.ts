@@ -4,8 +4,11 @@ import type {
   RecentRepositoryRecord,
   RepositoryOverview,
 } from '~/types/repository'
-
-export const LAST_OPENED_REPOSITORY_STORAGE_KEY = 'gitverse_last_opened_repository_path'
+import {
+  LAST_OPENED_REPOSITORY_STORAGE_KEY,
+  OPEN_REPOSITORY_TABS_STORAGE_KEY,
+  useWorkspaceTabController,
+} from '~/composables/useWorkspaceTabController'
 
 export function useRepositoryWorkspace() {
   const currentRepository = useState<RepositoryOverview | null>('workspace-current-repository', () => null)
@@ -183,6 +186,7 @@ export function useRepositoryWorkspace() {
     if (import.meta.client) {
       try {
         localStorage.removeItem(LAST_OPENED_REPOSITORY_STORAGE_KEY)
+        localStorage.removeItem(OPEN_REPOSITORY_TABS_STORAGE_KEY)
       } catch {
         // ignore
       }
@@ -194,33 +198,46 @@ export function useRepositoryWorkspace() {
     if (!import.meta.client) return null
 
     let savedPath: string | null = null
+    let savedTabsJson: string | null = null
     try {
       savedPath = localStorage.getItem(LAST_OPENED_REPOSITORY_STORAGE_KEY)
+      savedTabsJson = localStorage.getItem(OPEN_REPOSITORY_TABS_STORAGE_KEY)
     } catch {
       // ignore
     }
 
-    if (savedPath) {
+    if (!savedPath) {
+      return null
+    }
+
+    if (savedTabsJson) {
       try {
-        const overview = await openRepository(savedPath)
-        if (overview) return overview
-      } catch (error) {
-        console.warn('Failed to restore last opened repository from path:', savedPath, error)
-        try {
-          localStorage.removeItem(LAST_OPENED_REPOSITORY_STORAGE_KEY)
-        } catch {
-          // ignore
+        const savedTabs = JSON.parse(savedTabsJson) as Array<{ path: string; name: string }>
+        if (Array.isArray(savedTabs) && savedTabs.length > 0) {
+          const { openRepositoryTab, activateRepositoryTab } = useWorkspaceTabController()
+          for (const tab of savedTabs) {
+            openRepositoryTab(tab.path, tab.name)
+          }
+          if (savedPath) {
+            activateRepositoryTab(savedPath)
+          }
         }
+      } catch {
+        // ignore
       }
     }
 
     try {
-      const recents = await fetchRecentRepositories()
-      if (recents.length > 0 && recents[0]?.path) {
-        return await openRepository(recents[0].path)
-      }
+      const overview = await openRepository(savedPath)
+      if (overview) return overview
     } catch (error) {
-      console.warn('Failed to restore repository from recents:', error)
+      console.warn('Failed to restore last opened repository from path:', savedPath, error)
+      try {
+        localStorage.removeItem(LAST_OPENED_REPOSITORY_STORAGE_KEY)
+        localStorage.removeItem(OPEN_REPOSITORY_TABS_STORAGE_KEY)
+      } catch {
+        // ignore
+      }
     }
 
     return null
