@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use crate::application::ApplicationState;
 use crate::domain::{
-    ApplicationError, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation,
+    ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation,
     MergeBranchOutcome, RebaseBranchOutcome, RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
 
@@ -281,6 +281,29 @@ pub async fn get_commit_file_diff(
     directory_path: Option<String>,
 ) -> Result<FileDiff, ApplicationError> {
     state.get_commit_file_diff(directory_path.as_deref(), &commit_hash, file_path.as_deref()).await
+}
+
+/// Tauri IPC command to compare two commits or references and return changed files and metrics.
+#[tauri::command]
+pub async fn compare_commits(
+    state: State<'_, ApplicationState>,
+    base_hash: String,
+    target_hash: String,
+    directory_path: Option<String>,
+) -> Result<CommitComparison, ApplicationError> {
+    state.compare_commits(directory_path.as_deref(), &base_hash, &target_hash).await
+}
+
+/// Tauri IPC command to retrieve the diff of a specific file or all files between two commits.
+#[tauri::command]
+pub async fn get_comparison_file_diff(
+    state: State<'_, ApplicationState>,
+    base_hash: String,
+    target_hash: String,
+    file_path: Option<String>,
+    directory_path: Option<String>,
+) -> Result<FileDiff, ApplicationError> {
+    state.get_comparison_file_diff(directory_path.as_deref(), &base_hash, &target_hash, file_path.as_deref()).await
 }
 
 /// Tauri IPC command to fetch recent repositories from local SQLite database.

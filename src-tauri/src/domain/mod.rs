@@ -227,5 +227,17 @@ pub struct RebaseBranchOutcome {
     pub message: String,
 }
 
+/// Detailed comparison between two commits or branches.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CommitComparison {
+    pub base_hash: String,
+    pub target_hash: String,
+    pub base_subject: Option<String>,
+    pub target_subject: Option<String>,
+    pub total_additions: u32,
+    pub total_deletions: u32,
+    pub changed_files: Vec<CommitChangedFile>,
+}
+
 
 

@@ -21,6 +21,9 @@ export function useWorkspaceTabController() {
   })
 
   function getDiffTabIdentifier(options: OpenDiffTabOptions): string {
+    if (options.comparisonBaseHash && options.comparisonTargetHash) {
+      return `diff:compare:${options.comparisonBaseHash}:${options.comparisonTargetHash}:${options.filePath}`
+    }
     if (options.commitHash) {
       return `diff:commit:${options.commitHash}:${options.filePath}`
     }
@@ -91,6 +94,8 @@ export function useWorkspaceTabController() {
           filePath: options.filePath,
           isStaged: options.isStaged,
           commitHash: options.commitHash,
+          comparisonBaseHash: options.comparisonBaseHash,
+          comparisonTargetHash: options.comparisonTargetHash,
           changeStatus: options.changeStatus,
           isClosable: true,
           isPinned: false,
@@ -111,6 +116,8 @@ export function useWorkspaceTabController() {
       filePath: options.filePath,
       isStaged: options.isStaged,
       commitHash: options.commitHash,
+      comparisonBaseHash: options.comparisonBaseHash,
+      comparisonTargetHash: options.comparisonTargetHash,
       changeStatus: options.changeStatus,
       isClosable: true,
       isPinned: isExplicitlyPinned,

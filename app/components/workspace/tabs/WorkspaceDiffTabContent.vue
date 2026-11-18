@@ -29,7 +29,7 @@ const diffData = ref<FileDiff | null>(null)
 const isLoading = ref<boolean>(false)
 
 const isTargetStaged = computed<boolean | null>(() => {
-  if (properties.tab.commitHash) return null
+  if (properties.tab.commitHash || properties.tab.comparisonBaseHash) return null
   return properties.tab.isStaged ?? null
 })
 
@@ -159,7 +159,15 @@ async function loadDiff(): Promise<void> {
     if (await isTauriEnvironment()) {
       const { invoke } = await import('@tauri-apps/api/core')
 
-      if (properties.tab.commitHash) {
+      if (properties.tab.comparisonBaseHash && properties.tab.comparisonTargetHash) {
+        const diff = await invoke<FileDiff>('get_comparison_file_diff', {
+          baseHash: properties.tab.comparisonBaseHash,
+          targetHash: properties.tab.comparisonTargetHash,
+          filePath: properties.tab.filePath,
+          directoryPath: currentRepository.value.path,
+        })
+        diffData.value = diff
+      } else if (properties.tab.commitHash) {
         const diff = await invoke<FileDiff>('get_commit_file_diff', {
           commitHash: properties.tab.commitHash,
           filePath: properties.tab.filePath,

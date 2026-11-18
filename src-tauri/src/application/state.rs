@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tauri::AppHandle;
 use tokio::sync::RwLock;
 use crate::domain::{
-    ApplicationError, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation,
+    ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation,
     MergeBranchOutcome, RebaseBranchOutcome, RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
@@ -325,6 +325,29 @@ impl ApplicationState {
         }
 
         Ok(diff)
+    }
+
+    /// Compares two commits or references and returns changed files list and metadata.
+    pub async fn compare_commits(
+        &self,
+        directory_path: Option<&str>,
+        base_hash: &str,
+        target_hash: &str,
+    ) -> Result<CommitComparison, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.compare_commits(&target_path, base_hash, target_hash).await
+    }
+
+    /// Fetches unified diff for a single file or entire comparison between two commits.
+    pub async fn get_comparison_file_diff(
+        &self,
+        directory_path: Option<&str>,
+        base_hash: &str,
+        target_hash: &str,
+        file_path: Option<&str>,
+    ) -> Result<FileDiff, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_comparison_file_diff(&target_path, base_hash, target_hash, file_path).await
     }
 
     /// Lists stash records for repository.

@@ -238,6 +238,11 @@ export function useWorkspaceManager() {
     return await commitInspectorController.fetchCommitDetails(commitHash)
   }
 
+  async function compareCommits(baseHash: string, targetHash: string) {
+    stagingController.clearDiffSelection()
+    return await commitInspectorController.compareCommits(baseHash, targetHash)
+  }
+
   return {
     // Repository
     currentRepository: repositoryWorkspace.currentRepository,
@@ -292,10 +297,16 @@ export function useWorkspaceManager() {
 
     // Commit Inspector
     selectedCommitDetails: commitInspectorController.selectedCommitDetails,
+    activeComparison: commitInspectorController.activeComparison,
+    isComparing: commitInspectorController.isComparing,
     selectedCommitFilePath: commitInspectorController.selectedCommitFilePath,
     isLoadingCommitDetails: commitInspectorController.isLoadingCommitDetails,
     fetchCommitDetails,
     fetchCommitFileDiff: commitInspectorController.fetchCommitFileDiff,
+    compareCommits,
+    fetchComparisonFileDiff: commitInspectorController.fetchComparisonFileDiff,
+    swapComparison: commitInspectorController.swapComparison,
+    clearComparison: commitInspectorController.clearComparison,
     clearCommitSelection: commitInspectorController.clearCommitSelection,
 
     // Diff Viewer

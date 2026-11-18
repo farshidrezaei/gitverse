@@ -72,6 +72,8 @@ pub fn run() {
             commands::push_changes,
             commands::get_commit_details,
             commands::get_commit_file_diff,
+            commands::compare_commits,
+            commands::get_comparison_file_diff,
             commands::get_recent_repositories,
             commands::remove_recent_repository,
             commands::get_stash_list,

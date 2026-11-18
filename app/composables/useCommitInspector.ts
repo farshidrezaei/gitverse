@@ -1,10 +1,14 @@
-import type { CommitDetails, FileDiff } from '~/types/repository'
+import type { CommitComparison, CommitDetails, FileDiff } from '~/types/repository'
 
 export function useCommitInspector() {
   const { currentRepository } = useRepositoryWorkspace()
   const { currentDiff, isLoadingDiff } = useDiffViewer()
   const selectedCommitDetails = useState<CommitDetails | null>(
     'workspace-selected-commit-details',
+    () => null
+  )
+  const activeComparison = useState<CommitComparison | null>(
+    'workspace-active-comparison',
     () => null
   )
   const selectedCommitFilePath = useState<string | null>(
@@ -15,6 +19,8 @@ export function useCommitInspector() {
     'workspace-is-loading-commit-details',
     () => false
   )
+
+  const isComparing = computed<boolean>(() => activeComparison.value !== null)
 
   const { notifyError } = useNotificationService()
   const { t } = useI18n()
@@ -30,6 +36,7 @@ export function useCommitInspector() {
     }
 
     isLoadingCommitDetails.value = true
+    activeComparison.value = null
 
     try {
       if (await isTauriEnvironment()) {
@@ -165,17 +172,142 @@ export function useCommitInspector() {
     }
   }
 
+  async function compareCommits(
+    baseHash: string,
+    targetHash: string
+  ): Promise<CommitComparison | null> {
+    if (!currentRepository.value) {
+      activeComparison.value = null
+      return null
+    }
+
+    isLoadingCommitDetails.value = true
+    selectedCommitDetails.value = null
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        const comparison = await invoke<CommitComparison>('compare_commits', {
+          baseHash,
+          targetHash,
+          directoryPath: currentRepository.value.path,
+        })
+        activeComparison.value = comparison
+        if (comparison.changed_files.length > 0 && comparison.changed_files[0]) {
+          await fetchComparisonFileDiff(baseHash, targetHash, comparison.changed_files[0].path)
+        } else {
+          await fetchComparisonFileDiff(baseHash, targetHash)
+        }
+        return comparison
+      } else {
+        const mockComparison: CommitComparison = {
+          base_hash: baseHash,
+          target_hash: targetHash,
+          base_subject: 'Base commit preview',
+          target_subject: 'Target commit preview',
+          total_additions: 10,
+          total_deletions: 4,
+          changed_files: [
+            {
+              path: 'src/main.rs',
+              original_path: null,
+              status: 'modified',
+              additions: 10,
+              deletions: 4,
+            },
+          ],
+        }
+        activeComparison.value = mockComparison
+        await fetchComparisonFileDiff(baseHash, targetHash, mockComparison.changed_files[0]?.path)
+        return mockComparison
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      notifyError(t('common.error'), errorMessage)
+      activeComparison.value = null
+      return null
+    } finally {
+      isLoadingCommitDetails.value = false
+    }
+  }
+
+  async function fetchComparisonFileDiff(
+    baseHash: string,
+    targetHash: string,
+    filePath?: string
+  ): Promise<FileDiff | null> {
+    if (!currentRepository.value) {
+      currentDiff.value = null
+      return null
+    }
+
+    isLoadingDiff.value = true
+    selectedCommitFilePath.value = filePath || null
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        const diff = await invoke<FileDiff>('get_comparison_file_diff', {
+          baseHash,
+          targetHash,
+          filePath: filePath || null,
+          directoryPath: currentRepository.value.path,
+        })
+        currentDiff.value = diff
+        return diff
+      } else {
+        const mockDiff: FileDiff = {
+          old_path: filePath ? `a/${filePath}` : null,
+          new_path: filePath || `${baseHash}..${targetHash}`,
+          is_binary: false,
+          is_new_file: false,
+          is_deleted_file: false,
+          total_additions: 10,
+          total_deletions: 4,
+          hunks: [],
+        }
+        currentDiff.value = mockDiff
+        return mockDiff
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      notifyError(t('common.error'), errorMessage)
+      currentDiff.value = null
+      return null
+    } finally {
+      isLoadingDiff.value = false
+    }
+  }
+
+  async function swapComparison(): Promise<void> {
+    if (!activeComparison.value) return
+    const { base_hash, target_hash } = activeComparison.value
+    await compareCommits(target_hash, base_hash)
+  }
+
+  function clearComparison(): void {
+    activeComparison.value = null
+    selectedCommitFilePath.value = null
+  }
+
   function clearCommitSelection(): void {
     selectedCommitDetails.value = null
+    activeComparison.value = null
     selectedCommitFilePath.value = null
   }
 
   return {
     selectedCommitDetails,
+    activeComparison,
+    isComparing,
     selectedCommitFilePath,
     isLoadingCommitDetails,
     fetchCommitDetails,
     fetchCommitFileDiff,
+    compareCommits,
+    fetchComparisonFileDiff,
+    swapComparison,
+    clearComparison,
     clearCommitSelection,
   }
 }

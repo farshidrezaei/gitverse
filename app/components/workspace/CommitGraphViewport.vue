@@ -7,6 +7,7 @@ import CommitGraphRow from './graph/CommitGraphRow.vue'
 const props = defineProps<{
   graph: CommitGraphHistoryResponse | null
   selectedCommitHash: string | null
+  comparisonBaseHash?: string | null
   isLoading: boolean
   isOperating?: boolean
   activeReference?: string | null
@@ -14,6 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   selectCommit: [commitHash: string]
+  compareCommits: [baseHash: string, targetHash: string]
   refresh: []
   push: []
   pull: []
@@ -203,9 +205,12 @@ watch(
               :node="node"
               :index="startIndex + relativeIndex"
               :is-selected="node.commit.hash === props.selectedCommitHash"
+              :is-comparison-base="node.commit.hash === props.comparisonBaseHash"
+              :active-selected-hash="props.selectedCommitHash"
               :graph-width="graphWidth"
               :row-height="ROW_HEIGHT"
               @select-commit="emit('selectCommit', $event)"
+              @compare-commits="(base, target) => emit('compareCommits', base, target)"
               @create-branch-at-commit="emit('createBranchAtCommit', $event)"
               @checkout-commit="emit('checkoutCommit', $event)"
               @cherry-pick-commit="emit('cherryPickCommit', $event)"

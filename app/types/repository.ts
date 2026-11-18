@@ -221,6 +221,16 @@ export interface RebaseBranchOutcome {
   message: string
 }
 
+export interface CommitComparison {
+  base_hash: string
+  target_hash: string
+  base_subject: string | null
+  target_subject: string | null
+  total_additions: number
+  total_deletions: number
+  changed_files: CommitChangedFile[]
+}
+
 
 
 

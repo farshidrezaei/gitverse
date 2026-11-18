@@ -261,7 +261,13 @@
     "resetHardConfirmDescription": "Are you sure you want to hard reset to {hash}? All uncommitted changes will be permanently discarded.",
     "resetHardConfirmButton": "Hard Reset",
     "resetSuccess": "Branch reset ({mode}) successfully",
-    "resetFailed": "Failed to reset branch to commit"
+    "resetFailed": "Failed to reset branch to commit",
+    "comparison": "Commit Comparison",
+    "comparing": "Comparing",
+    "swapComparison": "Swap Base and Target",
+    "closeComparison": "Close Comparison",
+    "compareWithSelected": "Compare with selected ({hash})",
+    "compareWith": "Compare Commits"
   },
   "stash": {
     "title": "Stashes",
@@ -294,6 +300,7 @@
   "branch": {
     "mergeIntoCurrent": "Merge '{source}' into '{target}'",
     "rebaseCurrentOnto": "Rebase '{current}' onto '{upstream}'",
+    "compareWithCurrent": "Compare with '{current}'",
     "mergeConfirmTitle": "Merge '{source}' into '{target}'",
     "mergeConfirmDescription": "Are you sure you want to merge changes from '{source}' into your current branch '{target}'?",
     "mergeAction": "Merge Branch",

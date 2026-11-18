@@ -8,14 +8,20 @@ interface CommitGraphRowProps {
   node: CommitGraphNode
   index: number
   isSelected: boolean
+  isComparisonBase?: boolean
+  activeSelectedHash?: string | null
   graphWidth: number
   rowHeight: number
 }
 
-const props = defineProps<CommitGraphRowProps>()
+const props = withDefaults(defineProps<CommitGraphRowProps>(), {
+  isComparisonBase: false,
+  activeSelectedHash: null,
+})
 
 const emit = defineEmits<{
   selectCommit: [commitHash: string]
+  compareCommits: [baseHash: string, targetHash: string]
   createBranchAtCommit: [commitSha: string]
   checkoutCommit: [commitSha: string]
   cherryPickCommit: [commitHash: string]
@@ -25,14 +31,35 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
+function handleRowClick(event: MouseEvent): void {
+  if (
+    (event.ctrlKey || event.metaKey) &&
+    props.activeSelectedHash &&
+    props.activeSelectedHash !== props.node.commit.hash
+  ) {
+    emit('compareCommits', props.activeSelectedHash, props.node.commit.hash)
+    return
+  }
+  emit('selectCommit', props.node.commit.hash)
+}
+
 function getCommitContextMenuItems(commit: GitCommit): ContextMenuItem[][] {
-  return [
+  const items: ContextMenuItem[][] = [
     [
       {
         label: t('commit.details'),
         icon: 'i-lucide-file-search',
         onSelect: () => emit('selectCommit', commit.hash),
       },
+      ...(props.activeSelectedHash && props.activeSelectedHash !== commit.hash
+        ? [
+            {
+              label: t('commit.compareWithSelected', { hash: props.activeSelectedHash.slice(0, 7) }),
+              icon: 'i-lucide-arrow-left-right',
+              onSelect: () => emit('compareCommits', props.activeSelectedHash!, commit.hash),
+            },
+          ]
+        : []),
       {
         label: t('commit.createBranchHere'),
         icon: 'i-lucide-git-branch-plus',
@@ -92,6 +119,7 @@ function getCommitContextMenuItems(commit: GitCommit): ContextMenuItem[][] {
       },
     ],
   ]
+  return items
 }
 </script>
 
@@ -100,8 +128,9 @@ function getCommitContextMenuItems(commit: GitCommit): ContextMenuItem[][] {
     <div
       class="group relative flex w-full items-center border-b border-default/20 px-2 transition-colors duration-75 cursor-pointer text-xs"
       :class="{
-        'bg-primary/10 text-primary font-medium': props.isSelected,
-        'hover:bg-muted/15 text-highlighted': !props.isSelected,
+        'bg-warning/15 text-warning font-medium border-s-2 border-warning': props.isComparisonBase,
+        'bg-primary/10 text-primary font-medium': props.isSelected && !props.isComparisonBase,
+        'hover:bg-muted/15 text-highlighted': !props.isSelected && !props.isComparisonBase,
       }"
       :style="{
         height: `${props.rowHeight}px`,
@@ -109,7 +138,7 @@ function getCommitContextMenuItems(commit: GitCommit): ContextMenuItem[][] {
         containIntrinsicSize: `0 ${props.rowHeight}px`,
       }"
       :data-commit-hash="props.node.commit.hash"
-      @click="emit('selectCommit', props.node.commit.hash)"
+      @click="handleRowClick"
     >
       <!-- Spacer for SVG graph lanes -->
       <div

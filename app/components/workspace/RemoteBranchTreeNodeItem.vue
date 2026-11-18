@@ -14,7 +14,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { currentBranchName, mergeBranch, rebaseBranch } = useWorkspaceManager()
+const { currentBranchName, mergeBranch, rebaseBranch, compareCommits } = useWorkspaceManager()
 const isOpen = ref(true)
 
 function toggleOpen(): void {
@@ -48,6 +48,18 @@ const remoteContextMenuItems = computed<ContextMenuItem[][]>(() => {
         }),
         icon: 'i-lucide-git-pull-request-arrow',
         onSelect: () => rebaseBranch(props.node.fullBranchName),
+      },
+      {
+        label: t('branch.compareWithCurrent', {
+          current: currentBranchName.value,
+        }),
+        icon: 'i-lucide-arrow-left-right',
+        disabled: !currentBranchName.value,
+        onSelect: () => {
+          if (currentBranchName.value) {
+            void compareCommits(currentBranchName.value, props.node.fullBranchName)
+          }
+        },
       },
     ],
     [

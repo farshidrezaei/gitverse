@@ -23,6 +23,7 @@ const {
   currentBranchName,
   mergeBranch,
   rebaseBranch,
+  compareCommits,
 } = useWorkspaceManager()
 
 // Default folder open if it contains the HEAD branch
@@ -63,6 +64,18 @@ const branchContextMenuItems = computed<ContextMenuItem[][]>(() => {
         icon: 'i-lucide-git-pull-request-arrow',
         disabled: props.node.branch.is_head,
         onSelect: () => rebaseBranch(props.node.fullBranchName),
+      },
+      {
+        label: t('branch.compareWithCurrent', {
+          current: currentBranchName.value,
+        }),
+        icon: 'i-lucide-arrow-left-right',
+        disabled: props.node.branch.is_head || !currentBranchName.value,
+        onSelect: () => {
+          if (currentBranchName.value) {
+            void compareCommits(currentBranchName.value, props.node.fullBranchName)
+          }
+        },
       },
       {
         label: t('git.createBranch'),

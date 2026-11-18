@@ -26,6 +26,8 @@ const {
   selectedCommitHash,
   selectedCommitDetails,
   selectedCommitFilePath,
+  activeComparison,
+  isComparing,
   favoriteBranches,
   stagingViewMode,
   isLoading,
@@ -39,6 +41,10 @@ const {
   fetchFileDiff,
   fetchCommitDetails,
   fetchCommitFileDiff,
+  compareCommits,
+  fetchComparisonFileDiff,
+  swapComparison,
+  clearComparison,
   clearCommitSelection,
   toggleFavoriteBranch,
   loadFavoriteBranches,
@@ -176,7 +182,13 @@ async function selectCommit(sha: string): Promise<void> {
 }
 
 function handleSelectCommitFile(filePath: string): void {
-  if (selectedCommitHash.value) {
+  if (activeComparison.value) {
+    void fetchComparisonFileDiff(
+      activeComparison.value.base_hash,
+      activeComparison.value.target_hash,
+      filePath,
+    )
+  } else if (selectedCommitHash.value) {
     void fetchCommitFileDiff(selectedCommitHash.value, filePath)
   }
 }
@@ -261,7 +273,14 @@ function handleOpenStagingDiffTab(
 }
 
 function handleOpenCommitDiffTab(filePath: string): void {
-  if (selectedCommitHash.value) {
+  if (activeComparison.value) {
+    openDiffTab({
+      filePath,
+      comparisonBaseHash: activeComparison.value.base_hash,
+      comparisonTargetHash: activeComparison.value.target_hash,
+      isPinned: true,
+    })
+  } else if (selectedCommitHash.value) {
     openDiffTab({
       filePath,
       commitHash: selectedCommitHash.value,
@@ -410,10 +429,12 @@ async function handlePush(): Promise<void> {
                   <WorkspaceCommitGraphViewport
                     :graph="commitGraph"
                     :selected-commit-hash="selectedCommitHash"
+                    :comparison-base-hash="activeComparison?.base_hash"
                     :is-loading="isLoadingGraph"
                     :is-operating="isOperating"
                     :active-reference="activeGraphReference"
                     @select-commit="selectCommit"
+                    @compare-commits="(base, target) => compareCommits(base, target)"
                     @refresh="handleRefreshGraph"
                     @reset-graph-filter="handleResetGraphFilter"
                     @push="handlePush"
@@ -446,8 +467,9 @@ async function handlePush(): Promise<void> {
             <template #staging>
               <!-- Commit Inspector Island -->
               <WorkspaceCommitInspectorPanel
-                v-if="selectedCommitDetails || isLoadingCommitDetails"
+                v-if="selectedCommitDetails || activeComparison || isLoadingCommitDetails"
                 :commit-details="selectedCommitDetails"
+                :active-comparison="activeComparison"
                 :selected-file-path="selectedCommitFilePath"
                 :is-loading="isLoadingCommitDetails"
                 @select-file="handleSelectCommitFile"
@@ -458,6 +480,8 @@ async function handlePush(): Promise<void> {
                 @revert="revertCommit"
                 @reset="resetToCommit"
                 @close="clearCommitSelection"
+                @swap-comparison="swapComparison"
+                @close-comparison="clearComparison"
               />
 
               <!-- Working Tree Changes Island -->

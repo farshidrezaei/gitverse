@@ -21,6 +21,8 @@ export interface WorkspaceDiffTab extends BaseWorkspaceTab {
   filePath: string
   isStaged?: boolean
   commitHash?: string
+  comparisonBaseHash?: string
+  comparisonTargetHash?: string
   changeStatus?: FileChangeStatus
 }
 
@@ -30,6 +32,8 @@ export interface OpenDiffTabOptions {
   filePath: string
   isStaged?: boolean
   commitHash?: string
+  comparisonBaseHash?: string
+  comparisonTargetHash?: string
   changeStatus?: FileChangeStatus
   isPinned?: boolean
 }

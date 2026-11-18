@@ -261,7 +261,13 @@
     "resetHardConfirmDescription": "آیا از ریست سخت به کامیت {hash} اطمینان دارید؟ تمام تغییرات ثبت‌نشده برای همیشه پاک خواهند شد.",
     "resetHardConfirmButton": "انجام ریست سخت",
     "resetSuccess": "شاخه با موفقیت ریست شد ({mode})",
-    "resetFailed": "خطا در ریست شاخه به این کامیت"
+    "resetFailed": "خطا در ریست شاخه به این کامیت",
+    "comparison": "مقایسه کامیت‌ها",
+    "comparing": "در حال مقایسه",
+    "swapComparison": "جابجایی کامیت مبدأ و مقصد",
+    "closeComparison": "بستن مقایسه",
+    "compareWithSelected": "مقایسه با انتخاب‌شده ({hash})",
+    "compareWith": "مقایسه کامیت‌ها"
   },
   "stash": {
     "title": "استش‌ها (Stashes)",
@@ -294,6 +300,7 @@
   "branch": {
     "mergeIntoCurrent": "ادغام «{source}» در «{target}»",
     "rebaseCurrentOnto": "ریبیس «{current}» روی «{upstream}»",
+    "compareWithCurrent": "مقایسه با «{current}»",
     "mergeConfirmTitle": "ادغام شاخه: {source} به {target}",
     "mergeConfirmDescription": "آیا از ادغام تغییرات شاخه «{source}» در شاخه فعال فعلی «{target}» اطمینان دارید؟",
     "mergeAction": "ادغام شاخه",

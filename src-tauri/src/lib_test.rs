@@ -127,4 +127,48 @@ mod tests {
         let content_after_discard = std::fs::read_to_string(repository_path.join("doc.txt")).expect("read file");
         assert_eq!(content_after_discard, "line1\nline2\nline3\nline4_modified\n", "line2_modified should be reverted while line4_modified remains");
     }
+
+    #[tokio::test]
+    async fn test_compare_commits_and_get_comparison_file_diff() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        // Commit 1
+        std::fs::write(repository_path.join("alpha.txt"), "hello alpha\n").expect("write alpha");
+        Command::new("git").args(["add", "alpha.txt"]).current_dir(repository_path).output().expect("add alpha");
+        Command::new("git").args(["commit", "-m", "first commit"]).current_dir(repository_path).output().expect("commit 1");
+        let hash_1_output = Command::new("git").args(["rev-parse", "HEAD"]).current_dir(repository_path).output().expect("rev-parse 1");
+        let hash_1 = String::from_utf8_lossy(&hash_1_output.stdout).trim().to_string();
+
+        // Commit 2
+        std::fs::write(repository_path.join("alpha.txt"), "hello alpha updated\n").expect("write alpha 2");
+        std::fs::write(repository_path.join("beta.txt"), "hello beta\n").expect("write beta");
+        Command::new("git").args(["add", "alpha.txt", "beta.txt"]).current_dir(repository_path).output().expect("add alpha beta");
+        Command::new("git").args(["commit", "-m", "second commit"]).current_dir(repository_path).output().expect("commit 2");
+        let hash_2_output = Command::new("git").args(["rev-parse", "HEAD"]).current_dir(repository_path).output().expect("rev-parse 2");
+        let hash_2 = String::from_utf8_lossy(&hash_2_output.stdout).trim().to_string();
+
+        let executor_info = GitProcessExecutor::discover_system_git(None).await.expect("discover git");
+        let executor = GitProcessExecutor::new(executor_info.executable_path.into());
+        let inspector = GitRepositoryInspector::new(executor);
+
+        let comparison = inspector.compare_commits(repository_path, &hash_1, &hash_2).await.expect("compare commits");
+        assert_eq!(comparison.base_hash, hash_1);
+        assert_eq!(comparison.target_hash, hash_2);
+        assert_eq!(comparison.base_subject.as_deref(), Some("first commit"));
+        assert_eq!(comparison.target_subject.as_deref(), Some("second commit"));
+        assert_eq!(comparison.changed_files.len(), 2, "alpha.txt and beta.txt changed between commits");
+
+        let diff_alpha = inspector.get_comparison_file_diff(repository_path, &hash_1, &hash_2, Some("alpha.txt")).await.expect("comparison diff alpha");
+        assert_eq!(diff_alpha.new_path, "alpha.txt");
+        assert_eq!(diff_alpha.total_additions, 1);
+        assert_eq!(diff_alpha.total_deletions, 1);
+    }
 }

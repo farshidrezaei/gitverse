@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import type { CommitDetails } from '~/types/repository'
+import type { CommitComparison, CommitDetails } from '~/types/repository'
 import CommitDetailsHeader from './commit/CommitDetailsHeader.vue'
+import CommitComparisonHeader from './commit/CommitComparisonHeader.vue'
 import CommitChangedFileList from './commit/CommitChangedFileList.vue'
 
 const props = defineProps<{
   commitDetails: CommitDetails | null
+  activeComparison?: CommitComparison | null
   selectedFilePath: string | null
   isLoading: boolean
 }>()
@@ -18,6 +20,8 @@ const emit = defineEmits<{
   revert: [commitSha: string]
   reset: [commitSha: string, mode: 'soft' | 'mixed' | 'hard']
   close: []
+  swapComparison: []
+  closeComparison: []
 }>()
 
 const { t } = useI18n()
@@ -38,17 +42,24 @@ const { t } = useI18n()
       </div>
     </div>
 
-    <!-- Empty state -->
-    <div
-      v-else-if="!props.commitDetails"
-      class="flex h-full flex-col items-center justify-center gap-2 p-6 text-muted"
-    >
-      <UIcon name="i-lucide-git-commit" class="h-8 w-8 text-muted/60" />
-      <span class="text-xs">{{ t('commit.noCommitSelected') }}</span>
-    </div>
+    <!-- Active Commit Comparison Mode -->
+    <template v-else-if="props.activeComparison">
+      <CommitComparisonHeader
+        :comparison="props.activeComparison"
+        @swap="emit('swapComparison')"
+        @close="emit('closeComparison')"
+      />
 
-    <!-- Loaded Commit Content -->
-    <template v-else>
+      <CommitChangedFileList
+        :files="props.activeComparison.changed_files"
+        :selected-file-path="props.selectedFilePath"
+        @select-file="emit('selectFile', $event)"
+        @open-diff-tab="emit('openDiffTab', $event)"
+      />
+    </template>
+
+    <!-- Loaded Single Commit Content -->
+    <template v-else-if="props.commitDetails">
       <CommitDetailsHeader
         :commit-details="props.commitDetails"
         @create-branch="emit('createBranch', $event)"
@@ -66,5 +77,14 @@ const { t } = useI18n()
         @open-diff-tab="emit('openDiffTab', $event)"
       />
     </template>
+
+    <!-- Empty state -->
+    <div
+      v-else
+      class="flex h-full flex-col items-center justify-center gap-2 p-6 text-muted"
+    >
+      <UIcon name="i-lucide-git-commit" class="h-8 w-8 text-muted/60" />
+      <span class="text-xs">{{ t('commit.noCommitSelected') }}</span>
+    </div>
   </div>
 </template>

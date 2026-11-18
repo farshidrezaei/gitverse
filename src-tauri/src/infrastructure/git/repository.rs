@@ -377,6 +377,85 @@ impl GitRepositoryInspector {
         Ok(super::diff::parse_unified_diff(&raw_diff, display_path))
     }
 
+    /// Compares two commits or references, returning the list of changed files and summary metrics.
+    pub async fn compare_commits(
+        &self,
+        directory_path: &Path,
+        base_hash: &str,
+        target_hash: &str,
+    ) -> Result<crate::domain::CommitComparison, ApplicationError> {
+        let base_subject = self
+            .executor
+            .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", base_hash])
+            .await
+            .ok()
+            .map(|subject| subject.trim().to_string());
+
+        let target_subject = self
+            .executor
+            .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", target_hash])
+            .await
+            .ok()
+            .map(|subject| subject.trim().to_string());
+
+        let name_status_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["diff", "-M", "--name-status", base_hash, target_hash],
+            )
+            .await
+            .unwrap_or_default();
+
+        let numstat_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["diff", "-M", "--numstat", base_hash, target_hash],
+            )
+            .await
+            .unwrap_or_default();
+
+        let changed_files = super::history::parse_commit_changed_files(&name_status_output, &numstat_output);
+        let total_additions = changed_files.iter().map(|file| file.additions).sum();
+        let total_deletions = changed_files.iter().map(|file| file.deletions).sum();
+
+        Ok(crate::domain::CommitComparison {
+            base_hash: base_hash.to_string(),
+            target_hash: target_hash.to_string(),
+            base_subject,
+            target_subject,
+            total_additions,
+            total_deletions,
+            changed_files,
+        })
+    }
+
+    /// Fetches unified diff for a single file or entire comparison between two commits.
+    pub async fn get_comparison_file_diff(
+        &self,
+        directory_path: &Path,
+        base_hash: &str,
+        target_hash: &str,
+        file_path: Option<&str>,
+    ) -> Result<crate::domain::FileDiff, ApplicationError> {
+        let mut arguments = vec!["diff", "-M", base_hash, target_hash];
+
+        if let Some(target_file) = file_path {
+            arguments.push("--");
+            arguments.push(target_file);
+        }
+
+        let raw_diff = self
+            .executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
+            .unwrap_or_default();
+
+        let display_path = file_path.unwrap_or(target_hash);
+        Ok(super::diff::parse_unified_diff(&raw_diff, display_path))
+    }
+
     /// Fetches all repository references: local branches, remote branches, tags, and remotes.
     pub async fn get_repository_references(&self, directory_path: &Path) -> Result<crate::domain::RepositoryReferences, ApplicationError> {
         // 1. Local branches
