@@ -45,7 +45,8 @@
     "actions": "Actions",
     "navigate": "Navigate",
     "select": "Select",
-    "items": "items"
+    "items": "items",
+    "clearAll": "Clear All"
   },
   "commandPalette": {
     "title": "Command Palette",
@@ -279,7 +280,12 @@
     "noSubfolders": "No subfolders found",
     "folderIsGitRepository": "Valid Git repository detected",
     "folderNotGitRepository": "Not a Git repository (choose a subfolder or another directory)",
-    "openThisFolder": "Open Repository"
+    "openThisFolder": "Open Repository",
+    "clearRecent": "Clear History",
+    "clearRecentTitle": "Clear all recent repositories?",
+    "clearRecentDescription": "This will remove all recent repository records from GitVerse history. Your local repository files will not be deleted.",
+    "missing": "Missing",
+    "pathNotFound": "Repository path does not exist on disk: {path}"
   },
   "theme": {
     "dark": "Dark",

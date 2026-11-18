@@ -511,6 +511,11 @@ impl ApplicationState {
         self.store.remove_recent_repository(path)
     }
 
+    /// Clears all repositories from the recents list.
+    pub fn clear_recent_repositories(&self) -> Result<(), ApplicationError> {
+        self.store.clear_recent_repositories()
+    }
+
     /// Lists subfolders in a given directory path for custom folder browsing.
     pub async fn list_directory_folders(&self, directory_path: Option<&str>) -> Result<DirectoryListing, ApplicationError> {
         let home_dir = std::env::var("HOME")

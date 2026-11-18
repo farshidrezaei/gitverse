@@ -66,6 +66,8 @@ pub struct RecentRepositoryRecord {
     pub name: String,
     pub last_opened_timestamp: i64,
     pub is_pinned: bool,
+    #[serde(default)]
+    pub is_missing: bool,
 }
 
 /// Representation of a single file's change status in the working tree or staging index.

@@ -76,6 +76,7 @@ pub fn run() {
             commands::get_comparison_file_diff,
             commands::get_recent_repositories,
             commands::remove_recent_repository,
+            commands::clear_recent_repositories,
             commands::get_stash_list,
             commands::save_stash,
             commands::apply_stash,

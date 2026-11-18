@@ -57,6 +57,7 @@ const {
   toggleFavoriteBranch,
   loadFavoriteBranches,
   restoreLastOpenedRepository,
+  fetchRecentRepositories,
   checkoutBranch,
   createBranch,
   deleteBranch,
@@ -134,11 +135,8 @@ watch(
   (repository) => {
     if (repository) {
       openRepositoryTab(repository.path, repository.name)
-    } else if (repositoryTabs.value.length === 0) {
-      resetTabs()
     }
   },
-  { immediate: true },
 )
 
 async function handleSelectRepository(repositoryPath: string): Promise<void> {
@@ -178,6 +176,9 @@ function handleKeyboardShortcuts(event: KeyboardEvent): void {
 
 onMounted(async () => {
   window.addEventListener('keydown', handleKeyboardShortcuts)
+
+  // Populate recent repositories list immediately so Welcome state has recents
+  await fetchRecentRepositories()
 
   if (currentRepository.value) {
     loadFavoriteBranches()

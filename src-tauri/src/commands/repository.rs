@@ -325,6 +325,14 @@ pub async fn remove_recent_repository(
     state.remove_recent_repository(&directory_path)
 }
 
+/// Tauri IPC command to clear all repositories from recent history.
+#[tauri::command]
+pub async fn clear_recent_repositories(
+    state: State<'_, ApplicationState>,
+) -> Result<(), ApplicationError> {
+    state.clear_recent_repositories()
+}
+
 /// Tauri IPC command to list all stash entries for the active repository.
 #[tauri::command]
 pub async fn get_stash_list(

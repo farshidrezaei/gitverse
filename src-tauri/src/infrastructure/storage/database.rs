@@ -83,6 +83,7 @@ impl SQLiteRepositoryStore {
             name: name.to_string(),
             last_opened_timestamp: timestamp,
             is_pinned: false,
+            is_missing: false,
         })
     }
 
@@ -101,12 +102,15 @@ impl SQLiteRepositoryStore {
         let rows = statement
             .query_map(params![limit as i64], |row| {
                 let is_pinned_int: i32 = row.get(4)?;
+                let repository_path: String = row.get(1)?;
+                let is_missing = !std::path::Path::new(&repository_path).is_dir();
                 Ok(RecentRepositoryRecord {
                     id: row.get(0)?,
-                    path: row.get(1)?,
+                    path: repository_path,
                     name: row.get(2)?,
                     last_opened_timestamp: row.get(3)?,
                     is_pinned: is_pinned_int == 1,
+                    is_missing,
                 })
             })
             .map_err(|error| ApplicationError::PersistenceError(format!("Query execution failed: {}", error)))?;
@@ -131,6 +135,20 @@ impl SQLiteRepositoryStore {
             "DELETE FROM recent_repositories WHERE path = ?1",
             params![path],
         ).map_err(|error| ApplicationError::PersistenceError(format!("Deletion failed: {}", error)))?;
+
+        Ok(())
+    }
+
+    /// Clears all repositories from the recents list.
+    pub fn clear_recent_repositories(&self) -> Result<(), ApplicationError> {
+        let connection = self.connection.lock().map_err(|_| {
+            ApplicationError::PersistenceError("Failed to acquire database lock".into())
+        })?;
+
+        connection.execute(
+            "DELETE FROM recent_repositories",
+            [],
+        ).map_err(|error| ApplicationError::PersistenceError(format!("Clearing recent repositories failed: {}", error)))?;
 
         Ok(())
     }

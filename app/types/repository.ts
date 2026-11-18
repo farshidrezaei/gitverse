@@ -23,6 +23,7 @@ export interface RecentRepositoryRecord {
   name: string
   last_opened_timestamp: number
   is_pinned: boolean
+  is_missing?: boolean
 }
 
 export type FileChangeStatus =

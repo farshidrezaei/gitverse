@@ -259,6 +259,7 @@ export function useWorkspaceManager() {
     restoreLastOpenedRepository,
     fetchRecentRepositories: repositoryWorkspace.fetchRecentRepositories,
     removeRecentRepository: repositoryWorkspace.removeRecentRepository,
+    clearRecentRepositories: repositoryWorkspace.clearRecentRepositories,
 
     // Staging
     repositoryStatus: stagingController.repositoryStatus,

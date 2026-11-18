@@ -96,6 +96,19 @@ export function useRepositoryWorkspace() {
     }
   }
 
+  async function clearRecentRepositories(): Promise<void> {
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        await invoke('clear_recent_repositories')
+      }
+      recentRepositories.value = []
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      notifyError(t('common.error'), errorMessage)
+    }
+  }
+
   async function openRepository(directoryPath: string): Promise<RepositoryOverview | null> {
     isLoadingRepository.value = true
     lastError.value = null
@@ -285,6 +298,7 @@ export function useRepositoryWorkspace() {
     discoverGit,
     fetchRecentRepositories,
     removeRecentRepository,
+    clearRecentRepositories,
     openRepository,
     promptAndOpenRepository,
     listDirectoryFolders,

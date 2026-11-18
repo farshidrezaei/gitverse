@@ -378,20 +378,25 @@ function getFlatFileContextMenuItems(
 
         <!-- Staged Section -->
         <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="font-semibold text-highlighted flex items-center gap-1.5">
-              <span class="h-2 w-2 rounded-full bg-success inline-block" />
-              {{ t('git.status.staged') }}
-              <span class="text-muted">({{ props.repositoryStatus?.staged_files?.length || 0 }})</span>
+          <div class="flex items-center justify-between mb-1.5 gap-1">
+            <span class="font-semibold text-highlighted flex items-center gap-1.5 text-xs truncate min-w-0">
+              <span class="h-2 w-2 rounded-full bg-success shrink-0" />
+              <span class="truncate">{{ t('git.status.staged') }}</span>
+              <span class="text-muted shrink-0">({{ props.repositoryStatus?.staged_files?.length || 0 }})</span>
             </span>
-            <UButton
-              v-if="props.repositoryStatus?.staged_files?.length"
-              size="xs"
-              color="neutral"
-              variant="ghost"
-              :label="t('git.unstageAll')"
-              @click="emit('unstageAll')"
-            />
+
+            <div v-if="props.repositoryStatus?.staged_files?.length" class="flex items-center gap-0.5 shrink-0">
+              <UTooltip :text="t('git.unstageAll')">
+                <UButton
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  icon="i-lucide-minus"
+                  :aria-label="t('git.unstageAll')"
+                  @click="emit('unstageAll')"
+                />
+              </UTooltip>
+            </div>
           </div>
 
           <!-- Staged Tree View -->
@@ -458,28 +463,34 @@ function getFlatFileContextMenuItems(
 
         <!-- Unstaged Section -->
         <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="font-semibold text-highlighted flex items-center gap-1.5">
-              <span class="h-2 w-2 rounded-full bg-warning inline-block" />
-              {{ t('git.status.unstaged') }}
-              <span class="text-muted">({{ props.repositoryStatus?.unstaged_files?.length || 0 }})</span>
+          <div class="flex items-center justify-between mb-1.5 gap-1">
+            <span class="font-semibold text-highlighted flex items-center gap-1.5 text-xs truncate min-w-0">
+              <span class="h-2 w-2 rounded-full bg-warning shrink-0" />
+              <span class="truncate">{{ t('git.status.unstaged') }}</span>
+              <span class="text-muted shrink-0">({{ props.repositoryStatus?.unstaged_files?.length || 0 }})</span>
             </span>
-            <div v-if="props.repositoryStatus?.unstaged_files?.length" class="flex items-center gap-1">
-              <UButton
-                size="xs"
-                color="error"
-                variant="ghost"
-                icon="i-lucide-trash"
-                :label="t('git.discardAll')"
-                @click="emit('discardAllUnstaged')"
-              />
-              <UButton
-                size="xs"
-                color="neutral"
-                variant="ghost"
-                :label="t('git.stageAll')"
-                @click="emit('stageAll')"
-              />
+
+            <div v-if="props.repositoryStatus?.unstaged_files?.length" class="flex items-center gap-0.5 shrink-0">
+              <UTooltip :text="t('git.discardAll')">
+                <UButton
+                  size="xs"
+                  color="error"
+                  variant="ghost"
+                  icon="i-lucide-trash"
+                  :aria-label="t('git.discardAll')"
+                  @click="emit('discardAllUnstaged')"
+                />
+              </UTooltip>
+              <UTooltip :text="t('git.stageAll')">
+                <UButton
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  icon="i-lucide-plus"
+                  :aria-label="t('git.stageAll')"
+                  @click="emit('stageAll')"
+                />
+              </UTooltip>
             </div>
           </div>
 

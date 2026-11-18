@@ -30,8 +30,20 @@ mod tests {
         let recents = store.get_recent_repositories(10).expect("Failed to fetch recents");
         assert_eq!(recents.len(), 1);
         assert_eq!(recents[0].path, "/home/user/project_alpha");
+        assert!(recents[0].is_missing);
 
-        // Remove
+        // Record another and test clear
+        store
+            .record_opened_repository("/home/user/project_beta", "project_beta")
+            .expect("Failed to record beta");
+        assert_eq!(store.get_recent_repositories(10).expect("fetch").len(), 2);
+        store.clear_recent_repositories().expect("clear failed");
+        assert_eq!(store.get_recent_repositories(10).expect("fetch").len(), 0);
+
+        // Re-record and Remove
+        store
+            .record_opened_repository("/home/user/project_alpha", "project_alpha")
+            .expect("Failed to record");
         store
             .remove_recent_repository("/home/user/project_alpha")
             .expect("Failed to remove");

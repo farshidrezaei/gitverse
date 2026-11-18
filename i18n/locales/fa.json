@@ -45,7 +45,8 @@
     "actions": "عملیات",
     "navigate": "ناوبری",
     "select": "انتخاب",
-    "items": "مورد"
+    "items": "مورد",
+    "clearAll": "پاک کردن همه"
   },
   "commandPalette": {
     "title": "پالت دستورات",
@@ -279,7 +280,12 @@
     "noSubfolders": "هیچ زیرپوشه‌ای یافت نشد",
     "folderIsGitRepository": "مخزن معتبر گیت شناسایی شد",
     "folderNotGitRepository": "این پوشه مخزن گیت نیست (یک زیرپوشه یا مسیر دیگر انتخاب کنید)",
-    "openThisFolder": "باز کردن مخزن"
+    "openThisFolder": "باز کردن مخزن",
+    "clearRecent": "پاک کردن تاریخچه",
+    "clearRecentTitle": "آیا تمام ریپازیتوری‌های اخیر پاک شوند؟",
+    "clearRecentDescription": "تمام رکوردهای اخیر از تاریخچه برنامه حذف می‌شوند. فایل‌های محلی شما در دیسک حذف نخواهند شد.",
+    "missing": "موجود نیست",
+    "pathNotFound": "مسیر ریپازیتوری روی دیسک پیدا نشد: {path}"
   },
   "theme": {
     "dark": "تیره",

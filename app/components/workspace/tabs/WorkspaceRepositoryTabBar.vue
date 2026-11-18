@@ -68,10 +68,15 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
         const isOpen = alreadyOpenPaths.has(record.path)
         return {
           label: record.name,
-          description: record.path,
-          icon: isOpen ? 'i-lucide-check-circle-2' : 'i-lucide-folder-git-2',
-          color: isOpen ? ('primary' as const) : undefined,
-          onSelect: () => emit('openRecentRepository', record.path),
+          description: record.is_missing ? `${record.path} (${t('repository.missing')})` : record.path,
+          icon: record.is_missing ? 'i-lucide-folder-x' : isOpen ? 'i-lucide-check-circle-2' : 'i-lucide-folder-git-2',
+          color: record.is_missing ? ('error' as const) : isOpen ? ('primary' as const) : undefined,
+          disabled: record.is_missing,
+          onSelect: () => {
+            if (!record.is_missing) {
+              emit('openRecentRepository', record.path)
+            }
+          },
         }
       }),
     ]
