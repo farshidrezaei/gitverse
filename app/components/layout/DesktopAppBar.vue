@@ -10,6 +10,7 @@ const {
 
 const emit = defineEmits<{
   openSettings: []
+  openCommandPalette: []
 }>()
 
 function handleBarDoubleClick(event: MouseEvent): void {
@@ -37,15 +38,22 @@ function handleBarDoubleClick(event: MouseEvent): void {
       </span>
     </div>
 
-    <!-- Center Drag Region -->
-    <div data-tauri-drag-region class="flex-1 h-full flex items-center justify-center">
-      <span
-        v-if="!isWindowControlsAvailable"
-        data-tauri-drag-region
-        class="text-[10px] text-muted tracking-wider uppercase opacity-75"
+    <!-- Center: Quick Command Palette Trigger -->
+    <div data-tauri-drag-region class="flex-1 h-full flex items-center justify-center px-4 max-w-sm mx-auto">
+      <button
+        type="button"
+        class="flex h-7 w-full items-center justify-between gap-2 rounded-lg border border-default/70 bg-surface/60 px-2.5 text-[11px] text-muted transition-all hover:border-primary/50 hover:bg-surface hover:text-highlighted shadow-2xs"
+        @click="emit('openCommandPalette')"
       >
-        {{ t('application.status.browserPreviewMode') }}
-      </span>
+        <div class="flex items-center gap-1.5 min-w-0">
+          <UIcon name="i-lucide-search" class="h-3.5 w-3.5 shrink-0 text-muted" />
+          <span class="truncate">{{ t('commandPalette.placeholderShort') }}</span>
+        </div>
+        <div class="flex items-center gap-0.5 shrink-0" dir="ltr">
+          <UKbd size="sm" class="font-mono text-[9px]">Ctrl</UKbd>
+          <UKbd size="sm" class="font-mono text-[9px]">K</UKbd>
+        </div>
+      </button>
     </div>
 
     <!-- Trailing: Settings Trigger & Native Window Controls (No theme/lang toggles) -->

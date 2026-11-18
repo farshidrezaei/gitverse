@@ -42,7 +42,38 @@
     "error": "An error occurred",
     "reset": "Reset",
     "apply": "Apply",
-    "actions": "Actions"
+    "actions": "Actions",
+    "navigate": "Navigate",
+    "select": "Select",
+    "items": "items"
+  },
+  "commandPalette": {
+    "title": "Command Palette",
+    "placeholder": "Type a command or search branches, repositories...",
+    "placeholderShort": "Search or jump to...",
+    "noResults": "No matching commands or references found",
+    "categories": {
+      "actions": "Git Actions",
+      "branches": "Branches & Tags",
+      "repositories": "Recent Repositories",
+      "preferences": "Preferences & Appearance"
+    },
+    "actions": {
+      "stageAll": "Stage All Changes",
+      "unstageAll": "Unstage All Changes",
+      "fetch": "Fetch From All Remotes",
+      "pull": "Pull Latest Changes",
+      "push": "Push Changes",
+      "createBranch": "Create New Branch",
+      "createStash": "Create Stash",
+      "refresh": "Refresh Repository",
+      "openRepository": "Open Repository Folder",
+      "settings": "Open Settings",
+      "switchThemeDark": "Switch to Dark Theme",
+      "switchThemeLight": "Switch to Light Theme",
+      "switchLanguageEn": "Switch Language to English",
+      "switchLanguageFa": "تغییر زبان به فارسی"
+    }
   },
   "confirmation": {
     "defaultTitle": "Confirm Action",

@@ -42,7 +42,38 @@
     "error": "خطایی رخ داد",
     "reset": "بازنشانی",
     "apply": "اعمال",
-    "actions": "عملیات"
+    "actions": "عملیات",
+    "navigate": "ناوبری",
+    "select": "انتخاب",
+    "items": "مورد"
+  },
+  "commandPalette": {
+    "title": "پالت دستورات",
+    "placeholder": "یک دستور را بنویسید یا بین برنچ‌ها و ریپازیتوری‌ها جستجو کنید...",
+    "placeholderShort": "جستجو یا پرش سریع...",
+    "noResults": "هیچ دستور یا شاخه‌ای منطبق با جستجو یافت نشد",
+    "categories": {
+      "actions": "عملیات گیت",
+      "branches": "شاخه‌ها و تگ‌ها",
+      "repositories": "ریپازیتوری‌های اخیر",
+      "preferences": "تنظیمات و ظاهر"
+    },
+    "actions": {
+      "stageAll": "افزودن همه تغییرات به استیج",
+      "unstageAll": "حذف همه تغییرات از استیج",
+      "fetch": "دریافت تغییرات از تمام ریموت‌ها (Fetch)",
+      "pull": "دریافت و ادغام تغییرات (Pull)",
+      "push": "ارسال کامیت‌ها به ریموت (Push)",
+      "createBranch": "ایجاد شاخه جدید",
+      "createStash": "ایجاد استش جدید",
+      "refresh": "تازه‌سازی وضعیت و گراف ریپازیتوری",
+      "openRepository": "باز کردن پوشه ریپازیتوری",
+      "settings": "باز کردن تنظیمات",
+      "switchThemeDark": "تغییر تم به حالت تاریک",
+      "switchThemeLight": "تغییر تم به حالت روشن",
+      "switchLanguageEn": "تغییر زبان به انگلیسی (LTR)",
+      "switchLanguageFa": "تغییر زبان به فارسی (RTL)"
+    }
   },
   "confirmation": {
     "defaultTitle": "تأیید عملیات",
