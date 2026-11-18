@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { validateGitBranchName, sanitizeBranchNameInput } from '~/utils/branchValidation'
+import {
+  validateGitBranchName,
+  handleBranchKeydownFilter,
+  syncBranchInputElement,
+} from '~/utils/branchValidation'
 
 const props = defineProps<{
   open: boolean
@@ -46,12 +50,17 @@ function validateBranchName(name: string): boolean {
   return true
 }
 
-function handleBranchNameInput(value: string | number): void {
-  const sanitized = sanitizeBranchNameInput(String(value ?? ''))
-  branchName.value = sanitized
-  if (errorMessage.value) {
-    validateBranchName(sanitized)
-  }
+function handleKeydown(event: KeyboardEvent): void {
+  handleBranchKeydownFilter(event, branchName.value)
+}
+
+function handleInput(event: Event): void {
+  syncBranchInputElement(event, (sanitized) => {
+    branchName.value = sanitized
+    if (errorMessage.value) {
+      validateBranchName(sanitized)
+    }
+  })
 }
 
 function handleConfirm(): void {
@@ -112,13 +121,14 @@ function handleClose(): void {
               {{ t('git.branchName') }}
             </label>
             <UInput
-              :model-value="branchName"
+              v-model="branchName"
               size="sm"
               icon="i-lucide-git-branch"
               :placeholder="t('git.branchNamePlaceholder')"
               class="w-full font-mono text-xs"
               autofocus
-              @update:model-value="handleBranchNameInput"
+              @keydown="handleKeydown"
+              @input="handleInput"
               @keydown.enter.prevent="handleConfirm"
             />
             <p v-if="errorMessage" class="text-[11px] text-error font-medium">

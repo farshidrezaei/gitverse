@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { MergeBranchOutcome, RebaseBranchOutcome } from '~/types/repository'
-import { validateGitBranchName, sanitizeBranchNameInput } from '~/utils/branchValidation'
+import {
+  validateGitBranchName,
+  sanitizeBranchNameInput,
+  shouldBlockBranchKeydown,
+  handleBranchKeydownFilter,
+  syncBranchInputElement,
+} from '~/utils/branchValidation'
 
 describe('branch operations models and contracts', () => {
   it('correctly validates clean merge branch outcome', () => {
@@ -123,5 +129,76 @@ describe('branch operations models and contracts', () => {
 
     // Trailing space converted to hyphen to allow continuous typing
     expect(sanitizeBranchNameInput('feature ')).toBe('feature-')
+  })
+
+  it('correctly intercepts and blocks illegal branch keystrokes in real time', () => {
+    const makeKeydownEvent = (key: string, options?: Partial<KeyboardEvent>): KeyboardEvent => ({
+      key,
+      ctrlKey: false,
+      metaKey: false,
+      altKey: false,
+      shiftKey: false,
+      preventDefault: () => {},
+      ...options,
+    } as KeyboardEvent)
+
+    // 1. Consecutive dots: typing second dot after 'asd.' is BLOCKED
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('.'), 'asd.', 4, 4)).toBe(true)
+
+    // First dot after 'asd' is ALLOWED
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('.'), 'asd', 3, 3)).toBe(false)
+
+    // 2. Consecutive slashes: typing second slash after 'feature/' is BLOCKED
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('/'), 'feature/', 8, 8)).toBe(true)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('/'), 'feature', 7, 7)).toBe(false)
+
+    // 3. Consecutive hyphens: typing second hyphen after 'feature-' is BLOCKED
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('-'), 'feature-', 8, 8)).toBe(true)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('-'), 'feature', 7, 7)).toBe(false)
+
+    // 4. Leading separator: typing '.', '/', '-', or ' ' at index 0 is BLOCKED
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('.'), '', 0, 0)).toBe(true)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('/'), '', 0, 0)).toBe(true)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('-'), '', 0, 0)).toBe(true)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent(' '), '', 0, 0)).toBe(true)
+
+    // 5. Illegal ref characters: BLOCKED immediately
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('~'), 'test', 4, 4)).toBe(true)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('^'), 'test', 4, 4)).toBe(true)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent(':'), 'test', 4, 4)).toBe(true)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('*'), 'test', 4, 4)).toBe(true)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('?'), 'test', 4, 4)).toBe(true)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('@'), 'test', 4, 4)).toBe(true)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('!'), 'test', 4, 4)).toBe(true)
+
+    // 6. Navigation and shortcuts: ALLOWED
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('Backspace'), 'asd.', 4, 4)).toBe(false)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('ArrowLeft'), 'asd.', 4, 4)).toBe(false)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('v', { ctrlKey: true }), 'asd.', 4, 4)).toBe(false)
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('a', { metaKey: true }), 'asd.', 4, 4)).toBe(false)
+
+    // 7. Middle insertion adjacent to dot/slash: BLOCKED
+    // Text is 'a.b', cursor at 1 (before '.') -> typing '.' would create '..b'
+    expect(shouldBlockBranchKeydown(makeKeydownEvent('.'), 'a.b', 1, 1)).toBe(true)
+  })
+
+  it('correctly synchronizes HTMLInputElement DOM value and cursor', () => {
+    const inputElement = document.createElement('input')
+    inputElement.value = 'asd......w'
+    inputElement.selectionStart = 10
+    inputElement.selectionEnd = 10
+
+    let capturedSanitized = ''
+    const result = syncBranchInputElement(
+      { target: inputElement } as unknown as Event,
+      (sanitized) => {
+        capturedSanitized = sanitized
+      }
+    )
+
+    expect(result).toBe('asd.w')
+    expect(capturedSanitized).toBe('asd.w')
+    expect(inputElement.value).toBe('asd.w')
+    expect(inputElement.selectionStart).toBe(5)
   })
 })

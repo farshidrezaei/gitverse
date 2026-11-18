@@ -112,3 +112,124 @@ export function sanitizeBranchNameInput(rawInput: string): string {
 
   return sanitized
 }
+
+/**
+ * Determines whether a keyboard event should be blocked to prevent invalid Git branch characters
+ * or disallowed sequences (such as consecutive dots, leading dashes/slashes, or illegal symbols).
+ */
+export function shouldBlockBranchKeydown(
+  event: KeyboardEvent,
+  currentValue: string,
+  selectionStart: number | null,
+  selectionEnd: number | null = null
+): boolean {
+  // Allow browser/system shortcut keys (Ctrl+A, Ctrl+C, Ctrl+V, Cmd+V, etc.)
+  if (event.ctrlKey || event.metaKey || event.altKey) {
+    return false
+  }
+
+  // Allow navigation, deletion, and submission keys (Backspace, Delete, Arrows, Tab, Enter, etc.)
+  if (event.key.length !== 1) {
+    return false
+  }
+
+  const key = event.key
+  const isReplacingSelection = selectionStart !== null && selectionEnd !== null && selectionStart !== selectionEnd
+  const cursorIndex = selectionStart ?? currentValue.length
+
+  // Disallow leading hyphen, slash, dot, or space at the beginning of the branch name
+  if (cursorIndex === 0 && !isReplacingSelection && (key === '-' || key === '/' || key === '.' || key === ' ')) {
+    return true
+  }
+
+  // Check character immediately before cursor (if not replacing selection from beginning)
+  const previousCharacter = cursorIndex > 0 ? (currentValue[cursorIndex - 1] ?? '') : ''
+
+  // Check character immediately after cursor (if caret is collapsed)
+  const nextCharacter = !isReplacingSelection && cursorIndex < currentValue.length
+    ? (currentValue[cursorIndex] ?? '')
+    : ''
+
+  // 1. Disallow consecutive dots (..), slashes (//), or hyphens (--)
+  if (key === '.' && (previousCharacter === '.' || nextCharacter === '.')) {
+    return true
+  }
+  if (key === '/' && (previousCharacter === '/' || nextCharacter === '/')) {
+    return true
+  }
+  if (key === '-' && (previousCharacter === '-' || nextCharacter === '-')) {
+    return true
+  }
+
+  // 2. Disallow illegal combinations around slashes (/- or -/)
+  if (key === '-' && (previousCharacter === '/' || nextCharacter === '/')) {
+    return true
+  }
+  if (key === '/' && (previousCharacter === '-' || nextCharacter === '-')) {
+    return true
+  }
+  if (key === '.' && (previousCharacter === '/' || nextCharacter === '/')) {
+    return true
+  }
+  if (key === '/' && (previousCharacter === '.' || nextCharacter === '.')) {
+    return true
+  }
+
+  // 3. Space transforms into hyphen, so disallow space immediately adjacent to hyphen, slash, or dot
+  if (key === ' ' && (previousCharacter === '-' || previousCharacter === '/' || previousCharacter === '.')) {
+    return true
+  }
+
+  // 4. Disallow characters outside ASCII alphanumerics, dot, underscore, hyphen, slash, and space
+  const isAllowedCharacter = /^[a-zA-Z0-9._\-/ ]$/.test(key)
+  if (!isAllowedCharacter) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Keydown event handler that prevents illegal character entry at the hardware/keyboard level.
+ */
+export function handleBranchKeydownFilter(event: KeyboardEvent, currentValue: string): void {
+  const target = event.target as HTMLInputElement | null
+  const selectionStart = target ? target.selectionStart : null
+  const selectionEnd = target ? target.selectionEnd : null
+
+  if (shouldBlockBranchKeydown(event, currentValue, selectionStart, selectionEnd)) {
+    event.preventDefault()
+  }
+}
+
+/**
+ * Synchronizes the native HTMLInputElement DOM value immediately with the sanitized slug,
+ * preserving caret position and preventing desync when Vue skips reactive DOM re-renders.
+ */
+export function syncBranchInputElement(
+  event: Event,
+  onSanitized?: (sanitizedValue: string) => void
+): string {
+  const target = event.target as HTMLInputElement | null
+  if (!target) {
+    return ''
+  }
+
+  const rawValue = target.value
+  const sanitized = sanitizeBranchNameInput(rawValue)
+
+  if (target.value !== sanitized) {
+    const cursorPosition = target.selectionStart
+    target.value = sanitized
+    if (cursorPosition !== null) {
+      const adjustedPosition = Math.min(cursorPosition, sanitized.length)
+      target.setSelectionRange(adjustedPosition, adjustedPosition)
+    }
+  }
+
+  if (onSanitized) {
+    onSanitized(sanitized)
+  }
+
+  return sanitized
+}

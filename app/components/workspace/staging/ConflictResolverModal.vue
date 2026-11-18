@@ -278,19 +278,21 @@ function handleClose(): void {
 
             <!-- Base Lines List -->
             <div class="flex-1 overflow-auto divide-y divide-default/15 font-mono text-xs select-text" dir="ltr">
-              <div
-                v-for="(line, lineIndex) in baseLines"
-                :key="`base-line-${lineIndex}`"
-                class="flex items-stretch min-h-[22px] leading-relaxed text-muted border-s-2 border-transparent"
-              >
-                <div class="w-10 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/20 text-[10px]">
-                  {{ lineIndex + 1 }}
-                </div>
-                <div class="w-5 shrink-0 text-center select-none font-bold text-muted/40">
-                  &nbsp;
-                </div>
-                <div class="flex-1 px-1.5 whitespace-pre truncate">
-                  {{ line }}
+              <div class="min-w-fit w-full divide-y divide-default/15">
+                <div
+                  v-for="(line, lineIndex) in baseLines"
+                  :key="`base-line-${lineIndex}`"
+                  class="flex items-stretch min-h-[22px] leading-relaxed text-muted border-s-2 border-transparent"
+                >
+                  <div class="w-10 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/20 text-[10px]">
+                    {{ lineIndex + 1 }}
+                  </div>
+                  <div class="w-5 shrink-0 text-center select-none font-bold text-muted/40">
+                    &nbsp;
+                  </div>
+                  <div class="flex-1 px-1.5 whitespace-pre overflow-x-visible">
+                    {{ line }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -314,44 +316,46 @@ function handleClose(): void {
 
             <!-- Theirs Line By Line with 3-Color & Intra-line Diff -->
             <div class="flex-1 overflow-auto divide-y divide-default/15 font-mono text-xs select-text" dir="ltr">
-              <div
-                v-for="(line, lineIndex) in theirsLineComparisons"
-                :key="`theirs-line-${lineIndex}`"
-                class="flex items-stretch min-h-[22px] leading-relaxed"
-                :class="{
-                  'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': line.status === 'modification',
-                  'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': line.status === 'addition',
-                  'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': line.status === 'deletion',
-                  'text-highlighted border-s-2 border-transparent': line.status === 'context',
-                }"
-              >
-                <!-- Line Number -->
-                <div class="w-10 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/20 text-[10px]">
-                  {{ line.lineNumber || '' }}
-                </div>
-                <!-- Gutter Sign -->
-                <div class="w-5 shrink-0 text-center select-none font-bold">
-                  <span v-if="line.status === 'modification'">~</span>
-                  <span v-else-if="line.status === 'addition'">+</span>
-                  <span v-else-if="line.status === 'deletion'">-</span>
-                  <span v-else>&nbsp;</span>
-                </div>
-                <!-- Spans with Intra-line Highlighting -->
-                <div class="flex-1 px-1.5 whitespace-pre truncate">
-                  <template v-if="line.spans && line.spans.length">
-                    <span
-                      v-for="(span, spanIndex) in line.spans"
-                      :key="`span-theirs-${lineIndex}-${spanIndex}`"
-                      :class="{
-                        'bg-[var(--gv-diff-modify-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'modification',
-                        'bg-[var(--gv-diff-add-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'addition',
-                        'bg-[var(--gv-diff-remove-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'deletion',
-                      }"
-                    >{{ span.text }}</span>
-                  </template>
-                  <template v-else>
-                    {{ line.content }}
-                  </template>
+              <div class="min-w-fit w-full divide-y divide-default/15">
+                <div
+                  v-for="(line, lineIndex) in theirsLineComparisons"
+                  :key="`theirs-line-${lineIndex}`"
+                  class="flex items-stretch min-h-[22px] leading-relaxed"
+                  :class="{
+                    'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': line.status === 'modification',
+                    'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': line.status === 'addition',
+                    'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': line.status === 'deletion',
+                    'text-highlighted border-s-2 border-transparent': line.status === 'context',
+                  }"
+                >
+                  <!-- Line Number -->
+                  <div class="w-10 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/20 text-[10px]">
+                    {{ line.lineNumber || '' }}
+                  </div>
+                  <!-- Gutter Sign -->
+                  <div class="w-5 shrink-0 text-center select-none font-bold">
+                    <span v-if="line.status === 'modification'">~</span>
+                    <span v-else-if="line.status === 'addition'">+</span>
+                    <span v-else-if="line.status === 'deletion'">-</span>
+                    <span v-else>&nbsp;</span>
+                  </div>
+                  <!-- Spans with Intra-line Highlighting -->
+                  <div class="flex-1 px-1.5 whitespace-pre overflow-x-visible">
+                    <template v-if="line.spans && line.spans.length">
+                      <span
+                        v-for="(span, spanIndex) in line.spans"
+                        :key="`span-theirs-${lineIndex}-${spanIndex}`"
+                        :class="{
+                          'bg-[var(--gv-diff-modify-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'modification',
+                          'bg-[var(--gv-diff-add-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'addition',
+                          'bg-[var(--gv-diff-remove-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'deletion',
+                        }"
+                      >{{ span.text }}</span>
+                    </template>
+                    <template v-else>
+                      {{ line.content }}
+                    </template>
+                  </div>
                 </div>
               </div>
             </div>
@@ -396,7 +400,8 @@ function handleClose(): void {
           <textarea
             v-model="editableContent"
             rows="18"
-            class="w-full flex-1 p-3 font-mono text-xs rounded-xl border border-default/70 bg-surface/90 text-highlighted focus:outline-none focus:ring-1 focus:ring-primary select-text leading-relaxed resize-none"
+            wrap="off"
+            class="w-full flex-1 p-3 font-mono text-xs rounded-xl border border-default/70 bg-surface/90 text-highlighted focus:outline-none focus:ring-1 focus:ring-primary select-text leading-relaxed resize-none overflow-x-auto whitespace-pre"
             dir="ltr"
           />
         </div>
