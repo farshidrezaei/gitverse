@@ -195,7 +195,9 @@
     "selectDirectoryHint": "Choose any existing Git repository folder on disk",
     "removeRecentTitle": "Remove from Recent",
     "removeRecentDescription": "Are you sure you want to remove '{name}' from the recent list? Files on disk will not be deleted.",
-    "path": "Path"
+    "path": "Path",
+    "notGitRepository": "The selected folder is not a valid Git repository.",
+    "notGitRepositoryDetails": "Missing .git folder or Git cannot read a valid worktree in this directory."
   },
   "theme": {
     "dark": "Dark",

@@ -1,6 +1,5 @@
 import type {
-  WorkspaceTab,
-  WorkspaceMainTab,
+  WorkspaceRepositoryTab,
   WorkspaceDiffTab,
   OpenDiffTabOptions,
 } from '~/types/workspaceTab'
@@ -13,29 +12,43 @@ function safeState<T>(key: string, initialValue: () => T) {
 }
 
 export function useWorkspaceTabController() {
-  const tabs = safeState<WorkspaceTab[]>('workspace-tabs-list', () => [])
-  const activeTabId = safeState<string>('workspace-active-tab-id', () => '')
+  // Repository-level tabs (Top level)
+  const repositoryTabs = safeState<WorkspaceRepositoryTab[]>('workspace-repository-tabs-list', () => [])
+  const activeRepositoryPath = safeState<string>('workspace-active-repository-path', () => '')
 
-  const activeTab = computed<WorkspaceTab | undefined>(() => {
-    return tabs.value.find(tab => tab.id === activeTabId.value) || tabs.value[0]
+  // File diff tabs (Scoped by repository path)
+  const diffTabs = safeState<WorkspaceDiffTab[]>('workspace-diff-tabs-list', () => [])
+  const activeDiffTabId = safeState<string | null>('workspace-active-diff-tab-id', () => null)
+
+  const activeRepositoryTab = computed<WorkspaceRepositoryTab | undefined>(() => {
+    return repositoryTabs.value.find(tab => tab.repositoryPath === activeRepositoryPath.value) || repositoryTabs.value[0]
+  })
+
+  const currentRepositoryDiffTabs = computed<WorkspaceDiffTab[]>(() => {
+    if (!activeRepositoryPath.value) return []
+    return diffTabs.value.filter(tab => tab.repositoryPath === activeRepositoryPath.value)
+  })
+
+  const activeDiffTab = computed<WorkspaceDiffTab | undefined>(() => {
+    if (!activeDiffTabId.value) return undefined
+    return currentRepositoryDiffTabs.value.find(tab => tab.id === activeDiffTabId.value)
   })
 
   function getRepositoryTabIdentifier(repositoryPath: string): string {
     return `workspace:${repositoryPath}`
   }
 
-  function getDiffTabIdentifier(options: OpenDiffTabOptions): string {
-    const repositoryPrefix = options.repositoryPath ? `${options.repositoryPath}:` : ''
+  function getDiffTabIdentifier(options: OpenDiffTabOptions, repoPath: string): string {
     if (options.comparisonBaseHash && options.comparisonTargetHash) {
-      return `diff:compare:${repositoryPrefix}${options.comparisonBaseHash}:${options.comparisonTargetHash}:${options.filePath}`
+      return `diff:compare:${repoPath}:${options.comparisonBaseHash}:${options.comparisonTargetHash}:${options.filePath}`
     }
     if (options.commitHash) {
-      return `diff:commit:${repositoryPrefix}${options.commitHash}:${options.filePath}`
+      return `diff:commit:${repoPath}:${options.commitHash}:${options.filePath}`
     }
     if (options.isStaged) {
-      return `diff:staged:${repositoryPrefix}${options.filePath}`
+      return `diff:staged:${repoPath}:${options.filePath}`
     }
-    return `diff:working:${repositoryPrefix}${options.filePath}`
+    return `diff:working:${repoPath}:${options.filePath}`
   }
 
   function getFileNameFromPath(filePath: string): string {
@@ -43,66 +56,86 @@ export function useWorkspaceTabController() {
     return parts[parts.length - 1] || filePath
   }
 
-  function openWorkspaceTab(repositoryPath: string, repositoryName: string): WorkspaceMainTab {
+  function openRepositoryTab(repositoryPath: string, repositoryName: string): WorkspaceRepositoryTab {
     const tabIdentifier = getRepositoryTabIdentifier(repositoryPath)
-    const existingIndex = tabs.value.findIndex(tab => tab.id === tabIdentifier)
+    const existingIndex = repositoryTabs.value.findIndex(tab => tab.repositoryPath === repositoryPath)
 
     if (existingIndex !== -1) {
-      const existingTab = tabs.value[existingIndex] as WorkspaceMainTab
+      const existingTab = repositoryTabs.value[existingIndex] as WorkspaceRepositoryTab
       existingTab.repositoryName = repositoryName
-      activeTabId.value = existingTab.id
+      activeRepositoryPath.value = repositoryPath
+      activeDiffTabId.value = null // Reset active diff view to workbench
       return existingTab
     }
 
-    const mainTab: WorkspaceMainTab = {
+    const newTab: WorkspaceRepositoryTab = {
       id: tabIdentifier,
-      type: 'workspace',
-      title: repositoryName || 'Workspace',
       repositoryPath,
-      repositoryName,
+      repositoryName: repositoryName || 'Repository',
       isClosable: true,
-      isPinned: true,
     }
 
-    tabs.value.push(mainTab)
-    activeTabId.value = tabIdentifier
-    return mainTab
+    repositoryTabs.value.push(newTab)
+    activeRepositoryPath.value = repositoryPath
+    activeDiffTabId.value = null
+    return newTab
   }
 
-  function initializeWorkspaceTab(repositoryPath: string, repositoryName: string): void {
-    openWorkspaceTab(repositoryPath, repositoryName)
+  function closeRepositoryTab(repositoryPath: string): void {
+    const targetIndex = repositoryTabs.value.findIndex(tab => tab.repositoryPath === repositoryPath)
+    if (targetIndex === -1) return
+
+    // Clean up all diff tabs belonging to this repository
+    diffTabs.value = diffTabs.value.filter(tab => tab.repositoryPath !== repositoryPath)
+
+    const isClosingActive = activeRepositoryPath.value === repositoryPath
+    repositoryTabs.value.splice(targetIndex, 1)
+
+    if (isClosingActive) {
+      const nextActiveIndex = Math.max(0, targetIndex - 1)
+      const nextTab = repositoryTabs.value[nextActiveIndex]
+      activeRepositoryPath.value = nextTab ? nextTab.repositoryPath : ''
+      activeDiffTabId.value = null
+    }
+  }
+
+  function closeOtherRepositoryTabs(repositoryPath: string): void {
+    repositoryTabs.value = repositoryTabs.value.filter(tab => tab.repositoryPath === repositoryPath)
+    diffTabs.value = diffTabs.value.filter(tab => tab.repositoryPath === repositoryPath)
+    activeRepositoryPath.value = repositoryPath
+    activeDiffTabId.value = null
   }
 
   function openDiffTab(options: OpenDiffTabOptions, shouldActivate = true): WorkspaceDiffTab {
-    const tabIdentifier = getDiffTabIdentifier(options)
-    const existingTabIndex = tabs.value.findIndex(tab => tab.id === tabIdentifier)
+    const repoPath = options.repositoryPath || activeRepositoryPath.value
+    const tabIdentifier = getDiffTabIdentifier(options, repoPath)
+    const existingTabIndex = diffTabs.value.findIndex(tab => tab.id === tabIdentifier)
 
     if (existingTabIndex !== -1) {
-      const existingTab = tabs.value[existingTabIndex] as WorkspaceDiffTab
+      const existingTab = diffTabs.value[existingTabIndex] as WorkspaceDiffTab
       if (options.isPinned) {
         existingTab.isPinned = true
       }
       if (shouldActivate) {
-        activeTabId.value = existingTab.id
+        activeDiffTabId.value = existingTab.id
       }
       return existingTab
     }
 
     const isExplicitlyPinned = options.isPinned ?? true
 
-    // If an unpinned preview tab exists and this new open is NOT pinned, reuse the preview tab
+    // If an unpinned preview tab exists in this repository and this new open is NOT pinned, reuse it
     if (!isExplicitlyPinned) {
-      const previewTabIndex = tabs.value.findIndex(
-        tab => tab.type === 'diff' && !tab.isPinned,
+      const previewTabIndex = diffTabs.value.findIndex(
+        tab => tab.repositoryPath === repoPath && !tab.isPinned,
       )
 
       if (previewTabIndex !== -1) {
         const replacementTab: WorkspaceDiffTab = {
           id: tabIdentifier,
-          type: 'diff',
           title: getFileNameFromPath(options.filePath),
           filePath: options.filePath,
-          repositoryPath: options.repositoryPath,
+          repositoryPath: repoPath,
           isStaged: options.isStaged,
           commitHash: options.commitHash,
           comparisonBaseHash: options.comparisonBaseHash,
@@ -112,9 +145,9 @@ export function useWorkspaceTabController() {
           isPinned: false,
         }
 
-        tabs.value[previewTabIndex] = replacementTab
+        diffTabs.value[previewTabIndex] = replacementTab
         if (shouldActivate) {
-          activeTabId.value = replacementTab.id
+          activeDiffTabId.value = replacementTab.id
         }
         return replacementTab
       }
@@ -122,10 +155,9 @@ export function useWorkspaceTabController() {
 
     const newDiffTab: WorkspaceDiffTab = {
       id: tabIdentifier,
-      type: 'diff',
       title: getFileNameFromPath(options.filePath),
       filePath: options.filePath,
-      repositoryPath: options.repositoryPath,
+      repositoryPath: repoPath,
       isStaged: options.isStaged,
       commitHash: options.commitHash,
       comparisonBaseHash: options.comparisonBaseHash,
@@ -135,85 +167,88 @@ export function useWorkspaceTabController() {
       isPinned: isExplicitlyPinned,
     }
 
-    tabs.value.push(newDiffTab)
+    diffTabs.value.push(newDiffTab)
 
     if (shouldActivate) {
-      activeTabId.value = newDiffTab.id
+      activeDiffTabId.value = newDiffTab.id
     }
 
     return newDiffTab
   }
 
-  function pinTab(tabIdentifier: string): void {
-    const targetTab = tabs.value.find(tab => tab.id === tabIdentifier)
+  function pinDiffTab(tabIdentifier: string): void {
+    const targetTab = diffTabs.value.find(tab => tab.id === tabIdentifier)
     if (targetTab) {
       targetTab.isPinned = true
     }
   }
 
-  function closeTab(tabIdentifier: string): void {
-    const targetIndex = tabs.value.findIndex(tab => tab.id === tabIdentifier)
+  function closeDiffTab(tabIdentifier: string): void {
+    const repoDiffs = currentRepositoryDiffTabs.value
+    const targetIndex = repoDiffs.findIndex(tab => tab.id === tabIdentifier)
     if (targetIndex === -1) return
 
-    const targetTab = tabs.value[targetIndex]
-    if (!targetTab || !targetTab.isClosable) return
+    const isClosingActive = activeDiffTabId.value === tabIdentifier
 
-    const isClosingActive = activeTabId.value === tabIdentifier
-
-    tabs.value.splice(targetIndex, 1)
+    diffTabs.value = diffTabs.value.filter(tab => tab.id !== tabIdentifier)
 
     if (isClosingActive) {
-      const nextActiveIndex = Math.max(0, targetIndex - 1)
-      const nextTab = tabs.value[nextActiveIndex]
-      activeTabId.value = nextTab ? nextTab.id : ''
+      const remainingRepoDiffs = diffTabs.value.filter(tab => tab.repositoryPath === activeRepositoryPath.value)
+      if (remainingRepoDiffs.length > 0) {
+        const nextActiveIndex = Math.max(0, targetIndex - 1)
+        activeDiffTabId.value = remainingRepoDiffs[nextActiveIndex]?.id || null
+      } else {
+        activeDiffTabId.value = null
+      }
     }
   }
 
   function closeAllDiffTabs(): void {
-    tabs.value = tabs.value.filter(tab => tab.type === 'workspace')
-    if (!tabs.value.some(tab => tab.id === activeTabId.value)) {
-      activeTabId.value = tabs.value[0]?.id || ''
-    }
+    diffTabs.value = diffTabs.value.filter(tab => tab.repositoryPath !== activeRepositoryPath.value)
+    activeDiffTabId.value = null
   }
 
-  function closeOtherTabs(tabIdentifier: string): void {
-    const targetTab = tabs.value.find(tab => tab.id === tabIdentifier)
-    if (!targetTab) return
-
-    tabs.value = tabs.value.filter(
-      tab => tab.type === 'workspace' || tab.id === tabIdentifier,
+  function closeOtherDiffTabs(tabIdentifier: string): void {
+    diffTabs.value = diffTabs.value.filter(
+      tab => tab.repositoryPath !== activeRepositoryPath.value || tab.id === tabIdentifier,
     )
-    activeTabId.value = tabIdentifier
+    activeDiffTabId.value = tabIdentifier
   }
 
-  function activateTab(tabIdentifier: string): void {
-    const exists = tabs.value.some(tab => tab.id === tabIdentifier)
-    if (exists) {
-      activeTabId.value = tabIdentifier
-    }
+  function activateDiffTab(tabIdentifier: string | null): void {
+    activeDiffTabId.value = tabIdentifier
   }
 
-  function resetTabs(repositoryPath?: string, repositoryName?: string): void {
-    if (repositoryPath && repositoryName) {
-      openWorkspaceTab(repositoryPath, repositoryName)
-    } else {
-      tabs.value = []
-      activeTabId.value = ''
-    }
+  function activateRepositoryTab(repositoryPath: string): void {
+    activeRepositoryPath.value = repositoryPath
+    activeDiffTabId.value = null
+  }
+
+  function resetTabs(): void {
+    repositoryTabs.value = []
+    diffTabs.value = []
+    activeRepositoryPath.value = ''
+    activeDiffTabId.value = null
   }
 
   return {
-    tabs,
-    activeTabId,
-    activeTab,
-    openWorkspaceTab,
-    initializeWorkspaceTab,
+    repositoryTabs,
+    activeRepositoryPath,
+    activeRepositoryTab,
+    diffTabs,
+    activeDiffTabId,
+    activeDiffTab,
+    currentRepositoryDiffTabs,
+    openRepositoryTab,
+    closeRepositoryTab,
+    closeOtherRepositoryTabs,
+    activateRepositoryTab,
     openDiffTab,
-    pinTab,
-    closeTab,
+    pinDiffTab,
+    closeDiffTab,
     closeAllDiffTabs,
-    closeOtherTabs,
-    activateTab,
+    closeOtherDiffTabs,
+    activateDiffTab,
     resetTabs,
   }
 }

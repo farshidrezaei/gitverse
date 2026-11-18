@@ -129,9 +129,20 @@ export function useRepositoryWorkspace() {
         return overview
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      lastError.value = errorMessage
-      notifyError(t('common.error'), errorMessage)
+      const rawError = error as { type?: string; message?: string } | Error | string
+      const isInvalidRepo =
+        (typeof rawError === 'object' && rawError !== null && 'type' in rawError && rawError.type === 'InvalidRepository') ||
+        (typeof rawError === 'string' && rawError.includes('InvalidRepository')) ||
+        (rawError instanceof Error && rawError.message.includes('InvalidRepository'))
+
+      if (isInvalidRepo) {
+        lastError.value = t('repository.notGitRepository')
+        notifyError(t('repository.notGitRepository'), t('repository.notGitRepositoryDetails'))
+      } else {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        lastError.value = errorMessage
+        notifyError(t('common.error'), errorMessage)
+      }
       return null
     } finally {
       isLoadingRepository.value = false

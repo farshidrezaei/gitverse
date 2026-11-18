@@ -1,33 +1,25 @@
 import type { FileChangeStatus } from '~/types/repository'
 
-export type WorkspaceTabType = 'workspace' | 'diff'
-
-export interface BaseWorkspaceTab {
+export interface WorkspaceRepositoryTab {
   id: string
-  title: string
-  type: WorkspaceTabType
-  isClosable: boolean
-  isPinned: boolean
-}
-
-export interface WorkspaceMainTab extends BaseWorkspaceTab {
-  type: 'workspace'
   repositoryPath: string
   repositoryName: string
+  isClosable: boolean
 }
 
-export interface WorkspaceDiffTab extends BaseWorkspaceTab {
-  type: 'diff'
+export interface WorkspaceDiffTab {
+  id: string
+  title: string
   filePath: string
-  repositoryPath?: string
+  repositoryPath: string
   isStaged?: boolean
   commitHash?: string
   comparisonBaseHash?: string
   comparisonTargetHash?: string
   changeStatus?: FileChangeStatus
+  isClosable: boolean
+  isPinned: boolean
 }
-
-export type WorkspaceTab = WorkspaceMainTab | WorkspaceDiffTab
 
 export interface OpenDiffTabOptions {
   filePath: string

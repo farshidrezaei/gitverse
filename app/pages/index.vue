@@ -2,7 +2,8 @@
 import type { SplitterItem } from '@nuxt/ui'
 import type { BranchSummary, RemoteBranchSummary, FileChangeStatus } from '~/types/repository'
 import type { WorkspaceDiffTab } from '~/types/workspaceTab'
-import WorkspaceTabBar from '~/components/workspace/tabs/WorkspaceTabBar.vue'
+import WorkspaceRepositoryTabBar from '~/components/workspace/tabs/WorkspaceRepositoryTabBar.vue'
+import WorkspaceDiffTabBar from '~/components/workspace/tabs/WorkspaceDiffTabBar.vue'
 import WorkspaceDiffTabContent from '~/components/workspace/tabs/WorkspaceDiffTabContent.vue'
 import WorkspaceBranchSidebar from '~/components/workspace/branch/WorkspaceBranchSidebar.vue'
 import WorkspaceStagingSidebar from '~/components/workspace/staging/WorkspaceStagingSidebar.vue'
@@ -18,6 +19,7 @@ const { confirmStandard, confirmHold, confirmKeyword } = useConfirmationDialog()
 
 const {
   currentRepository,
+  recentRepositories,
   repositoryStatus,
   repositoryReferences,
   selectedDiffTarget,
@@ -72,17 +74,22 @@ const {
 } = useWorkspaceManager()
 
 const {
-  tabs,
-  activeTabId,
-  activeTab,
-  openWorkspaceTab,
-  initializeWorkspaceTab,
+  repositoryTabs,
+  activeRepositoryPath,
+  activeRepositoryTab,
+  currentRepositoryDiffTabs,
+  activeDiffTabId,
+  activeDiffTab,
+  openRepositoryTab,
+  closeRepositoryTab,
+  closeOtherRepositoryTabs,
+  activateRepositoryTab,
   openDiffTab,
-  pinTab,
-  closeTab,
+  pinDiffTab,
+  closeDiffTab,
   closeAllDiffTabs,
-  closeOtherTabs,
-  activateTab,
+  closeOtherDiffTabs,
+  activateDiffTab,
   resetTabs,
 } = useWorkspaceTabController()
 
@@ -96,55 +103,45 @@ watch(
   currentRepository,
   (repository) => {
     if (repository) {
-      openWorkspaceTab(repository.path, repository.name)
-    } else {
+      openRepositoryTab(repository.path, repository.name)
+    } else if (repositoryTabs.value.length === 0) {
       resetTabs()
     }
   },
   { immediate: true },
 )
 
-async function handleSelectTab(tabId: string): Promise<void> {
-  const targetTab = tabs.value.find(tab => tab.id === tabId)
-  if (!targetTab) return
+async function handleSelectRepository(repositoryPath: string): Promise<void> {
+  if (currentRepository.value?.path === repositoryPath) return
+  activateRepositoryTab(repositoryPath)
+  await openRepository(repositoryPath)
+}
 
-  activateTab(tabId)
-
-  if (targetTab.type === 'workspace') {
-    const mainTab = targetTab as WorkspaceMainTab
-    if (currentRepository.value?.path !== mainTab.repositoryPath) {
-      await openRepository(mainTab.repositoryPath)
-    }
-  } else if (targetTab.type === 'diff') {
-    const diffTab = targetTab as WorkspaceDiffTab
-    if (diffTab.repositoryPath && currentRepository.value?.path !== diffTab.repositoryPath) {
-      await openRepository(diffTab.repositoryPath)
-    }
+async function handleCloseRepository(repositoryPath: string): Promise<void> {
+  closeRepositoryTab(repositoryPath)
+  if (repositoryTabs.value.length === 0) {
+    await closeRepository()
+  } else if (activeRepositoryPath.value && currentRepository.value?.path !== activeRepositoryPath.value) {
+    await openRepository(activeRepositoryPath.value)
   }
 }
 
-async function handleCloseTab(tabId: string): Promise<void> {
-  const targetTab = tabs.value.find(tab => tab.id === tabId)
-  closeTab(tabId)
-
-  // If no workspace tabs left, close active repository
-  const remainingWorkspaceTabs = tabs.value.filter(tab => tab.type === 'workspace')
-  if (remainingWorkspaceTabs.length === 0) {
-    await closeRepository()
-  } else if (activeTab.value?.type === 'workspace') {
-    const activeMainTab = activeTab.value as WorkspaceMainTab
-    if (currentRepository.value?.path !== activeMainTab.repositoryPath) {
-      await openRepository(activeMainTab.repositoryPath)
-    }
+async function handleCloseOtherRepositories(repositoryPath: string): Promise<void> {
+  closeOtherRepositoryTabs(repositoryPath)
+  if (currentRepository.value?.path !== repositoryPath) {
+    await openRepository(repositoryPath)
   }
 }
 
 function handleKeyboardShortcuts(event: KeyboardEvent): void {
   const isModifierKeyActive = event.ctrlKey || event.metaKey
   if (isModifierKeyActive && event.key.toLowerCase() === 'w') {
-    if (activeTab.value?.isClosable) {
+    if (activeDiffTab.value) {
       event.preventDefault()
-      closeTab(activeTabId.value)
+      closeDiffTab(activeDiffTab.value.id)
+    } else if (currentRepository.value) {
+      event.preventDefault()
+      void handleCloseRepository(currentRepository.value.path)
     }
   }
 }
@@ -409,25 +406,38 @@ async function handlePush(): Promise<void> {
     <!-- Zero Repository Open State: Show Welcome screen with recent repos -->
     <WelcomeWorkspaceState v-if="!currentRepository" />
 
-    <!-- Active Repository: Tab Bar + Content Area -->
+    <!-- Active Repository: Tab Bars + Content Area -->
     <div v-else class="flex h-full w-full flex-col overflow-hidden">
-      <!-- Workspace Tab Strip -->
-      <WorkspaceTabBar
-        :tabs="tabs"
-        :active-tab-id="activeTabId"
-        @select-tab="handleSelectTab"
-        @close-tab="handleCloseTab"
-        @close-other-tabs="closeOtherTabs"
+      <!-- LEVEL 1: Repository Tab Strip -->
+      <WorkspaceRepositoryTabBar
+        :tabs="repositoryTabs"
+        :active-repository-path="currentRepository?.path || ''"
+        :recent-repositories="recentRepositories"
+        @select-repository="handleSelectRepository"
+        @close-repository="handleCloseRepository"
+        @close-other-repositories="handleCloseOtherRepositories"
+        @open-repository-prompt="promptAndOpenRepository"
+        @open-recent-repository="openRepository"
+      />
+
+      <!-- LEVEL 2: Scoped Diff Tab Strip (Only shown when repository has open diff tabs) -->
+      <WorkspaceDiffTabBar
+        v-if="currentRepositoryDiffTabs.length > 0"
+        :tabs="currentRepositoryDiffTabs"
+        :active-tab-id="activeDiffTabId"
+        @select-diff-tab="activateDiffTab"
+        @select-workbench="activateDiffTab(null)"
+        @close-diff-tab="closeDiffTab"
+        @close-other-diff-tabs="closeOtherDiffTabs"
         @close-all-diff-tabs="closeAllDiffTabs"
-        @pin-tab="pinTab"
-        @open-new-repository="promptAndOpenRepository"
+        @pin-diff-tab="pinDiffTab"
       />
 
       <!-- Content Area -->
       <div class="relative flex-1 overflow-hidden">
         <!-- Main Workspace Workbench Island (Preserved with v-show for instantaneous tab switching) -->
         <div
-          v-show="activeTab?.type === 'workspace'"
+          v-show="!activeDiffTab"
           class="h-full w-full"
         >
           <USplitter
@@ -556,12 +566,12 @@ async function handlePush(): Promise<void> {
 
         <!-- Full-Page Dedicated Diff Tab -->
         <WorkspaceDiffTabContent
-          v-if="activeTab?.type === 'diff'"
-          :tab="(activeTab as WorkspaceDiffTab)"
+          v-if="activeDiffTab"
+          :tab="activeDiffTab"
           @stage="stageFile"
           @unstage="unstageFile"
           @discard="handleDiscard"
-          @close="closeTab"
+          @close="closeDiffTab"
         />
       </div>
     </div>

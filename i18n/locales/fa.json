@@ -195,7 +195,9 @@
     "selectDirectoryHint": "پوشه یک مخزن گیت موجود را انتخاب کنید",
     "removeRecentTitle": "حذف از لیست اخیر",
     "removeRecentDescription": "آیا از حذف مخزن «{name}» از لیست اخیر اطمینان دارید؟ فایل‌های روی دیسک پاک نخواهند شد.",
-    "path": "مسیر"
+    "path": "مسیر",
+    "notGitRepository": "پوشه انتخاب‌شده یک مخزن معتبر گیت نیست.",
+    "notGitRepositoryDetails": "پوشه .git یافت نشد یا دستورات گیت در این پوشه قابل اجرا نیستند."
   },
   "theme": {
     "dark": "تیره",
