@@ -129,6 +129,8 @@ watch(isWordWrap, (newWrap) => {
         :file-path="currentFilePath"
         :file-extension="currentFileExtension"
         :is-binary="props.diff.is_binary"
+        :old-content-base64="props.diff.old_content_base64"
+        :new-content-base64="props.diff.new_content_base64"
       />
 
       <!-- Empty / No Changes State -->

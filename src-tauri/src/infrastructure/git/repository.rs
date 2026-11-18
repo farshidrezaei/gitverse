@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use base64::Engine;
 use crate::domain::{
     ApplicationError, ConflictFileDetails, DirectoryListing, FolderEntry, MergeBranchOutcome, RebaseBranchOutcome,
     RepositoryOperationState, RepositoryOverview, StashRecord,
@@ -13,6 +14,23 @@ pub struct GitRepositoryInspector {
     executor: GitProcessExecutor,
 }
 
+fn is_media_file(file_path: &str) -> bool {
+    let lower = file_path.to_lowercase();
+    lower.ends_with(".png")
+        || lower.ends_with(".jpg")
+        || lower.ends_with(".jpeg")
+        || lower.ends_with(".gif")
+        || lower.ends_with(".svg")
+        || lower.ends_with(".webp")
+        || lower.ends_with(".bmp")
+        || lower.ends_with(".ico")
+        || lower.ends_with(".mp3")
+        || lower.ends_with(".wav")
+        || lower.ends_with(".ogg")
+        || lower.ends_with(".mp4")
+        || lower.ends_with(".webm")
+}
+
 impl GitRepositoryInspector {
     pub fn new(executor: GitProcessExecutor) -> Self {
         Self { executor }
@@ -21,11 +39,16 @@ impl GitRepositoryInspector {
     /// Verifies if a given path is a valid Git repository root or worktree.
     pub async fn verify_repository_path(&self, directory_path: &Path) -> Result<bool, ApplicationError> {
         let output = self.executor
-            .execute_git_command(Some(directory_path), &["rev-parse", "--is-inside-work-tree"])
+            .execute_git_command(Some(directory_path), &["rev-parse", "--show-toplevel"])
             .await;
 
         match output {
-            Ok(result) => Ok(result.trim() == "true"),
+            Ok(result) => {
+                let toplevel_str = result.trim();
+                let canonical_target = std::fs::canonicalize(directory_path).unwrap_or_else(|_| directory_path.to_path_buf());
+                let canonical_toplevel = std::fs::canonicalize(Path::new(toplevel_str)).unwrap_or_else(|_| PathBuf::from(toplevel_str));
+                Ok(canonical_target == canonical_toplevel)
+            }
             Err(_) => Ok(false),
         }
     }
@@ -254,7 +277,54 @@ impl GitRepositoryInspector {
             }
         };
 
-        Ok(super::diff::parse_unified_diff(&raw_diff, file_path))
+        let mut parsed_diff = super::diff::parse_unified_diff(&raw_diff, file_path);
+
+        // If file is binary or media, load base64 content for visual side-by-side comparison
+        if parsed_diff.is_binary || is_media_file(file_path) {
+            let (old_b64, new_b64) = self.load_diff_media_contents(directory_path, file_path, is_staged).await;
+            parsed_diff.old_content_base64 = old_b64;
+            parsed_diff.new_content_base64 = new_b64;
+        }
+
+        Ok(parsed_diff)
+    }
+
+    async fn load_diff_media_contents(
+        &self,
+        directory_path: &Path,
+        file_path: &str,
+        is_staged: bool,
+    ) -> (Option<String>, Option<String>) {
+        let engine = base64::engine::general_purpose::STANDARD;
+
+        // Old content: from HEAD (or index if unstaged)
+        let head_target = if is_staged {
+            format!("HEAD:{}", file_path)
+        } else {
+            format!(":{}", file_path)
+        };
+
+        let old_content = self.executor
+            .execute_git_command_raw(Some(directory_path), &["show", &head_target])
+            .await
+            .ok()
+            .map(|bytes| engine.encode(&bytes));
+
+        // New content: from file on disk or staging index
+        let new_content = if is_staged {
+            self.executor
+                .execute_git_command_raw(Some(directory_path), &[":", file_path])
+                .await
+                .ok()
+                .map(|bytes| engine.encode(&bytes))
+        } else {
+            let full_path = directory_path.join(file_path);
+            std::fs::read(&full_path)
+                .ok()
+                .map(|bytes| engine.encode(&bytes))
+        };
+
+        (old_content, new_content)
     }
 
     /// Extracts commit history using machine-readable delimited output.
@@ -374,7 +444,23 @@ impl GitRepositoryInspector {
             .unwrap_or_default();
 
         let display_path = file_path.unwrap_or(commit_hash);
-        Ok(super::diff::parse_unified_diff(&raw_diff, display_path))
+        let mut parsed_diff = super::diff::parse_unified_diff(&raw_diff, display_path);
+
+        if let Some(target_file) = file_path {
+            if parsed_diff.is_binary || is_media_file(target_file) {
+                let engine = base64::engine::general_purpose::STANDARD;
+                let old_target = format!("{}:{}", commit_hash, target_file);
+                let old_content = self.executor
+                    .execute_git_command_raw(Some(directory_path), &["show", &old_target])
+                    .await
+                    .ok()
+                    .map(|bytes| engine.encode(&bytes));
+                parsed_diff.new_content_base64 = old_content.clone(); // In a commit diff, new is the commit version
+                parsed_diff.old_content_base64 = old_content;
+            }
+        }
+
+        Ok(parsed_diff)
     }
 
     /// Compares two commits or references, returning the list of changed files and summary metrics.

@@ -12,6 +12,8 @@ pub fn parse_unified_diff(raw_diff: &str, file_path: &str) -> FileDiff {
             hunks: Vec::new(),
             total_additions: 0,
             total_deletions: 0,
+            old_content_base64: None,
+            new_content_base64: None,
         };
     }
 
@@ -25,6 +27,8 @@ pub fn parse_unified_diff(raw_diff: &str, file_path: &str) -> FileDiff {
             hunks: Vec::new(),
             total_additions: 0,
             total_deletions: 0,
+            old_content_base64: None,
+            new_content_base64: None,
         };
     }
 
@@ -132,6 +136,8 @@ pub fn parse_unified_diff(raw_diff: &str, file_path: &str) -> FileDiff {
         hunks,
         total_additions,
         total_deletions,
+        old_content_base64: None,
+        new_content_base64: None,
     }
 }
 

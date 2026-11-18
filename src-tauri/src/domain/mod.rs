@@ -170,6 +170,8 @@ pub struct FileDiff {
     pub hunks: Vec<DiffHunk>,
     pub total_additions: u32,
     pub total_deletions: u32,
+    pub old_content_base64: Option<String>,
+    pub new_content_base64: Option<String>,
 }
 
 /// Represents a file modified in a specific commit with status and diff counts.

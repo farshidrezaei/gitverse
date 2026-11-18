@@ -331,6 +331,8 @@ function handleUnstage(filePath: string): void {
         :file-path="properties.tab.filePath"
         :file-extension="fileExtension"
         :is-binary="diffData.is_binary"
+        :old-content-base64="diffData.old_content_base64"
+        :new-content-base64="diffData.new_content_base64"
       />
 
       <!-- Empty / No Changes Notice -->

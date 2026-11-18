@@ -3,6 +3,8 @@ interface DiffMediaViewerProperties {
   filePath: string
   fileExtension: string
   isBinary?: boolean
+  oldContentBase64?: string | null
+  newContentBase64?: string | null
 }
 
 const properties = defineProps<DiffMediaViewerProperties>()
@@ -13,6 +15,18 @@ type ImageDiffMode = 'side-by-side' | 'swipe' | 'onion'
 const activeImageMode = ref<ImageDiffMode>('side-by-side')
 const swipePosition = ref<number>(50)
 const onionOpacity = ref<number>(50)
+
+const oldImageSrc = computed<string | null>(() => {
+  if (!properties.oldContentBase64) return null
+  const mimeType = properties.fileExtension.toLowerCase() === 'svg' ? 'image/svg+xml' : `image/${properties.fileExtension.toLowerCase()}`
+  return `data:${mimeType};base64,${properties.oldContentBase64}`
+})
+
+const newImageSrc = computed<string | null>(() => {
+  if (!properties.newContentBase64) return null
+  const mimeType = properties.fileExtension.toLowerCase() === 'svg' ? 'image/svg+xml' : `image/${properties.fileExtension.toLowerCase()}`
+  return `data:${mimeType};base64,${properties.newContentBase64}`
+})
 
 const isImageFile = computed(() => {
   const ext = properties.fileExtension.toLowerCase()
@@ -77,29 +91,59 @@ const isVideoFile = computed(() => {
         <div v-if="activeImageMode === 'side-by-side'" class="grid grid-cols-2 gap-4 w-full max-w-4xl">
           <div class="flex flex-col items-center rounded-lg border border-error/30 bg-error/5 p-3">
             <span class="text-[10px] font-semibold text-error mb-2 tracking-wider uppercase">Head / Original</span>
-            <div class="h-48 w-full flex items-center justify-center bg-[var(--gv-background)]/80 rounded border border-dashed border-error/40 p-2">
-              <UIcon name="i-lucide-image" class="h-12 w-12 text-error/40" />
+            <div class="h-64 w-full flex items-center justify-center bg-[var(--gv-background)]/80 rounded border border-dashed border-error/40 p-2 overflow-hidden">
+              <img
+                v-if="oldImageSrc"
+                :src="oldImageSrc"
+                alt="Original"
+                class="max-h-full max-w-full object-contain"
+              >
+              <div v-else class="flex flex-col items-center gap-1 text-muted">
+                <UIcon name="i-lucide-image-off" class="h-8 w-8 text-error/40" />
+                <span class="text-[10px]">{{ t('diff.noFileSelected') }}</span>
+              </div>
             </div>
           </div>
           <div class="flex flex-col items-center rounded-lg border border-success/30 bg-success/5 p-3">
             <span class="text-[10px] font-semibold text-success mb-2 tracking-wider uppercase">Working / Modified</span>
-            <div class="h-48 w-full flex items-center justify-center bg-[var(--gv-background)]/80 rounded border border-dashed border-success/40 p-2">
-              <UIcon name="i-lucide-image" class="h-12 w-12 text-success/40" />
+            <div class="h-64 w-full flex items-center justify-center bg-[var(--gv-background)]/80 rounded border border-dashed border-success/40 p-2 overflow-hidden">
+              <img
+                v-if="newImageSrc"
+                :src="newImageSrc"
+                alt="Modified"
+                class="max-h-full max-w-full object-contain"
+              >
+              <div v-else class="flex flex-col items-center gap-1 text-muted">
+                <UIcon name="i-lucide-image-off" class="h-8 w-8 text-success/40" />
+                <span class="text-[10px]">{{ t('diff.noFileSelected') }}</span>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Swipe Slider Preview -->
         <div v-else-if="activeImageMode === 'swipe'" class="flex flex-col items-center gap-3 w-full max-w-2xl">
-          <div class="relative h-64 w-full rounded-lg border border-default bg-[var(--gv-background)] overflow-hidden flex items-center justify-center">
-            <div class="absolute inset-0 flex items-center justify-center bg-error/5 text-error">
-              <UIcon name="i-lucide-image" class="h-16 w-16 opacity-40" />
+          <div class="relative h-72 w-full rounded-lg border border-default bg-[var(--gv-background)] overflow-hidden flex items-center justify-center">
+            <div class="absolute inset-0 flex items-center justify-center p-2">
+              <img
+                v-if="oldImageSrc"
+                :src="oldImageSrc"
+                alt="Original"
+                class="max-h-full max-w-full object-contain opacity-50"
+              >
+              <UIcon v-else name="i-lucide-image" class="h-16 w-16 text-error opacity-40" />
             </div>
             <div
-              class="absolute inset-0 flex items-center justify-center bg-success/10 text-success border-s-2 border-primary"
+              class="absolute inset-0 flex items-center justify-center p-2 border-s-2 border-primary"
               :style="{ clipPath: `inset(0 0 0 ${swipePosition}%)` }"
             >
-              <UIcon name="i-lucide-image" class="h-16 w-16 opacity-80" />
+              <img
+                v-if="newImageSrc"
+                :src="newImageSrc"
+                alt="Modified"
+                class="max-h-full max-w-full object-contain"
+              >
+              <UIcon v-else name="i-lucide-image" class="h-16 w-16 text-success opacity-80" />
             </div>
           </div>
           <input
@@ -118,15 +162,27 @@ const isVideoFile = computed(() => {
 
         <!-- Onion Skin Opacity -->
         <div v-else class="flex flex-col items-center gap-3 w-full max-w-2xl">
-          <div class="relative h-64 w-full rounded-lg border border-default bg-[var(--gv-background)] overflow-hidden flex items-center justify-center">
-            <div class="absolute inset-0 flex items-center justify-center text-error opacity-70">
-              <UIcon name="i-lucide-image" class="h-16 w-16" />
+          <div class="relative h-72 w-full rounded-lg border border-default bg-[var(--gv-background)] overflow-hidden flex items-center justify-center">
+            <div class="absolute inset-0 flex items-center justify-center p-2">
+              <img
+                v-if="oldImageSrc"
+                :src="oldImageSrc"
+                alt="Original"
+                class="max-h-full max-w-full object-contain opacity-70"
+              >
+              <UIcon v-else name="i-lucide-image" class="h-16 w-16 text-error opacity-70" />
             </div>
             <div
-              class="absolute inset-0 flex items-center justify-center text-success"
+              class="absolute inset-0 flex items-center justify-center p-2"
               :style="{ opacity: onionOpacity / 100 }"
             >
-              <UIcon name="i-lucide-image" class="h-16 w-16" />
+              <img
+                v-if="newImageSrc"
+                :src="newImageSrc"
+                alt="Modified"
+                class="max-h-full max-w-full object-contain"
+              >
+              <UIcon v-else name="i-lucide-image" class="h-16 w-16 text-success" />
             </div>
           </div>
           <input

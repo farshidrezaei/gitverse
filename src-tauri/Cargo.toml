@@ -37,6 +37,7 @@ uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+base64 = "0.23.1"
 
 [dev-dependencies]
 tempfile = "3"

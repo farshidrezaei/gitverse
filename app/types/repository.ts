@@ -97,6 +97,8 @@ export interface FileDiff {
   hunks: DiffHunk[]
   total_additions: number
   total_deletions: number
+  old_content_base64?: string | null
+  new_content_base64?: string | null
 }
 
 export type GitReferenceType = 'localbranch' | 'remotebranch' | 'tag' | 'head'

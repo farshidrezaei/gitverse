@@ -513,13 +513,25 @@ impl ApplicationState {
 
     /// Lists subfolders in a given directory path for custom folder browsing.
     pub async fn list_directory_folders(&self, directory_path: Option<&str>) -> Result<DirectoryListing, ApplicationError> {
+        let home_dir = std::env::var("HOME")
+            .or_else(|_| std::env::var("USERPROFILE"))
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from("."));
+
         let path = if let Some(p) = directory_path {
-            PathBuf::from(p)
+            if p.is_empty() {
+                home_dir
+            } else if p.starts_with("~/") || p == "~" {
+                if p == "~" {
+                    home_dir
+                } else {
+                    home_dir.join(&p[2..])
+                }
+            } else {
+                PathBuf::from(p)
+            }
         } else {
-            std::env::var("HOME")
-                .or_else(|_| std::env::var("USERPROFILE"))
-                .map(PathBuf::from)
-                .unwrap_or_else(|_| PathBuf::from("."))
+            home_dir
         };
 
         self.git_inspector.list_directory_folders(&path).await

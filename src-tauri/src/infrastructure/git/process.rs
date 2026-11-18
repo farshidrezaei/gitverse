@@ -212,4 +212,47 @@ impl GitProcessExecutor {
 
         Ok(String::from_utf8_lossy(&execution_result.stdout).to_string())
     }
+
+    /// Executes a Git command and returns the raw stdout bytes (for binary files, images, etc.).
+    pub async fn execute_git_command_raw(
+        &self,
+        working_directory: Option<&Path>,
+        arguments: &[&str],
+    ) -> Result<Vec<u8>, ApplicationError> {
+        let mut command = Command::new(&self.executable_path);
+
+        if let Some(directory) = working_directory {
+            command.current_dir(directory);
+        }
+
+        for argument in arguments {
+            command.arg(argument);
+        }
+
+        let execution_result = tokio::time::timeout(DEFAULT_COMMAND_TIMEOUT, command.output())
+            .await
+            .map_err(|_| {
+                ApplicationError::TimeoutOrCancelled(format!(
+                    "Command 'git {:?}' timed out after {:?}",
+                    arguments, DEFAULT_COMMAND_TIMEOUT
+                ))
+            })?
+            .map_err(|error| {
+                ApplicationError::FilesystemError(format!(
+                    "Failed to spawn process {:?}: {}",
+                    self.executable_path, error
+                ))
+            })?;
+
+        if !execution_result.status.success() {
+            let stderr = String::from_utf8_lossy(&execution_result.stderr).trim().to_string();
+            let exit_code = execution_result.status.code().unwrap_or(-1);
+            return Err(ApplicationError::GitExecutionFailed {
+                exit_code,
+                message: stderr,
+            });
+        }
+
+        Ok(execution_result.stdout)
+    }
 }
