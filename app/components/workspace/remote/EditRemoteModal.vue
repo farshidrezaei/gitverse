@@ -33,6 +33,10 @@ watch(
   },
 )
 
+function handleClose(): void {
+  emit('update:open', false)
+}
+
 function handleConfirm(): void {
   if (!props.remote) return
 
@@ -70,27 +74,31 @@ function handleConfirm(): void {
 <template>
   <UModal
     :open="props.open"
-    :title="t('remote.editRemoteTitle')"
+    :ui="{
+      overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity',
+      content: 'sm:max-w-md p-0 border border-default/70 bg-[var(--gv-surface)] shadow-2xl rounded-2xl overflow-hidden',
+    }"
     @update:open="emit('update:open', $event)"
   >
     <template #content>
-      <div class="p-6 space-y-4">
+      <div class="flex flex-col select-none">
         <!-- Header -->
-        <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+        <div class="flex items-center justify-between border-b border-default/70 px-5 py-3.5 bg-muted/20">
+          <div class="flex items-center gap-2">
             <UIcon name="i-lucide-pencil" class="h-5 w-5 text-primary" />
+            <span class="text-sm font-semibold text-highlighted">{{ t('remote.editRemoteTitle') }}</span>
           </div>
-          <div>
-            <h3 class="text-sm font-bold text-highlighted">
-              {{ t('remote.editRemoteTitle') }}
-            </h3>
-            <p class="text-xs text-muted">
-              {{ props.remote?.name }}
-            </p>
-          </div>
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-x"
+            @click="handleClose"
+          />
         </div>
 
-        <div class="space-y-3 pt-2">
+        <!-- Form Body -->
+        <div class="p-5 space-y-4">
           <!-- Remote Name Input -->
           <div class="space-y-1.5">
             <label class="text-xs font-semibold text-highlighted">
@@ -102,6 +110,7 @@ function handleConfirm(): void {
               size="sm"
               class="w-full font-mono text-xs"
               :placeholder="t('remote.remoteNamePlaceholder')"
+              autofocus
             />
           </div>
 
@@ -116,7 +125,7 @@ function handleConfirm(): void {
               size="sm"
               class="w-full font-mono text-xs"
               :placeholder="t('remote.remoteUrlPlaceholder')"
-              @keydown.enter="handleConfirm"
+              @keydown.enter.prevent="handleConfirm"
             />
           </div>
 
@@ -131,17 +140,18 @@ function handleConfirm(): void {
         </div>
 
         <!-- Footer Actions -->
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-default">
+        <div class="flex items-center justify-end gap-2 border-t border-default/70 px-5 py-3 bg-muted/10">
           <UButton
             size="sm"
             color="neutral"
             variant="ghost"
             :label="t('common.cancel')"
-            @click="emit('update:open', false)"
+            @click="handleClose"
           />
           <UButton
             size="sm"
             color="primary"
+            variant="solid"
             icon="i-lucide-check"
             :loading="isSubmitting"
             :label="t('common.save')"
