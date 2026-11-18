@@ -1,18 +1,21 @@
 <script setup lang="ts">
+export type ImageDiffMode = 'side-by-side' | 'swipe' | 'onion'
+
 interface DiffMediaViewerProperties {
   filePath: string
   fileExtension: string
   isBinary?: boolean
+  imageMode?: ImageDiffMode
   oldContentBase64?: string | null
   newContentBase64?: string | null
 }
 
-const properties = defineProps<DiffMediaViewerProperties>()
+const properties = withDefaults(defineProps<DiffMediaViewerProperties>(), {
+  imageMode: 'side-by-side',
+})
 
 const { t } = useI18n()
 
-type ImageDiffMode = 'side-by-side' | 'swipe' | 'onion'
-const activeImageMode = ref<ImageDiffMode>('side-by-side')
 const swipePosition = ref<number>(50)
 const onionOpacity = ref<number>(50)
 
@@ -46,49 +49,12 @@ const isVideoFile = computed(() => {
 
 <template>
   <div class="flex h-full w-full flex-col overflow-hidden bg-[var(--gv-surface)]/30 text-xs">
-    <!-- Image Media Diff Viewer -->
+    <!-- Image Media Diff Viewer (No duplicate header) -->
     <template v-if="isImageFile">
-      <!-- Toolbar: Visual Diff Modes -->
-      <div class="flex h-8 shrink-0 items-center justify-between border-b border-default/70 px-3 bg-[var(--gv-sidebar)]/50">
-        <div class="flex items-center gap-1">
-          <UIcon name="i-lucide-image" class="h-3.5 w-3.5 text-primary" />
-          <span class="font-medium text-highlighted">{{ properties.filePath }}</span>
-        </div>
-
-        <div class="flex items-center gap-1.5">
-          <UButtonGroup size="xs">
-            <UButton
-              :color="activeImageMode === 'side-by-side' ? 'primary' : 'neutral'"
-              :variant="activeImageMode === 'side-by-side' ? 'solid' : 'ghost'"
-              icon="i-lucide-columns-2"
-              @click="activeImageMode = 'side-by-side'"
-            >
-              Side-by-Side
-            </UButton>
-            <UButton
-              :color="activeImageMode === 'swipe' ? 'primary' : 'neutral'"
-              :variant="activeImageMode === 'swipe' ? 'solid' : 'ghost'"
-              icon="i-lucide-split"
-              @click="activeImageMode = 'swipe'"
-            >
-              Swipe
-            </UButton>
-            <UButton
-              :color="activeImageMode === 'onion' ? 'primary' : 'neutral'"
-              :variant="activeImageMode === 'onion' ? 'solid' : 'ghost'"
-              icon="i-lucide-layers"
-              @click="activeImageMode = 'onion'"
-            >
-              Onion Skin
-            </UButton>
-          </UButtonGroup>
-        </div>
-      </div>
-
       <!-- Image Canvas Viewport -->
       <div class="flex-1 overflow-auto p-4 flex flex-col items-center justify-center">
         <!-- Side by Side Preview -->
-        <div v-if="activeImageMode === 'side-by-side'" class="grid grid-cols-2 gap-4 w-full max-w-4xl">
+        <div v-if="properties.imageMode === 'side-by-side'" class="grid grid-cols-2 gap-4 w-full max-w-4xl">
           <div class="flex flex-col items-center rounded-lg border border-error/30 bg-error/5 p-3">
             <span class="text-[10px] font-semibold text-error mb-2 tracking-wider uppercase">Head / Original</span>
             <div class="h-64 w-full flex items-center justify-center bg-[var(--gv-background)]/80 rounded border border-dashed border-error/40 p-2 overflow-hidden">
@@ -122,7 +88,7 @@ const isVideoFile = computed(() => {
         </div>
 
         <!-- Swipe Slider Preview -->
-        <div v-else-if="activeImageMode === 'swipe'" class="flex flex-col items-center gap-3 w-full max-w-2xl">
+        <div v-else-if="properties.imageMode === 'swipe'" class="flex flex-col items-center gap-3 w-full max-w-2xl">
           <div class="relative h-72 w-full rounded-lg border border-default bg-[var(--gv-background)] overflow-hidden flex items-center justify-center">
             <div class="absolute inset-0 flex items-center justify-center p-2">
               <img
@@ -197,23 +163,16 @@ const isVideoFile = computed(() => {
       </div>
     </template>
 
-    <!-- Audio / Video Media Diff Player -->
+    <!-- Audio / Video Media Diff Player (No duplicate header) -->
     <template v-else-if="isAudioFile || isVideoFile">
-      <div class="flex h-8 shrink-0 items-center justify-between border-b border-default/70 px-3 bg-[var(--gv-sidebar)]/50">
-        <div class="flex items-center gap-1.5">
-          <UIcon :name="isAudioFile ? 'i-lucide-music' : 'i-lucide-video'" class="h-3.5 w-3.5 text-primary" />
-          <span class="font-medium text-highlighted">{{ properties.filePath }}</span>
-        </div>
-        <UBadge size="xs" color="primary" variant="subtle">Media Player</UBadge>
-      </div>
-
       <div class="flex-1 flex flex-col items-center justify-center p-6 space-y-4 max-w-lg mx-auto w-full">
         <div class="w-full rounded-xl border border-default bg-[var(--gv-background)] p-4 space-y-3 shadow-xs">
           <div class="flex items-center justify-between">
-            <span class="font-semibold text-highlighted text-xs">Audio Stream</span>
+            <span class="font-semibold text-highlighted text-xs">{{ isAudioFile ? 'Audio Stream' : 'Video Stream' }}</span>
             <span class="text-[10px] font-mono text-muted uppercase">.{{ properties.fileExtension }}</span>
           </div>
-          <audio controls class="w-full h-8" />
+          <audio v-if="isAudioFile" controls class="w-full h-8" />
+          <video v-else controls class="w-full max-h-64 rounded bg-black" />
         </div>
       </div>
     </template>

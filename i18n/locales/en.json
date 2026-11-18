@@ -221,6 +221,8 @@
   "diff": {
     "viewInline": "Inline",
     "viewSideBySide": "Side-by-Side",
+    "swipeMode": "Swipe",
+    "onionSkinMode": "Onion Skin",
     "noFileSelected": "No file selected",
     "selectFilePrompt": "Select a changed file from the changes panel to view its diff",
     "binaryFile": "Binary file not shown",

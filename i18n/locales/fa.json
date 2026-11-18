@@ -221,6 +221,8 @@
   "diff": {
     "viewInline": "یکپارچه (Inline)",
     "viewSideBySide": "کنار هم (Side-by-Side)",
+    "swipeMode": "لغزنده (Swipe)",
+    "onionSkinMode": "پوست‌پیازی (Onion Skin)",
     "noFileSelected": "هیچ فایلی انتخاب نشده است",
     "selectFilePrompt": "یک فایل تغییر یافته را از پنل تغییرات برای بررسی دیف انتخاب کنید",
     "binaryFile": "فایل باینری قابل نمایش نیست",

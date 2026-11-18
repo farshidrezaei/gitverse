@@ -102,7 +102,9 @@ async function handleDiscardLine(hunkIndex: number, lineIndex: number): Promise<
 const DIFF_VIEW_MODE_STORAGE_KEY = 'gitverse_diff_view_mode'
 const DIFF_WORD_WRAP_STORAGE_KEY = 'gitverse_diff_word_wrap'
 type DiffViewMode = 'inline' | 'side-by-side'
+type ImageDiffMode = 'side-by-side' | 'swipe' | 'onion'
 const viewMode = ref<DiffViewMode>('side-by-side')
+const imageDiffMode = ref<ImageDiffMode>('side-by-side')
 const isWordWrap = ref<boolean>(false)
 
 onMounted(() => {
@@ -282,8 +284,10 @@ function handleUnstage(filePath: string): void {
           :diff="diffData"
           :selected-target="computedSelectedTarget"
           :view-mode="viewMode"
+          :image-mode="imageDiffMode"
           :is-word-wrap="isWordWrap"
           @update:view-mode="viewMode = $event"
+          @update:image-mode="imageDiffMode = $event"
           @update:is-word-wrap="isWordWrap = $event"
           @stage="handleStage"
           @unstage="handleUnstage"
@@ -331,6 +335,7 @@ function handleUnstage(filePath: string): void {
         :file-path="properties.tab.filePath"
         :file-extension="fileExtension"
         :is-binary="diffData.is_binary"
+        :image-mode="imageDiffMode"
         :old-content-base64="diffData.old_content_base64"
         :new-content-base64="diffData.new_content_base64"
       />

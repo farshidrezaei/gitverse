@@ -37,7 +37,9 @@ const isTargetStaged = computed<boolean | null>(() => {
 const DIFF_VIEW_MODE_STORAGE_KEY = 'gitverse_diff_view_mode'
 const DIFF_WORD_WRAP_STORAGE_KEY = 'gitverse_diff_word_wrap'
 type DiffViewMode = 'inline' | 'side-by-side'
+type ImageDiffMode = 'side-by-side' | 'swipe' | 'onion'
 const viewMode = ref<DiffViewMode>('inline')
+const imageDiffMode = ref<ImageDiffMode>('side-by-side')
 const isWordWrap = ref<boolean>(false)
 
 const currentFilePath = computed<string>(() => {
@@ -94,8 +96,10 @@ watch(isWordWrap, (newWrap) => {
       :diff="props.diff"
       :selected-target="props.selectedTarget"
       :view-mode="viewMode"
+      :image-mode="imageDiffMode"
       :is-word-wrap="isWordWrap"
       @update:view-mode="viewMode = $event"
+      @update:image-mode="imageDiffMode = $event"
       @update:is-word-wrap="isWordWrap = $event"
       @stage="$emit('stage', $event)"
       @unstage="$emit('unstage', $event)"
@@ -129,6 +133,7 @@ watch(isWordWrap, (newWrap) => {
         :file-path="currentFilePath"
         :file-extension="currentFileExtension"
         :is-binary="props.diff.is_binary"
+        :image-mode="imageDiffMode"
         :old-content-base64="props.diff.old_content_base64"
         :new-content-base64="props.diff.new_content_base64"
       />
