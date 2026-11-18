@@ -93,6 +93,20 @@
     "removeSuccess": "Worktree removed from {path}",
     "removeFailed": "Failed to remove worktree: {error}"
   },
+  "rebase": {
+    "interactiveRebaseHere": "Rebase Interactively from Here...",
+    "modalTitle": "Interactive Rebase",
+    "warningHistoryRewrite": "Warning: Rebasing rewrites Git commit history. Avoid rebasing commits that have already been pushed to a remote branch.",
+    "baseCommitLabel": "Onto base commit",
+    "commitsCount": "commits to rebase",
+    "noCommitsToRebase": "No commits found between selected base and HEAD",
+    "meldsIntoPrevious": "Combines with commit above",
+    "startRebaseButton": "Start Rebase",
+    "fetchCommitsFailed": "Failed to load commits for rebase",
+    "rebaseSuccessful": "Interactive rebase completed successfully",
+    "rebaseConflicts": "Rebase paused due to merge conflicts. Please resolve conflicts and continue.",
+    "rebaseFailed": "Interactive rebase failed: {error}"
+  },
   "confirmation": {
     "defaultTitle": "Confirm Action",
     "criticalNotice": "Critical & Irreversible Operation",

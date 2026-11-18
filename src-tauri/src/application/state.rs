@@ -5,7 +5,7 @@ use tauri::AppHandle;
 use tokio::sync::RwLock;
 use crate::domain::{
     ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
-    GitWorktreeSummary, MergeBranchOutcome, RebaseBranchOutcome, RecentRepositoryRecord, RepositoryOverview, StashRecord,
+    GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome, RebaseBranchOutcome, RebasePlanItem, RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
 use crate::infrastructure::storage::SQLiteRepositoryStore;
@@ -564,6 +564,26 @@ impl ApplicationState {
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
         self.git_inspector.remove_worktree(&target_path, worktree_path, force).await
+    }
+
+    /// Fetches commits between base commit and HEAD for interactive rebase plan.
+    pub async fn get_rebase_commits(
+        &self,
+        directory_path: Option<&str>,
+        base_commit_hash: &str,
+    ) -> Result<Vec<RebasePlanItem>, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_rebase_commits(&target_path, base_commit_hash).await
+    }
+
+    /// Executes interactive rebase according to plan items.
+    pub async fn execute_interactive_rebase(
+        &self,
+        directory_path: Option<&str>,
+        request: InteractiveRebaseRequest,
+    ) -> Result<RebaseBranchOutcome, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.execute_interactive_rebase(&target_path, &request).await
     }
 }
 

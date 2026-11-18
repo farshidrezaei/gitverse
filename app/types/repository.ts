@@ -223,6 +223,22 @@ export interface RebaseBranchOutcome {
   message: string
 }
 
+export type RebaseAction = 'pick' | 'reword' | 'edit' | 'squash' | 'fixup' | 'drop'
+
+export interface RebasePlanItem {
+  action: RebaseAction
+  commit_hash: string
+  short_hash: string
+  original_subject: string
+  new_message: string | null
+  author_name: string
+}
+
+export interface InteractiveRebaseRequest {
+  base_commit_hash: string
+  plan_items: RebasePlanItem[]
+}
+
 export interface CommitComparison {
   base_hash: string
   target_hash: string

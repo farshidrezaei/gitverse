@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 use base64::Engine;
 use crate::domain::{
-    ApplicationError, ConflictFileDetails, DirectoryListing, FolderEntry, GitWorktreeSummary, MergeBranchOutcome, RebaseBranchOutcome,
-    RepositoryOperationState, RepositoryOverview, StashRecord,
+    ApplicationError, ConflictFileDetails, DirectoryListing, FolderEntry, GitWorktreeSummary, InteractiveRebaseRequest,
+    MergeBranchOutcome, RebaseBranchOutcome, RebasePlanItem, RepositoryOperationState, RepositoryOverview, StashRecord,
 };
 use super::branch::validate_branch_name;
 use super::process::GitProcessExecutor;
@@ -1226,5 +1226,115 @@ impl GitRepositoryInspector {
         arguments.push(worktree_path);
 
         self.executor.execute_git_command(Some(directory_path), &arguments).await
+    }
+
+    /// Fetches all commits between base commit and HEAD for interactive rebase planning.
+    pub async fn get_rebase_commits(
+        &self,
+        directory_path: &Path,
+        base_commit_hash: &str,
+    ) -> Result<Vec<RebasePlanItem>, ApplicationError> {
+        let range = format!("{}..HEAD", base_commit_hash);
+        let output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["log", &range, "--reverse", "--format=%H\x1f%h\x1f%s\x1f%an"],
+            )
+            .await?;
+
+        let mut plan_items = Vec::new();
+        for line in output.lines() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            let fields: Vec<&str> = trimmed.split('\x1f').collect();
+            if fields.len() >= 4 {
+                plan_items.push(RebasePlanItem {
+                    action: "pick".to_string(),
+                    commit_hash: fields[0].to_string(),
+                    short_hash: fields[1].to_string(),
+                    original_subject: fields[2].to_string(),
+                    new_message: None,
+                    author_name: fields[3].to_string(),
+                });
+            }
+        }
+
+        Ok(plan_items)
+    }
+
+    /// Executes an interactive rebase with the specified ordered plan items.
+    pub async fn execute_interactive_rebase(
+        &self,
+        directory_path: &Path,
+        request: &InteractiveRebaseRequest,
+    ) -> Result<RebaseBranchOutcome, ApplicationError> {
+        let mut todo_content = String::new();
+        for item in &request.plan_items {
+            let valid_action = match item.action.as_str() {
+                "reword" | "edit" | "squash" | "fixup" | "drop" => item.action.as_str(),
+                _ => "pick",
+            };
+            todo_content.push_str(&format!("{} {} {}\n", valid_action, item.commit_hash, item.original_subject));
+        }
+
+        let temp_dir = std::env::temp_dir();
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let temp_todo_path = temp_dir.join(format!("gitverse-rebase-todo-{}.txt", timestamp));
+
+        tokio::fs::write(&temp_todo_path, &todo_content)
+            .await
+            .map_err(|error| ApplicationError::FilesystemError(format!("Failed to write rebase plan file: {}", error)))?;
+
+        let current_exe = std::env::current_exe().map_err(|error| {
+            ApplicationError::Unexpected(format!("Failed to determine current application path: {}", error))
+        })?;
+
+        let editor_argument = format!(
+            "sequence.editor=\"{}\" --sequence-editor \"{}\"",
+            current_exe.to_string_lossy(),
+            temp_todo_path.to_string_lossy()
+        );
+
+        let (exit_code, stdout, stderr) = self
+            .executor
+            .execute_git_command_with_status(
+                Some(directory_path),
+                &["-c", &editor_argument, "rebase", "-i", &request.base_commit_hash],
+            )
+            .await?;
+
+        let _ = tokio::fs::remove_file(&temp_todo_path).await;
+
+        if exit_code == 0 {
+            Ok(RebaseBranchOutcome {
+                is_successful: true,
+                has_conflicts: false,
+                message: stdout.trim().to_string(),
+            })
+        } else {
+            let operation_state = self.detect_repository_operation_state(directory_path).await?;
+            let has_conflicts = operation_state == RepositoryOperationState::Rebasing
+                || stdout.contains("CONFLICT")
+                || stderr.contains("CONFLICT");
+
+            if has_conflicts {
+                Ok(RebaseBranchOutcome {
+                    is_successful: false,
+                    has_conflicts: true,
+                    message: "Interactive rebase paused due to merge conflicts. Resolve conflicts and continue.".to_string(),
+                })
+            } else {
+                Err(ApplicationError::GitExecutionFailed {
+                    exit_code,
+                    message: if stderr.is_empty() { stdout } else { stderr },
+                })
+            }
+        }
     }
 }

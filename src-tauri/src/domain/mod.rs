@@ -229,6 +229,24 @@ pub struct RebaseBranchOutcome {
     pub message: String,
 }
 
+/// An item in an interactive rebase plan.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RebasePlanItem {
+    pub action: String,
+    pub commit_hash: String,
+    pub short_hash: String,
+    pub original_subject: String,
+    pub new_message: Option<String>,
+    pub author_name: String,
+}
+
+/// Request to execute an interactive rebase.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct InteractiveRebaseRequest {
+    pub base_commit_hash: String,
+    pub plan_items: Vec<RebasePlanItem>,
+}
+
 /// Detailed comparison between two commits or branches.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CommitComparison {

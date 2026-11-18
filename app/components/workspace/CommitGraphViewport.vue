@@ -26,6 +26,7 @@ const emit = defineEmits<{
   cherryPickCommit: [commitHash: string]
   revertCommit: [commitHash: string]
   resetToCommit: [commitHash: string, mode: 'soft' | 'mixed' | 'hard']
+  rebaseInteractive: [commitHash: string]
   resetGraphFilter: []
 }>()
 
@@ -216,6 +217,7 @@ watch(
               @cherry-pick-commit="emit('cherryPickCommit', $event)"
               @revert-commit="emit('revertCommit', $event)"
               @reset-to-commit="(hash, mode) => emit('resetToCommit', hash, mode)"
+              @rebase-interactive="emit('rebaseInteractive', $event)"
             />
           </div>
         </div>

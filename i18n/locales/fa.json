@@ -93,6 +93,20 @@
     "removeSuccess": "ورک‌تری از {path} حذف شد",
     "removeFailed": "خطا در حذف ورک‌تری: {error}"
   },
+  "rebase": {
+    "interactiveRebaseHere": "ریبیس تعاملی از این کامیت...",
+    "modalTitle": "ریبیس تعاملی (Interactive Rebase)",
+    "warningHistoryRewrite": "هشدار: ریبیس تاریخچه کامیت‌ها را بازنویسی می‌کند. از ریبیس کامیت‌هایی که قبلاً به ریموت ارسال شده‌اند خودداری کنید.",
+    "baseCommitLabel": "بر روی کامیت پایه",
+    "commitsCount": "کامیت جهت ریبیس",
+    "noCommitsToRebase": "هیچ کامیتی بین کامیت انتخاب‌شده و شاخه جاری یافت نشد",
+    "meldsIntoPrevious": "با کامیت بالایی ترکیب می‌شود",
+    "startRebaseButton": "شروع ریبیس",
+    "fetchCommitsFailed": "خطا در واکشی کامیت‌های ریبیس",
+    "rebaseSuccessful": "ریبیس تعاملی با موفقیت انجام شد",
+    "rebaseConflicts": "عملیات ریبیس به دلیل تداخل متوقف شد. لطفاً تداخل‌ها را برطرف کرده و ادامه دهید.",
+    "rebaseFailed": "خطا در اجرای ریبیس تعاملی: {error}"
+  },
   "confirmation": {
     "defaultTitle": "تأیید عملیات",
     "criticalNotice": "عملیات بحرانی و غیرقابل بازگشت",

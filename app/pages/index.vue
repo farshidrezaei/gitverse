@@ -13,6 +13,7 @@ import WorkspaceCommitInspectorPanel from '~/components/workspace/CommitInspecto
 import WelcomeWorkspaceState from '~/components/workspace/WelcomeWorkspaceState.vue'
 import CreateBranchModal from '~/components/workspace/CreateBranchModal.vue'
 import CreateWorktreeModal from '~/components/workspace/CreateWorktreeModal.vue'
+import InteractiveRebaseModal from '~/components/workspace/commit/InteractiveRebaseModal.vue'
 import FolderPickerModal from '~/components/workspace/FolderPickerModal.vue'
 import { useWorkspaceTabController } from '~/composables/useWorkspaceTabController'
 
@@ -97,8 +98,20 @@ const {
 
 const isCreateBranchModalOpen = ref<boolean>(false)
 const isCreateWorktreeModalOpen = ref<boolean>(false)
+const isInteractiveRebaseModalOpen = ref<boolean>(false)
+const interactiveRebaseBaseHash = ref<string>('')
 const isFolderPickerModalOpen = ref<boolean>(false)
 const { addWorktree } = useWorktreeController()
+
+function handleOpenInteractiveRebase(commitHash: string): void {
+  interactiveRebaseBaseHash.value = commitHash
+  isInteractiveRebaseModalOpen.value = true
+}
+
+async function handleInteractiveRebaseComplete(): Promise<void> {
+  await fetchCommitGraph()
+  await fetchStatus()
+}
 
 async function handleCreateWorktree(
   path: string,
@@ -521,6 +534,7 @@ async function handlePush(): Promise<void> {
                     @cherry-pick-commit="cherryPickCommit"
                     @revert-commit="revertCommit"
                     @reset-to-commit="resetToCommit"
+                    @rebase-interactive="handleOpenInteractiveRebase"
                   />
                 </template>
 
@@ -613,6 +627,13 @@ async function handlePush(): Promise<void> {
       :default-directory-path="currentRepository?.path"
       :existing-branch-names="repositoryReferences?.branches.map((b) => b.name) || []"
       @create="handleCreateWorktree"
+    />
+
+    <!-- Interactive Rebase Modal -->
+    <InteractiveRebaseModal
+      v-model:open="isInteractiveRebaseModalOpen"
+      :base-commit-hash="interactiveRebaseBaseHash"
+      @complete="handleInteractiveRebaseComplete"
     />
 
     <!-- Custom Folder Picker Modal -->

@@ -3,7 +3,7 @@ use tauri::{AppHandle, State};
 use crate::application::ApplicationState;
 use crate::domain::{
     ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
-    GitWorktreeSummary, MergeBranchOutcome, RebaseBranchOutcome, RecentRepositoryRecord, RepositoryOverview, StashRecord,
+    GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome, RebaseBranchOutcome, RebasePlanItem, RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
 
 /// Tauri IPC command to discover and validate the native Git binary.
@@ -534,6 +534,26 @@ pub async fn remove_worktree(
         &worktree_path,
         force.unwrap_or(false),
     ).await
+}
+
+/// Tauri IPC command to get commits for interactive rebase plan.
+#[tauri::command]
+pub async fn get_rebase_commits(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+    base_commit_hash: String,
+) -> Result<Vec<RebasePlanItem>, ApplicationError> {
+    state.get_rebase_commits(directory_path.as_deref(), &base_commit_hash).await
+}
+
+/// Tauri IPC command to execute interactive rebase with plan items.
+#[tauri::command]
+pub async fn execute_interactive_rebase(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+    request: InteractiveRebaseRequest,
+) -> Result<RebaseBranchOutcome, ApplicationError> {
+    state.execute_interactive_rebase(directory_path.as_deref(), request).await
 }
 
 

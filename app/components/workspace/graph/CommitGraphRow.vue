@@ -27,6 +27,7 @@ const emit = defineEmits<{
   cherryPickCommit: [commitHash: string]
   revertCommit: [commitHash: string]
   resetToCommit: [commitHash: string, mode: 'soft' | 'mixed' | 'hard']
+  rebaseInteractive: [commitHash: string]
 }>()
 
 const { t } = useI18n()
@@ -81,6 +82,11 @@ function getCommitContextMenuItems(commit: GitCommit): ContextMenuItem[][] {
         label: t('commit.revert'),
         icon: 'i-lucide-undo-2',
         onSelect: () => emit('revertCommit', commit.hash),
+      },
+      {
+        label: t('rebase.interactiveRebaseHere'),
+        icon: 'i-lucide-list-ordered',
+        onSelect: () => emit('rebaseInteractive', commit.hash),
       },
       {
         label: t('commit.resetToHere'),
