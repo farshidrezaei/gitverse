@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { validateGitBranchName } from '~/utils/branchValidation'
+import { validateGitBranchName, sanitizeBranchNameInput } from '~/utils/branchValidation'
 
 const props = defineProps<{
   open: boolean
@@ -44,6 +44,14 @@ function validateBranchName(name: string): boolean {
 
   errorMessage.value = null
   return true
+}
+
+function handleBranchNameInput(value: string | number): void {
+  const sanitized = sanitizeBranchNameInput(String(value ?? ''))
+  branchName.value = sanitized
+  if (errorMessage.value) {
+    validateBranchName(sanitized)
+  }
 }
 
 function handleConfirm(): void {
@@ -104,12 +112,13 @@ function handleClose(): void {
               {{ t('git.branchName') }}
             </label>
             <UInput
-              v-model="branchName"
+              :model-value="branchName"
               size="sm"
               icon="i-lucide-git-branch"
               :placeholder="t('git.branchNamePlaceholder')"
               class="w-full font-mono text-xs"
               autofocus
+              @update:model-value="handleBranchNameInput"
               @keydown.enter.prevent="handleConfirm"
             />
             <p v-if="errorMessage" class="text-[11px] text-error font-medium">

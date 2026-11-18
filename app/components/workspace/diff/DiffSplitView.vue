@@ -4,9 +4,12 @@ import { buildSideBySideHunk } from '~/utils/diffLayout'
 
 interface DiffSplitViewProps {
   diff: FileDiff
+  isWordWrap?: boolean
 }
 
-const props = defineProps<DiffSplitViewProps>()
+const props = withDefaults(defineProps<DiffSplitViewProps>(), {
+  isWordWrap: false,
+})
 
 const INITIAL_VISIBLE_ROWS_LIMIT = 500
 const isFullyExpanded = ref<boolean>(false)
@@ -51,7 +54,7 @@ const displayedHunks = computed(() => {
 </script>
 
 <template>
-  <div class="min-w-fit">
+  <div class="min-w-fit w-full">
     <div
       v-for="(hunk, hunkIndex) in displayedHunks"
       :key="`sbs-hunk-${hunkIndex}`"
@@ -66,12 +69,12 @@ const displayedHunks = computed(() => {
       <div
         v-for="row in hunk.rows"
         :key="row.id"
-        class="grid grid-cols-2 divide-x divide-default/50 border-b border-default/20 last:border-b-0"
+        class="grid grid-cols-2 divide-x divide-default/50 border-b border-default/20 last:border-b-0 min-w-full"
         style="content-visibility: auto; contain-intrinsic-size: 0 20px;"
       >
         <!-- Left Side: Base / Old -->
         <div
-          class="flex items-stretch overflow-hidden"
+          class="flex items-stretch min-w-[320px]"
           :class="{
             'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': row.left.lineType === 'deletion',
             'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': row.left.lineType === 'modification',
@@ -92,7 +95,10 @@ const displayedHunks = computed(() => {
           </div>
 
           <!-- Old Content -->
-          <div class="flex-1 pe-2 whitespace-pre font-mono select-text truncate">
+          <div
+            class="flex-1 pe-2 font-mono select-text"
+            :class="props.isWordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre overflow-x-visible'"
+          >
             <template v-if="row.left.spans && row.left.spans.length">
               <span
                 v-for="(span, spanIndex) in row.left.spans"
@@ -111,7 +117,7 @@ const displayedHunks = computed(() => {
 
         <!-- Right Side: Modified / New -->
         <div
-          class="flex items-stretch overflow-hidden"
+          class="flex items-stretch min-w-[320px]"
           :class="{
             'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': row.right.lineType === 'addition',
             'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': row.right.lineType === 'modification',
@@ -132,7 +138,10 @@ const displayedHunks = computed(() => {
           </div>
 
           <!-- New Content -->
-          <div class="flex-1 pe-2 whitespace-pre font-mono select-text truncate">
+          <div
+            class="flex-1 pe-2 font-mono select-text"
+            :class="props.isWordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre overflow-x-visible'"
+          >
             <template v-if="row.right.spans && row.right.spans.length">
               <span
                 v-for="(span, spanIndex) in row.right.spans"

@@ -219,44 +219,46 @@ function handleClose(): void {
 
             <!-- Ours Line By Line with 3-Color & Intra-line Diff -->
             <div class="flex-1 overflow-auto divide-y divide-default/15 font-mono text-xs select-text" dir="ltr">
-              <div
-                v-for="(line, lineIndex) in oursLineComparisons"
-                :key="`ours-line-${lineIndex}`"
-                class="flex items-stretch min-h-[22px] leading-relaxed"
-                :class="{
-                  'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': line.status === 'modification',
-                  'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': line.status === 'addition',
-                  'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': line.status === 'deletion',
-                  'text-highlighted border-s-2 border-transparent': line.status === 'context',
-                }"
-              >
-                <!-- Line Number -->
-                <div class="w-10 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/20 text-[10px]">
-                  {{ line.lineNumber || '' }}
-                </div>
-                <!-- Gutter Sign -->
-                <div class="w-5 shrink-0 text-center select-none font-bold">
-                  <span v-if="line.status === 'modification'">~</span>
-                  <span v-else-if="line.status === 'addition'">+</span>
-                  <span v-else-if="line.status === 'deletion'">-</span>
-                  <span v-else>&nbsp;</span>
-                </div>
-                <!-- Spans with Intra-line Highlighting -->
-                <div class="flex-1 px-1.5 whitespace-pre truncate">
-                  <template v-if="line.spans && line.spans.length">
-                    <span
-                      v-for="(span, spanIndex) in line.spans"
-                      :key="`span-ours-${lineIndex}-${spanIndex}`"
-                      :class="{
-                        'bg-[var(--gv-diff-modify-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'modification',
-                        'bg-[var(--gv-diff-add-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'addition',
-                        'bg-[var(--gv-diff-remove-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'deletion',
-                      }"
-                    >{{ span.text }}</span>
-                  </template>
-                  <template v-else>
-                    {{ line.content }}
-                  </template>
+              <div class="min-w-fit w-full divide-y divide-default/15">
+                <div
+                  v-for="(line, lineIndex) in oursLineComparisons"
+                  :key="`ours-line-${lineIndex}`"
+                  class="flex items-stretch min-h-[22px] leading-relaxed"
+                  :class="{
+                    'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': line.status === 'modification',
+                    'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': line.status === 'addition',
+                    'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': line.status === 'deletion',
+                    'text-highlighted border-s-2 border-transparent': line.status === 'context',
+                  }"
+                >
+                  <!-- Line Number -->
+                  <div class="w-10 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/20 text-[10px]">
+                    {{ line.lineNumber || '' }}
+                  </div>
+                  <!-- Gutter Sign -->
+                  <div class="w-5 shrink-0 text-center select-none font-bold">
+                    <span v-if="line.status === 'modification'">~</span>
+                    <span v-else-if="line.status === 'addition'">+</span>
+                    <span v-else-if="line.status === 'deletion'">-</span>
+                    <span v-else>&nbsp;</span>
+                  </div>
+                  <!-- Spans with Intra-line Highlighting -->
+                  <div class="flex-1 px-1.5 whitespace-pre overflow-x-visible">
+                    <template v-if="line.spans && line.spans.length">
+                      <span
+                        v-for="(span, spanIndex) in line.spans"
+                        :key="`span-ours-${lineIndex}-${spanIndex}`"
+                        :class="{
+                          'bg-[var(--gv-diff-modify-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'modification',
+                          'bg-[var(--gv-diff-add-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'addition',
+                          'bg-[var(--gv-diff-remove-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'deletion',
+                        }"
+                      >{{ span.text }}</span>
+                    </template>
+                    <template v-else>
+                      {{ line.content }}
+                    </template>
+                  </div>
                 </div>
               </div>
             </div>

@@ -28,6 +28,9 @@ pub enum ApplicationError {
     #[error("Operation cancelled or timed out: {0}")]
     TimeoutOrCancelled(String),
 
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
+
     #[error("Unexpected error: {0}")]
     Unexpected(String),
 }

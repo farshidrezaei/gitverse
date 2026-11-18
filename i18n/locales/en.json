@@ -220,6 +220,7 @@
     "stageFile": "Stage File",
     "unstageFile": "Unstage File",
     "discardFile": "Discard Changes",
+    "wordWrap": "Toggle Word Wrap",
     "additions": "{count} additions",
     "deletions": "{count} deletions"
   },

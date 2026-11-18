@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::domain::{BranchSummary, RemoteBranchSummary, RemoteSummary, TagSummary};
+use crate::domain::{ApplicationError, BranchSummary, RemoteBranchSummary, RemoteSummary, TagSummary};
 
 pub const REF_FIELD_DELIMITER: char = '\x1f';
 
@@ -168,4 +168,55 @@ pub fn parse_remotes(raw: &str) -> Vec<RemoteSummary> {
 
     remotes.sort_by(|a, b| a.name.cmp(&b.name));
     remotes
+}
+
+/// Validates a branch name against Git ref format rules before invocation.
+pub fn validate_branch_name(candidate_name: &str) -> Result<(), ApplicationError> {
+    let trimmed = candidate_name.trim();
+
+    if trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput("Branch name cannot be empty".into()));
+    }
+
+    if trimmed.contains(char::is_whitespace) {
+        return Err(ApplicationError::InvalidInput("Branch name cannot contain whitespace".into()));
+    }
+
+    if trimmed.starts_with('/') || trimmed.ends_with('/') {
+        return Err(ApplicationError::InvalidInput("Branch name cannot start or end with a slash".into()));
+    }
+
+    if trimmed.starts_with('-') || trimmed.ends_with('-') {
+        return Err(ApplicationError::InvalidInput("Branch name cannot start or end with a hyphen".into()));
+    }
+
+    if trimmed.starts_with('.') || trimmed.ends_with('.') {
+        return Err(ApplicationError::InvalidInput("Branch name cannot start or end with a dot".into()));
+    }
+
+    if trimmed.contains("//") || trimmed.contains("..") {
+        return Err(ApplicationError::InvalidInput("Branch name cannot contain consecutive separators (// or ..)".into()));
+    }
+
+    if trimmed.ends_with(".lock") {
+        return Err(ApplicationError::InvalidInput("Branch name cannot end with .lock".into()));
+    }
+
+    if trimmed.contains("@{") {
+        return Err(ApplicationError::InvalidInput("Branch name cannot contain '@{'".into()));
+    }
+
+    let is_valid_characters = trimmed.chars().all(|character| {
+        character.is_ascii_alphanumeric()
+            || character == '.'
+            || character == '_'
+            || character == '-'
+            || character == '/'
+    });
+
+    if !is_valid_characters {
+        return Err(ApplicationError::InvalidInput("Branch name contains illegal characters".into()));
+    }
+
+    Ok(())
 }

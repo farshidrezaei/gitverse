@@ -171,15 +171,3 @@ function getContextMenuItems(tab: WorkspaceTab): ContextMenuItem[][] {
     </div>
   </nav>
 </template>
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-x-circle"
-          class="opacity-70 hover:opacity-100"
-          :aria-label="t('tabs.closeAllDiffs')"
-          @click="emit('closeAllDiffTabs')"
-        />
-      </UTooltip>
-    </div>
-  </nav>
-</template>

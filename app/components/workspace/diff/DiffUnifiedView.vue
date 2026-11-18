@@ -4,9 +4,12 @@ import { computeIntraLineDiff, type DiffTextSpan } from '~/utils/diffLayout'
 
 interface DiffUnifiedViewProps {
   diff: FileDiff
+  isWordWrap?: boolean
 }
 
-const props = defineProps<DiffUnifiedViewProps>()
+const props = withDefaults(defineProps<DiffUnifiedViewProps>(), {
+  isWordWrap: false,
+})
 
 const INITIAL_VISIBLE_LINES_LIMIT = 500
 const isFullyExpanded = ref<boolean>(false)
@@ -121,7 +124,10 @@ const displayedHunks = computed(() => {
         </div>
 
         <!-- Line Content -->
-        <div class="flex-1 pe-4 whitespace-pre font-mono select-text overflow-x-visible">
+        <div
+          class="flex-1 pe-4 font-mono select-text"
+          :class="props.isWordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre overflow-x-visible'"
+        >
           <template v-if="getHunkLineSpans(hunk.lines).get(lineIndex)">
             <span
               v-for="(span, spanIndex) in getHunkLineSpans(hunk.lines).get(lineIndex)"

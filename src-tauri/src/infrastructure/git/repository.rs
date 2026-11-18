@@ -3,6 +3,7 @@ use crate::domain::{
     ApplicationError, ConflictFileDetails, MergeBranchOutcome, RebaseBranchOutcome,
     RepositoryOperationState, RepositoryOverview, StashRecord,
 };
+use super::branch::validate_branch_name;
 use super::process::GitProcessExecutor;
 use super::stash::parse_stash_list;
 
@@ -413,6 +414,8 @@ impl GitRepositoryInspector {
         branch_name: &str,
         start_point: Option<&str>,
     ) -> Result<String, ApplicationError> {
+        validate_branch_name(branch_name)?;
+
         let mut arguments = vec!["branch", branch_name];
         if let Some(sp) = start_point {
             arguments.push(sp);
@@ -441,6 +444,8 @@ impl GitRepositoryInspector {
         old_name: &str,
         new_name: &str,
     ) -> Result<String, ApplicationError> {
+        validate_branch_name(new_name)?;
+
         self.executor
             .execute_git_command(Some(directory_path), &["branch", "-m", old_name, new_name])
             .await

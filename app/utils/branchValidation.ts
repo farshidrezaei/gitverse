@@ -73,3 +73,42 @@ export function validateGitBranchName(
 
   return { isValid: true }
 }
+
+/**
+ * Automatically sanitizes raw input or pasted text into a compliant Git branch slug.
+ * Transforms whitespace and forbidden characters into hyphens, collapses consecutive separators,
+ * and preserves valid branch hierarchy slashes (JetBrains-style smart branch input).
+ */
+export function sanitizeBranchNameInput(rawInput: string): string {
+  if (!rawInput) {
+    return ''
+  }
+
+  const hasTrailingWhitespace = /\s$/.test(rawInput)
+
+  // 1. Convert whitespace and any non-alphanumeric/non-allowed punctuation into hyphens
+  let sanitized = rawInput.replace(/[^a-zA-Z0-9._\-/]+/g, '-')
+
+  // 2. Collapse consecutive slashes into single slash
+  sanitized = sanitized.replace(/\/+/g, '/')
+
+  // 3. Collapse consecutive dots into single dot
+  sanitized = sanitized.replace(/\.+/g, '.')
+
+  // 4. Collapse consecutive hyphens into single hyphen
+  sanitized = sanitized.replace(/-+/g, '-')
+
+  // 5. Clean up hyphens around slashes (e.g. "feat-/name" -> "feat/name")
+  sanitized = sanitized.replace(/-+\//g, '/')
+  sanitized = sanitized.replace(/\/-+/g, '/')
+
+  // 6. Remove leading dash, slash, or dot
+  sanitized = sanitized.replace(/^[-/.]+/, '')
+
+  // 7. Remove trailing dash unless the user specifically typed a trailing space to separate words
+  if (!hasTrailingWhitespace) {
+    sanitized = sanitized.replace(/-+$/, '')
+  }
+
+  return sanitized
+}

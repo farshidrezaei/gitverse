@@ -79,4 +79,32 @@ mod tests {
         assert_eq!(upstream.fetch_url.as_deref(), Some("https://github.com/upstream/gitverse.git"));
         assert_eq!(upstream.push_url, None);
     }
+
+    #[test]
+    fn test_validate_branch_name_rules() {
+        use super::super::branch::validate_branch_name;
+
+        // Valid branch names
+        assert!(validate_branch_name("main").is_ok());
+        assert!(validate_branch_name("feature/login").is_ok());
+        assert!(validate_branch_name("bugfix/issue-123_part2").is_ok());
+        assert!(validate_branch_name("v1.0.0-rc1").is_ok());
+
+        // Invalid branch names
+        assert!(validate_branch_name("").is_err());
+        assert!(validate_branch_name("   ").is_err());
+        assert!(validate_branch_name("feature name with spaces").is_err());
+        assert!(validate_branch_name("/leading-slash").is_err());
+        assert!(validate_branch_name("trailing-slash/").is_err());
+        assert!(validate_branch_name("-leading-dash").is_err());
+        assert!(validate_branch_name("trailing-dash-").is_err());
+        assert!(validate_branch_name(".leading-dot").is_err());
+        assert!(validate_branch_name("double//slash").is_err());
+        assert!(validate_branch_name("double..dot").is_err());
+        assert!(validate_branch_name("feature.lock").is_err());
+        assert!(validate_branch_name("feature@{upstream}").is_err());
+        assert!(validate_branch_name("invalid:colon").is_err());
+        assert!(validate_branch_name("invalid~tilde").is_err());
+        assert!(validate_branch_name("invalid^caret").is_err());
+    }
 }

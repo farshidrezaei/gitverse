@@ -6,12 +6,16 @@ interface DiffHeaderToolbarProps {
   diff: FileDiff | null
   selectedTarget: SelectedDiffTarget | null
   viewMode: 'inline' | 'side-by-side'
+  isWordWrap?: boolean
 }
 
-const props = defineProps<DiffHeaderToolbarProps>()
+const props = withDefaults(defineProps<DiffHeaderToolbarProps>(), {
+  isWordWrap: false,
+})
 
 const emit = defineEmits<{
   'update:viewMode': [mode: 'inline' | 'side-by-side']
+  'update:isWordWrap': [enabled: boolean]
   stage: [filePath: string]
   unstage: [filePath: string]
 }>()
@@ -141,6 +145,18 @@ const { t } = useI18n()
           <span>{{ t('diff.viewSideBySide') }}</span>
         </button>
       </div>
+
+      <!-- Word Wrap Toggle Button -->
+      <UTooltip :text="t('diff.wordWrap')">
+        <UButton
+          size="xs"
+          :color="props.isWordWrap ? 'primary' : 'neutral'"
+          :variant="props.isWordWrap ? 'subtle' : 'ghost'"
+          icon="i-lucide-wrap-text"
+          :aria-label="t('diff.wordWrap')"
+          @click="emit('update:isWordWrap', !props.isWordWrap)"
+        />
+      </UTooltip>
     </div>
   </div>
 </template>

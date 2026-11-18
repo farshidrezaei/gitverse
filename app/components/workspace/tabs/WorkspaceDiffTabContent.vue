@@ -27,8 +27,10 @@ const diffData = ref<FileDiff | null>(null)
 const isLoading = ref<boolean>(false)
 
 const DIFF_VIEW_MODE_STORAGE_KEY = 'gitverse_diff_view_mode'
+const DIFF_WORD_WRAP_STORAGE_KEY = 'gitverse_diff_word_wrap'
 type DiffViewMode = 'inline' | 'side-by-side'
 const viewMode = ref<DiffViewMode>('side-by-side')
+const isWordWrap = ref<boolean>(false)
 
 onMounted(() => {
   if (import.meta.client) {
@@ -36,6 +38,10 @@ onMounted(() => {
       const savedMode = localStorage.getItem(DIFF_VIEW_MODE_STORAGE_KEY)
       if (savedMode === 'inline' || savedMode === 'side-by-side') {
         viewMode.value = savedMode
+      }
+      const savedWrap = localStorage.getItem(DIFF_WORD_WRAP_STORAGE_KEY)
+      if (savedWrap !== null) {
+        isWordWrap.value = savedWrap === 'true'
       }
     } catch {
       // ignore
@@ -48,6 +54,16 @@ watch(viewMode, (newMode) => {
   if (import.meta.client) {
     try {
       localStorage.setItem(DIFF_VIEW_MODE_STORAGE_KEY, newMode)
+    } catch {
+      // ignore
+    }
+  }
+})
+
+watch(isWordWrap, (newWrap) => {
+  if (import.meta.client) {
+    try {
+      localStorage.setItem(DIFF_WORD_WRAP_STORAGE_KEY, String(newWrap))
     } catch {
       // ignore
     }
@@ -185,7 +201,9 @@ function handleUnstage(filePath: string): void {
           :diff="diffData"
           :selected-target="computedSelectedTarget"
           :view-mode="viewMode"
+          :is-word-wrap="isWordWrap"
           @update:view-mode="viewMode = $event"
+          @update:is-word-wrap="isWordWrap = $event"
           @stage="handleStage"
           @unstage="handleUnstage"
         />
@@ -259,12 +277,14 @@ function handleUnstage(filePath: string): void {
       <DiffUnifiedView
         v-else-if="viewMode === 'inline'"
         :diff="diffData"
+        :is-word-wrap="isWordWrap"
       />
 
       <!-- Split (Side-by-Side) Diff View -->
       <DiffSplitView
         v-else
         :diff="diffData"
+        :is-word-wrap="isWordWrap"
       />
     </div>
   </div>

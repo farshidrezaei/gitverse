@@ -18,7 +18,7 @@ mod stash_test;
 #[cfg(test)]
 mod status_test;
 
-pub use branch::{parse_local_branches, parse_remote_branches, parse_remotes, parse_tags};
+pub use branch::{parse_local_branches, parse_remote_branches, parse_remotes, parse_tags, validate_branch_name};
 pub use diff::parse_unified_diff;
 pub use history::parse_delimited_git_log;
 pub use process::GitProcessExecutor;

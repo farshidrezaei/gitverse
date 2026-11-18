@@ -220,6 +220,7 @@
     "stageFile": "افزودن به استیج",
     "unstageFile": "حذف از استیج",
     "discardFile": "لغو تغییرات",
+    "wordWrap": "شکست خودکار خطوط",
     "additions": "{count} مورد افزوده",
     "deletions": "{count} مورد حذف"
   },
