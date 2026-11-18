@@ -6,6 +6,7 @@ import DiffHeaderToolbar from '~/components/workspace/diff/DiffHeaderToolbar.vue
 import DiffUnifiedView from '~/components/workspace/diff/DiffUnifiedView.vue'
 import DiffSplitView from '~/components/workspace/diff/DiffSplitView.vue'
 import DiffViewerSkeleton from '~/components/workspace/diff/DiffViewerSkeleton.vue'
+import { buildHunkPatch, buildSelectedLinesPatch } from '~/utils/patchGenerator'
 
 interface WorkspaceDiffTabContentProperties {
   tab: WorkspaceDiffTab
@@ -22,9 +23,75 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const { currentRepository } = useRepositoryWorkspace()
+const { stagePatch, unstagePatch, discardPatch } = useStagingController()
 
 const diffData = ref<FileDiff | null>(null)
 const isLoading = ref<boolean>(false)
+
+const isTargetStaged = computed<boolean | null>(() => {
+  if (properties.tab.commitHash) return null
+  return properties.tab.isStaged ?? null
+})
+
+async function handleStageHunk(hunkIndex: number): Promise<void> {
+  if (!diffData.value) return
+  const patch = buildHunkPatch(diffData.value, hunkIndex)
+  if (!patch) return
+  const success = await stagePatch(patch)
+  if (success) {
+    await loadDiff()
+  }
+}
+
+async function handleUnstageHunk(hunkIndex: number): Promise<void> {
+  if (!diffData.value) return
+  const patch = buildHunkPatch(diffData.value, hunkIndex)
+  if (!patch) return
+  const success = await unstagePatch(patch)
+  if (success) {
+    await loadDiff()
+  }
+}
+
+async function handleDiscardHunk(hunkIndex: number): Promise<void> {
+  if (!diffData.value) return
+  const patch = buildHunkPatch(diffData.value, hunkIndex)
+  if (!patch) return
+  const success = await discardPatch(patch)
+  if (success) {
+    await loadDiff()
+  }
+}
+
+async function handleStageLine(hunkIndex: number, lineIndex: number): Promise<void> {
+  if (!diffData.value) return
+  const patch = buildSelectedLinesPatch(diffData.value, hunkIndex, [lineIndex], 'stage')
+  if (!patch) return
+  const success = await stagePatch(patch)
+  if (success) {
+    await loadDiff()
+  }
+}
+
+async function handleUnstageLine(hunkIndex: number, lineIndex: number): Promise<void> {
+  if (!diffData.value) return
+  const patch = buildSelectedLinesPatch(diffData.value, hunkIndex, [lineIndex], 'unstage')
+  if (!patch) return
+  const success = await unstagePatch(patch)
+  if (success) {
+    await loadDiff()
+  }
+}
+
+async function handleDiscardLine(hunkIndex: number, lineIndex: number): Promise<void> {
+  if (!diffData.value) return
+  const patch = buildSelectedLinesPatch(diffData.value, hunkIndex, [lineIndex], 'discard')
+  if (!patch) return
+  const success = await discardPatch(patch)
+  if (success) {
+    await loadDiff()
+  }
+}
 
 const DIFF_VIEW_MODE_STORAGE_KEY = 'gitverse_diff_view_mode'
 const DIFF_WORD_WRAP_STORAGE_KEY = 'gitverse_diff_word_wrap'
@@ -281,6 +348,13 @@ function handleUnstage(filePath: string): void {
         v-else-if="viewMode === 'inline'"
         :diff="diffData"
         :is-word-wrap="isWordWrap"
+        :is-staged="isTargetStaged"
+        @stage-hunk="handleStageHunk"
+        @unstage-hunk="handleUnstageHunk"
+        @discard-hunk="handleDiscardHunk"
+        @stage-line="handleStageLine"
+        @unstage-line="handleUnstageLine"
+        @discard-line="handleDiscardLine"
       />
 
       <!-- Split (Side-by-Side) Diff View -->
@@ -288,6 +362,13 @@ function handleUnstage(filePath: string): void {
         v-else
         :diff="diffData"
         :is-word-wrap="isWordWrap"
+        :is-staged="isTargetStaged"
+        @stage-hunk="handleStageHunk"
+        @unstage-hunk="handleUnstageHunk"
+        @discard-hunk="handleDiscardHunk"
+        @stage-line="handleStageLine"
+        @unstage-line="handleUnstageLine"
+        @discard-line="handleDiscardLine"
       />
     </div>
   </div>

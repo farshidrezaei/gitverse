@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 use std::time::Duration;
+use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 use crate::domain::{ApplicationError, GitBinaryInformation};
 
@@ -147,5 +149,67 @@ impl GitProcessExecutor {
         let stderr = String::from_utf8_lossy(&execution_result.stderr).to_string();
 
         Ok((exit_code, stdout, stderr))
+    }
+
+    /// Executes a Git command safely with standard input piped into the child process.
+    pub async fn execute_git_command_with_stdin(
+        &self,
+        working_directory: Option<&Path>,
+        arguments: &[&str],
+        standard_input_bytes: &[u8],
+    ) -> Result<String, ApplicationError> {
+        let mut command = Command::new(&self.executable_path);
+
+        if let Some(directory) = working_directory {
+            command.current_dir(directory);
+        }
+
+        for argument in arguments {
+            command.arg(argument);
+        }
+
+        command.stdin(Stdio::piped());
+        command.stdout(Stdio::piped());
+        command.stderr(Stdio::piped());
+        command.env("LC_ALL", "C");
+
+        let mut child = command.spawn().map_err(|error| {
+            ApplicationError::FilesystemError(format!(
+                "Failed to spawn process {:?}: {}",
+                self.executable_path, error
+            ))
+        })?;
+
+        if let Some(mut stdin) = child.stdin.take() {
+            let _ = stdin.write_all(standard_input_bytes).await;
+            let _ = stdin.flush().await;
+            drop(stdin);
+        }
+
+        let execution_result = tokio::time::timeout(DEFAULT_COMMAND_TIMEOUT, child.wait_with_output())
+            .await
+            .map_err(|_| {
+                ApplicationError::TimeoutOrCancelled(format!(
+                    "Command 'git {:?}' timed out after {:?}",
+                    arguments, DEFAULT_COMMAND_TIMEOUT
+                ))
+            })?
+            .map_err(|error| {
+                ApplicationError::FilesystemError(format!(
+                    "Failed to read child process output: {}",
+                    error
+                ))
+            })?;
+
+        if !execution_result.status.success() {
+            let stderr = String::from_utf8_lossy(&execution_result.stderr).trim().to_string();
+            let exit_code = execution_result.status.code().unwrap_or(-1);
+            return Err(ApplicationError::GitExecutionFailed {
+                exit_code,
+                message: stderr,
+            });
+        }
+
+        Ok(String::from_utf8_lossy(&execution_result.stdout).to_string())
     }
 }

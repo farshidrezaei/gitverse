@@ -101,6 +101,36 @@ pub async fn discard_file_changes(
     state.discard_file_changes(directory_path.as_deref(), &file_path, is_untracked).await
 }
 
+/// Tauri IPC command to stage a unified diff patch into the Git index.
+#[tauri::command]
+pub async fn stage_patch(
+    state: State<'_, ApplicationState>,
+    patch_content: String,
+    directory_path: Option<String>,
+) -> Result<(), ApplicationError> {
+    state.stage_patch(directory_path.as_deref(), &patch_content).await
+}
+
+/// Tauri IPC command to unstage a unified diff patch from the Git index.
+#[tauri::command]
+pub async fn unstage_patch(
+    state: State<'_, ApplicationState>,
+    patch_content: String,
+    directory_path: Option<String>,
+) -> Result<(), ApplicationError> {
+    state.unstage_patch(directory_path.as_deref(), &patch_content).await
+}
+
+/// Tauri IPC command to discard changes matching a unified diff patch from working tree.
+#[tauri::command]
+pub async fn discard_patch(
+    state: State<'_, ApplicationState>,
+    patch_content: String,
+    directory_path: Option<String>,
+) -> Result<(), ApplicationError> {
+    state.discard_patch(directory_path.as_deref(), &patch_content).await
+}
+
 /// Tauri IPC command to commit staged changes.
 #[tauri::command]
 pub async fn commit(

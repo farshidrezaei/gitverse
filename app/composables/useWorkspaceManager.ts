@@ -11,6 +11,7 @@ import type {
 import { useStashController } from '~/composables/useStashController'
 import { useCommitOperations } from '~/composables/useCommitOperations'
 import { useConflictController } from '~/composables/useConflictController'
+import { buildHunkPatch, buildSelectedLinesPatch } from '~/utils/patchGenerator'
 
 export function useWorkspaceManager() {
   const repositoryWorkspace = useRepositoryWorkspace()
@@ -147,6 +148,90 @@ export function useWorkspaceManager() {
     return await diffViewerController.fetchFileDiff(filePath, isStaged)
   }
 
+  async function stageHunk(hunkIndex: number): Promise<boolean> {
+    if (!diffViewerController.currentDiff.value) return false
+    const patch = buildHunkPatch(diffViewerController.currentDiff.value, hunkIndex)
+    if (!patch) return false
+    const success = await stagingController.stagePatch(patch)
+    if (success && stagingController.selectedDiffTarget.value) {
+      await fetchFileDiff(
+        stagingController.selectedDiffTarget.value.filePath,
+        stagingController.selectedDiffTarget.value.isStaged,
+      )
+    }
+    return success
+  }
+
+  async function unstageHunk(hunkIndex: number): Promise<boolean> {
+    if (!diffViewerController.currentDiff.value) return false
+    const patch = buildHunkPatch(diffViewerController.currentDiff.value, hunkIndex)
+    if (!patch) return false
+    const success = await stagingController.unstagePatch(patch)
+    if (success && stagingController.selectedDiffTarget.value) {
+      await fetchFileDiff(
+        stagingController.selectedDiffTarget.value.filePath,
+        stagingController.selectedDiffTarget.value.isStaged,
+      )
+    }
+    return success
+  }
+
+  async function discardHunk(hunkIndex: number): Promise<boolean> {
+    if (!diffViewerController.currentDiff.value) return false
+    const patch = buildHunkPatch(diffViewerController.currentDiff.value, hunkIndex)
+    if (!patch) return false
+    const success = await stagingController.discardPatch(patch)
+    if (success && stagingController.selectedDiffTarget.value) {
+      await fetchFileDiff(
+        stagingController.selectedDiffTarget.value.filePath,
+        stagingController.selectedDiffTarget.value.isStaged,
+      )
+    }
+    return success
+  }
+
+  async function stageSelectedLines(hunkIndex: number, lineIndices: number[]): Promise<boolean> {
+    if (!diffViewerController.currentDiff.value) return false
+    const patch = buildSelectedLinesPatch(diffViewerController.currentDiff.value, hunkIndex, lineIndices, 'stage')
+    if (!patch) return false
+    const success = await stagingController.stagePatch(patch)
+    if (success && stagingController.selectedDiffTarget.value) {
+      await fetchFileDiff(
+        stagingController.selectedDiffTarget.value.filePath,
+        stagingController.selectedDiffTarget.value.isStaged,
+      )
+    }
+    return success
+  }
+
+  async function unstageSelectedLines(hunkIndex: number, lineIndices: number[]): Promise<boolean> {
+    if (!diffViewerController.currentDiff.value) return false
+    const patch = buildSelectedLinesPatch(diffViewerController.currentDiff.value, hunkIndex, lineIndices, 'unstage')
+    if (!patch) return false
+    const success = await stagingController.unstagePatch(patch)
+    if (success && stagingController.selectedDiffTarget.value) {
+      await fetchFileDiff(
+        stagingController.selectedDiffTarget.value.filePath,
+        stagingController.selectedDiffTarget.value.isStaged,
+      )
+    }
+    return success
+  }
+
+  async function discardSelectedLines(hunkIndex: number, lineIndices: number[]): Promise<boolean> {
+    if (!diffViewerController.currentDiff.value) return false
+    const patch = buildSelectedLinesPatch(diffViewerController.currentDiff.value, hunkIndex, lineIndices, 'discard')
+    if (!patch) return false
+    const success = await stagingController.discardPatch(patch)
+    if (success && stagingController.selectedDiffTarget.value) {
+      await fetchFileDiff(
+        stagingController.selectedDiffTarget.value.filePath,
+        stagingController.selectedDiffTarget.value.isStaged,
+      )
+    }
+    return success
+  }
+
   async function fetchCommitDetails(commitHash: string): Promise<CommitDetails | null> {
     commitGraphController.selectCommit(commitHash)
     stagingController.clearDiffSelection()
@@ -218,6 +303,12 @@ export function useWorkspaceManager() {
     isLoadingDiff: diffViewerController.isLoadingDiff,
     diffViewMode: diffViewerController.diffViewMode,
     fetchFileDiff,
+    stageHunk,
+    unstageHunk,
+    discardHunk,
+    stageSelectedLines,
+    unstageSelectedLines,
+    discardSelectedLines,
 
     // Remotes
     fetchRemote,

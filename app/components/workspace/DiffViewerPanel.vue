@@ -19,6 +19,19 @@ defineEmits<{
 }>()
 
 const { t } = useI18n()
+const {
+  stageHunk,
+  unstageHunk,
+  discardHunk,
+  stageSelectedLines,
+  unstageSelectedLines,
+  discardSelectedLines,
+} = useWorkspaceManager()
+
+const isTargetStaged = computed<boolean | null>(() => {
+  if (!props.selectedTarget) return null
+  return props.selectedTarget.isStaged
+})
 
 const DIFF_VIEW_MODE_STORAGE_KEY = 'gitverse_diff_view_mode'
 const DIFF_WORD_WRAP_STORAGE_KEY = 'gitverse_diff_word_wrap'
@@ -137,6 +150,13 @@ watch(isWordWrap, (newWrap) => {
         v-else-if="viewMode === 'inline'"
         :diff="props.diff"
         :is-word-wrap="isWordWrap"
+        :is-staged="isTargetStaged"
+        @stage-hunk="(hunkIndex) => stageHunk(hunkIndex)"
+        @unstage-hunk="(hunkIndex) => unstageHunk(hunkIndex)"
+        @discard-hunk="(hunkIndex) => discardHunk(hunkIndex)"
+        @stage-line="(hunkIndex, lineIndex) => stageSelectedLines(hunkIndex, [lineIndex])"
+        @unstage-line="(hunkIndex, lineIndex) => unstageSelectedLines(hunkIndex, [lineIndex])"
+        @discard-line="(hunkIndex, lineIndex) => discardSelectedLines(hunkIndex, [lineIndex])"
       />
 
       <!-- Side-by-Side Split View -->
@@ -144,6 +164,13 @@ watch(isWordWrap, (newWrap) => {
         v-else-if="viewMode === 'side-by-side'"
         :diff="props.diff"
         :is-word-wrap="isWordWrap"
+        :is-staged="isTargetStaged"
+        @stage-hunk="(hunkIndex) => stageHunk(hunkIndex)"
+        @unstage-hunk="(hunkIndex) => unstageHunk(hunkIndex)"
+        @discard-hunk="(hunkIndex) => discardHunk(hunkIndex)"
+        @stage-line="(hunkIndex, lineIndex) => stageSelectedLines(hunkIndex, [lineIndex])"
+        @unstage-line="(hunkIndex, lineIndex) => unstageSelectedLines(hunkIndex, [lineIndex])"
+        @discard-line="(hunkIndex, lineIndex) => discardSelectedLines(hunkIndex, [lineIndex])"
       />
     </div>
   </div>

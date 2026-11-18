@@ -126,6 +126,24 @@ impl ApplicationState {
         self.git_inspector.discard_file_changes(&target_path, file_path, is_untracked).await
     }
 
+    /// Stages a unified diff patch into the index.
+    pub async fn stage_patch(&self, directory_path: Option<&str>, patch_content: &str) -> Result<(), ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.stage_patch(&target_path, patch_content).await
+    }
+
+    /// Unstages a unified diff patch from the index.
+    pub async fn unstage_patch(&self, directory_path: Option<&str>, patch_content: &str) -> Result<(), ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.unstage_patch(&target_path, patch_content).await
+    }
+
+    /// Discards changes in a unified diff patch from the working tree.
+    pub async fn discard_patch(&self, directory_path: Option<&str>, patch_content: &str) -> Result<(), ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.discard_patch(&target_path, patch_content).await
+    }
+
     /// Commit staged changes.
     pub async fn commit(&self, directory_path: Option<&str>, message: &str, is_amend: bool) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;

@@ -85,4 +85,46 @@ mod tests {
         assert_eq!(diff.total_deletions, 0);
         assert_eq!(diff.hunks.len(), 1);
     }
+
+    #[tokio::test]
+    async fn test_stage_unstage_and_discard_patch() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        std::fs::write(repository_path.join("doc.txt"), "line1\nline2\nline3\nline4\n").expect("write doc.txt");
+        Command::new("git").args(["add", "doc.txt"]).current_dir(repository_path).output().expect("git add doc.txt");
+        Command::new("git").args(["commit", "-m", "init doc"]).current_dir(repository_path).output().expect("git commit");
+
+        std::fs::write(repository_path.join("doc.txt"), "line1\nline2_modified\nline3\nline4_modified\n").expect("write modified doc.txt");
+
+        let executor_info = GitProcessExecutor::discover_system_git(None).await.expect("discover git");
+        let executor = GitProcessExecutor::new(executor_info.executable_path.into());
+        let inspector = GitRepositoryInspector::new(executor);
+
+        // Stage only the first hunk/change via patch
+        let patch_for_first_change = "--- a/doc.txt\n+++ b/doc.txt\n@@ -1,3 +1,3 @@\n line1\n-line2\n+line2_modified\n line3\n";
+        inspector.stage_patch(repository_path, patch_for_first_change).await.expect("stage patch");
+
+        let status_after_staging = inspector.get_detailed_status(repository_path).await.expect("get status");
+        assert_eq!(status_after_staging.staged_files.len(), 1, "doc.txt should be in staged");
+        assert_eq!(status_after_staging.unstaged_files.len(), 1, "doc.txt should also be in unstaged");
+
+        // Unstage that patch
+        inspector.unstage_patch(repository_path, patch_for_first_change).await.expect("unstage patch");
+        let status_after_unstaging = inspector.get_detailed_status(repository_path).await.expect("get status");
+        assert_eq!(status_after_unstaging.staged_files.len(), 0, "staged should be empty after unstage_patch");
+        assert_eq!(status_after_unstaging.unstaged_files.len(), 1, "unstaged should still contain doc.txt");
+
+        // Discard that first change from working tree
+        inspector.discard_patch(repository_path, patch_for_first_change).await.expect("discard patch");
+        let content_after_discard = std::fs::read_to_string(repository_path.join("doc.txt")).expect("read file");
+        assert_eq!(content_after_discard, "line1\nline2\nline3\nline4_modified\n", "line2_modified should be reverted while line4_modified remains");
+    }
 }

@@ -222,7 +222,13 @@
     "discardFile": "Discard Changes",
     "wordWrap": "Toggle Word Wrap",
     "additions": "{count} additions",
-    "deletions": "{count} deletions"
+    "deletions": "{count} deletions",
+    "stageHunk": "Stage Hunk",
+    "unstageHunk": "Unstage Hunk",
+    "discardHunk": "Discard Hunk",
+    "stageLine": "Stage line",
+    "unstageLine": "Unstage line",
+    "discardLine": "Discard line"
   },
   "commit": {
     "details": "Commit Details",

@@ -176,6 +176,42 @@ impl GitRepositoryInspector {
         Ok(())
     }
 
+    /// Applies a unified diff patch to the Git staging index (--cached).
+    pub async fn stage_patch(&self, directory_path: &Path, patch_content: &str) -> Result<(), ApplicationError> {
+        self.executor
+            .execute_git_command_with_stdin(
+                Some(directory_path),
+                &["apply", "--cached", "--unidiff-zero", "--recount", "--whitespace=nowarn", "-"],
+                patch_content.as_bytes(),
+            )
+            .await?;
+        Ok(())
+    }
+
+    /// Reverses a unified diff patch from the Git staging index (--cached --reverse).
+    pub async fn unstage_patch(&self, directory_path: &Path, patch_content: &str) -> Result<(), ApplicationError> {
+        self.executor
+            .execute_git_command_with_stdin(
+                Some(directory_path),
+                &["apply", "--cached", "--reverse", "--unidiff-zero", "--recount", "--whitespace=nowarn", "-"],
+                patch_content.as_bytes(),
+            )
+            .await?;
+        Ok(())
+    }
+
+    /// Discards working tree changes represented by a unified diff patch (--reverse).
+    pub async fn discard_patch(&self, directory_path: &Path, patch_content: &str) -> Result<(), ApplicationError> {
+        self.executor
+            .execute_git_command_with_stdin(
+                Some(directory_path),
+                &["apply", "--reverse", "--unidiff-zero", "--recount", "--whitespace=nowarn", "-"],
+                patch_content.as_bytes(),
+            )
+            .await?;
+        Ok(())
+    }
+
     /// Commits staged changes with a commit message and optional amend flag.
     pub async fn commit(&self, directory_path: &Path, message: &str, is_amend: bool) -> Result<String, ApplicationError> {
         let mut arguments = vec!["commit", "-m", message];

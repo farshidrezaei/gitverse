@@ -5,11 +5,24 @@ import { buildSideBySideHunk } from '~/utils/diffLayout'
 interface DiffSplitViewProps {
   diff: FileDiff
   isWordWrap?: boolean
+  isStaged?: boolean | null
 }
 
 const props = withDefaults(defineProps<DiffSplitViewProps>(), {
   isWordWrap: false,
+  isStaged: null,
 })
+
+const emit = defineEmits<{
+  stageHunk: [hunkIndex: number]
+  unstageHunk: [hunkIndex: number]
+  discardHunk: [hunkIndex: number]
+  stageLine: [hunkIndex: number, lineIndex: number]
+  unstageLine: [hunkIndex: number, lineIndex: number]
+  discardLine: [hunkIndex: number, lineIndex: number]
+}>()
+
+const { t } = useI18n()
 
 const INITIAL_VISIBLE_ROWS_LIMIT = 500
 const isFullyExpanded = ref<boolean>(false)
@@ -96,7 +109,7 @@ const displayedHunks = computed(() => {
             v-for="(hunk, hunkIndex) in displayedHunks"
             :key="`sbs-left-hunk-${hunkIndex}`"
           >
-            <!-- Hunk Header (Exact 24px height on both sides) -->
+            <!-- Left Hunk Header (Exact 24px height matches right pane) -->
             <div class="h-6 flex items-center bg-[var(--gv-diff-hunk-bg)] text-[var(--gv-diff-hunk-text)] px-3 text-[11px] font-semibold select-none border-b border-default/40">
               <span class="truncate font-mono">{{ hunk.header }}</span>
             </div>
@@ -105,7 +118,7 @@ const displayedHunks = computed(() => {
             <div
               v-for="row in hunk.rows"
               :key="`left-${row.id}`"
-              class="h-[22px] min-h-[22px] max-h-[22px] flex items-center border-b border-default/15"
+              class="h-[22px] min-h-[22px] max-h-[22px] flex items-center border-b border-default/15 group"
               :class="{
                 'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': row.left.lineType === 'deletion',
                 'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': row.left.lineType === 'modification',
@@ -118,11 +131,37 @@ const displayedHunks = computed(() => {
                 {{ row.left.lineNumber || '' }}
               </div>
 
-              <!-- Old Gutter Prefix -->
-              <div class="w-4 shrink-0 text-center select-none font-bold leading-[22px]">
-                <span v-if="row.left.lineType === 'deletion'">-</span>
-                <span v-else-if="row.left.lineType === 'modification'">~</span>
-                <span v-else-if="row.left.lineType === 'context'">&nbsp;</span>
+              <!-- Old Gutter Prefix & Line Action -->
+              <div class="w-5 shrink-0 flex items-center justify-center select-none font-bold leading-[22px]">
+                <template v-if="props.isStaged !== null && row.left.originalLineIndex !== undefined && (row.left.lineType === 'deletion' || row.left.lineType === 'modification')">
+                  <span class="group-hover:hidden">
+                    <span v-if="row.left.lineType === 'deletion'">-</span>
+                    <span v-else-if="row.left.lineType === 'modification'">~</span>
+                  </span>
+                  <button
+                    v-if="!props.isStaged"
+                    type="button"
+                    class="hidden group-hover:flex items-center justify-center h-4 w-4 rounded-xs bg-primary/20 text-primary hover:bg-primary hover:text-white transition-colors cursor-pointer"
+                    :title="t('diff.stageLine')"
+                    @click.stop="emit('stageLine', hunkIndex, row.left.originalLineIndex)"
+                  >
+                    <UIcon name="i-lucide-plus" class="h-3 w-3" />
+                  </button>
+                  <button
+                    v-else
+                    type="button"
+                    class="hidden group-hover:flex items-center justify-center h-4 w-4 rounded-xs bg-error/20 text-error hover:bg-error hover:text-white transition-colors cursor-pointer"
+                    :title="t('diff.unstageLine')"
+                    @click.stop="emit('unstageLine', hunkIndex, row.left.originalLineIndex)"
+                  >
+                    <UIcon name="i-lucide-minus" class="h-3 w-3" />
+                  </button>
+                </template>
+                <template v-else>
+                  <span v-if="row.left.lineType === 'deletion'">-</span>
+                  <span v-else-if="row.left.lineType === 'modification'">~</span>
+                  <span v-else>&nbsp;</span>
+                </template>
               </div>
 
               <!-- Old Line Content (Smooth independent horizontal scroll) -->
@@ -161,15 +200,50 @@ const displayedHunks = computed(() => {
             :key="`sbs-right-hunk-${hunkIndex}`"
           >
             <!-- Hunk Header (Exact 24px height on both sides) -->
-            <div class="h-6 flex items-center bg-[var(--gv-diff-hunk-bg)] text-[var(--gv-diff-hunk-text)] px-3 text-[11px] font-semibold select-none border-b border-default/40">
+            <div class="h-6 flex items-center justify-between bg-[var(--gv-diff-hunk-bg)] text-[var(--gv-diff-hunk-text)] px-3 text-[11px] font-semibold select-none border-b border-default/40">
               <span class="truncate font-mono">{{ hunk.header }}</span>
+
+              <!-- Hunk Action Controls -->
+              <div v-if="props.isStaged !== null" class="flex items-center gap-1.5 opacity-80 hover:opacity-100 transition-opacity">
+                <template v-if="!props.isStaged">
+                  <button
+                    type="button"
+                    class="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-xs bg-primary/20 text-primary hover:bg-primary hover:text-white transition-colors cursor-pointer"
+                    :title="t('diff.stageHunk')"
+                    @click.stop="emit('stageHunk', hunkIndex)"
+                  >
+                    <UIcon name="i-lucide-plus" class="h-3 w-3" />
+                    <span>{{ t('diff.stageHunk') }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-xs bg-error/20 text-error hover:bg-error hover:text-white transition-colors cursor-pointer"
+                    :title="t('diff.discardHunk')"
+                    @click.stop="emit('discardHunk', hunkIndex)"
+                  >
+                    <UIcon name="i-lucide-undo-2" class="h-3 w-3" />
+                    <span>{{ t('diff.discardHunk') }}</span>
+                  </button>
+                </template>
+                <template v-else>
+                  <button
+                    type="button"
+                    class="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-xs bg-neutral-500/20 text-neutral-300 hover:bg-neutral-600 hover:text-white transition-colors cursor-pointer"
+                    :title="t('diff.unstageHunk')"
+                    @click.stop="emit('unstageHunk', hunkIndex)"
+                  >
+                    <UIcon name="i-lucide-minus" class="h-3 w-3" />
+                    <span>{{ t('diff.unstageHunk') }}</span>
+                  </button>
+                </template>
+              </div>
             </div>
 
             <!-- Right Line Rows (Fixed 22px height prevents vertical text collisions) -->
             <div
               v-for="row in hunk.rows"
               :key="`right-${row.id}`"
-              class="h-[22px] min-h-[22px] max-h-[22px] flex items-center border-b border-default/15"
+              class="h-[22px] min-h-[22px] max-h-[22px] flex items-center border-b border-default/15 group"
               :class="{
                 'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': row.right.lineType === 'addition',
                 'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': row.right.lineType === 'modification',
@@ -182,11 +256,37 @@ const displayedHunks = computed(() => {
                 {{ row.right.lineNumber || '' }}
               </div>
 
-              <!-- New Gutter Prefix -->
-              <div class="w-4 shrink-0 text-center select-none font-bold leading-[22px]">
-                <span v-if="row.right.lineType === 'addition'">+</span>
-                <span v-else-if="row.right.lineType === 'modification'">~</span>
-                <span v-else-if="row.right.lineType === 'context'">&nbsp;</span>
+              <!-- New Gutter Prefix & Line Action -->
+              <div class="w-5 shrink-0 flex items-center justify-center select-none font-bold leading-[22px]">
+                <template v-if="props.isStaged !== null && row.right.originalLineIndex !== undefined && (row.right.lineType === 'addition' || row.right.lineType === 'modification')">
+                  <span class="group-hover:hidden">
+                    <span v-if="row.right.lineType === 'addition'">+</span>
+                    <span v-else-if="row.right.lineType === 'modification'">~</span>
+                  </span>
+                  <button
+                    v-if="!props.isStaged"
+                    type="button"
+                    class="hidden group-hover:flex items-center justify-center h-4 w-4 rounded-xs bg-primary/20 text-primary hover:bg-primary hover:text-white transition-colors cursor-pointer"
+                    :title="t('diff.stageLine')"
+                    @click.stop="emit('stageLine', hunkIndex, row.right.originalLineIndex)"
+                  >
+                    <UIcon name="i-lucide-plus" class="h-3 w-3" />
+                  </button>
+                  <button
+                    v-else
+                    type="button"
+                    class="hidden group-hover:flex items-center justify-center h-4 w-4 rounded-xs bg-error/20 text-error hover:bg-error hover:text-white transition-colors cursor-pointer"
+                    :title="t('diff.unstageLine')"
+                    @click.stop="emit('unstageLine', hunkIndex, row.right.originalLineIndex)"
+                  >
+                    <UIcon name="i-lucide-minus" class="h-3 w-3" />
+                  </button>
+                </template>
+                <template v-else>
+                  <span v-if="row.right.lineType === 'addition'">+</span>
+                  <span v-else-if="row.right.lineType === 'modification'">~</span>
+                  <span v-else>&nbsp;</span>
+                </template>
               </div>
 
               <!-- New Line Content (Smooth independent horizontal scroll) -->

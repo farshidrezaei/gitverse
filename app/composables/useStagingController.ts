@@ -244,6 +244,72 @@ export function useStagingController() {
     }
   }
 
+  async function stagePatch(patchContent: string): Promise<boolean> {
+    if (!currentRepository.value || !patchContent.trim()) return false
+    isOperatingStaging.value = true
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        await invoke('stage_patch', {
+          patchContent,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+      await fetchStatus()
+      return true
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      notifyError(t('common.error'), errorMessage)
+      return false
+    } finally {
+      isOperatingStaging.value = false
+    }
+  }
+
+  async function unstagePatch(patchContent: string): Promise<boolean> {
+    if (!currentRepository.value || !patchContent.trim()) return false
+    isOperatingStaging.value = true
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        await invoke('unstage_patch', {
+          patchContent,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+      await fetchStatus()
+      return true
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      notifyError(t('common.error'), errorMessage)
+      return false
+    } finally {
+      isOperatingStaging.value = false
+    }
+  }
+
+  async function discardPatch(patchContent: string): Promise<boolean> {
+    if (!currentRepository.value || !patchContent.trim()) return false
+    isOperatingStaging.value = true
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        await invoke('discard_patch', {
+          patchContent,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+      await fetchStatus()
+      return true
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      notifyError(t('common.error'), errorMessage)
+      return false
+    } finally {
+      isOperatingStaging.value = false
+    }
+  }
+
   async function discardAllUnstaged(): Promise<void> {
     if (!currentRepository.value || !repositoryStatus.value) return
     const unstagedFiles = repositoryStatus.value.unstaged_files || []
@@ -317,6 +383,9 @@ export function useStagingController() {
     unstageAll,
     discardFile,
     discardAllUnstaged,
+    stagePatch,
+    unstagePatch,
+    discardPatch,
     commitChanges,
     clearDiffSelection,
   }

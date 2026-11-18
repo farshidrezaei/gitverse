@@ -10,6 +10,7 @@ export interface SideBySideLineCell {
   content: string
   lineType: DiffLineType | 'empty'
   spans?: DiffTextSpan[]
+  originalLineIndex?: number
 }
 
 export interface SideBySideRow {
@@ -116,41 +117,49 @@ export function buildSideBySideHunk(hunk: DiffHunk): SideBySideHunk {
           content: cleanContent,
           lineType: 'context',
           spans: [{ text: cleanContent, isChanged: false }],
+          originalLineIndex: lineIndex,
         },
         right: {
           lineNumber: currentLine.new_line_number,
           content: cleanContent,
           lineType: 'context',
           spans: [{ text: cleanContent, isChanged: false }],
+          originalLineIndex: lineIndex,
         },
       })
       lineIndex += 1
       continue
     }
 
-    // Accumulate consecutive deletions and additions
-    const deletions: DiffLine[] = []
-    const additions: DiffLine[] = []
+    // Accumulate consecutive deletions and additions with their original hunk line indices
+    interface IndexedLine {
+      line: DiffLine
+      originalLineIndex: number
+    }
+    const deletions: IndexedLine[] = []
+    const additions: IndexedLine[] = []
 
     while (lineIndex < lines.length && lines[lineIndex]?.line_type === 'deletion') {
       const line = lines[lineIndex]
-      if (line) deletions.push(line)
+      if (line) deletions.push({ line, originalLineIndex: lineIndex })
       lineIndex += 1
     }
 
     while (lineIndex < lines.length && lines[lineIndex]?.line_type === 'addition') {
       const line = lines[lineIndex]
-      if (line) additions.push(line)
+      if (line) additions.push({ line, originalLineIndex: lineIndex })
       lineIndex += 1
     }
 
     const maxCount = Math.max(deletions.length, additions.length)
     for (let index = 0; index < maxCount; index += 1) {
-      const deletion = deletions[index]
-      const addition = additions[index]
+      const deletionEntry = deletions[index]
+      const additionEntry = additions[index]
 
-      if (deletion && addition) {
+      if (deletionEntry && additionEntry) {
         // Paired line: this is an in-place modification (Blue 3-color mode)
+        const deletion = deletionEntry.line
+        const addition = additionEntry.line
         const cleanOldContent = deletion.content.startsWith('-')
           ? deletion.content.slice(1)
           : deletion.content
@@ -167,16 +176,19 @@ export function buildSideBySideHunk(hunk: DiffHunk): SideBySideHunk {
             content: cleanOldContent,
             lineType: 'modification',
             spans: oldSpans,
+            originalLineIndex: deletionEntry.originalLineIndex,
           },
           right: {
             lineNumber: addition.new_line_number,
             content: cleanNewContent,
             lineType: 'modification',
             spans: newSpans,
+            originalLineIndex: additionEntry.originalLineIndex,
           },
         })
-      } else if (deletion) {
+      } else if (deletionEntry) {
         // Pure deletion (Red)
+        const deletion = deletionEntry.line
         const cleanOldContent = deletion.content.startsWith('-')
           ? deletion.content.slice(1)
           : deletion.content
@@ -188,6 +200,7 @@ export function buildSideBySideHunk(hunk: DiffHunk): SideBySideHunk {
             content: cleanOldContent,
             lineType: 'deletion',
             spans: [{ text: cleanOldContent, isChanged: true }],
+            originalLineIndex: deletionEntry.originalLineIndex,
           },
           right: {
             lineNumber: null,
@@ -195,8 +208,9 @@ export function buildSideBySideHunk(hunk: DiffHunk): SideBySideHunk {
             lineType: 'empty',
           },
         })
-      } else if (addition) {
+      } else if (additionEntry) {
         // Pure addition (Green)
+        const addition = additionEntry.line
         const cleanNewContent = addition.content.startsWith('+')
           ? addition.content.slice(1)
           : addition.content
@@ -213,6 +227,7 @@ export function buildSideBySideHunk(hunk: DiffHunk): SideBySideHunk {
             content: cleanNewContent,
             lineType: 'addition',
             spans: [{ text: cleanNewContent, isChanged: true }],
+            originalLineIndex: additionEntry.originalLineIndex,
           },
         })
       }

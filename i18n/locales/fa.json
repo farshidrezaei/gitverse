@@ -222,7 +222,13 @@
     "discardFile": "لغو تغییرات",
     "wordWrap": "شکست خودکار خطوط",
     "additions": "{count} مورد افزوده",
-    "deletions": "{count} مورد حذف"
+    "deletions": "{count} مورد حذف",
+    "stageHunk": "استیج تکه‌کد",
+    "unstageHunk": "حذف تکه‌کد از استیج",
+    "discardHunk": "دور انداختن تکه‌کد",
+    "stageLine": "استیج خط",
+    "unstageLine": "حذف خط از استیج",
+    "discardLine": "دور انداختن خط"
   },
   "commit": {
     "details": "جزئیات کامیت",

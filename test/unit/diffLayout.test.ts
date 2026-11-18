@@ -35,12 +35,14 @@ describe('diffLayout - buildSideBySideHunk', () => {
       content: 'const a = 1;',
       lineType: 'context',
       spans: [{ text: 'const a = 1;', isChanged: false }],
+      originalLineIndex: 0,
     })
     expect(result.rows[0]?.right).toEqual({
       lineNumber: 1,
       content: 'const a = 1;',
       lineType: 'context',
       spans: [{ text: 'const a = 1;', isChanged: false }],
+      originalLineIndex: 0,
     })
   })
 
@@ -86,6 +88,7 @@ describe('diffLayout - buildSideBySideHunk', () => {
         { text: 'Old', isChanged: true },
         { text: ' = true;', isChanged: false },
       ],
+      originalLineIndex: 0,
     })
     expect(result.rows[0]?.right).toEqual({
       lineNumber: 10,
@@ -96,6 +99,7 @@ describe('diffLayout - buildSideBySideHunk', () => {
         { text: 'New', isChanged: true },
         { text: ' = true;', isChanged: false },
       ],
+      originalLineIndex: 2,
     })
 
     // Row 1: second deletion pairs with empty placeholder -> pure deletion (Red)
@@ -104,6 +108,7 @@ describe('diffLayout - buildSideBySideHunk', () => {
       content: 'let isLegacy = false;',
       lineType: 'deletion',
       spans: [{ text: 'let isLegacy = false;', isChanged: true }],
+      originalLineIndex: 1,
     })
     expect(result.rows[1]?.right).toEqual({
       lineNumber: null,
