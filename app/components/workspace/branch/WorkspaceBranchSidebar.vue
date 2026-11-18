@@ -1,13 +1,17 @@
 <script setup lang="ts">
+import type { ContextMenuItem } from '@nuxt/ui'
 import type {
   BranchSummary,
   RemoteBranchSummary,
+  RemoteSummary,
   RepositoryReferences,
 } from '~/types/repository'
 import { buildBranchTree, buildRemoteBranchTree } from '~/utils/branchTree'
 import BranchTreeNodeItem from '../BranchTreeNodeItem.vue'
 import RemoteBranchTreeNodeItem from '../RemoteBranchTreeNodeItem.vue'
 import RenameBranchModal from '../RenameBranchModal.vue'
+import AddRemoteModal from '../remote/AddRemoteModal.vue'
+import EditRemoteModal from '../remote/EditRemoteModal.vue'
 
 interface WorkspaceBranchSidebarProps {
   references: RepositoryReferences | null
@@ -33,6 +37,15 @@ const { t } = useI18n()
 const { currentRepository } = useRepositoryWorkspace()
 const { renameBranch } = useWorkspaceManager()
 const { worktreeList, isLoadingWorktrees, fetchWorktrees, removeWorktree } = useWorktreeController()
+const {
+  fetchRemote,
+  addRemote,
+  removeRemote,
+  renameRemote,
+  setRemoteUrl,
+  copyRemoteUrl,
+} = useRemoteController()
+const { confirmStandard } = useConfirmationDialog()
 
 watch(
   () => currentRepository.value?.path,
@@ -56,6 +69,91 @@ function openRenameBranchModal(branchName: string): void {
 
 async function handleRenameBranch(oldName: string, newName: string): Promise<void> {
   await renameBranch(oldName, newName)
+}
+
+// Remote Management Modals & Handlers
+const isAddRemoteModalOpen = ref(false)
+const isEditRemoteModalOpen = ref(false)
+const selectedRemoteToEdit = ref<RemoteSummary | null>(null)
+
+const existingRemoteNames = computed(() => {
+  return props.references?.remotes?.map(remote => remote.name) || []
+})
+
+async function handleAddRemote(name: string, url: string, shouldFetchImmediately: boolean): Promise<void> {
+  const isSuccess = await addRemote(name, url, shouldFetchImmediately)
+  if (isSuccess) {
+    isAddRemoteModalOpen.value = false
+  }
+}
+
+function openEditRemoteModal(remote: RemoteSummary): void {
+  selectedRemoteToEdit.value = remote
+  isEditRemoteModalOpen.value = true
+}
+
+async function handleSaveEditRemote(oldName: string, newName: string, newUrl: string): Promise<void> {
+  let isRenamed = true
+  if (oldName !== newName) {
+    isRenamed = await renameRemote(oldName, newName)
+  }
+
+  if (isRenamed) {
+    const effectiveName = oldName !== newName ? newName : oldName
+    const isUrlUpdated = await setRemoteUrl(effectiveName, newUrl)
+    if (isUrlUpdated) {
+      isEditRemoteModalOpen.value = false
+    }
+  }
+}
+
+async function handleRemoveRemote(remote: RemoteSummary): Promise<void> {
+  const isConfirmed = await confirmStandard({
+    title: t('remote.removeConfirmTitle', { name: remote.name }),
+    description: t('remote.removeConfirmDescription', { name: remote.name }),
+    variant: 'danger',
+    confirmLabel: t('common.delete'),
+    details: [
+      { label: t('remote.remoteNameLabel'), value: remote.name },
+      { label: t('remote.remoteUrlLabel'), value: remote.fetch_url || remote.push_url || '', isMonospace: true },
+    ],
+  })
+
+  if (isConfirmed) {
+    await removeRemote(remote.name)
+  }
+}
+
+function getRemoteContextMenu(remote: RemoteSummary): ContextMenuItem[][] {
+  const remoteUrl = remote.fetch_url || remote.push_url || ''
+  return [
+    [
+      {
+        label: t('remote.fetchFrom', { name: remote.name }),
+        icon: 'i-lucide-refresh-cw',
+        onSelect: () => void fetchRemote(remote.name),
+      },
+      {
+        label: t('remote.copyUrl'),
+        icon: 'i-lucide-copy',
+        disabled: !remoteUrl,
+        onSelect: () => void copyRemoteUrl(remoteUrl),
+      },
+    ],
+    [
+      {
+        label: t('remote.editRemote'),
+        icon: 'i-lucide-pencil',
+        onSelect: () => openEditRemoteModal(remote),
+      },
+      {
+        label: t('remote.removeRemote'),
+        icon: 'i-lucide-trash-2',
+        color: 'error' as const,
+        onSelect: () => void handleRemoveRemote(remote),
+      },
+    ],
+  ]
 }
 
 const branchTreeNodes = computed(() => {
@@ -209,20 +307,99 @@ const existingBranchNames = computed(() => {
           </div>
         </div>
 
-        <!-- Remote Branches Tree -->
-        <div v-if="props.references?.remote_branches?.length" class="mb-3">
+        <!-- Remotes -->
+        <div class="mb-3">
           <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
             <span>{{ t('navigation.remotes') }}</span>
-            <span class="text-[10px]">{{ props.references.remote_branches.length }}</span>
+            <div class="flex items-center gap-1">
+              <span class="text-[10px]">{{ props.references?.remotes?.length || 0 }}</span>
+              <button
+                type="button"
+                class="rounded p-0.5 text-muted hover:bg-primary/20 hover:text-primary transition-colors cursor-pointer"
+                :title="t('remote.addRemote')"
+                @click="isAddRemoteModalOpen = true"
+              >
+                <UIcon name="i-lucide-plus" class="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
-          <div class="flex flex-col gap-0.5 mt-1">
-            <RemoteBranchTreeNodeItem
-              v-for="node in remoteBranchTreeNodes"
-              :key="node.id"
-              :node="node"
-              :selected-branch-name="props.selectedBranchName"
-              @select-branch="emit('selectBranch', $event)"
-              @checkout="emit('checkout', $event)"
+
+          <!-- Remotes List -->
+          <div v-if="props.references?.remotes?.length" class="flex flex-col gap-0.5 mt-1">
+            <UContextMenu
+              v-for="remote in props.references.remotes"
+              :key="remote.name"
+              :items="getRemoteContextMenu(remote)"
+            >
+              <div
+                class="group flex w-full items-center justify-between gap-1.5 rounded-lg px-2 py-1 text-start text-toned text-[11px] hover:bg-surface/80 cursor-pointer transition-colors"
+                :title="remote.fetch_url || remote.push_url || remote.name"
+              >
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <UIcon name="i-lucide-globe" class="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <span class="font-bold text-highlighted truncate">{{ remote.name }}</span>
+                  <span
+                    v-if="remote.fetch_url"
+                    class="font-mono text-[9px] text-muted truncate max-w-[120px]"
+                    dir="ltr"
+                  >
+                    {{ remote.fetch_url }}
+                  </span>
+                </div>
+
+                <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    class="rounded p-0.5 text-muted hover:text-primary transition-colors cursor-pointer"
+                    :title="t('remote.fetchFrom', { name: remote.name })"
+                    @click.stop="fetchRemote(remote.name)"
+                  >
+                    <UIcon name="i-lucide-refresh-cw" class="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded p-0.5 text-muted hover:text-highlighted transition-colors cursor-pointer"
+                    :title="t('remote.editRemote')"
+                    @click.stop="openEditRemoteModal(remote)"
+                  >
+                    <UIcon name="i-lucide-pencil" class="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded p-0.5 text-muted hover:text-error transition-colors cursor-pointer"
+                    :title="t('remote.removeRemote')"
+                    @click.stop="handleRemoveRemote(remote)"
+                  >
+                    <UIcon name="i-lucide-trash-2" class="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            </UContextMenu>
+
+            <!-- Remote Tracking Branches Tree (Filtered or nested under remotes) -->
+            <div v-if="remoteBranchTreeNodes.length" class="ps-2 mt-1 space-y-0.5 border-s border-default/40 ms-2">
+              <RemoteBranchTreeNodeItem
+                v-for="node in remoteBranchTreeNodes"
+                :key="node.id"
+                :node="node"
+                :selected-branch-name="props.selectedBranchName"
+                @select-branch="emit('selectBranch', $event)"
+                @checkout="emit('checkout', $event)"
+              />
+            </div>
+          </div>
+
+          <div
+            v-else
+            class="px-2 py-1.5 text-[10px] text-muted italic flex items-center justify-between"
+          >
+            <span>No remotes</span>
+            <UButton
+              size="xs"
+              variant="link"
+              class="text-[10px] p-0 text-primary cursor-pointer"
+              :label="t('remote.addRemote')"
+              @click="isAddRemoteModalOpen = true"
             />
           </div>
         </div>
@@ -300,6 +477,21 @@ const existingBranchNames = computed(() => {
       :current-branch-name="branchToRename"
       :existing-branch-names="existingBranchNames"
       @rename="handleRenameBranch"
+    />
+
+    <!-- Add Remote Modal -->
+    <AddRemoteModal
+      v-model:open="isAddRemoteModalOpen"
+      :existing-remote-names="existingRemoteNames"
+      @add="handleAddRemote"
+    />
+
+    <!-- Edit Remote Modal -->
+    <EditRemoteModal
+      v-model:open="isEditRemoteModalOpen"
+      :remote="selectedRemoteToEdit"
+      :existing-remote-names="existingRemoteNames"
+      @save="handleSaveEditRemote"
     />
   </div>
 </template>

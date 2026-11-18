@@ -327,6 +327,11 @@ export function useWorkspaceManager() {
     fetchRemote,
     pullChanges,
     pushChanges,
+    addRemote: remoteController.addRemote,
+    removeRemote: remoteController.removeRemote,
+    renameRemote: remoteController.renameRemote,
+    setRemoteUrl: remoteController.setRemoteUrl,
+    copyRemoteUrl: remoteController.copyRemoteUrl,
 
     // Stashes
     stashRecords: stashController.stashRecords,

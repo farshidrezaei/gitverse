@@ -704,6 +704,96 @@ impl GitRepositoryInspector {
         self.executor.execute_git_command(Some(directory_path), &arguments).await
     }
 
+    /// Adds a new Git remote to the repository.
+    pub async fn add_remote(
+        &self,
+        directory_path: &Path,
+        name: &str,
+        url: &str,
+    ) -> Result<String, ApplicationError> {
+        let trimmed_name = name.trim();
+        let trimmed_url = url.trim();
+        if trimmed_name.is_empty() {
+            return Err(ApplicationError::InvalidInput(
+                "Remote name cannot be empty".into(),
+            ));
+        }
+        if trimmed_url.is_empty() {
+            return Err(ApplicationError::InvalidInput(
+                "Remote URL cannot be empty".into(),
+            ));
+        }
+        self.executor
+            .execute_git_command(Some(directory_path), &["remote", "add", trimmed_name, trimmed_url])
+            .await
+    }
+
+    /// Removes an existing Git remote from the repository.
+    pub async fn remove_remote(
+        &self,
+        directory_path: &Path,
+        name: &str,
+    ) -> Result<String, ApplicationError> {
+        let trimmed_name = name.trim();
+        if trimmed_name.is_empty() {
+            return Err(ApplicationError::InvalidInput(
+                "Remote name cannot be empty".into(),
+            ));
+        }
+        self.executor
+            .execute_git_command(Some(directory_path), &["remote", "remove", trimmed_name])
+            .await
+    }
+
+    /// Renames a Git remote.
+    pub async fn rename_remote(
+        &self,
+        directory_path: &Path,
+        old_name: &str,
+        new_name: &str,
+    ) -> Result<String, ApplicationError> {
+        let trimmed_old = old_name.trim();
+        let trimmed_new = new_name.trim();
+        if trimmed_old.is_empty() || trimmed_new.is_empty() {
+            return Err(ApplicationError::InvalidInput(
+                "Remote names cannot be empty".into(),
+            ));
+        }
+        self.executor
+            .execute_git_command(Some(directory_path), &["remote", "rename", trimmed_old, trimmed_new])
+            .await
+    }
+
+    /// Updates the URL of an existing Git remote.
+    pub async fn set_remote_url(
+        &self,
+        directory_path: &Path,
+        name: &str,
+        url: &str,
+        is_push_only: bool,
+    ) -> Result<String, ApplicationError> {
+        let trimmed_name = name.trim();
+        let trimmed_url = url.trim();
+        if trimmed_name.is_empty() {
+            return Err(ApplicationError::InvalidInput(
+                "Remote name cannot be empty".into(),
+            ));
+        }
+        if trimmed_url.is_empty() {
+            return Err(ApplicationError::InvalidInput(
+                "Remote URL cannot be empty".into(),
+            ));
+        }
+        let arguments = if is_push_only {
+            vec!["remote", "set-url", "--push", trimmed_name, trimmed_url]
+        } else {
+            vec!["remote", "set-url", trimmed_name, trimmed_url]
+        };
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
+    }
+
     /// Lists all stash records for the given repository.
     pub async fn list_stashes(&self, directory_path: &Path) -> Result<Vec<StashRecord>, ApplicationError> {
         let output = self.executor

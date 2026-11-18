@@ -262,6 +262,55 @@ pub async fn push_changes(
     ).await
 }
 
+/// Tauri IPC command to add a new Git remote.
+#[tauri::command]
+pub async fn add_remote(
+    state: State<'_, ApplicationState>,
+    name: String,
+    url: String,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.add_remote(directory_path.as_deref(), &name, &url).await
+}
+
+/// Tauri IPC command to remove a Git remote.
+#[tauri::command]
+pub async fn remove_remote(
+    state: State<'_, ApplicationState>,
+    name: String,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.remove_remote(directory_path.as_deref(), &name).await
+}
+
+/// Tauri IPC command to rename a Git remote.
+#[tauri::command]
+pub async fn rename_remote(
+    state: State<'_, ApplicationState>,
+    old_name: String,
+    new_name: String,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.rename_remote(directory_path.as_deref(), &old_name, &new_name).await
+}
+
+/// Tauri IPC command to update a Git remote URL.
+#[tauri::command]
+pub async fn set_remote_url(
+    state: State<'_, ApplicationState>,
+    name: String,
+    url: String,
+    is_push_only: Option<bool>,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.set_remote_url(
+        directory_path.as_deref(),
+        &name,
+        &url,
+        is_push_only.unwrap_or(false),
+    ).await
+}
+
 /// Tauri IPC command to retrieve comprehensive commit details with changed files.
 #[tauri::command]
 pub async fn get_commit_details(

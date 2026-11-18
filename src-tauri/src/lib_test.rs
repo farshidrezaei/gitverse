@@ -183,4 +183,51 @@ mod tests {
         assert_eq!(diff_alpha.total_additions, 1);
         assert_eq!(diff_alpha.total_deletions, 1);
     }
+
+    #[tokio::test]
+    async fn test_remote_management_operations() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create tempdir");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+
+        let executor_info = GitProcessExecutor::discover_system_git(None).await.expect("discover git");
+        let executor = GitProcessExecutor::new(executor_info.executable_path.into());
+        let inspector = GitRepositoryInspector::new(executor);
+
+        // 1. Add remote
+        inspector.add_remote(repository_path, "origin", "https://example.com/gitverse/core.git")
+            .await
+            .expect("add origin");
+
+        let references = inspector.get_repository_references(repository_path).await.expect("refs");
+        let origin = references.remotes.iter().find(|r| r.name == "origin").expect("origin exists");
+        assert_eq!(origin.fetch_url.as_deref(), Some("https://example.com/gitverse/core.git"));
+
+        // 2. Set remote URL
+        inspector.set_remote_url(repository_path, "origin", "https://example.com/gitverse/updated.git", false)
+            .await
+            .expect("set url");
+        let references_updated = inspector.get_repository_references(repository_path).await.expect("refs updated");
+        let origin_updated = references_updated.remotes.iter().find(|r| r.name == "origin").expect("origin updated");
+        assert_eq!(origin_updated.fetch_url.as_deref(), Some("https://example.com/gitverse/updated.git"));
+
+        // 3. Rename remote
+        inspector.rename_remote(repository_path, "origin", "upstream")
+            .await
+            .expect("rename origin to upstream");
+        let references_renamed = inspector.get_repository_references(repository_path).await.expect("refs renamed");
+        assert!(references_renamed.remotes.iter().any(|r| r.name == "upstream"));
+        assert!(!references_renamed.remotes.iter().any(|r| r.name == "origin"));
+
+        // 4. Remove remote
+        inspector.remove_remote(repository_path, "upstream")
+            .await
+            .expect("remove upstream");
+        let references_cleaned = inspector.get_repository_references(repository_path).await.expect("refs cleaned");
+        assert!(references_cleaned.remotes.is_empty());
+    }
 }

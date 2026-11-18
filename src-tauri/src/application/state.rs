@@ -263,6 +263,50 @@ impl ApplicationState {
         self.git_inspector.push_changes(&target_path, remote_name, branch_name, set_upstream).await
     }
 
+    /// Adds a new Git remote.
+    pub async fn add_remote(
+        &self,
+        directory_path: Option<&str>,
+        name: &str,
+        url: &str,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.add_remote(&target_path, name, url).await
+    }
+
+    /// Removes a Git remote.
+    pub async fn remove_remote(
+        &self,
+        directory_path: Option<&str>,
+        name: &str,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.remove_remote(&target_path, name).await
+    }
+
+    /// Renames a Git remote.
+    pub async fn rename_remote(
+        &self,
+        directory_path: Option<&str>,
+        old_name: &str,
+        new_name: &str,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.rename_remote(&target_path, old_name, new_name).await
+    }
+
+    /// Sets the URL of a Git remote.
+    pub async fn set_remote_url(
+        &self,
+        directory_path: Option<&str>,
+        name: &str,
+        url: &str,
+        is_push_only: bool,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.set_remote_url(&target_path, name, url, is_push_only).await
+    }
+
     /// Fetches full commit details including changed files. Uses in-memory cache to eliminate duplicate Git invocations.
     pub async fn get_commit_details(
         &self,
