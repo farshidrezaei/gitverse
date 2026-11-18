@@ -92,6 +92,9 @@ pub fn run() {
             commands::merge_branch,
             commands::rebase_branch,
             commands::list_directory_folders,
+            commands::list_worktrees,
+            commands::add_worktree,
+            commands::remove_worktree,
         ])
         .run(tauri::generate_context!());
 

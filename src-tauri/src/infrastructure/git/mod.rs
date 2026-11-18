@@ -6,6 +6,7 @@ pub mod repository;
 pub mod stash;
 pub mod status;
 pub mod watcher;
+pub mod worktree;
 
 #[cfg(test)]
 mod branch_test;
@@ -17,6 +18,8 @@ mod history_test;
 mod stash_test;
 #[cfg(test)]
 mod status_test;
+#[cfg(test)]
+mod worktree_test;
 
 pub use branch::{parse_local_branches, parse_remote_branches, parse_remotes, parse_tags, validate_branch_name};
 pub use diff::parse_unified_diff;
@@ -26,6 +29,7 @@ pub use repository::GitRepositoryInspector;
 pub use stash::parse_stash_list;
 pub use status::parse_porcelain_v2_status;
 pub use watcher::RepositoryWatcherManager;
+pub use worktree::parse_worktree_list;
 
 
 

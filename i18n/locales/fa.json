@@ -75,6 +75,24 @@
       "switchLanguageFa": "تغییر زبان به فارسی (RTL)"
     }
   },
+  "worktree": {
+    "title": "درخت‌های کاری (Worktrees)",
+    "createTitle": "ایجاد ورک‌تری جدید",
+    "directoryPathLabel": "مسیر دایرکتوری ورک‌تری",
+    "directoryPathHelp": "مسیری که فایل‌های کاری شاخه مستقل در آن ذخیره می‌شوند",
+    "directoryPathRequired": "مسیر دایرکتوری الزامی است",
+    "pathRequired": "لطفاً مسیر دایرکتوری برای ورک‌تری را مشخص کنید",
+    "newBranchRadio": "ایجاد شاخه جدید",
+    "existingBranchRadio": "اتصال به شاخه موجود",
+    "newBranchNameLabel": "نام شاخه جدید",
+    "selectExistingBranchLabel": "انتخاب شاخه موجود",
+    "createButton": "ایجاد ورک‌تری",
+    "fetchFailed": "خطا در واکشی فهرست ورک‌تری‌ها",
+    "addSuccess": "ورک‌تری با موفقیت در {path} ایجاد شد",
+    "addFailed": "خطا در ایجاد ورک‌تری: {error}",
+    "removeSuccess": "ورک‌تری از {path} حذف شد",
+    "removeFailed": "خطا در حذف ورک‌تری: {error}"
+  },
   "confirmation": {
     "defaultTitle": "تأیید عملیات",
     "criticalNotice": "عملیات بحرانی و غیرقابل بازگشت",

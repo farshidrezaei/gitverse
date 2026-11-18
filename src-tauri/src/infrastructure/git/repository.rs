@@ -1,12 +1,13 @@
 use std::path::{Path, PathBuf};
 use base64::Engine;
 use crate::domain::{
-    ApplicationError, ConflictFileDetails, DirectoryListing, FolderEntry, MergeBranchOutcome, RebaseBranchOutcome,
+    ApplicationError, ConflictFileDetails, DirectoryListing, FolderEntry, GitWorktreeSummary, MergeBranchOutcome, RebaseBranchOutcome,
     RepositoryOperationState, RepositoryOverview, StashRecord,
 };
 use super::branch::validate_branch_name;
 use super::process::GitProcessExecutor;
 use super::stash::parse_stash_list;
+use super::worktree::parse_worktree_list;
 
 /// Service responsible for querying Git repository state, references, and working tree status.
 #[derive(Debug, Clone)]
@@ -1176,5 +1177,54 @@ impl GitRepositoryInspector {
             folders,
             is_current_git_repository,
         })
+    }
+
+    /// Lists all worktrees linked to the repository.
+    pub async fn list_worktrees(&self, directory_path: &Path) -> Result<Vec<GitWorktreeSummary>, ApplicationError> {
+        let output = self.executor
+            .execute_git_command(Some(directory_path), &["worktree", "list", "--porcelain"])
+            .await?;
+        Ok(parse_worktree_list(&output))
+    }
+
+    /// Adds a new worktree to the repository.
+    pub async fn add_worktree(
+        &self,
+        directory_path: &Path,
+        worktree_path: &str,
+        branch_name: Option<&str>,
+        is_new_branch: bool,
+    ) -> Result<String, ApplicationError> {
+        let mut arguments = vec!["worktree", "add"];
+        if is_new_branch {
+            if let Some(branch) = branch_name {
+                arguments.push("-b");
+                arguments.push(branch);
+            }
+        }
+        arguments.push(worktree_path);
+        if !is_new_branch {
+            if let Some(branch) = branch_name {
+                arguments.push(branch);
+            }
+        }
+
+        self.executor.execute_git_command(Some(directory_path), &arguments).await
+    }
+
+    /// Removes a worktree from the repository.
+    pub async fn remove_worktree(
+        &self,
+        directory_path: &Path,
+        worktree_path: &str,
+        force: bool,
+    ) -> Result<String, ApplicationError> {
+        let mut arguments = vec!["worktree", "remove"];
+        if force {
+            arguments.push("--force");
+        }
+        arguments.push(worktree_path);
+
+        self.executor.execute_git_command(Some(directory_path), &arguments).await
     }
 }

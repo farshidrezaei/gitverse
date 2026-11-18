@@ -24,11 +24,27 @@ const emit = defineEmits<{
   createBranchFromBranch: [branchName: string]
   deleteBranch: [branchName: string]
   openCreateBranchModal: []
+  openCreateWorktreeModal: []
+  openWorktreeInTab: [directoryPath: string]
   toggleFavoriteBranch: [branchName: string]
 }>()
 
 const { t } = useI18n()
+const { currentRepository } = useRepositoryWorkspace()
 const { renameBranch } = useWorkspaceManager()
+const { worktreeList, isLoadingWorktrees, fetchWorktrees, removeWorktree } = useWorktreeController()
+
+watch(
+  () => currentRepository.value?.path,
+  () => {
+    void fetchWorktrees()
+  },
+  { immediate: true },
+)
+
+async function handleRemoveWorktree(worktreePath: string): Promise<void> {
+  await removeWorktree(worktreePath)
+}
 
 const isRenameModalOpen = ref(false)
 const branchToRename = ref('')
@@ -212,7 +228,7 @@ const existingBranchNames = computed(() => {
         </div>
 
         <!-- Tags -->
-        <div v-if="props.references?.tags?.length">
+        <div v-if="props.references?.tags?.length" class="mb-3">
           <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
             <span>{{ t('git.tags') }}</span>
             <span class="text-[10px]">{{ props.references.tags.length }}</span>
@@ -225,6 +241,53 @@ const existingBranchNames = computed(() => {
             >
               <UIcon name="i-lucide-tag" class="h-3.5 w-3.5 shrink-0 text-muted" />
               <span class="truncate">{{ tag.name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Worktrees -->
+        <div class="mb-3">
+          <div class="flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted uppercase tracking-wider">
+            <span>{{ t('worktree.title') }}</span>
+            <div class="flex items-center gap-1">
+              <span class="text-[10px]">{{ worktreeList.length }}</span>
+              <button
+                type="button"
+                class="rounded p-0.5 text-muted hover:bg-primary/20 hover:text-primary transition-colors"
+                :title="t('worktree.createTitle')"
+                @click="emit('openCreateWorktreeModal')"
+              >
+                <UIcon name="i-lucide-plus" class="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-col gap-0.5 mt-1">
+            <div
+              v-for="worktree in worktreeList"
+              :key="worktree.directory_path"
+              class="group flex w-full items-center justify-between rounded-lg px-2 py-1 text-toned text-[11px] font-mono hover:bg-primary/10 transition-colors cursor-pointer"
+              :class="worktree.directory_path === currentRepository?.path ? 'bg-primary/15 text-primary font-semibold' : ''"
+              @click="emit('openWorktreeInTab', worktree.directory_path)"
+            >
+              <div class="flex items-center gap-1.5 min-w-0">
+                <UIcon name="i-lucide-git-fork" class="h-3.5 w-3.5 shrink-0 text-primary" />
+                <span class="truncate" :title="worktree.directory_path">
+                  {{ worktree.branch_name || worktree.head_commit_hash.slice(0, 7) }}
+                </span>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <UBadge v-if="worktree.is_main" size="xs" color="primary" variant="subtle">Main</UBadge>
+                <UBadge v-else-if="worktree.is_locked" size="xs" color="warning" variant="subtle">Locked</UBadge>
+                <button
+                  v-if="!worktree.is_main"
+                  type="button"
+                  class="rounded p-0.5 text-muted opacity-0 group-hover:opacity-100 hover:bg-error/20 hover:text-error transition-all"
+                  :title="t('common.delete')"
+                  @click.stop="handleRemoveWorktree(worktree.directory_path)"
+                >
+                  <UIcon name="i-lucide-trash-2" class="h-3 w-3" />
+                </button>
+              </div>
             </div>
           </div>
         </div>

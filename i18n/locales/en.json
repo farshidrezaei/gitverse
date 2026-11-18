@@ -75,6 +75,24 @@
       "switchLanguageFa": "تغییر زبان به فارسی"
     }
   },
+  "worktree": {
+    "title": "Worktrees",
+    "createTitle": "Create Git Worktree",
+    "directoryPathLabel": "Worktree Directory Path",
+    "directoryPathHelp": "Path where the linked working tree files will be stored",
+    "directoryPathRequired": "Worktree destination path is required",
+    "pathRequired": "Please specify a directory path for the worktree",
+    "newBranchRadio": "Create new branch",
+    "existingBranchRadio": "Attach existing branch",
+    "newBranchNameLabel": "New Branch Name",
+    "selectExistingBranchLabel": "Select Existing Branch",
+    "createButton": "Create Worktree",
+    "fetchFailed": "Failed to query repository worktrees",
+    "addSuccess": "Worktree created at {path}",
+    "addFailed": "Failed to create worktree: {error}",
+    "removeSuccess": "Worktree removed from {path}",
+    "removeFailed": "Failed to remove worktree: {error}"
+  },
   "confirmation": {
     "defaultTitle": "Confirm Action",
     "criticalNotice": "Critical & Irreversible Operation",

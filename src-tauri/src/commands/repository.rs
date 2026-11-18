@@ -3,7 +3,7 @@ use tauri::{AppHandle, State};
 use crate::application::ApplicationState;
 use crate::domain::{
     ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
-    MergeBranchOutcome, RebaseBranchOutcome, RecentRepositoryRecord, RepositoryOverview, StashRecord,
+    GitWorktreeSummary, MergeBranchOutcome, RebaseBranchOutcome, RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
 
 /// Tauri IPC command to discover and validate the native Git binary.
@@ -493,6 +493,47 @@ pub async fn list_directory_folders(
     directory_path: Option<String>,
 ) -> Result<DirectoryListing, ApplicationError> {
     state.list_directory_folders(directory_path.as_deref()).await
+}
+
+/// Tauri IPC command to list worktrees linked to the repository.
+#[tauri::command]
+pub async fn list_worktrees(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+) -> Result<Vec<GitWorktreeSummary>, ApplicationError> {
+    state.list_worktrees(directory_path.as_deref()).await
+}
+
+/// Tauri IPC command to add a new worktree to the repository.
+#[tauri::command]
+pub async fn add_worktree(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+    worktree_path: String,
+    branch_name: Option<String>,
+    is_new_branch: Option<bool>,
+) -> Result<String, ApplicationError> {
+    state.add_worktree(
+        directory_path.as_deref(),
+        &worktree_path,
+        branch_name.as_deref(),
+        is_new_branch.unwrap_or(false),
+    ).await
+}
+
+/// Tauri IPC command to remove a worktree from the repository.
+#[tauri::command]
+pub async fn remove_worktree(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+    worktree_path: String,
+    force: Option<bool>,
+) -> Result<String, ApplicationError> {
+    state.remove_worktree(
+        directory_path.as_deref(),
+        &worktree_path,
+        force.unwrap_or(false),
+    ).await
 }
 
 

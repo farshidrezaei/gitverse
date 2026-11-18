@@ -12,6 +12,7 @@ import WorkspaceDiffViewerPanel from '~/components/workspace/DiffViewerPanel.vue
 import WorkspaceCommitInspectorPanel from '~/components/workspace/CommitInspectorPanel.vue'
 import WelcomeWorkspaceState from '~/components/workspace/WelcomeWorkspaceState.vue'
 import CreateBranchModal from '~/components/workspace/CreateBranchModal.vue'
+import CreateWorktreeModal from '~/components/workspace/CreateWorktreeModal.vue'
 import FolderPickerModal from '~/components/workspace/FolderPickerModal.vue'
 import { useWorkspaceTabController } from '~/composables/useWorkspaceTabController'
 
@@ -95,7 +96,21 @@ const {
 } = useWorkspaceTabController()
 
 const isCreateBranchModalOpen = ref<boolean>(false)
+const isCreateWorktreeModalOpen = ref<boolean>(false)
 const isFolderPickerModalOpen = ref<boolean>(false)
+const { addWorktree } = useWorktreeController()
+
+async function handleCreateWorktree(
+  path: string,
+  branchName: string | undefined,
+  isNewBranch: boolean,
+): Promise<void> {
+  const success = await addWorktree(path, branchName, isNewBranch)
+  if (success) {
+    isCreateWorktreeModalOpen.value = false
+    await openRepository(path)
+  }
+}
 const commitMessage = ref<string>('')
 const isAmend = ref<boolean>(false)
 const selectedBranchName = ref<string | null>(null)
@@ -466,6 +481,8 @@ async function handlePush(): Promise<void> {
                 @create-branch-from-branch="handleCreateBranchFromBranch"
                 @delete-branch="handleDeleteBranch"
                 @open-create-branch-modal="isCreateBranchModalOpen = true"
+                @open-create-worktree-modal="isCreateWorktreeModalOpen = true"
+                @open-worktree-in-tab="openRepository($event)"
                 @toggle-favorite-branch="toggleFavoriteBranch"
               />
             </template>
@@ -588,6 +605,14 @@ async function handlePush(): Promise<void> {
       :source-commit-sha="selectedCommitHash"
       :existing-branch-names="repositoryReferences?.branches.map((b) => b.name) || []"
       @create="handleCreateBranch"
+    />
+
+    <!-- Worktree creation modal -->
+    <CreateWorktreeModal
+      v-model:open="isCreateWorktreeModalOpen"
+      :default-directory-path="currentRepository?.path"
+      :existing-branch-names="repositoryReferences?.branches.map((b) => b.name) || []"
+      @create="handleCreateWorktree"
     />
 
     <!-- Custom Folder Picker Modal -->

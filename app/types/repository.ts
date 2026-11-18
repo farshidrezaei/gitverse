@@ -246,6 +246,17 @@ export interface DirectoryListing {
   is_current_git_repository: boolean
 }
 
+export interface GitWorktreeSummary {
+  directory_path: string
+  head_commit_hash: string
+  branch_name: string | null
+  is_bare: boolean
+  is_locked: boolean
+  lock_reason: string | null
+  is_prunable: boolean
+  is_main: boolean
+}
+
 
 
 

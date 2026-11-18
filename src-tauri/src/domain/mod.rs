@@ -258,6 +258,20 @@ pub struct DirectoryListing {
     pub is_current_git_repository: bool,
 }
 
+/// Represents a Git worktree linked to a repository.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GitWorktreeSummary {
+    pub directory_path: String,
+    pub head_commit_hash: String,
+    pub branch_name: Option<String>,
+    pub is_bare: bool,
+    pub is_locked: bool,
+    pub lock_reason: Option<String>,
+    pub is_prunable: bool,
+    pub is_main: bool,
+}
+
+
 
 
 

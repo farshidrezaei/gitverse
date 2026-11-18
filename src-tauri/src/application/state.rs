@@ -5,7 +5,7 @@ use tauri::AppHandle;
 use tokio::sync::RwLock;
 use crate::domain::{
     ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
-    MergeBranchOutcome, RebaseBranchOutcome, RecentRepositoryRecord, RepositoryOverview, StashRecord,
+    GitWorktreeSummary, MergeBranchOutcome, RebaseBranchOutcome, RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
 use crate::infrastructure::storage::SQLiteRepositoryStore;
@@ -535,6 +535,35 @@ impl ApplicationState {
         };
 
         self.git_inspector.list_directory_folders(&path).await
+    }
+
+    /// Lists worktrees linked to the repository.
+    pub async fn list_worktrees(&self, directory_path: Option<&str>) -> Result<Vec<GitWorktreeSummary>, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.list_worktrees(&target_path).await
+    }
+
+    /// Adds a new worktree to the repository.
+    pub async fn add_worktree(
+        &self,
+        directory_path: Option<&str>,
+        worktree_path: &str,
+        branch_name: Option<&str>,
+        is_new_branch: bool,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.add_worktree(&target_path, worktree_path, branch_name, is_new_branch).await
+    }
+
+    /// Removes a worktree from the repository.
+    pub async fn remove_worktree(
+        &self,
+        directory_path: Option<&str>,
+        worktree_path: &str,
+        force: bool,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.remove_worktree(&target_path, worktree_path, force).await
     }
 }
 
