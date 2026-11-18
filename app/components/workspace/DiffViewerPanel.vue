@@ -5,6 +5,7 @@ import DiffHeaderToolbar from './diff/DiffHeaderToolbar.vue'
 import DiffUnifiedView from './diff/DiffUnifiedView.vue'
 import DiffSplitView from './diff/DiffSplitView.vue'
 import DiffViewerSkeleton from './diff/DiffViewerSkeleton.vue'
+import DiffMediaViewer from './diff/DiffMediaViewer.vue'
 
 const props = defineProps<{
   diff: FileDiff | null
@@ -38,6 +39,15 @@ const DIFF_WORD_WRAP_STORAGE_KEY = 'gitverse_diff_word_wrap'
 type DiffViewMode = 'inline' | 'side-by-side'
 const viewMode = ref<DiffViewMode>('inline')
 const isWordWrap = ref<boolean>(false)
+
+const currentFilePath = computed<string>(() => {
+  return props.selectedTarget?.filePath || props.diff?.new_path || ''
+})
+
+const currentFileExtension = computed<string>(() => {
+  const parts = currentFilePath.value.split('.')
+  return parts.length > 1 ? parts.pop() || '' : ''
+})
 
 onMounted(() => {
   if (import.meta.client) {
@@ -113,21 +123,13 @@ watch(isWordWrap, (newWrap) => {
         </div>
       </div>
 
-      <!-- Binary File State -->
-      <div
+      <!-- Media & Binary Diff Viewer -->
+      <DiffMediaViewer
         v-else-if="props.diff?.is_binary"
-        class="flex h-full flex-col items-center justify-center gap-2 p-6 text-muted"
-      >
-        <div class="rounded-full bg-muted/20 p-3">
-          <UIcon name="i-lucide-binary" class="h-8 w-8 text-warning" />
-        </div>
-        <div class="text-center font-sans">
-          <p class="font-medium text-highlighted text-xs">{{ t('diff.binaryFile') }}</p>
-          <p class="text-[11px] text-muted mt-0.5 font-mono">
-            {{ props.selectedTarget ? props.selectedTarget.filePath : props.diff.new_path }}
-          </p>
-        </div>
-      </div>
+        :file-path="currentFilePath"
+        :file-extension="currentFileExtension"
+        :is-binary="props.diff.is_binary"
+      />
 
       <!-- Empty / No Changes State -->
       <div

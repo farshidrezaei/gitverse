@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use crate::application::ApplicationState;
 use crate::domain::{
-    ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation,
+    ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
     MergeBranchOutcome, RebaseBranchOutcome, RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
 
@@ -485,6 +485,16 @@ pub async fn continue_repository_operation(
 ) -> Result<String, ApplicationError> {
     state.continue_repository_operation(directory_path.as_deref()).await
 }
+
+/// Tauri IPC command to list subdirectories only for custom folder picker.
+#[tauri::command]
+pub async fn list_directory_folders(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+) -> Result<DirectoryListing, ApplicationError> {
+    state.list_directory_folders(directory_path.as_deref()).await
+}
+
 
 
 

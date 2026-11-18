@@ -6,6 +6,7 @@ import DiffHeaderToolbar from '~/components/workspace/diff/DiffHeaderToolbar.vue
 import DiffUnifiedView from '~/components/workspace/diff/DiffUnifiedView.vue'
 import DiffSplitView from '~/components/workspace/diff/DiffSplitView.vue'
 import DiffViewerSkeleton from '~/components/workspace/diff/DiffViewerSkeleton.vue'
+import DiffMediaViewer from '~/components/workspace/diff/DiffMediaViewer.vue'
 import { buildHunkPatch, buildSelectedLinesPatch } from '~/utils/patchGenerator'
 
 interface WorkspaceDiffTabContentProperties {
@@ -31,6 +32,11 @@ const isLoading = ref<boolean>(false)
 const isTargetStaged = computed<boolean | null>(() => {
   if (properties.tab.commitHash || properties.tab.comparisonBaseHash) return null
   return properties.tab.isStaged ?? null
+})
+
+const fileExtension = computed<string>(() => {
+  const parts = properties.tab.filePath.split('.')
+  return parts.length > 1 ? parts.pop() || '' : ''
 })
 
 async function handleStageHunk(hunkIndex: number): Promise<void> {
@@ -319,21 +325,13 @@ function handleUnstage(filePath: string): void {
     >
       <DiffViewerSkeleton v-if="isLoading" />
 
-      <!-- Binary File Notice -->
-      <div
+      <!-- Media & Binary Diff Viewer -->
+      <DiffMediaViewer
         v-else-if="diffData?.is_binary"
-        class="flex h-full flex-col items-center justify-center gap-2 p-6 text-muted"
-      >
-        <div class="rounded-full bg-muted/20 p-3">
-          <UIcon name="i-lucide-binary" class="h-8 w-8 text-warning" />
-        </div>
-        <div class="text-center font-sans">
-          <p class="font-medium text-highlighted text-xs">{{ t('diff.binaryFile') }}</p>
-          <p class="text-[11px] text-muted mt-0.5 font-mono">
-            {{ properties.tab.filePath }}
-          </p>
-        </div>
-      </div>
+        :file-path="properties.tab.filePath"
+        :file-extension="fileExtension"
+        :is-binary="diffData.is_binary"
+      />
 
       <!-- Empty / No Changes Notice -->
       <div

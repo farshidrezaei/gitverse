@@ -91,6 +91,7 @@ pub fn run() {
             commands::continue_repository_operation,
             commands::merge_branch,
             commands::rebase_branch,
+            commands::list_directory_folders,
         ])
         .run(tauri::generate_context!());
 

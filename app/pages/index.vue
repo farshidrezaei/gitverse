@@ -12,6 +12,7 @@ import WorkspaceDiffViewerPanel from '~/components/workspace/DiffViewerPanel.vue
 import WorkspaceCommitInspectorPanel from '~/components/workspace/CommitInspectorPanel.vue'
 import WelcomeWorkspaceState from '~/components/workspace/WelcomeWorkspaceState.vue'
 import CreateBranchModal from '~/components/workspace/CreateBranchModal.vue'
+import FolderPickerModal from '~/components/workspace/FolderPickerModal.vue'
 import { useWorkspaceTabController } from '~/composables/useWorkspaceTabController'
 
 const { t } = useI18n()
@@ -94,6 +95,7 @@ const {
 } = useWorkspaceTabController()
 
 const isCreateBranchModalOpen = ref<boolean>(false)
+const isFolderPickerModalOpen = ref<boolean>(false)
 const commitMessage = ref<string>('')
 const isAmend = ref<boolean>(false)
 const selectedBranchName = ref<string | null>(null)
@@ -404,7 +406,10 @@ async function handlePush(): Promise<void> {
 <template>
   <div class="h-full w-full flex-1 overflow-hidden select-none bg-[var(--gv-background)]">
     <!-- Zero Repository Open State: Show Welcome screen with recent repos -->
-    <WelcomeWorkspaceState v-if="!currentRepository" />
+    <WelcomeWorkspaceState
+      v-if="!currentRepository"
+      @open-folder-picker="isFolderPickerModalOpen = true"
+    />
 
     <!-- Active Repository: Tab Bars + Content Area -->
     <div v-else class="flex h-full w-full flex-col overflow-hidden">
@@ -416,7 +421,7 @@ async function handlePush(): Promise<void> {
         @select-repository="handleSelectRepository"
         @close-repository="handleCloseRepository"
         @close-other-repositories="handleCloseOtherRepositories"
-        @open-repository-prompt="promptAndOpenRepository"
+        @open-repository-prompt="isFolderPickerModalOpen = true"
         @open-recent-repository="openRepository"
       />
 
@@ -583,6 +588,12 @@ async function handlePush(): Promise<void> {
       :source-commit-sha="selectedCommitHash"
       :existing-branch-names="repositoryReferences?.branches.map((b) => b.name) || []"
       @create="handleCreateBranch"
+    />
+
+    <!-- Custom Folder Picker Modal -->
+    <FolderPickerModal
+      v-model:open="isFolderPickerModalOpen"
+      @select-folder="openRepository"
     />
   </div>
 </template>

@@ -231,6 +231,20 @@ export interface CommitComparison {
   changed_files: CommitChangedFile[]
 }
 
+export interface FolderEntry {
+  name: string
+  path: string
+  is_git_repository: boolean
+}
+
+export interface DirectoryListing {
+  current_path: string
+  parent_path: string | null
+  folders: FolderEntry[]
+  is_current_git_repository: boolean
+}
+
+
 
 
 

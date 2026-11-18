@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tauri::AppHandle;
 use tokio::sync::RwLock;
 use crate::domain::{
-    ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, FileDiff, GitBinaryInformation,
+    ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
     MergeBranchOutcome, RebaseBranchOutcome, RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
@@ -509,6 +509,20 @@ impl ApplicationState {
     /// Removes a repository from the recents list.
     pub fn remove_recent_repository(&self, path: &str) -> Result<(), ApplicationError> {
         self.store.remove_recent_repository(path)
+    }
+
+    /// Lists subfolders in a given directory path for custom folder browsing.
+    pub async fn list_directory_folders(&self, directory_path: Option<&str>) -> Result<DirectoryListing, ApplicationError> {
+        let path = if let Some(p) = directory_path {
+            PathBuf::from(p)
+        } else {
+            std::env::var("HOME")
+                .or_else(|_| std::env::var("USERPROFILE"))
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| PathBuf::from("."))
+        };
+
+        self.git_inspector.list_directory_folders(&path).await
     }
 }
 

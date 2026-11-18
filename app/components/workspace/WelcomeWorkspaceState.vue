@@ -1,5 +1,8 @@
 <script setup lang="ts">
 const { t } = useI18n()
+const emit = defineEmits<{
+  openFolderPicker: []
+}>()
 const {
   recentRepositories,
   isLoading,
@@ -55,7 +58,7 @@ async function handleRemoveRecentRepository(
           icon="i-lucide-folder-open"
           :loading="isLoading"
           class="w-full sm:w-auto font-medium"
-          @click="promptAndOpenRepository"
+          @click="emit('openFolderPicker')"
         >
           {{ t('repository.openRepository') }}
         </UButton>

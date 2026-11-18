@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 use crate::domain::{
-    ApplicationError, ConflictFileDetails, MergeBranchOutcome, RebaseBranchOutcome,
+    ApplicationError, ConflictFileDetails, DirectoryListing, FolderEntry, MergeBranchOutcome, RebaseBranchOutcome,
     RepositoryOperationState, RepositoryOverview, StashRecord,
 };
 use super::branch::validate_branch_name;
@@ -1027,5 +1027,68 @@ impl GitRepositoryInspector {
                 Err(ApplicationError::Unexpected("No active Git operation to continue".into()))
             }
         }
+    }
+
+    /// Lists only directory folders within a specified path and checks if each is a Git repository.
+    pub async fn list_directory_folders(&self, directory_path: &Path) -> Result<DirectoryListing, ApplicationError> {
+        let canonical_path = match std::fs::canonicalize(directory_path) {
+            Ok(p) => p,
+            Err(_) => directory_path.to_path_buf(),
+        };
+
+        let current_path_str = canonical_path.to_string_lossy().to_string();
+        let parent_path = canonical_path.parent().map(|p| p.to_string_lossy().to_string());
+        let is_current_git_repository = self.verify_repository_path(&canonical_path).await.unwrap_or(false);
+
+        let mut folders = Vec::new();
+
+        let read_dir_result = std::fs::read_dir(&canonical_path).map_err(|error| {
+            ApplicationError::FilesystemError(format!("Failed to read directory {}: {}", current_path_str, error))
+        })?;
+
+        for entry_result in read_dir_result {
+            let entry = match entry_result {
+                Ok(e) => e,
+                Err(_) => continue,
+            };
+
+            let file_type = match entry.file_type() {
+                Ok(ft) => ft,
+                Err(_) => continue,
+            };
+
+            if file_type.is_dir() {
+                let folder_name = entry.file_name().to_string_lossy().to_string();
+
+                // Skip hidden folders unless it's a specific visible query
+                if folder_name.starts_with('.') {
+                    continue;
+                }
+
+                let subfolder_path = entry.path();
+                let has_git_folder = subfolder_path.join(".git").exists();
+                let is_git_repo = if has_git_folder {
+                    true
+                } else {
+                    self.verify_repository_path(&subfolder_path).await.unwrap_or(false)
+                };
+
+                folders.push(FolderEntry {
+                    name: folder_name,
+                    path: subfolder_path.to_string_lossy().to_string(),
+                    is_git_repository: is_git_repo,
+                });
+            }
+        }
+
+        // Sort folders alphabetically (case-insensitive)
+        folders.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+
+        Ok(DirectoryListing {
+            current_path: current_path_str,
+            parent_path,
+            folders,
+            is_current_git_repository,
+        })
     }
 }

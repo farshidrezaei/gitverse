@@ -197,7 +197,15 @@
     "removeRecentDescription": "آیا از حذف مخزن «{name}» از لیست اخیر اطمینان دارید؟ فایل‌های روی دیسک پاک نخواهند شد.",
     "path": "مسیر",
     "notGitRepository": "پوشه انتخاب‌شده یک مخزن معتبر گیت نیست.",
-    "notGitRepositoryDetails": "پوشه .git یافت نشد یا دستورات گیت در این پوشه قابل اجرا نیستند."
+    "notGitRepositoryDetails": "پوشه .git یافت نشد یا دستورات گیت در این پوشه قابل اجرا نیستند.",
+    "selectFolderTitle": "انتخاب پوشه مخزن گیت",
+    "selectFolderSubtitle": "پوشه‌های سیستم را برای باز کردن مخزن گیت مرور کنید.",
+    "parentFolder": "پوشه والد",
+    "filterFolders": "جستجوی پوشه‌ها...",
+    "noSubfolders": "هیچ زیرپوشه‌ای یافت نشد",
+    "folderIsGitRepository": "مخزن معتبر گیت شناسایی شد",
+    "folderNotGitRepository": "این پوشه مخزن گیت نیست (یک زیرپوشه یا مسیر دیگر انتخاب کنید)",
+    "openThisFolder": "باز کردن مخزن"
   },
   "theme": {
     "dark": "تیره",

@@ -254,6 +254,7 @@ export function useWorkspaceManager() {
     discoverGit: repositoryWorkspace.discoverGit,
     openRepository,
     promptAndOpenRepository: repositoryWorkspace.promptAndOpenRepository,
+    listDirectoryFolders: repositoryWorkspace.listDirectoryFolders,
     closeRepository,
     restoreLastOpenedRepository,
     fetchRecentRepositories: repositoryWorkspace.fetchRecentRepositories,

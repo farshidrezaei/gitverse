@@ -1,4 +1,5 @@
 import type {
+  DirectoryListing,
   GitBinaryInformation,
   RecentRepositoryRecord,
   RepositoryOverview,
@@ -229,6 +230,34 @@ export function useRepositoryWorkspace() {
     lastError.value = null
   }
 
+  async function listDirectoryFolders(directoryPath?: string): Promise<DirectoryListing | null> {
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        return await invoke<DirectoryListing>('list_directory_folders', {
+          directoryPath: directoryPath || null,
+        })
+      } else {
+        // Mock browser listing
+        const mockFolders = [
+          { name: 'gitverse', path: '/home/farshid/Desktop/self/gitverse', is_git_repository: true },
+          { name: 'carasan', path: '/home/farshid/Desktop/self/carasan', is_git_repository: true },
+          { name: 'notes', path: '/home/farshid/Desktop/self/notes', is_git_repository: false },
+        ]
+        return {
+          current_path: directoryPath || '/home/farshid/Desktop/self',
+          parent_path: '/home/farshid/Desktop',
+          folders: mockFolders,
+          is_current_git_repository: false,
+        }
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      notifyError(t('common.error'), errorMessage)
+      return null
+    }
+  }
+
   return {
     currentRepository,
     recentRepositories,
@@ -241,6 +270,7 @@ export function useRepositoryWorkspace() {
     removeRecentRepository,
     openRepository,
     promptAndOpenRepository,
+    listDirectoryFolders,
     closeRepository,
     restoreLastOpenedRepository,
     clearError,

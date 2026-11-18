@@ -197,7 +197,15 @@
     "removeRecentDescription": "Are you sure you want to remove '{name}' from the recent list? Files on disk will not be deleted.",
     "path": "Path",
     "notGitRepository": "The selected folder is not a valid Git repository.",
-    "notGitRepositoryDetails": "Missing .git folder or Git cannot read a valid worktree in this directory."
+    "notGitRepositoryDetails": "Missing .git folder or Git cannot read a valid worktree in this directory.",
+    "selectFolderTitle": "Select Git Repository Folder",
+    "selectFolderSubtitle": "Browse folders on your system to open a local Git repository.",
+    "parentFolder": "Parent Folder",
+    "filterFolders": "Search folders...",
+    "noSubfolders": "No subfolders found",
+    "folderIsGitRepository": "Valid Git repository detected",
+    "folderNotGitRepository": "Not a Git repository (choose a subfolder or another directory)",
+    "openThisFolder": "Open Repository"
   },
   "theme": {
     "dark": "Dark",

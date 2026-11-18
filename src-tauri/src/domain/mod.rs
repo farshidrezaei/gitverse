@@ -239,5 +239,23 @@ pub struct CommitComparison {
     pub changed_files: Vec<CommitChangedFile>,
 }
 
+/// Directory entry returned by filesystem folder inspection.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FolderEntry {
+    pub name: String,
+    pub path: String,
+    pub is_git_repository: bool,
+}
+
+/// Result of querying a directory for subfolders.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DirectoryListing {
+    pub current_path: String,
+    pub parent_path: Option<String>,
+    pub folders: Vec<FolderEntry>,
+    pub is_current_git_repository: bool,
+}
+
+
 
 
