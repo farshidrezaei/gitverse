@@ -19,6 +19,7 @@ export interface WorkspaceMainTab extends BaseWorkspaceTab {
 export interface WorkspaceDiffTab extends BaseWorkspaceTab {
   type: 'diff'
   filePath: string
+  repositoryPath?: string
   isStaged?: boolean
   commitHash?: string
   comparisonBaseHash?: string
@@ -30,6 +31,7 @@ export type WorkspaceTab = WorkspaceMainTab | WorkspaceDiffTab
 
 export interface OpenDiffTabOptions {
   filePath: string
+  repositoryPath?: string
   isStaged?: boolean
   commitHash?: string
   comparisonBaseHash?: string

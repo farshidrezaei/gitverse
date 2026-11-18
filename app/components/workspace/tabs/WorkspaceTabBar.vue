@@ -16,6 +16,7 @@ const emit = defineEmits<{
   closeOtherTabs: [tabIdentifier: string]
   closeAllDiffTabs: []
   pinTab: [tabIdentifier: string]
+  openNewRepository: []
 }>()
 
 const { t } = useI18n()
@@ -150,6 +151,18 @@ function getContextMenuItems(tab: WorkspaceTab): ContextMenuItem[][] {
           </button>
         </div>
       </UContextMenu>
+
+      <!-- New Repository Workspace Tab Action -->
+      <UTooltip :text="t('tabs.openNewWorkspaceTab')">
+        <button
+          type="button"
+          class="flex h-7 w-7 items-center justify-center rounded-md border border-dashed border-default/80 text-muted transition-colors hover:border-primary/50 hover:bg-muted/30 hover:text-highlighted focus:outline-none shrink-0"
+          :aria-label="t('tabs.openNewWorkspaceTab')"
+          @click="emit('openNewRepository')"
+        >
+          <UIcon name="i-lucide-plus" class="h-3.5 w-3.5" />
+        </button>
+      </UTooltip>
     </div>
 
     <!-- Trailing Actions (Close all diffs shortcut) -->

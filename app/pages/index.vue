@@ -46,6 +46,9 @@ const {
   swapComparison,
   clearComparison,
   clearCommitSelection,
+  openRepository,
+  closeRepository,
+  promptAndOpenRepository,
   toggleFavoriteBranch,
   loadFavoriteBranches,
   restoreLastOpenedRepository,
@@ -72,6 +75,7 @@ const {
   tabs,
   activeTabId,
   activeTab,
+  openWorkspaceTab,
   initializeWorkspaceTab,
   openDiffTab,
   pinTab,
@@ -92,13 +96,48 @@ watch(
   currentRepository,
   (repository) => {
     if (repository) {
-      initializeWorkspaceTab(repository.path, repository.name)
+      openWorkspaceTab(repository.path, repository.name)
     } else {
       resetTabs()
     }
   },
   { immediate: true },
 )
+
+async function handleSelectTab(tabId: string): Promise<void> {
+  const targetTab = tabs.value.find(tab => tab.id === tabId)
+  if (!targetTab) return
+
+  activateTab(tabId)
+
+  if (targetTab.type === 'workspace') {
+    const mainTab = targetTab as WorkspaceMainTab
+    if (currentRepository.value?.path !== mainTab.repositoryPath) {
+      await openRepository(mainTab.repositoryPath)
+    }
+  } else if (targetTab.type === 'diff') {
+    const diffTab = targetTab as WorkspaceDiffTab
+    if (diffTab.repositoryPath && currentRepository.value?.path !== diffTab.repositoryPath) {
+      await openRepository(diffTab.repositoryPath)
+    }
+  }
+}
+
+async function handleCloseTab(tabId: string): Promise<void> {
+  const targetTab = tabs.value.find(tab => tab.id === tabId)
+  closeTab(tabId)
+
+  // If no workspace tabs left, close active repository
+  const remainingWorkspaceTabs = tabs.value.filter(tab => tab.type === 'workspace')
+  if (remainingWorkspaceTabs.length === 0) {
+    await closeRepository()
+  } else if (activeTab.value?.type === 'workspace') {
+    const activeMainTab = activeTab.value as WorkspaceMainTab
+    if (currentRepository.value?.path !== activeMainTab.repositoryPath) {
+      await openRepository(activeMainTab.repositoryPath)
+    }
+  }
+}
 
 function handleKeyboardShortcuts(event: KeyboardEvent): void {
   const isModifierKeyActive = event.ctrlKey || event.metaKey
@@ -266,6 +305,7 @@ function handleOpenStagingDiffTab(
 ): void {
   openDiffTab({
     filePath,
+    repositoryPath: currentRepository.value?.path,
     isStaged,
     changeStatus,
     isPinned: true,
@@ -276,6 +316,7 @@ function handleOpenCommitDiffTab(filePath: string): void {
   if (activeComparison.value) {
     openDiffTab({
       filePath,
+      repositoryPath: currentRepository.value?.path,
       comparisonBaseHash: activeComparison.value.base_hash,
       comparisonTargetHash: activeComparison.value.target_hash,
       isPinned: true,
@@ -283,6 +324,7 @@ function handleOpenCommitDiffTab(filePath: string): void {
   } else if (selectedCommitHash.value) {
     openDiffTab({
       filePath,
+      repositoryPath: currentRepository.value?.path,
       commitHash: selectedCommitHash.value,
       isPinned: true,
     })
@@ -373,11 +415,12 @@ async function handlePush(): Promise<void> {
       <WorkspaceTabBar
         :tabs="tabs"
         :active-tab-id="activeTabId"
-        @select-tab="activateTab"
-        @close-tab="closeTab"
+        @select-tab="handleSelectTab"
+        @close-tab="handleCloseTab"
         @close-other-tabs="closeOtherTabs"
         @close-all-diff-tabs="closeAllDiffTabs"
         @pin-tab="pinTab"
+        @open-new-repository="promptAndOpenRepository"
       />
 
       <!-- Content Area -->

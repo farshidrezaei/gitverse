@@ -7,17 +7,33 @@ describe('useWorkspaceTabController', () => {
       tabs,
       activeTabId,
       activeTab,
-      initializeWorkspaceTab,
+      openWorkspaceTab,
     } = useWorkspaceTabController()
 
-    initializeWorkspaceTab('/path/to/project', 'project')
+    openWorkspaceTab('/path/to/project', 'project')
 
     expect(tabs.value.length).toBe(1)
-    expect(tabs.value[0]?.id).toBe('workspace-main')
+    expect(tabs.value[0]?.id).toBe('workspace:/path/to/project')
     expect(tabs.value[0]?.type).toBe('workspace')
-    expect(tabs.value[0]?.isClosable).toBe(false)
-    expect(activeTabId.value).toBe('workspace-main')
-    expect(activeTab.value?.id).toBe('workspace-main')
+    expect(tabs.value[0]?.isClosable).toBe(true)
+    expect(activeTabId.value).toBe('workspace:/path/to/project')
+    expect(activeTab.value?.id).toBe('workspace:/path/to/project')
+  })
+
+  it('manages multiple workspace tabs independently', () => {
+    const {
+      tabs,
+      activeTabId,
+      openWorkspaceTab,
+    } = useWorkspaceTabController()
+
+    openWorkspaceTab('/path/to/project1', 'project1')
+    openWorkspaceTab('/path/to/project2', 'project2')
+
+    expect(tabs.value.length).toBe(2)
+    expect(tabs.value[0]?.id).toBe('workspace:/path/to/project1')
+    expect(tabs.value[1]?.id).toBe('workspace:/path/to/project2')
+    expect(activeTabId.value).toBe('workspace:/path/to/project2')
   })
 
   it('opens a new diff tab and activates it', () => {
@@ -25,10 +41,10 @@ describe('useWorkspaceTabController', () => {
       tabs,
       activeTabId,
       openDiffTab,
-      initializeWorkspaceTab,
+      openWorkspaceTab,
     } = useWorkspaceTabController()
 
-    initializeWorkspaceTab('/path/to/project', 'project')
+    openWorkspaceTab('/path/to/project', 'project')
 
     const newTab = openDiffTab({
       filePath: 'src/main.rs',
@@ -50,10 +66,10 @@ describe('useWorkspaceTabController', () => {
       tabs,
       activeTabId,
       openDiffTab,
-      initializeWorkspaceTab,
+      openWorkspaceTab,
     } = useWorkspaceTabController()
 
-    initializeWorkspaceTab('/path/to/project', 'project')
+    openWorkspaceTab('/path/to/project', 'project')
 
     // Open first preview tab (unpinned)
     openDiffTab({
@@ -82,10 +98,10 @@ describe('useWorkspaceTabController', () => {
       tabs,
       openDiffTab,
       pinTab,
-      initializeWorkspaceTab,
+      openWorkspaceTab,
     } = useWorkspaceTabController()
 
-    initializeWorkspaceTab('/path/to/project', 'project')
+    openWorkspaceTab('/path/to/project', 'project')
 
     const tab = openDiffTab({
       filePath: 'src/preview.rs',
@@ -103,10 +119,10 @@ describe('useWorkspaceTabController', () => {
       activeTabId,
       openDiffTab,
       closeTab,
-      initializeWorkspaceTab,
+      openWorkspaceTab,
     } = useWorkspaceTabController()
 
-    initializeWorkspaceTab('/path/to/project', 'project')
+    openWorkspaceTab('/path/to/project', 'project')
 
     const tabA = openDiffTab({ filePath: 'fileA.txt', isPinned: true })
     const tabB = openDiffTab({ filePath: 'fileB.txt', isPinned: true })
@@ -119,14 +135,10 @@ describe('useWorkspaceTabController', () => {
     expect(tabs.value.length).toBe(2)
     expect(activeTabId.value).toBe(tabA.id)
 
-    // Close tabA -> should fallback to workspace-main
+    // Close tabA -> should fallback to workspace tab
     closeTab(tabA.id)
     expect(tabs.value.length).toBe(1)
-    expect(activeTabId.value).toBe('workspace-main')
-
-    // Attempt to close non-closable main tab -> should not close
-    closeTab('workspace-main')
-    expect(tabs.value.length).toBe(1)
+    expect(activeTabId.value).toBe('workspace:/path/to/project')
   })
 
   it('closes other tabs and closes all diff tabs', () => {
@@ -136,10 +148,10 @@ describe('useWorkspaceTabController', () => {
       openDiffTab,
       closeOtherTabs,
       closeAllDiffTabs,
-      initializeWorkspaceTab,
+      openWorkspaceTab,
     } = useWorkspaceTabController()
 
-    initializeWorkspaceTab('/path/to/project', 'project')
+    openWorkspaceTab('/path/to/project', 'project')
 
     openDiffTab({ filePath: 'file1.txt', isPinned: true })
     const tab2 = openDiffTab({ filePath: 'file2.txt', isPinned: true })
@@ -150,13 +162,13 @@ describe('useWorkspaceTabController', () => {
     // Close others with respect to tab2 -> keep main and tab2
     closeOtherTabs(tab2.id)
     expect(tabs.value.length).toBe(2)
-    expect(tabs.value.map(item => item.id)).toEqual(['workspace-main', tab2.id])
+    expect(tabs.value.map(item => item.id)).toEqual(['workspace:/path/to/project', tab2.id])
     expect(activeTabId.value).toBe(tab2.id)
 
     // Close all diff tabs -> only main remains
     closeAllDiffTabs()
     expect(tabs.value.length).toBe(1)
-    expect(tabs.value[0]?.id).toBe('workspace-main')
-    expect(activeTabId.value).toBe('workspace-main')
+    expect(tabs.value[0]?.id).toBe('workspace:/path/to/project')
+    expect(activeTabId.value).toBe('workspace:/path/to/project')
   })
 })

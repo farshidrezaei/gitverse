@@ -438,6 +438,7 @@
     "pin": "Keep Open",
     "staged": "Staged",
     "unstaged": "Unstaged",
-    "commit": "Commit"
+    "commit": "Commit",
+    "openNewWorkspaceTab": "Open Repository in New Tab"
   }
 }
