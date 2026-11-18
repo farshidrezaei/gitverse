@@ -94,17 +94,19 @@ const displayedHunks = computed(() => {
         <span class="font-mono text-[11px]">{{ hunk.header }}</span>
       </div>
 
-      <!-- Lines in Hunk with Content-Visibility Optimization -->
+      <!-- Lines in Hunk -->
       <div
         v-for="(line, lineIndex) in hunk.lines"
         :key="`inline-line-${hunkIndex}-${lineIndex}`"
-        class="flex items-stretch group"
-        style="content-visibility: auto; contain-intrinsic-size: 0 20px;"
-        :class="{
-          'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': line.line_type === 'addition',
-          'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': line.line_type === 'deletion',
-          'text-highlighted hover:bg-muted/15 border-s-2 border-transparent': line.line_type === 'context',
-        }"
+        class="flex items-stretch group leading-[22px]"
+        :class="[
+          props.isWordWrap ? 'min-h-[22px]' : 'h-[22px] min-h-[22px] max-h-[22px]',
+          {
+            'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': line.line_type === 'addition',
+            'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': line.line_type === 'deletion',
+            'text-highlighted hover:bg-muted/15 border-s-2 border-transparent': line.line_type === 'context',
+          },
+        ]"
       >
         <!-- Old Line Number -->
         <div class="w-12 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/30 font-mono text-[10px]">

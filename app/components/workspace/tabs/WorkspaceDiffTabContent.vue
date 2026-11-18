@@ -238,7 +238,10 @@ function handleUnstage(filePath: string): void {
     </div>
 
     <!-- Main Diff Viewport -->
-    <div class="flex-1 overflow-auto bg-[var(--gv-surface)] font-mono text-[11px] leading-5">
+    <div
+      class="flex-1 min-h-0 bg-[var(--gv-surface)] font-mono text-[11px]"
+      :class="viewMode === 'side-by-side' ? 'overflow-hidden flex flex-col' : 'overflow-auto leading-5'"
+    >
       <DiffViewerSkeleton v-if="isLoading" />
 
       <!-- Binary File Notice -->
