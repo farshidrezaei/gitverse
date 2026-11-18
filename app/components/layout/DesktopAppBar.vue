@@ -47,7 +47,6 @@ function handleBarDoubleClick(event: MouseEvent): void {
         {{ t('application.status.browserPreviewMode') }}
       </span>
     </div>
-    </div>
 
     <!-- Trailing: Settings Trigger & Native Window Controls (No theme/lang toggles) -->
     <div class="flex items-center gap-1.5 shrink-0">
