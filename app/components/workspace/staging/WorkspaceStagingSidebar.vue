@@ -176,49 +176,58 @@ function getFlatFileContextMenuItems(
 <template>
   <div class="gv-island-panel flex h-full flex-col overflow-hidden">
     <!-- Staging Header with View Toggle (Flat vs Tree) -->
-    <div class="flex h-9 shrink-0 items-center justify-between border-b border-default/70 px-3 bg-muted/20">
-      <span class="text-xs font-semibold text-highlighted uppercase tracking-wider">
+    <div class="flex h-9 shrink-0 items-center justify-between border-b border-default/70 px-3 bg-muted/20 gap-1.5">
+      <span class="text-xs font-semibold text-highlighted uppercase tracking-wider truncate">
         {{ t('navigation.changes') }}
       </span>
-      <div class="flex items-center gap-1.5">
-        <!-- Segmented Pill Switcher: Flat vs Tree -->
+
+      <div class="flex items-center gap-1 shrink-0">
+        <!-- Segmented Pill Switcher: Flat vs Tree (Compact icon-based with tooltips) -->
         <div class="flex items-center rounded-lg border border-default/70 bg-surface/80 p-0.5 shadow-2xs">
-          <button
-            type="button"
-            class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all"
-            :class="props.stagingViewMode === 'flat'
-              ? 'bg-primary text-inverted shadow-xs'
-              : 'text-muted hover:text-highlighted'"
-            :title="t('repository.viewFlat')"
-            @click="emit('update:stagingViewMode', 'flat')"
-          >
-            <UIcon name="i-lucide-list" class="h-3 w-3" />
-            <span>{{ t('repository.viewFlatShort') }}</span>
-          </button>
-          <button
-            type="button"
-            class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all"
-            :class="props.stagingViewMode === 'tree'
-              ? 'bg-primary text-inverted shadow-xs'
-              : 'text-muted hover:text-highlighted'"
-            :title="t('repository.viewTree')"
-            @click="emit('update:stagingViewMode', 'tree')"
-          >
-            <UIcon name="i-lucide-folder-tree" class="h-3 w-3" />
-            <span>{{ t('repository.viewTreeShort') }}</span>
-          </button>
+          <UTooltip :text="t('repository.viewFlat')">
+            <button
+              type="button"
+              class="flex items-center justify-center rounded-md p-1 transition-all"
+              :class="props.stagingViewMode === 'flat'
+                ? 'bg-primary text-inverted shadow-xs'
+                : 'text-muted hover:text-highlighted'"
+              :aria-label="t('repository.viewFlat')"
+              @click="emit('update:stagingViewMode', 'flat')"
+            >
+              <UIcon name="i-lucide-list" class="h-3.5 w-3.5" />
+            </button>
+          </UTooltip>
+
+          <UTooltip :text="t('repository.viewTree')">
+            <button
+              type="button"
+              class="flex items-center justify-center rounded-md p-1 transition-all"
+              :class="props.stagingViewMode === 'tree'
+                ? 'bg-primary text-inverted shadow-xs'
+                : 'text-muted hover:text-highlighted'"
+              :aria-label="t('repository.viewTree')"
+              @click="emit('update:stagingViewMode', 'tree')"
+            >
+              <UIcon name="i-lucide-folder-tree" class="h-3.5 w-3.5" />
+            </button>
+          </UTooltip>
         </div>
 
-        <div class="h-3.5 w-px bg-default/80" aria-hidden="true" />
+        <div class="h-3.5 w-px bg-default/80 mx-0.5" aria-hidden="true" />
 
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-refresh-cw"
-          :title="t('common.refresh')"
-          @click="emit('refresh')"
-        />
+        <!-- Refresh Button -->
+        <UTooltip :text="t('common.refresh')">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-rotate-cw"
+            :aria-label="t('common.refresh')"
+            @click="emit('refresh')"
+          />
+        </UTooltip>
+
+        <!-- Stash Button -->
         <UTooltip :text="t('stash.createTitle')">
           <UButton
             size="xs"
@@ -229,15 +238,6 @@ function getFlatFileContextMenuItems(
             @click="isCreateStashModalOpen = true"
           />
         </UTooltip>
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-check-check"
-          :label="t('git.stageAll')"
-          :disabled="!props.repositoryStatus?.unstaged_files?.length"
-          @click="emit('stageAll')"
-        />
       </div>
     </div>
 

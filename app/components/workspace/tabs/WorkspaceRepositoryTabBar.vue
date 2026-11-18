@@ -59,13 +59,22 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
   const alreadyOpenPaths = new Set(properties.tabs.map(tab => tab.repositoryPath))
 
   if (properties.recentRepositories.length > 0) {
-    const recentItems: DropdownMenuItem[] = properties.recentRepositories.map(record => ({
-      label: record.name,
-      description: record.path,
-      icon: 'i-lucide-git-fork',
-      color: alreadyOpenPaths.has(record.path) ? ('primary' as const) : undefined,
-      onSelect: () => emit('openRecentRepository', record.path),
-    }))
+    const recentItems: DropdownMenuItem[] = [
+      {
+        label: t('repository.recentRepositories'),
+        type: 'label' as const,
+      },
+      ...properties.recentRepositories.map(record => {
+        const isOpen = alreadyOpenPaths.has(record.path)
+        return {
+          label: record.name,
+          description: record.path,
+          icon: isOpen ? 'i-lucide-check-circle-2' : 'i-lucide-folder-git-2',
+          color: isOpen ? ('primary' as const) : undefined,
+          onSelect: () => emit('openRecentRepository', record.path),
+        }
+      }),
+    ]
     items.push(recentItems)
   }
 
@@ -120,15 +129,16 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
       </UContextMenu>
 
       <!-- Dropdown button to open another repository -->
-      <UDropdownMenu :items="newRepositoryDropdownItems">
-        <button
-          type="button"
-          class="flex h-7 items-center gap-1 rounded-md border border-dashed border-default/80 px-2 text-muted transition-colors hover:border-primary/50 hover:bg-muted/30 hover:text-highlighted focus:outline-none shrink-0"
+      <UDropdownMenu :items="newRepositoryDropdownItems" :content="{ align: 'start' }">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-plus"
+          trailing-icon="i-lucide-chevron-down"
+          class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
           :title="t('tabs.openNewWorkspaceTab')"
-        >
-          <UIcon name="i-lucide-plus" class="h-3.5 w-3.5" />
-          <UIcon name="i-lucide-chevron-down" class="h-3 w-3 text-muted/70" />
-        </button>
+        />
       </UDropdownMenu>
     </div>
   </nav>

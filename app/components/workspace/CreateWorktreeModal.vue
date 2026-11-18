@@ -153,18 +153,13 @@ function handleClose(): void {
               <label class="text-xs font-semibold text-highlighted">
                 {{ t('worktree.selectExistingBranchLabel') }}
               </label>
-              <select
+              <USelect
                 v-model="selectedBranch"
-                class="w-full rounded-lg border border-default bg-surface px-3 py-1.5 text-xs text-highlighted focus:outline-primary"
-              >
-                <option
-                  v-for="branch in props.existingBranchNames || []"
-                  :key="branch"
-                  :value="branch"
-                >
-                  {{ branch }}
-                </option>
-              </select>
+                :items="props.existingBranchNames || []"
+                icon="i-lucide-git-branch"
+                size="sm"
+                class="w-full font-mono text-xs"
+              />
             </div>
           </div>
 

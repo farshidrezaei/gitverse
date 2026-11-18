@@ -75,7 +75,7 @@ function getCommitContextMenuItems(commit: GitCommit): ContextMenuItem[][] {
     [
       {
         label: t('commit.cherryPick'),
-        icon: 'i-lucide-git-cherry-pick',
+        icon: 'i-lucide-cherry',
         onSelect: () => emit('cherryPickCommit', commit.hash),
       },
       {

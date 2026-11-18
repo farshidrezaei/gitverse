@@ -158,21 +158,13 @@ async function handleConfirmRebase(): Promise<void> {
                   </div>
 
                   <!-- Action selector -->
-                  <select
+                  <USelect
                     v-model="item.action"
-                    class="rounded-md border border-default bg-[var(--gv-background)] px-2 py-1 text-xs font-semibold focus:outline-primary"
-                    :class="{
-                      'text-primary': item.action === 'pick',
-                      'text-info': item.action === 'reword',
-                      'text-warning': item.action === 'edit',
-                      'text-secondary': item.action === 'squash',
-                      'text-error': item.action === 'drop',
-                    }"
-                  >
-                    <option v-for="action in availableActions" :key="action.id" :value="action.id">
-                      {{ action.label }}
-                    </option>
-                  </select>
+                    :items="availableActions"
+                    value-key="id"
+                    size="xs"
+                    class="w-28 font-semibold text-xs shrink-0"
+                  />
                 </div>
 
                 <!-- Commit Hash & Subject -->

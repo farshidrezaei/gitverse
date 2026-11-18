@@ -190,7 +190,10 @@
       "added": "Added",
       "deleted": "Deleted",
       "renamed": "Renamed"
-    }
+    },
+    "searchCommits": "Search commits...",
+    "copyHash": "Copy full commit hash",
+    "noCommitsFound": "No commits found matching filter"
   },
   "settings": {
     "title": "Settings",
@@ -350,7 +353,8 @@
     "swapComparison": "Swap Base and Target",
     "closeComparison": "Close Comparison",
     "compareWithSelected": "Compare with selected ({hash})",
-    "compareWith": "Compare Commits"
+    "compareWith": "Compare Commits",
+    "noCommitSelected": "Select a commit from the graph to inspect details"
   },
   "stash": {
     "title": "Stashes",
@@ -413,7 +417,8 @@
     "validationNoLeadingTrailingDot": "Branch name cannot start or end with a dot.",
     "validationNoConsecutiveSeparators": "Branch name cannot contain consecutive slashes (//) or dots (..).",
     "validationCannotEndWithLock": "Branch name cannot end with .lock.",
-    "validationInvalidCharacters": "Branch name contains invalid characters."
+    "validationInvalidCharacters": "Branch name contains invalid characters.",
+    "create": "Create branch"
   },
   "conflict": {
     "title": "Merge Conflicts",
@@ -491,7 +496,9 @@
     "demoHold": "Hold-to-Confirm (Hard Reset)",
     "demoKeyword": "Type-to-Confirm (Force Push)",
     "confirmedMessage": "Action confirmed: {type}",
-    "cancelledMessage": "Action was cancelled"
+    "cancelledMessage": "Action was cancelled",
+    "statusTokens": "Status Indicators",
+    "diffTokens": "Diff Color Tokens"
   },
   "notifications": {
     "undo": "Undo",

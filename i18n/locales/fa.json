@@ -190,7 +190,10 @@
       "added": "افزوده‌شده",
       "deleted": "حذف‌شده",
       "renamed": "تغییرنام‌یافته"
-    }
+    },
+    "searchCommits": "جستجوی کامیت‌ها...",
+    "copyHash": "کپی هش کامل کامیت",
+    "noCommitsFound": "کامیتی منطبق با فیلتر یافت نشد"
   },
   "settings": {
     "title": "تنظیمات",
@@ -350,7 +353,8 @@
     "swapComparison": "جابجایی کامیت مبدأ و مقصد",
     "closeComparison": "بستن مقایسه",
     "compareWithSelected": "مقایسه با انتخاب‌شده ({hash})",
-    "compareWith": "مقایسه کامیت‌ها"
+    "compareWith": "مقایسه کامیت‌ها",
+    "noCommitSelected": "برای مشاهده جزئیات، یک کامیت را از نمودار انتخاب کنید"
   },
   "stash": {
     "title": "استش‌ها (Stashes)",
@@ -413,7 +417,8 @@
     "validationNoLeadingTrailingDot": "نام شاخه نمی‌تواند با نقطه (.) شروع یا تمام شود.",
     "validationNoConsecutiveSeparators": "نام شاخه نباید حاوی اسلش متوالی (//) یا دو نقطه (..) باشد.",
     "validationCannotEndWithLock": "نام شاخه نمی‌تواند با lock. پایان یابد.",
-    "validationInvalidCharacters": "نام شاخه حاوی کاراکترهای غیرمجاز است."
+    "validationInvalidCharacters": "نام شاخه حاوی کاراکترهای غیرمجاز است.",
+    "create": "ایجاد شاخه"
   },
   "conflict": {
     "title": "تعارض‌های مرج (Merge Conflicts)",
@@ -491,7 +496,9 @@
     "demoHold": "تأیید فشردن و نگه‌داشتن (Hard Reset)",
     "demoKeyword": "تأیید تایپ عبارت (Force Push)",
     "confirmedMessage": "عملیات تأیید شد: {type}",
-    "cancelledMessage": "عملیات لغو شد"
+    "cancelledMessage": "عملیات لغو شد",
+    "statusTokens": "نشانگرهای وضعیت",
+    "diffTokens": "توکن‌های رنگ دیف"
   },
   "notifications": {
     "undo": "بازگردانی",

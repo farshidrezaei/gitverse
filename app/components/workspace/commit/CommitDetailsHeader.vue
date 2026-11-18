@@ -23,7 +23,7 @@ const moreActions = computed(() => [
   [
     {
       label: t('commit.cherryPick'),
-      icon: 'i-lucide-git-cherry-pick',
+      icon: 'i-lucide-cherry',
       onSelect: () => emit('cherryPick', props.commitDetails.hash),
     },
     {
