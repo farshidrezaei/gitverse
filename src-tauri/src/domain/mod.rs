@@ -247,6 +247,17 @@ pub struct InteractiveRebaseRequest {
     pub plan_items: Vec<RebasePlanItem>,
 }
 
+/// System diagnostics and environment information for voluntary bug reporting.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ApplicationDiagnostics {
+    pub app_version: String,
+    pub os_name: String,
+    pub os_arch: String,
+    pub git_binary_path: String,
+    pub git_version: String,
+    pub current_repository_path: Option<String>,
+}
+
 /// Detailed comparison between two commits or branches.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CommitComparison {

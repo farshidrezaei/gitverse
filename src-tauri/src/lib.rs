@@ -97,6 +97,7 @@ pub fn run() {
             commands::remove_worktree,
             commands::get_rebase_commits,
             commands::execute_interactive_rebase,
+            commands::get_application_diagnostics,
         ])
         .run(tauri::generate_context!());
 

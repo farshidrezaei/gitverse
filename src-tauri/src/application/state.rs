@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tauri::AppHandle;
 use tokio::sync::RwLock;
 use crate::domain::{
-    ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
+    ApplicationDiagnostics, ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
     GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome, RebaseBranchOutcome, RebasePlanItem, RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
@@ -584,6 +584,22 @@ impl ApplicationState {
     ) -> Result<RebaseBranchOutcome, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
         self.git_inspector.execute_interactive_rebase(&target_path, &request).await
+    }
+
+    /// Collects system diagnostics and environment details for voluntary bug reporting.
+    pub async fn get_application_diagnostics(&self) -> Result<ApplicationDiagnostics, ApplicationError> {
+        let git_info = self.discover_git(None).await?;
+        let current_repo = self.current_repository.read().await;
+        let repo_path = current_repo.as_ref().map(|r| r.path.clone());
+
+        Ok(ApplicationDiagnostics {
+            app_version: env!("CARGO_PKG_VERSION").to_string(),
+            os_name: std::env::consts::OS.to_string(),
+            os_arch: std::env::consts::ARCH.to_string(),
+            git_binary_path: git_info.executable_path,
+            git_version: git_info.version_string,
+            current_repository_path: repo_path,
+        })
     }
 }
 

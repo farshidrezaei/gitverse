@@ -233,7 +233,15 @@
       "description": "اطلاعات نسخه و مشخصات معماری پایه.",
       "versionLabel": "نسخه برنامه",
       "runtimeLabel": "محیط دسکتاپ",
-      "architectureLabel": "استاندارد معماری"
+      "architectureLabel": "استاندارد معماری",
+      "diagnosticsTitle": "اطلاعات عیب‌یابی سیستم",
+      "copyDiagnostics": "کپی مشخصات سیستم",
+      "copied": "کپی شد!",
+      "diagnosticsCopied": "مشخصات عیب‌یابی سیستم در کلیپ‌بورد ذخیره شد",
+      "osArchLabel": "سیستم‌عامل و معماری",
+      "gitVersionLabel": "نسخه گیت",
+      "gitPathLabel": "مسیر باینری گیت",
+      "diagnosticsPrivacyNote": "کاملاً اختیاری و امن: تمامی اطلاعات حساس و توکن‌ها پیش از کپی به‌صورت خودکار سانسور می‌شوند."
     }
   },
   "repository": {

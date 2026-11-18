@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use tauri::{AppHandle, State};
 use crate::application::ApplicationState;
 use crate::domain::{
-    ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
+    ApplicationDiagnostics, ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
     GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome, RebaseBranchOutcome, RebasePlanItem, RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
 
@@ -554,6 +554,14 @@ pub async fn execute_interactive_rebase(
     request: InteractiveRebaseRequest,
 ) -> Result<RebaseBranchOutcome, ApplicationError> {
     state.execute_interactive_rebase(directory_path.as_deref(), request).await
+}
+
+/// Tauri IPC command to get system and application diagnostics.
+#[tauri::command]
+pub async fn get_application_diagnostics(
+    state: State<'_, ApplicationState>,
+) -> Result<ApplicationDiagnostics, ApplicationError> {
+    state.get_application_diagnostics().await
 }
 
 

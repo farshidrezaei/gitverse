@@ -273,6 +273,15 @@ export interface GitWorktreeSummary {
   is_main: boolean
 }
 
+export interface ApplicationDiagnostics {
+  app_version: string
+  os_name: string
+  os_arch: string
+  git_binary_path: string
+  git_version: string
+  current_repository_path: string | null
+}
+
 
 
 

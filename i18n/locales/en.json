@@ -233,7 +233,15 @@
       "description": "Version information and core architectural baseline.",
       "versionLabel": "Application Version",
       "runtimeLabel": "Desktop Runtime",
-      "architectureLabel": "Architecture Standard"
+      "architectureLabel": "Architecture Standard",
+      "diagnosticsTitle": "System Diagnostics",
+      "copyDiagnostics": "Copy Diagnostics",
+      "copied": "Copied!",
+      "diagnosticsCopied": "Copied system diagnostics to clipboard",
+      "osArchLabel": "OS / Architecture",
+      "gitVersionLabel": "Git Version",
+      "gitPathLabel": "Git Binary Path",
+      "diagnosticsPrivacyNote": "Voluntary & Privacy Safe: Sensitive tokens and credentials are automatically redacted before export."
     }
   },
   "repository": {
