@@ -6,6 +6,7 @@ import {
   GITHUB_DEFAULT_INSTANCE_URL,
   GITLAB_DEFAULT_INSTANCE_URL,
 } from '~/schemas/providerSchema'
+import { openExternalUrl } from '~/utils/tauriClient'
 
 interface ConnectProviderAccountModalProps {
   open: boolean
@@ -44,6 +45,10 @@ const tokenGenerationUrl = computed(() => {
     : 'https://gitlab.com'
   return `${base}/-/user_settings/personal_access_tokens?name=GitVerse+Desktop&scopes=api,read_user,read_repository`
 })
+
+async function handleOpenTokenGenerator(): Promise<void> {
+  await openExternalUrl(tokenGenerationUrl.value)
+}
 
 async function handlePasteFromClipboard(): Promise<void> {
   try {
@@ -191,15 +196,14 @@ async function handleConnect(): Promise<void> {
                 <UIcon name="i-lucide-sparkles" class="h-3.5 w-3.5 text-primary" />
                 <span>{{ t('provider.generateTokenButton', { provider: selectedProvider === 'gitlab' ? 'GitLab' : 'GitHub' }) }}</span>
               </span>
-              <a
-                :href="tokenGenerationUrl"
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
                 class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary text-white text-[11px] font-semibold hover:bg-primary/90 transition-all cursor-pointer shadow-xs"
+                @click="handleOpenTokenGenerator"
               >
                 <span>Generate</span>
                 <UIcon name="i-lucide-external-link" class="h-3 w-3" />
-              </a>
+              </button>
             </div>
             <p class="text-[10px] text-muted leading-tight">
               {{ t('provider.generateTokenHelper', { provider: selectedProvider === 'gitlab' ? 'GitLab' : 'GitHub' }) }}

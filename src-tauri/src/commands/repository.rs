@@ -621,6 +621,40 @@ pub async fn get_application_diagnostics(
     state.get_application_diagnostics().await
 }
 
+/// Tauri IPC command to open an external URL in the default system browser.
+#[tauri::command]
+pub async fn open_external_url(url: String) -> Result<(), ApplicationError> {
+    if !url.starts_with("https://") && !url.starts_with("http://") {
+        return Err(ApplicationError::InvalidInput("Only HTTP/HTTPS URLs are allowed".into()));
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        tokio::process::Command::new("xdg-open")
+            .arg(&url)
+            .spawn()
+            .map_err(|error| ApplicationError::Unexpected(format!("Failed to open browser: {}", error)))?;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        tokio::process::Command::new("open")
+            .arg(&url)
+            .spawn()
+            .map_err(|error| ApplicationError::Unexpected(format!("Failed to open browser: {}", error)))?;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        tokio::process::Command::new("cmd")
+            .args(["/C", "start", "", &url])
+            .spawn()
+            .map_err(|error| ApplicationError::Unexpected(format!("Failed to open browser: {}", error)))?;
+    }
+
+    Ok(())
+}
+
 
 
 

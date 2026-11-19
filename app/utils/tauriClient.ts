@@ -40,3 +40,21 @@ export async function subscribeTauriEvent<TPayload>(
   })
   return unlisten
 }
+
+/**
+ * Opens an external URL in the user's default web browser across desktop and web environments.
+ */
+export async function openExternalUrl(url: string): Promise<void> {
+  if (isTauriRuntime()) {
+    try {
+      await invokeTauriCommand('open_external_url', { url })
+      return
+    } catch {
+      // Fallback to window.open if IPC fails
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+}
