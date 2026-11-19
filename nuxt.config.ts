@@ -46,6 +46,8 @@ export default defineNuxtConfig({
         '@tauri-apps/api/window',
         '@tauri-apps/plugin-dialog',
         'zod',
+        'marked',
+        'dompurify',
       ],
     },
   },

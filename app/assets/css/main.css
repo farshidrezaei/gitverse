@@ -561,6 +561,83 @@ div[data-state][class*="overlay"] {
   -webkit-backdrop-filter: none !important;
 }
 
+/* Markdown rendered content in PRs and release notes */
+.gv-markdown-content {
+  line-height: 1.6;
+}
+
+.gv-markdown-content h1,
+.gv-markdown-content h2,
+.gv-markdown-content h3,
+.gv-markdown-content h4 {
+  font-weight: 700;
+  color: var(--gv-text-highlighted, #f3f4f6);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.gv-markdown-content h1 { font-size: 1.25rem; }
+.gv-markdown-content h2 { font-size: 1.1rem; }
+.gv-markdown-content h3 { font-size: 0.95rem; }
+
+.gv-markdown-content p {
+  margin-bottom: 0.75rem;
+}
+
+.gv-markdown-content ul,
+.gv-markdown-content ol {
+  padding-inline-start: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.gv-markdown-content ul { list-style-type: disc; }
+.gv-markdown-content ol { list-style-type: decimal; }
+
+.gv-markdown-content li {
+  margin-bottom: 0.25rem;
+}
+
+.gv-markdown-content code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+}
+
+.gv-markdown-content pre {
+  background-color: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--gv-border, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  padding: 0.75rem;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+}
+
+.gv-markdown-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.gv-markdown-content blockquote {
+  border-inline-start: 3px solid var(--gv-primary, #0284c7);
+  padding-inline-start: 0.75rem;
+  color: var(--gv-text-muted, #9ca3af);
+  margin-bottom: 0.75rem;
+  font-style: italic;
+}
+
+.gv-markdown-content a {
+  color: var(--gv-primary, #38bdf8);
+  text-decoration: underline;
+}
+
+.gv-markdown-content hr {
+  border: 0;
+  border-top: 1px solid var(--gv-border, rgba(255, 255, 255, 0.1));
+  margin: 1rem 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

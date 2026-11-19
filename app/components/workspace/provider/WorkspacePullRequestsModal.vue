@@ -2,6 +2,7 @@
 import type { RemotePullRequest, PullRequestState, ProviderAccount } from '~/types/provider'
 import type { RemoteSummary } from '~/types/repository'
 import ConnectProviderAccountModal from './ConnectProviderAccountModal.vue'
+import { renderSafeMarkdown } from '~/utils/markdownRenderer'
 
 interface WorkspacePullRequestsModalProps {
   open: boolean
@@ -481,8 +482,16 @@ const filteredPullRequests = computed(() => {
               <!-- Description Body -->
               <div class="space-y-2 pt-2 border-t border-default/60">
                 <h4 class="text-xs font-bold text-highlighted uppercase tracking-wider">Description</h4>
-                <div class="p-3.5 rounded-xl border border-default/70 bg-muted/10 text-xs text-toned font-mono whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
-                  {{ selectedPullRequest.description || 'No description provided.' }}
+                <div
+                  v-if="selectedPullRequest.description"
+                  class="gv-markdown-content p-4 rounded-xl border border-default/70 bg-muted/10 text-xs text-toned leading-relaxed max-h-80 overflow-y-auto"
+                  v-html="renderSafeMarkdown(selectedPullRequest.description)"
+                />
+                <div
+                  v-else
+                  class="p-4 rounded-xl border border-default/70 bg-muted/10 text-xs text-muted italic"
+                >
+                  No description provided.
                 </div>
               </div>
             </div>
