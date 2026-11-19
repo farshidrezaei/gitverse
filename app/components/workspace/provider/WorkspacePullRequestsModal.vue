@@ -379,15 +379,25 @@ const filteredPullRequests = computed(() => {
               </p>
 
               <div class="flex items-center justify-between text-[10px] text-muted pt-0.5">
-                <span class="flex items-center gap-1 font-mono">
-                  <span>{{ pr.source_branch }}</span>
-                  <UIcon name="i-lucide-arrow-right" class="h-2.5 w-2.5 rtl:rotate-180" />
-                  <span>{{ pr.target_branch }}</span>
+                <span class="flex items-center gap-1.5 font-medium truncate max-w-[130px]">
+                  <UAvatar
+                    :src="pr.author_avatar_url || undefined"
+                    :alt="pr.author_username"
+                    size="3xs"
+                  />
+                  <span class="truncate">{{ pr.author_username }}</span>
                 </span>
-                <span class="flex items-center gap-1">
-                  <UIcon name="i-lucide-message-square" class="h-3 w-3" />
-                  <span>{{ pr.comments_count }}</span>
-                </span>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="flex items-center gap-1 font-mono text-[9px] opacity-75">
+                    <span>{{ pr.source_branch }}</span>
+                    <UIcon name="i-lucide-arrow-right" class="h-2 w-2 rtl:rotate-180" />
+                    <span>{{ pr.target_branch }}</span>
+                  </span>
+                  <span class="flex items-center gap-0.5">
+                    <UIcon name="i-lucide-message-square" class="h-2.5 w-2.5" />
+                    <span>{{ pr.comments_count }}</span>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -439,11 +449,11 @@ const filteredPullRequests = computed(() => {
                 </h2>
 
                 <div class="flex items-center gap-3 text-xs text-muted">
-                  <span class="flex items-center gap-1 font-medium text-highlighted">
-                    <img
-                      v-if="selectedPullRequest.author_avatar_url"
-                      :src="selectedPullRequest.author_avatar_url"
-                      class="h-4 w-4 rounded-full"
+                  <span class="flex items-center gap-1.5 font-medium text-highlighted">
+                    <UAvatar
+                      :src="selectedPullRequest.author_avatar_url || undefined"
+                      :alt="selectedPullRequest.author_username"
+                      size="2xs"
                     />
                     <span>{{ selectedPullRequest.author_username }}</span>
                   </span>

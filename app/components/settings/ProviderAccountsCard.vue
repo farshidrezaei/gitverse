@@ -87,18 +87,12 @@ async function confirmDisconnect(): Promise<void> {
         >
           <div class="flex items-center gap-3">
             <!-- Avatar or Fallback icon -->
-            <img
-              v-if="account.avatar_url"
-              :src="account.avatar_url"
-              :alt="account.username"
-              class="h-9 w-9 rounded-full border border-default object-cover"
+            <UAvatar
+              :src="account.avatar_url || undefined"
+              :alt="account.display_name || account.username"
+              size="md"
+              class="border border-default"
             />
-            <div
-              v-else
-              class="h-9 w-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-xs"
-            >
-              {{ account.username.slice(0, 2).toUpperCase() }}
-            </div>
 
             <!-- Profile Info -->
             <div class="space-y-0.5">
