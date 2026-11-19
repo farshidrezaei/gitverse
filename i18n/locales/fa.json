@@ -556,7 +556,7 @@
     "remoteNameLabel": "نام ریموت",
     "remoteNamePlaceholder": "مثلاً origin یا upstream",
     "remoteUrlLabel": "آدرس مخزن ریموت",
-    "remoteUrlPlaceholder": "https://github.com/user/repo.git یا git@github.com:user/repo.git",
+    "remoteUrlPlaceholder": "https://github.com/user/repo.git یا git{'@'}github.com:user/repo.git",
     "fetchAfterAdd": "فچ کردن فوری پس از افزودن",
     "addSuccess": "ریموت «{name}» با موفقیت اضافه شد.",
     "removeSuccess": "ریموت «{name}» با موفقیت حذف شد.",

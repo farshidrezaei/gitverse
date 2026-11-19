@@ -556,7 +556,7 @@
     "remoteNameLabel": "Remote Name",
     "remoteNamePlaceholder": "e.g. origin, upstream",
     "remoteUrlLabel": "Remote URL",
-    "remoteUrlPlaceholder": "https://github.com/user/repo.git or git@github.com:user/repo.git",
+    "remoteUrlPlaceholder": "https://github.com/user/repo.git or git{'@'}github.com:user/repo.git",
     "fetchAfterAdd": "Fetch from remote immediately",
     "addSuccess": "Remote \"{name}\" added successfully.",
     "removeSuccess": "Remote \"{name}\" removed successfully.",
