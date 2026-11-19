@@ -12,6 +12,7 @@ import RemoteBranchTreeNodeItem from '../RemoteBranchTreeNodeItem.vue'
 import RenameBranchModal from '../RenameBranchModal.vue'
 import AddRemoteModal from '../remote/AddRemoteModal.vue'
 import EditRemoteModal from '../remote/EditRemoteModal.vue'
+import WorkspacePullRequestsModal from '../provider/WorkspacePullRequestsModal.vue'
 
 interface WorkspaceBranchSidebarProps {
   references: RepositoryReferences | null
@@ -61,6 +62,7 @@ async function handleRemoveWorktree(worktreePath: string): Promise<void> {
 
 const isRenameModalOpen = ref(false)
 const branchToRename = ref('')
+const isPullRequestsModalOpen = ref(false)
 
 function openRenameBranchModal(branchName: string): void {
   branchToRename.value = branchName
@@ -183,15 +185,26 @@ const existingBranchNames = computed(() => {
       <span class="text-xs font-semibold text-highlighted uppercase tracking-wider">
         {{ t('navigation.references') }}
       </span>
-      <UButton
-        size="xs"
-        color="neutral"
-        variant="ghost"
-        icon="i-lucide-plus"
-        class="h-6 w-6"
-        :title="t('git.createBranch')"
-        @click="emit('openCreateBranchModal')"
-      />
+      <div class="flex items-center gap-1">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-git-pull-request"
+          class="h-6 w-6 text-primary"
+          :title="t('provider.pullRequests')"
+          @click="isPullRequestsModalOpen = true"
+        />
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-plus"
+          class="h-6 w-6"
+          :title="t('git.createBranch')"
+          @click="emit('openCreateBranchModal')"
+        />
+      </div>
     </div>
 
     <!-- Branch & Reference Tree -->
@@ -492,6 +505,13 @@ const existingBranchNames = computed(() => {
       :remote="selectedRemoteToEdit"
       :existing-remote-names="existingRemoteNames"
       @save="handleSaveEditRemote"
+    />
+
+    <!-- Pull Requests Modal -->
+    <WorkspacePullRequestsModal
+      v-model:open="isPullRequestsModalOpen"
+      :remotes="props.references?.remotes"
+      @checkout-branch="emit('checkout', $event)"
     />
   </div>
 </template>

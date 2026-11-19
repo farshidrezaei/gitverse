@@ -203,6 +203,7 @@
       "appearance": "Appearance & Theme",
       "git": "Git Engine",
       "language": "Language",
+      "providers": "Cloud Providers",
       "about": "About"
     },
     "appearance": {

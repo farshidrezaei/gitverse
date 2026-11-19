@@ -2,19 +2,21 @@
 import AppearanceSettingsCard from './AppearanceSettingsCard.vue'
 import GitEngineSettingsCard from './GitEngineSettingsCard.vue'
 import LanguageSettingsCard from './LanguageSettingsCard.vue'
+import ProviderAccountsCard from './ProviderAccountsCard.vue'
 import AboutSettingsCard from './AboutSettingsCard.vue'
 
 const isOpen = defineModel<boolean>('open', { default: false })
 
 const { t } = useI18n()
 
-type SettingsCategory = 'appearance' | 'git' | 'language' | 'about'
+type SettingsCategory = 'appearance' | 'git' | 'language' | 'providers' | 'about'
 
 const activeCategory = ref<SettingsCategory>('appearance')
 
 const categories = computed<Array<{ id: SettingsCategory; labelKey: string; icon: string }>>(() => [
   { id: 'appearance', labelKey: 'settings.categories.appearance', icon: 'i-lucide-palette' },
   { id: 'git', labelKey: 'settings.categories.git', icon: 'i-lucide-terminal' },
+  { id: 'providers', labelKey: 'settings.categories.providers', icon: 'i-lucide-cloud' },
   { id: 'language', labelKey: 'settings.categories.language', icon: 'i-lucide-languages' },
   { id: 'about', labelKey: 'settings.categories.about', icon: 'i-lucide-info' },
 ])
@@ -84,6 +86,7 @@ const categories = computed<Array<{ id: SettingsCategory; labelKey: string; icon
           <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-[var(--gv-background)]">
             <AppearanceSettingsCard v-if="activeCategory === 'appearance'" />
             <GitEngineSettingsCard v-else-if="activeCategory === 'git'" />
+            <ProviderAccountsCard v-else-if="activeCategory === 'providers'" />
             <LanguageSettingsCard v-else-if="activeCategory === 'language'" />
             <AboutSettingsCard v-else-if="activeCategory === 'about'" />
           </div>

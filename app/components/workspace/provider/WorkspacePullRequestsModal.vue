@@ -1,0 +1,339 @@
+<script setup lang="ts">
+import type { RemotePullRequest, PullRequestState, ProviderAccount } from '~/types/provider'
+import type { RemoteSummary } from '~/types/repository'
+
+interface WorkspacePullRequestsModalProps {
+  open: boolean
+  remotes?: RemoteSummary[]
+}
+
+const props = defineProps<WorkspacePullRequestsModalProps>()
+
+const emit = defineEmits<{
+  'update:open': [value: boolean]
+  checkoutBranch: [branchName: string]
+}>()
+
+const { t } = useI18n()
+const { accounts, loadAccounts, fetchPullRequests, pullRequests, isLoading } = useProviderController()
+
+const activeStateFilter = ref<PullRequestState | 'all'>('open')
+const searchQuery = ref('')
+const selectedPullRequest = ref<RemotePullRequest | null>(null)
+const matchedAccount = ref<ProviderAccount | null>(null)
+const matchedRepositoryFullName = ref<string | null>(null)
+
+function handleClose(): void {
+  emit('update:open', false)
+}
+
+function parseRepositoryFromUrl(url: string): { host: string; fullName: string } | null {
+  const trimmed = url.trim()
+
+  // Match git@host:owner/repo.git
+  const scpMatch = trimmed.match(/^[a-zA-Z0-9._-]+@([^:]+):([^\s/]+)\/([^\s/]+?)(?:\.git)?$/)
+  if (scpMatch && scpMatch[1] && scpMatch[2] && scpMatch[3]) {
+    return {
+      host: scpMatch[1].toLowerCase(),
+      fullName: `${scpMatch[2]}/${scpMatch[3]}`,
+    }
+  }
+
+  // Match https://host/owner/repo.git
+  const urlMatch = trimmed.match(/^https?:\/\/([^/]+)\/([^\s/]+)\/([^\s/]+?)(?:\.git)?$/)
+  if (urlMatch && urlMatch[1] && urlMatch[2] && urlMatch[3]) {
+    return {
+      host: urlMatch[1].toLowerCase(),
+      fullName: `${urlMatch[2]}/${urlMatch[3]}`,
+    }
+  }
+
+  return null
+}
+
+async function detectAndLoadPullRequests(): Promise<void> {
+  await loadAccounts()
+  if (accounts.value.length === 0) return
+
+  // Find remote URL from props.remotes
+  let targetRepo: { host: string; fullName: string } | null = null
+
+  if (props.remotes && props.remotes.length > 0) {
+    for (const remote of props.remotes) {
+      const url = remote.fetch_url || remote.push_url
+      if (url) {
+        const parsed = parseRepositoryFromUrl(url)
+        if (parsed) {
+          targetRepo = parsed
+          break
+        }
+      }
+    }
+  }
+
+  if (!targetRepo) {
+    matchedRepositoryFullName.value = null
+    matchedAccount.value = null
+    return
+  }
+
+  matchedRepositoryFullName.value = targetRepo.fullName
+
+  // Match account by instance URL or host
+  const account = accounts.value.find((acc) => {
+    if (targetRepo?.host.includes('github') && acc.provider === 'github') return true
+    if (targetRepo?.host.includes('gitlab') && acc.provider === 'gitlab') return true
+    return acc.instance_url.toLowerCase().includes(targetRepo?.host || '')
+  })
+
+  matchedAccount.value = account || accounts.value[0] || null
+
+  if (matchedAccount.value && matchedRepositoryFullName.value) {
+    await fetchPullRequests(
+      matchedAccount.value.id,
+      matchedRepositoryFullName.value,
+      activeStateFilter.value === 'all' ? undefined : activeStateFilter.value,
+    )
+  }
+}
+
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) {
+      selectedPullRequest.value = null
+      searchQuery.value = ''
+      void detectAndLoadPullRequests()
+    }
+  },
+)
+
+watch(activeStateFilter, async (filter) => {
+  if (matchedAccount.value && matchedRepositoryFullName.value) {
+    await fetchPullRequests(
+      matchedAccount.value.id,
+      matchedRepositoryFullName.value,
+      filter === 'all' ? undefined : filter,
+    )
+  }
+})
+
+const filteredPullRequests = computed(() => {
+  if (!searchQuery.value.trim()) return pullRequests.value
+  const query = searchQuery.value.toLowerCase().trim()
+  return pullRequests.value.filter(
+    (pr) =>
+      pr.title.toLowerCase().includes(query) ||
+      pr.number.toString().includes(query) ||
+      pr.author_username.toLowerCase().includes(query) ||
+      pr.source_branch.toLowerCase().includes(query),
+  )
+})
+</script>
+
+<template>
+  <UModal
+    :open="props.open"
+    :ui="{
+      overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity',
+      content: 'sm:max-w-4xl max-h-[85vh] p-0 border border-default/70 bg-[var(--gv-surface)] shadow-2xl rounded-2xl overflow-hidden',
+    }"
+    @update:open="emit('update:open', $event)"
+  >
+    <template #content>
+      <div class="flex flex-col h-[75vh] select-none text-xs">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-default/70 px-5 py-3.5 bg-muted/20 shrink-0">
+          <div class="flex items-center gap-2.5">
+            <div class="h-7 w-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+              <UIcon name="i-lucide-git-pull-request" class="h-4 w-4" />
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-highlighted">{{ t('provider.pullRequests') }}</span>
+                <UBadge
+                  v-if="matchedRepositoryFullName"
+                  size="xs"
+                  color="neutral"
+                  variant="subtle"
+                  class="font-mono text-[10px]"
+                >
+                  {{ matchedRepositoryFullName }}
+                </UBadge>
+              </div>
+            </div>
+          </div>
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-x"
+            @click="handleClose"
+          />
+        </div>
+
+        <!-- Filter bar -->
+        <div class="flex items-center justify-between border-b border-default/60 px-4 py-2 bg-muted/10 gap-3 shrink-0">
+          <!-- State filter chips -->
+          <div class="flex items-center gap-1">
+            <button
+              v-for="filter in (['open', 'merged', 'closed', 'all'] as const)"
+              :key="filter"
+              type="button"
+              class="px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer capitalize"
+              :class="activeStateFilter === filter
+                ? 'bg-primary text-white font-semibold shadow-xs'
+                : 'text-muted hover:text-highlighted hover:bg-muted/30'"
+              @click="activeStateFilter = filter"
+            >
+              {{ filter }}
+            </button>
+          </div>
+
+          <!-- Search input -->
+          <div class="w-64">
+            <UInput
+              v-model="searchQuery"
+              size="xs"
+              icon="i-lucide-search"
+              placeholder="Filter pull requests..."
+            />
+          </div>
+        </div>
+
+        <!-- Content Split (List + Details) -->
+        <div class="flex flex-1 min-h-0 overflow-hidden">
+          <!-- PR List -->
+          <div class="w-2/5 border-e border-default/60 overflow-y-auto p-2 space-y-1.5">
+            <div v-if="isLoading" class="py-12 text-center text-muted">
+              <UIcon name="i-lucide-loader-2" class="h-5 w-5 animate-spin mx-auto mb-2 text-primary" />
+              <span>{{ t('common.loading') }}</span>
+            </div>
+
+            <div v-else-if="filteredPullRequests.length === 0" class="py-12 text-center text-muted space-y-1">
+              <UIcon name="i-lucide-git-pull-request" class="h-6 w-6 mx-auto mb-1 opacity-40" />
+              <p class="font-medium">{{ t('provider.noPullRequests') }}</p>
+              <p class="text-[11px] text-muted">No requests matching this state filter.</p>
+            </div>
+
+            <div
+              v-for="pr in filteredPullRequests"
+              :key="pr.id"
+              class="p-2.5 rounded-xl border transition-all cursor-pointer space-y-1"
+              :class="selectedPullRequest?.id === pr.id
+                ? 'bg-primary/10 border-primary/40 shadow-xs'
+                : 'border-default/50 hover:bg-muted/20 hover:border-default'"
+              @click="selectedPullRequest = pr"
+            >
+              <div class="flex items-center justify-between gap-1">
+                <span class="font-mono text-[10px] font-semibold text-muted">#{{ pr.number }}</span>
+                <UBadge
+                  size="xs"
+                  :color="pr.state === 'open' ? 'success' : pr.state === 'merged' ? 'primary' : 'neutral'"
+                  variant="subtle"
+                  class="capitalize text-[10px] py-0"
+                >
+                  {{ pr.state }}
+                </UBadge>
+              </div>
+
+              <p class="text-xs font-semibold text-highlighted line-clamp-2 leading-tight">
+                {{ pr.title }}
+              </p>
+
+              <div class="flex items-center justify-between text-[10px] text-muted pt-0.5">
+                <span class="flex items-center gap-1 font-mono">
+                  <span>{{ pr.source_branch }}</span>
+                  <UIcon name="i-lucide-arrow-right" class="h-2.5 w-2.5 rtl:rotate-180" />
+                  <span>{{ pr.target_branch }}</span>
+                </span>
+                <span class="flex items-center gap-1">
+                  <UIcon name="i-lucide-message-square" class="h-3 w-3" />
+                  <span>{{ pr.comments_count }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PR Details View -->
+          <div class="flex-1 overflow-y-auto p-5 bg-[var(--gv-background)]">
+            <div v-if="!selectedPullRequest" class="h-full flex flex-col items-center justify-center text-muted space-y-2">
+              <UIcon name="i-lucide-mouse-pointer-click" class="h-8 w-8 opacity-30" />
+              <p>Select a pull request from the list to view details.</p>
+            </div>
+
+            <div v-else class="space-y-5">
+              <!-- PR Title & State -->
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <UBadge
+                    size="sm"
+                    :color="selectedPullRequest.state === 'open' ? 'success' : selectedPullRequest.state === 'merged' ? 'primary' : 'neutral'"
+                    variant="solid"
+                    class="capitalize font-bold flex items-center gap-1"
+                  >
+                    <UIcon name="i-lucide-git-pull-request" class="h-3.5 w-3.5" />
+                    <span>{{ selectedPullRequest.state }}</span>
+                  </UBadge>
+                  <span class="text-xs font-mono font-bold text-muted">#{{ selectedPullRequest.number }}</span>
+                </div>
+
+                <h2 class="text-base font-bold text-highlighted leading-snug">
+                  {{ selectedPullRequest.title }}
+                </h2>
+
+                <div class="flex items-center gap-3 text-xs text-muted">
+                  <span class="flex items-center gap-1 font-medium text-highlighted">
+                    <img
+                      v-if="selectedPullRequest.author_avatar_url"
+                      :src="selectedPullRequest.author_avatar_url"
+                      class="h-4 w-4 rounded-full"
+                    />
+                    <span>{{ selectedPullRequest.author_username }}</span>
+                  </span>
+                  <span>·</span>
+                  <span class="font-mono text-[11px] bg-muted/30 px-1.5 py-0.5 rounded border border-default/50">
+                    {{ selectedPullRequest.source_branch }}
+                  </span>
+                  <span>into</span>
+                  <span class="font-mono text-[11px] bg-muted/30 px-1.5 py-0.5 rounded border border-default/50">
+                    {{ selectedPullRequest.target_branch }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Quick Actions -->
+              <div class="flex items-center gap-2 pt-2 border-t border-default/60">
+                <a
+                  :href="selectedPullRequest.html_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-default/70 bg-muted/20 hover:bg-muted/40 font-semibold text-xs text-highlighted transition-colors"
+                >
+                  <UIcon name="i-lucide-external-link" class="h-3.5 w-3.5" />
+                  <span>Open in Browser</span>
+                </a>
+                <UButton
+                  size="xs"
+                  color="neutral"
+                  variant="outline"
+                  icon="i-lucide-git-branch"
+                  label="Checkout Branch"
+                  @click="emit('checkoutBranch', selectedPullRequest.source_branch)"
+                />
+              </div>
+
+              <!-- Description Body -->
+              <div class="space-y-2 pt-2 border-t border-default/60">
+                <h4 class="text-xs font-bold text-highlighted uppercase tracking-wider">Description</h4>
+                <div class="p-3.5 rounded-xl border border-default/70 bg-muted/10 text-xs text-toned font-mono whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto">
+                  {{ selectedPullRequest.description || 'No description provided.' }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </UModal>
+</template>

@@ -103,6 +103,12 @@ pub fn run() {
             commands::get_rebase_commits,
             commands::execute_interactive_rebase,
             commands::get_application_diagnostics,
+            commands::connect_github_account,
+            commands::connect_gitlab_account,
+            commands::list_provider_accounts,
+            commands::disconnect_provider_account,
+            commands::get_provider_repositories,
+            commands::get_provider_pull_requests,
         ])
         .run(tauri::generate_context!());
 

@@ -5,9 +5,11 @@ use tauri::AppHandle;
 use tokio::sync::RwLock;
 use crate::domain::{
     ApplicationDiagnostics, ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
-    GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome, RebaseBranchOutcome, RebasePlanItem, RecentRepositoryRecord, RepositoryOverview, StashRecord,
+    GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome, ProviderAccount, ProviderKind, RebaseBranchOutcome, RebasePlanItem, RecentRepositoryRecord, RemoteProjectRepository, RemotePullRequest, RepositoryOverview, StashRecord,
 };
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
+use crate::infrastructure::provider::{GitHubClient, GitLabClient};
+use crate::infrastructure::security::CredentialStore;
 use crate::infrastructure::storage::SQLiteRepositoryStore;
 
 const MAX_CACHE_ENTRIES: usize = 250;
@@ -16,6 +18,7 @@ const MAX_CACHE_ENTRIES: usize = 250;
 pub struct ApplicationState {
     pub current_repository: Arc<RwLock<Option<RepositoryOverview>>>,
     pub store: Arc<SQLiteRepositoryStore>,
+    pub credential_store: Arc<CredentialStore>,
     pub git_executor: Arc<GitProcessExecutor>,
     pub git_inspector: Arc<GitRepositoryInspector>,
     pub watcher_manager: Arc<RepositoryWatcherManager>,
@@ -26,6 +29,7 @@ pub struct ApplicationState {
 impl ApplicationState {
     pub fn new(database_path: &Path) -> Result<Self, ApplicationError> {
         let store = Arc::new(SQLiteRepositoryStore::new(database_path)?);
+        let credential_store = Arc::new(CredentialStore::new());
         let git_executor = Arc::new(GitProcessExecutor::new(PathBuf::from("git")));
         let git_inspector = Arc::new(GitRepositoryInspector::new((*git_executor).clone()));
         let watcher_manager = Arc::new(RepositoryWatcherManager::new());
@@ -33,6 +37,7 @@ impl ApplicationState {
         Ok(Self {
             current_repository: Arc::new(RwLock::new(None)),
             store,
+            credential_store,
             git_executor,
             git_inspector,
             watcher_manager,
@@ -649,6 +654,120 @@ impl ApplicationState {
             git_version: git_info.version_string,
             current_repository_path: repo_path,
         })
+    }
+
+    /// Connects and validates a GitHub account using personal access token.
+    pub async fn connect_github_account(
+        &self,
+        personal_access_token: &str,
+        instance_url: Option<&str>,
+    ) -> Result<ProviderAccount, ApplicationError> {
+        let instance = instance_url.unwrap_or("https://github.com");
+        let client = GitHubClient::new(Some(instance))?;
+        let account = client.get_authenticated_user(personal_access_token, instance).await?;
+
+        // Securely store token
+        self.credential_store.store_token(&account.id, personal_access_token)?;
+
+        // Persist account profile
+        self.store.save_provider_account(&account)?;
+
+        Ok(account)
+    }
+
+    /// Connects and validates a GitLab account using personal access token.
+    pub async fn connect_gitlab_account(
+        &self,
+        personal_access_token: &str,
+        instance_url: Option<&str>,
+    ) -> Result<ProviderAccount, ApplicationError> {
+        let instance = instance_url.unwrap_or("https://gitlab.com");
+        let client = GitLabClient::new(Some(instance))?;
+        let account = client.get_authenticated_user(personal_access_token, instance).await?;
+
+        // Securely store token
+        self.credential_store.store_token(&account.id, personal_access_token)?;
+
+        // Persist account profile
+        self.store.save_provider_account(&account)?;
+
+        Ok(account)
+    }
+
+    /// Lists all connected remote provider accounts.
+    pub async fn list_provider_accounts(&self) -> Result<Vec<ProviderAccount>, ApplicationError> {
+        self.store.list_provider_accounts()
+    }
+
+    /// Disconnects a remote provider account and wipes secure credentials.
+    pub async fn disconnect_provider_account(&self, account_identifier: &str) -> Result<bool, ApplicationError> {
+        self.credential_store.delete_token(account_identifier)?;
+        self.store.delete_provider_account(account_identifier)
+    }
+
+    /// Retrieves remote repositories/projects for a connected account.
+    pub async fn get_provider_repositories(
+        &self,
+        account_identifier: &str,
+        page: Option<u32>,
+        per_page: Option<u32>,
+    ) -> Result<Vec<RemoteProjectRepository>, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        let page_number = page.unwrap_or(1);
+        let items_per_page = per_page.unwrap_or(30);
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.list_repositories(&token, page_number, items_per_page).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.list_projects(&token, page_number, items_per_page).await
+            }
+        }
+    }
+
+    /// Retrieves pull requests or merge requests for a repository.
+    pub async fn get_provider_pull_requests(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        state_filter: Option<&str>,
+    ) -> Result<Vec<RemotePullRequest>, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.list_pull_requests(&token, parts[0], parts[1], state_filter).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.list_merge_requests(&token, repository_full_name, state_filter).await
+            }
+        }
     }
 }
 
