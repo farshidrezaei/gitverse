@@ -226,12 +226,34 @@ const filteredPullRequests = computed(() => {
               @click="selectedPullRequest = pr"
             >
               <div class="flex items-center justify-between gap-1">
-                <span class="font-mono text-[10px] font-semibold text-muted">#{{ pr.number }}</span>
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="font-mono text-[10px] font-semibold text-muted">#{{ pr.number }}</span>
+                  <!-- CI Pipeline Badge if present -->
+                  <span
+                    v-if="pr.pipeline_status"
+                    class="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1 py-0.2 rounded shrink-0"
+                    :class="[
+                      pr.pipeline_status.state === 'success' ? 'bg-success/20 text-success' :
+                      pr.pipeline_status.state === 'failed' ? 'bg-error/20 text-error' :
+                      pr.pipeline_status.state === 'running' ? 'bg-primary/20 text-primary animate-pulse' :
+                      'bg-muted/30 text-muted'
+                    ]"
+                    :title="`CI: ${pr.pipeline_status.state} (${pr.pipeline_status.successful_checks_count}/${pr.pipeline_status.total_checks_count})`"
+                  >
+                    <UIcon
+                      :name="pr.pipeline_status.state === 'success' ? 'i-lucide-check-circle-2' :
+                             pr.pipeline_status.state === 'failed' ? 'i-lucide-x-circle' :
+                             pr.pipeline_status.state === 'running' ? 'i-lucide-loader-2' : 'i-lucide-circle'"
+                      class="h-2.5 w-2.5"
+                    />
+                    <span>CI</span>
+                  </span>
+                </div>
                 <UBadge
                   size="xs"
                   :color="pr.state === 'open' ? 'success' : pr.state === 'merged' ? 'primary' : 'neutral'"
                   variant="subtle"
-                  class="capitalize text-[10px] py-0"
+                  class="capitalize text-[10px] py-0 shrink-0"
                 >
                   {{ pr.state }}
                 </UBadge>
@@ -276,6 +298,25 @@ const filteredPullRequests = computed(() => {
                     <span>{{ selectedPullRequest.state }}</span>
                   </UBadge>
                   <span class="text-xs font-mono font-bold text-muted">#{{ selectedPullRequest.number }}</span>
+                  <span
+                    v-if="selectedPullRequest.pipeline_status"
+                    class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border"
+                    :class="[
+                      selectedPullRequest.pipeline_status.state === 'success' ? 'bg-success/15 border-success/40 text-success' :
+                      selectedPullRequest.pipeline_status.state === 'failed' ? 'bg-error/15 border-error/40 text-error' :
+                      selectedPullRequest.pipeline_status.state === 'running' ? 'bg-primary/15 border-primary/40 text-primary animate-pulse' :
+                      'bg-muted/20 border-default text-muted'
+                    ]"
+                  >
+                    <UIcon
+                      :name="selectedPullRequest.pipeline_status.state === 'success' ? 'i-lucide-check-circle-2' :
+                             selectedPullRequest.pipeline_status.state === 'failed' ? 'i-lucide-x-circle' :
+                             selectedPullRequest.pipeline_status.state === 'running' ? 'i-lucide-loader-2' : 'i-lucide-circle'"
+                      class="h-3 w-3"
+                    />
+                    <span class="capitalize">CI: {{ selectedPullRequest.pipeline_status.state }}</span>
+                    <span class="text-[10px] opacity-75">({{ selectedPullRequest.pipeline_status.successful_checks_count }}/{{ selectedPullRequest.pipeline_status.total_checks_count }})</span>
+                  </span>
                 </div>
 
                 <h2 class="text-base font-bold text-highlighted leading-snug">

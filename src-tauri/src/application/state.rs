@@ -769,5 +769,72 @@ impl ApplicationState {
             }
         }
     }
+
+    /// Retrieves commit pipeline status summary for a commit or branch.
+    pub async fn get_commit_pipeline_summary(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        reference_or_sha: &str,
+    ) -> Result<Option<crate::domain::PipelineSummary>, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.get_commit_pipeline_summary(&token, parts[0], parts[1], reference_or_sha).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.get_commit_pipeline_summary(&token, repository_full_name, reference_or_sha).await
+            }
+        }
+    }
+
+    /// Retrieves detailed check runs or CI jobs for a commit or pipeline.
+    pub async fn list_check_runs(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        reference_or_pipeline_id: &str,
+    ) -> Result<Vec<crate::domain::CiCheckRun>, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.list_check_runs(&token, parts[0], parts[1], reference_or_pipeline_id).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                let pipeline_id = reference_or_pipeline_id.parse::<u64>().unwrap_or(0);
+                client.list_pipeline_jobs(&token, repository_full_name, pipeline_id).await
+            }
+        }
+    }
 }
 

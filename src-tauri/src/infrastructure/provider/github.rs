@@ -3,8 +3,8 @@ use reqwest::Client;
 use serde::Deserialize;
 use chrono::Utc;
 use crate::domain::{
-    ApplicationError, ProviderAccount, ProviderKind,
-    RemoteProjectRepository, RemotePullRequest, PullRequestState,
+    ApplicationError, CiCheckRun, PipelineState, PipelineSummary,
+    ProviderAccount, ProviderKind, RemoteProjectRepository, RemotePullRequest, PullRequestState,
 };
 
 const DEFAULT_GITHUB_API_URL: &str = "https://api.github.com";
@@ -222,10 +222,10 @@ impl GitHubClient {
         &self,
         token: &str,
         owner: &str,
-        repo: &str,
+        repository_name: &str,
         state_filter: Option<&str>,
     ) -> Result<Vec<RemotePullRequest>, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/pulls", self.api_base_url, owner, repo);
+        let url = format!("{}/repos/{}/{}/pulls", self.api_base_url, owner, repository_name);
         let headers = self.build_headers(token)?;
 
         let state = state_filter.unwrap_or("all");
@@ -246,7 +246,7 @@ impl GitHubClient {
             ApplicationError::ProviderError(format!("Failed to parse pull requests: {}", error))
         })?;
 
-        let pull_requests = raw_pulls
+        let mut pull_requests: Vec<RemotePullRequest> = raw_pulls
             .into_iter()
             .map(|raw| {
                 let state = match raw.state.as_str() {
@@ -289,6 +289,160 @@ impl GitHubClient {
             })
             .collect();
 
+        // Populate pipeline status for the first few open pull requests
+        for pull_request in pull_requests.iter_mut().take(5) {
+            if let Ok(summary) = self.get_commit_pipeline_summary(token, owner, repository_name, &pull_request.source_branch).await {
+                pull_request.pipeline_status = summary;
+            }
+        }
+
         Ok(pull_requests)
+    }
+
+    /// Fetches commit status summary (CI check runs and commit status) for a reference or SHA.
+    pub async fn get_commit_pipeline_summary(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        reference_or_sha: &str,
+    ) -> Result<Option<PipelineSummary>, ApplicationError> {
+        let url = format!("{}/repos/{}/{}/commits/{}/check-runs", self.api_base_url, owner, repository, reference_or_sha);
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            return Ok(None);
+        }
+
+        #[derive(Deserialize)]
+        struct CheckRunsPayload {
+            total_count: u32,
+            check_runs: Vec<GitHubCheckRunItem>,
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubCheckRunItem {
+            status: String,
+            conclusion: Option<String>,
+            html_url: Option<String>,
+        }
+
+        let payload: CheckRunsPayload = match response.json().await {
+            Ok(parsed) => parsed,
+            Err(_) => return Ok(None),
+        };
+
+        if payload.total_count == 0 {
+            return Ok(None);
+        }
+
+        let mut success_count = 0;
+        let mut failed_count = 0;
+        let mut has_running = false;
+
+        for check in &payload.check_runs {
+            match check.conclusion.as_deref() {
+                Some("success") => success_count += 1,
+                Some("failure") | Some("timed_out") | Some("cancelled") => failed_count += 1,
+                _ => {
+                    if check.status == "in_progress" || check.status == "queued" {
+                        has_running = true;
+                    }
+                }
+            }
+        }
+
+        let pipeline_state = if failed_count > 0 {
+            PipelineState::Failed
+        } else if has_running {
+            PipelineState::Running
+        } else if success_count > 0 {
+            PipelineState::Success
+        } else {
+            PipelineState::Pending
+        };
+
+        let first_url = payload.check_runs.first().and_then(|check| check.html_url.clone());
+
+        Ok(Some(PipelineSummary {
+            state: pipeline_state,
+            web_url: first_url,
+            commit_sha: Some(reference_or_sha.to_string()),
+            total_checks_count: payload.total_count,
+            successful_checks_count: success_count,
+            failed_checks_count: failed_count,
+        }))
+    }
+
+    /// Fetches detailed check runs for a commit.
+    pub async fn list_check_runs(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        commit_sha: &str,
+    ) -> Result<Vec<CiCheckRun>, ApplicationError> {
+        let url = format!("{}/repos/{}/{}/commits/{}/check-runs", self.api_base_url, owner, repository, commit_sha);
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to fetch check runs: {}", error_text)));
+        }
+
+        #[derive(Deserialize)]
+        struct CheckRunsPayload {
+            check_runs: Vec<GitHubCheckRunItem>,
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubCheckRunItem {
+            id: u64,
+            name: String,
+            status: String,
+            conclusion: Option<String>,
+            html_url: Option<String>,
+            started_at: Option<String>,
+            completed_at: Option<String>,
+        }
+
+        let payload: CheckRunsPayload = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse check runs: {}", error))
+        })?;
+
+        let checks = payload.check_runs.into_iter().map(|item| {
+            let started_timestamp = item.started_at
+                .as_deref()
+                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                .map(|datetime| datetime.timestamp());
+            let completed_timestamp = item.completed_at
+                .as_deref()
+                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                .map(|datetime| datetime.timestamp());
+
+            CiCheckRun {
+                id: format!("github:{}", item.id),
+                name: item.name,
+                status: item.status,
+                conclusion: item.conclusion,
+                html_url: item.html_url,
+                started_at_timestamp: started_timestamp,
+                completed_at_timestamp: completed_timestamp,
+            }
+        }).collect();
+
+        Ok(checks)
     }
 }

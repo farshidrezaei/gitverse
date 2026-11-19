@@ -4,6 +4,8 @@ import type {
   RemoteProjectRepository,
   RemotePullRequest,
   PullRequestState,
+  PipelineSummary,
+  CiCheckRun,
 } from '~/types/provider'
 import { invokeTauriIpc } from '~/utils/tauriClient'
 
@@ -127,6 +129,39 @@ export function useProviderController() {
     }
   }
 
+  async function fetchCommitPipelineSummary(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    referenceOrSha: string,
+  ): Promise<PipelineSummary | null> {
+    try {
+      return await invokeTauriIpc<PipelineSummary | null>('get_commit_pipeline_summary', {
+        accountIdentifier,
+        repositoryFullName,
+        referenceOrSha,
+      })
+    } catch (error) {
+      return null
+    }
+  }
+
+  async function fetchCheckRuns(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    referenceOrPipelineId: string,
+  ): Promise<CiCheckRun[]> {
+    try {
+      const result = await invokeTauriIpc<CiCheckRun[]>('list_check_runs', {
+        accountIdentifier,
+        repositoryFullName,
+        referenceOrPipelineId,
+      })
+      return result || []
+    } catch (error) {
+      return []
+    }
+  }
+
   return {
     accounts,
     isLoading,
@@ -140,5 +175,7 @@ export function useProviderController() {
     disconnectAccount,
     fetchRepositories,
     fetchPullRequests,
+    fetchCommitPipelineSummary,
+    fetchCheckRuns,
   }
 }

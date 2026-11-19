@@ -3,8 +3,8 @@ use reqwest::Client;
 use serde::Deserialize;
 use chrono::Utc;
 use crate::domain::{
-    ApplicationError, ProviderAccount, ProviderKind,
-    RemoteProjectRepository, RemotePullRequest, PullRequestState,
+    ApplicationError, CiCheckRun, PipelineState, PipelineSummary,
+    ProviderAccount, ProviderKind, RemoteProjectRepository, RemotePullRequest, PullRequestState,
 };
 
 const DEFAULT_GITLAB_API_URL: &str = "https://gitlab.com/api/v4";
@@ -251,7 +251,7 @@ impl GitLabClient {
             ApplicationError::ProviderError(format!("Failed to parse merge requests: {}", error))
         })?;
 
-        let merge_requests = raw_mrs
+        let mut merge_requests: Vec<RemotePullRequest> = raw_mrs
             .into_iter()
             .map(|raw| {
                 let state = match raw.state.as_str() {
@@ -296,7 +296,141 @@ impl GitLabClient {
             })
             .collect();
 
+        // Populate pipeline status for the first few open merge requests
+        for merge_request in merge_requests.iter_mut().take(5) {
+            if let Ok(summary) = self.get_commit_pipeline_summary(token, project_id_or_path, &merge_request.source_branch).await {
+                merge_request.pipeline_status = summary;
+            }
+        }
+
         Ok(merge_requests)
+    }
+
+    /// Fetches commit pipeline summary for a GitLab commit or branch.
+    pub async fn get_commit_pipeline_summary(
+        &self,
+        token: &str,
+        project_id_or_path: &str,
+        reference_or_sha: &str,
+    ) -> Result<Option<PipelineSummary>, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_id_or_path);
+        let url = format!("{}/projects/{}/pipelines", self.api_base_url, encoded_project);
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.get(&url)
+            .headers(headers)
+            .query(&[("ref", reference_or_sha), ("per_page", "1")])
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            return Ok(None);
+        }
+
+        #[derive(Deserialize)]
+        #[allow(dead_code)]
+        struct GitLabPipelineItem {
+            id: u64,
+            status: String,
+            web_url: String,
+            sha: String,
+        }
+
+        let pipelines: Vec<GitLabPipelineItem> = match response.json().await {
+            Ok(parsed) => parsed,
+            Err(_) => return Ok(None),
+        };
+
+        let latest = match pipelines.into_iter().next() {
+            Some(pipeline) => pipeline,
+            None => return Ok(None),
+        };
+
+        let pipeline_state = match latest.status.as_str() {
+            "success" => PipelineState::Success,
+            "failed" => PipelineState::Failed,
+            "running" => PipelineState::Running,
+            "canceled" => PipelineState::Canceled,
+            "skipped" => PipelineState::Skipped,
+            _ => PipelineState::Pending,
+        };
+
+        Ok(Some(PipelineSummary {
+            state: pipeline_state,
+            web_url: Some(latest.web_url),
+            commit_sha: Some(latest.sha),
+            total_checks_count: 1,
+            successful_checks_count: if pipeline_state == PipelineState::Success { 1 } else { 0 },
+            failed_checks_count: if pipeline_state == PipelineState::Failed { 1 } else { 0 },
+        }))
+    }
+
+    /// Fetches detailed jobs/checks for a pipeline ID in GitLab.
+    pub async fn list_pipeline_jobs(
+        &self,
+        token: &str,
+        project_id_or_path: &str,
+        pipeline_id: u64,
+    ) -> Result<Vec<CiCheckRun>, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_id_or_path);
+        let url = format!("{}/projects/{}/pipelines/{}/jobs", self.api_base_url, encoded_project, pipeline_id);
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to fetch pipeline jobs: {}", error_text)));
+        }
+
+        #[derive(Deserialize)]
+        struct GitLabJobItem {
+            id: u64,
+            name: String,
+            status: String,
+            web_url: String,
+            started_at: Option<String>,
+            finished_at: Option<String>,
+        }
+
+        let jobs: Vec<GitLabJobItem> = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse pipeline jobs: {}", error))
+        })?;
+
+        let checks = jobs.into_iter().map(|item| {
+            let started_timestamp = item.started_at
+                .as_deref()
+                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                .map(|datetime| datetime.timestamp());
+            let completed_timestamp = item.finished_at
+                .as_deref()
+                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                .map(|datetime| datetime.timestamp());
+
+            let conclusion = match item.status.as_str() {
+                "success" => Some("success".to_string()),
+                "failed" => Some("failure".to_string()),
+                "canceled" => Some("cancelled".to_string()),
+                _ => None,
+            };
+
+            CiCheckRun {
+                id: format!("gitlab:{}", item.id),
+                name: item.name,
+                status: item.status,
+                conclusion,
+                html_url: Some(item.web_url),
+                started_at_timestamp: started_timestamp,
+                completed_at_timestamp: completed_timestamp,
+            }
+        }).collect();
+
+        Ok(checks)
     }
 }
 

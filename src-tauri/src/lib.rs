@@ -109,6 +109,8 @@ pub fn run() {
             commands::disconnect_provider_account,
             commands::get_provider_repositories,
             commands::get_provider_pull_requests,
+            commands::get_commit_pipeline_summary,
+            commands::list_check_runs,
         ])
         .run(tauri::generate_context!());
 

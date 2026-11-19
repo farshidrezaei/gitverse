@@ -50,4 +50,36 @@ mod tests {
             assert_eq!(json, expected_json);
         }
     }
+
+    #[test]
+    fn test_pipeline_summary_and_check_runs_serialization() {
+        use crate::domain::{CiCheckRun, PipelineState, PipelineSummary};
+
+        let summary = PipelineSummary {
+            state: PipelineState::Success,
+            web_url: Some("https://github.com/org/repo/actions/runs/123".into()),
+            commit_sha: Some("abcdef123456".into()),
+            total_checks_count: 5,
+            successful_checks_count: 5,
+            failed_checks_count: 0,
+        };
+
+        let json = serde_json::to_string(&summary).expect("Serialize PipelineSummary");
+        assert!(json.contains("\"success\""));
+        assert!(json.contains("\"total_checks_count\":5"));
+
+        let check = CiCheckRun {
+            id: "github:999".into(),
+            name: "test-suite".into(),
+            status: "completed".into(),
+            conclusion: Some("success".into()),
+            html_url: Some("https://github.com/org/repo/runs/999".into()),
+            started_at_timestamp: Some(1700000000),
+            completed_at_timestamp: Some(1700000100),
+        };
+
+        let check_json = serde_json::to_string(&check).expect("Serialize CiCheckRun");
+        assert!(check_json.contains("\"test-suite\""));
+        assert!(check_json.contains("\"github:999\""));
+    }
 }

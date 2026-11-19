@@ -60,3 +60,25 @@ pub async fn get_provider_pull_requests(
 ) -> Result<Vec<RemotePullRequest>, ApplicationError> {
     state.get_provider_pull_requests(&account_identifier, &repository_full_name, state_filter.as_deref()).await
 }
+
+/// Tauri IPC command to fetch commit pipeline status summary.
+#[tauri::command]
+pub async fn get_commit_pipeline_summary(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    reference_or_sha: String,
+) -> Result<Option<crate::domain::PipelineSummary>, ApplicationError> {
+    state.get_commit_pipeline_summary(&account_identifier, &repository_full_name, &reference_or_sha).await
+}
+
+/// Tauri IPC command to fetch detailed check runs or CI jobs.
+#[tauri::command]
+pub async fn list_check_runs(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    reference_or_pipeline_id: String,
+) -> Result<Vec<crate::domain::CiCheckRun>, ApplicationError> {
+    state.list_check_runs(&account_identifier, &repository_full_name, &reference_or_pipeline_id).await
+}
