@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use tempfile::tempdir;
+    use crate::domain::{ProviderAccount, ProviderKind};
     use crate::infrastructure::git::GitProcessExecutor;
     use crate::infrastructure::storage::SQLiteRepositoryStore;
 
@@ -49,6 +50,42 @@ mod tests {
             .expect("Failed to remove");
         let updated_recents = store.get_recent_repositories(10).expect("Failed to fetch");
         assert_eq!(updated_recents.len(), 0);
+    }
+
+    #[test]
+    fn test_sqlite_provider_account_crud() {
+        let temporary_dir = tempdir().expect("Failed to create tempdir");
+        let database_file = temporary_dir.path().join("test_provider_store.sqlite");
+
+        let store = SQLiteRepositoryStore::new(&database_file).expect("Failed to create store");
+
+        let account = ProviderAccount {
+            id: "github:octocat".to_string(),
+            provider: ProviderKind::GitHub,
+            username: "octocat".to_string(),
+            display_name: Some("The Octocat".to_string()),
+            email: Some("octocat@github.com".to_string()),
+            avatar_url: Some("https://avatars.githubusercontent.com/u/583231".to_string()),
+            instance_url: "https://github.com".to_string(),
+            created_at_timestamp: 1700000000,
+        };
+
+        // Save account
+        store.save_provider_account(&account).expect("Save account should succeed");
+
+        // List accounts
+        let accounts = store.list_provider_accounts().expect("List should succeed");
+        assert_eq!(accounts.len(), 1);
+        assert_eq!(accounts[0].username, "octocat");
+        assert_eq!(accounts[0].provider, ProviderKind::GitHub);
+
+        // Delete account
+        let deleted = store.delete_provider_account("github:octocat").expect("Delete should succeed");
+        assert!(deleted);
+
+        // Verify empty
+        let after_delete = store.list_provider_accounts().expect("List after delete");
+        assert_eq!(after_delete.len(), 0);
     }
 
     #[tokio::test]

@@ -569,5 +569,31 @@
     "copyUrl": "کپی آدرس ریموت",
     "copySuccess": "آدرس ریموت در کلیپ‌بورد کپی شد.",
     "fetchFrom": "فچ از {name}"
+  },
+  "provider": {
+    "title": "سرویس‌های ابری و ریموت",
+    "subtitle": "اتصال حساب‌های گیت‌هاب و گیت‌لب برای مشاهده پول‌ریکوئست‌ها، پایپ‌لاین‌های CI و بررسی کد.",
+    "connectAccount": "اتصال حساب",
+    "disconnectAccount": "قطع اتصال حساب",
+    "disconnectConfirmTitle": "قطع اتصال حساب {provider}؟",
+    "disconnectConfirmDescription": "آیا از قطع اتصال حساب {username} اطمینان دارید؟ کلیدهای احراز هویت ذخیره‌شده پاک خواهند شد.",
+    "github": "گیت‌هاب",
+    "gitlab": "گیت‌لب",
+    "personalAccessToken": "توکن دسترسی شخصی (PAT)",
+    "personalAccessTokenPlaceholder": "توکن دسترسی شخصی خود را وارد کنید...",
+    "instanceUrl": "آدرس سرور (Instance URL)",
+    "connectedAccounts": "حساب‌های متصل",
+    "noConnectedAccounts": "هنوز هیچ حساب ارائه‌دهنده‌ای متصل نشده است.",
+    "pullRequests": "درخواست‌های ادغام (PR/MR)",
+    "noPullRequests": "هیچ درخواست ادغامی یافت نشد.",
+    "rateLimit": "محدودیت درخواست API: {remaining}/{limit}",
+    "validationGitHubTokenTooShort": "توکن گیت‌هاب باید حداقل ۲۰ کاراکتر باشد.",
+    "validationGitLabTokenTooShort": "توکن گیت‌لب باید حداقل ۲۰ کاراکتر باشد.",
+    "validationTokenTooLong": "توکن نمی‌تواند بیش از ۵۰۰ کاراکتر باشد.",
+    "validationTokenNoSpaces": "توکن نمی‌تواند حاوی فاصله باشد.",
+    "validationInvalidInstanceUrl": "آدرس سرور باید یک URL معتبر باشد.",
+    "validationInvalidInstanceUrlScheme": "آدرس سرور باید با https:// یا http:// شروع شود.",
+    "validationEmptyTitle": "عنوان درخواست ادغام نمی‌تواند خالی باشد.",
+    "validationTitleTooLong": "عنوان درخواست ادغام نمی‌تواند بیش از ۲۵۵ کاراکتر باشد."
   }
 }

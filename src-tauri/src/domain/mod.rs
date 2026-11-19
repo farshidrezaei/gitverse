@@ -3,9 +3,11 @@ use thiserror::Error;
 
 pub mod branch;
 pub mod graph;
+pub mod provider;
 pub mod validation;
 pub use branch::*;
 pub use graph::*;
+pub use provider::*;
 pub use validation::*;
 
 /// Domain errors representing failures across Git and workspace operations.
@@ -32,6 +34,15 @@ pub enum ApplicationError {
 
     #[error("Invalid input: {0}")]
     InvalidInput(String),
+
+    #[error("Remote provider error: {0}")]
+    ProviderError(String),
+
+    #[error("Authentication error: {0}")]
+    AuthenticationError(String),
+
+    #[error("Provider rate limit exceeded. Retry after {retry_after_seconds} seconds")]
+    RateLimitExceeded { retry_after_seconds: u64 },
 
     #[error("Unexpected error: {0}")]
     Unexpected(String),

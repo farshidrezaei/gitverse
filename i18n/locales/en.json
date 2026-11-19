@@ -569,5 +569,31 @@
     "copyUrl": "Copy Remote URL",
     "copySuccess": "Remote URL copied to clipboard.",
     "fetchFrom": "Fetch from {name}"
+  },
+  "provider": {
+    "title": "Cloud Providers",
+    "subtitle": "Connect GitHub and GitLab accounts for Pull Requests, CI pipelines, and code reviews.",
+    "connectAccount": "Connect Account",
+    "disconnectAccount": "Disconnect Account",
+    "disconnectConfirmTitle": "Disconnect {provider} account?",
+    "disconnectConfirmDescription": "Are you sure you want to disconnect {username}? Stored credentials will be removed.",
+    "github": "GitHub",
+    "gitlab": "GitLab",
+    "personalAccessToken": "Personal Access Token",
+    "personalAccessTokenPlaceholder": "Paste your personal access token...",
+    "instanceUrl": "Instance URL",
+    "connectedAccounts": "Connected Accounts",
+    "noConnectedAccounts": "No remote provider accounts connected yet.",
+    "pullRequests": "Pull Requests",
+    "noPullRequests": "No pull requests found.",
+    "rateLimit": "API Rate Limit: {remaining}/{limit}",
+    "validationGitHubTokenTooShort": "GitHub token must be at least 20 characters.",
+    "validationGitLabTokenTooShort": "GitLab token must be at least 20 characters.",
+    "validationTokenTooLong": "Token cannot exceed 500 characters.",
+    "validationTokenNoSpaces": "Token cannot contain spaces.",
+    "validationInvalidInstanceUrl": "Instance URL must be a valid URL.",
+    "validationInvalidInstanceUrlScheme": "Instance URL must begin with https:// or http://.",
+    "validationEmptyTitle": "Pull request title cannot be empty.",
+    "validationTitleTooLong": "Pull request title cannot exceed 255 characters."
   }
 }

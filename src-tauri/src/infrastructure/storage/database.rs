@@ -3,7 +3,7 @@ use std::sync::Mutex;
 use rusqlite::{params, Connection};
 use uuid::Uuid;
 use chrono::Utc;
-use crate::domain::{ApplicationError, RecentRepositoryRecord};
+use crate::domain::{ApplicationError, ProviderAccount, ProviderKind, RecentRepositoryRecord};
 
 /// Persistent SQLite store for recent repositories, bookmarks, and local workspace state.
 pub struct SQLiteRepositoryStore {
@@ -41,6 +41,20 @@ impl SQLiteRepositoryStore {
 
             CREATE INDEX IF NOT EXISTS idx_recent_repositories_last_opened
             ON recent_repositories(last_opened_timestamp DESC);
+
+            CREATE TABLE IF NOT EXISTS provider_accounts (
+                id TEXT PRIMARY KEY,
+                provider TEXT NOT NULL,
+                username TEXT NOT NULL,
+                display_name TEXT,
+                email TEXT,
+                avatar_url TEXT,
+                instance_url TEXT NOT NULL,
+                created_at_timestamp INTEGER NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_provider_accounts_lookup
+            ON provider_accounts(provider, username);
             "#
         ).map_err(|error| ApplicationError::PersistenceError(format!("Migration failed: {}", error)))?;
 
@@ -151,5 +165,99 @@ impl SQLiteRepositoryStore {
         ).map_err(|error| ApplicationError::PersistenceError(format!("Clearing recent repositories failed: {}", error)))?;
 
         Ok(())
+    }
+
+    /// Stores or updates a connected remote Git provider account profile.
+    pub fn save_provider_account(&self, account: &ProviderAccount) -> Result<(), ApplicationError> {
+        let connection = self.connection.lock().map_err(|_| {
+            ApplicationError::PersistenceError("Failed to acquire database lock".into())
+        })?;
+
+        let provider_string = match account.provider {
+            ProviderKind::GitHub => "github",
+            ProviderKind::GitLab => "gitlab",
+        };
+
+        connection.execute(
+            r#"
+            INSERT INTO provider_accounts (
+                id, provider, username, display_name, email, avatar_url, instance_url, created_at_timestamp
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+            ON CONFLICT(id) DO UPDATE SET
+                display_name = excluded.display_name,
+                email = excluded.email,
+                avatar_url = excluded.avatar_url,
+                instance_url = excluded.instance_url
+            "#,
+            params![
+                account.id,
+                provider_string,
+                account.username,
+                account.display_name,
+                account.email,
+                account.avatar_url,
+                account.instance_url,
+                account.created_at_timestamp,
+            ],
+        ).map_err(|error| ApplicationError::PersistenceError(format!("Failed to save provider account: {}", error)))?;
+
+        Ok(())
+    }
+
+    /// Lists all connected provider accounts.
+    pub fn list_provider_accounts(&self) -> Result<Vec<ProviderAccount>, ApplicationError> {
+        let connection = self.connection.lock().map_err(|_| {
+            ApplicationError::PersistenceError("Failed to acquire database lock".into())
+        })?;
+
+        let mut statement = connection.prepare(
+            r#"
+            SELECT id, provider, username, display_name, email, avatar_url, instance_url, created_at_timestamp
+            FROM provider_accounts
+            ORDER BY created_at_timestamp ASC
+            "#
+        ).map_err(|error| ApplicationError::PersistenceError(format!("Query preparation failed: {}", error)))?;
+
+        let rows = statement.query_map([], |row| {
+            let provider_raw: String = row.get(1)?;
+            let provider = match provider_raw.as_str() {
+                "gitlab" => ProviderKind::GitLab,
+                _ => ProviderKind::GitHub,
+            };
+
+            Ok(ProviderAccount {
+                id: row.get(0)?,
+                provider,
+                username: row.get(2)?,
+                display_name: row.get(3)?,
+                email: row.get(4)?,
+                avatar_url: row.get(5)?,
+                instance_url: row.get(6)?,
+                created_at_timestamp: row.get(7)?,
+            })
+        }).map_err(|error| ApplicationError::PersistenceError(format!("Query execution failed: {}", error)))?;
+
+        let mut accounts = Vec::new();
+        for row in rows {
+            if let Ok(account) = row {
+                accounts.push(account);
+            }
+        }
+
+        Ok(accounts)
+    }
+
+    /// Deletes a connected provider account by ID.
+    pub fn delete_provider_account(&self, account_identifier: &str) -> Result<bool, ApplicationError> {
+        let connection = self.connection.lock().map_err(|_| {
+            ApplicationError::PersistenceError("Failed to acquire database lock".into())
+        })?;
+
+        let rows_affected = connection.execute(
+            "DELETE FROM provider_accounts WHERE id = ?1",
+            params![account_identifier],
+        ).map_err(|error| ApplicationError::PersistenceError(format!("Failed to delete provider account: {}", error)))?;
+
+        Ok(rows_affected > 0)
     }
 }

@@ -10,6 +10,11 @@ import {
 } from '../../app/schemas/remoteSchema'
 import { createStashInputSchema } from '../../app/schemas/stashSchema'
 import { commitInputSchema } from '../../app/schemas/commitSchema'
+import {
+  connectGitHubAccountSchema,
+  connectGitLabAccountSchema,
+  createPullRequestInputSchema,
+} from '../../app/schemas/providerSchema'
 
 describe('Zod Schemas Validation Suite', () => {
   describe('Branch Name Validation', () => {
@@ -98,6 +103,67 @@ describe('Zod Schemas Validation Suite', () => {
       expect(commitInputSchema.safeParse({ summary: 'feat: add feature' }).success).toBe(true)
       expect(commitInputSchema.safeParse({ summary: '' }).success).toBe(false)
       expect(commitInputSchema.safeParse({ summary: '   ' }).success).toBe(false)
+    })
+  })
+
+  describe('Provider Account & Pull Request Validation', () => {
+    it('validates GitHub account connection inputs', () => {
+      expect(
+        connectGitHubAccountSchema.safeParse({
+          personalAccessToken: 'ghp_123456789012345678901234567890',
+          instanceUrl: 'https://github.com',
+        }).success,
+      ).toBe(true)
+
+      // Token too short
+      expect(
+        connectGitHubAccountSchema.safeParse({
+          personalAccessToken: 'short',
+        }).success,
+      ).toBe(false)
+
+      // Invalid instance url
+      expect(
+        connectGitHubAccountSchema.safeParse({
+          personalAccessToken: 'ghp_123456789012345678901234567890',
+          instanceUrl: 'not-a-url',
+        }).success,
+      ).toBe(false)
+    })
+
+    it('validates GitLab account connection inputs', () => {
+      expect(
+        connectGitLabAccountSchema.safeParse({
+          personalAccessToken: 'glpat-12345678901234567890',
+          instanceUrl: 'https://gitlab.com',
+        }).success,
+      ).toBe(true)
+
+      // Token with spaces
+      expect(
+        connectGitLabAccountSchema.safeParse({
+          personalAccessToken: 'glpat-12345 678901234567890',
+        }).success,
+      ).toBe(false)
+    })
+
+    it('validates create pull request inputs', () => {
+      expect(
+        createPullRequestInputSchema.safeParse({
+          title: 'feat: add awesome feature',
+          sourceBranch: 'feature/login',
+          targetBranch: 'main',
+          isDraft: false,
+        }).success,
+      ).toBe(true)
+
+      expect(
+        createPullRequestInputSchema.safeParse({
+          title: '',
+          sourceBranch: 'feature/login',
+          targetBranch: 'main',
+        }).success,
+      ).toBe(false)
     })
   })
 })
