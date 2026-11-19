@@ -22,6 +22,8 @@ const searchQuery = ref('')
 const selectedPullRequest = ref<RemotePullRequest | null>(null)
 const matchedAccount = ref<ProviderAccount | null>(null)
 const matchedRepositoryFullName = ref<string | null>(null)
+const manualRepositoryInput = ref('')
+const isManualSelectorVisible = ref(false)
 
 function handleClose(): void {
   emit('update:open', false)
@@ -51,6 +53,23 @@ function parseRepositoryFromUrl(url: string): { host: string; fullName: string }
   return null
 }
 
+async function loadPullRequestsForSelectedRepo(): Promise<void> {
+  if (!matchedAccount.value || !matchedRepositoryFullName.value) return
+  await fetchPullRequests(
+    matchedAccount.value.id,
+    matchedRepositoryFullName.value,
+    activeStateFilter.value === 'all' ? undefined : activeStateFilter.value,
+  )
+}
+
+async function handleApplyManualRepository(): Promise<void> {
+  const trimmed = manualRepositoryInput.value.trim()
+  if (!trimmed) return
+  matchedRepositoryFullName.value = trimmed
+  isManualSelectorVisible.value = false
+  await loadPullRequestsForSelectedRepo()
+}
+
 async function detectAndLoadPullRequests(): Promise<void> {
   await loadAccounts()
   if (accounts.value.length === 0) return
@@ -72,8 +91,11 @@ async function detectAndLoadPullRequests(): Promise<void> {
   }
 
   if (!targetRepo) {
-    matchedRepositoryFullName.value = null
-    matchedAccount.value = null
+    // Repository without remotes: default to first connected account and show manual repo selector
+    matchedAccount.value = accounts.value[0] || null
+    if (!matchedRepositoryFullName.value) {
+      isManualSelectorVisible.value = true
+    }
     return
   }
 
@@ -89,11 +111,7 @@ async function detectAndLoadPullRequests(): Promise<void> {
   matchedAccount.value = account || accounts.value[0] || null
 
   if (matchedAccount.value && matchedRepositoryFullName.value) {
-    await fetchPullRequests(
-      matchedAccount.value.id,
-      matchedRepositoryFullName.value,
-      activeStateFilter.value === 'all' ? undefined : activeStateFilter.value,
-    )
+    await loadPullRequestsForSelectedRepo()
   }
 }
 
@@ -108,14 +126,8 @@ watch(
   },
 )
 
-watch(activeStateFilter, async (filter) => {
-  if (matchedAccount.value && matchedRepositoryFullName.value) {
-    await fetchPullRequests(
-      matchedAccount.value.id,
-      matchedRepositoryFullName.value,
-      filter === 'all' ? undefined : filter,
-    )
-  }
+watch(activeStateFilter, async () => {
+  await loadPullRequestsForSelectedRepo()
 })
 
 const filteredPullRequests = computed(() => {
@@ -160,6 +172,16 @@ const filteredPullRequests = computed(() => {
                 >
                   {{ matchedRepositoryFullName }}
                 </UBadge>
+                <UButton
+                  v-if="accounts.length > 0"
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  icon="i-lucide-pencil"
+                  class="h-5 w-5 text-muted hover:text-highlighted cursor-pointer"
+                  :title="t('common.edit')"
+                  @click="isManualSelectorVisible = !isManualSelectorVisible"
+                />
               </div>
             </div>
           </div>
@@ -170,6 +192,52 @@ const filteredPullRequests = computed(() => {
             icon="i-lucide-x"
             @click="handleClose"
           />
+        </div>
+
+        <!-- Manual Repository / Account Selector Toolbar -->
+        <div
+          v-if="isManualSelectorVisible"
+          class="border-b border-primary/20 bg-primary/5 px-5 py-3 space-y-2 shrink-0 transition-all"
+        >
+          <div class="flex items-center justify-between text-[11px] text-muted">
+            <span>{{ t('provider.selectRepositoryPrompt') }}</span>
+            <span v-if="!props.remotes?.length" class="text-warning text-[10px] flex items-center gap-1">
+              <UIcon name="i-lucide-alert-triangle" class="h-3 w-3" />
+              {{ t('provider.noRemoteWarning') }}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- Account dropdown/select -->
+            <select
+              v-model="matchedAccount"
+              class="h-7 rounded-lg border border-default/70 bg-[var(--gv-surface)] px-2 text-xs text-highlighted outline-none focus:border-primary"
+            >
+              <option v-for="acc in accounts" :key="acc.id" :value="acc">
+                {{ acc.provider === 'github' ? 'GitHub' : 'GitLab' }} ({{ acc.username }})
+              </option>
+            </select>
+
+            <!-- Manual repository full name input -->
+            <UInput
+              v-model="manualRepositoryInput"
+              size="xs"
+              icon="i-lucide-folder-git-2"
+              :placeholder="matchedRepositoryFullName || t('provider.manualRepositoryPlaceholder')"
+              class="flex-1"
+              @keydown.enter="handleApplyManualRepository"
+            />
+
+            <UButton
+              size="xs"
+              color="primary"
+              variant="solid"
+              :label="t('provider.loadPullRequests')"
+              icon="i-lucide-download-cloud"
+              :loading="isLoading"
+              @click="handleApplyManualRepository"
+            />
+          </div>
         </div>
 
         <!-- Filter bar -->

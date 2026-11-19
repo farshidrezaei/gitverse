@@ -595,6 +595,10 @@
     "validationInvalidInstanceUrl": "آدرس سرور باید یک URL معتبر باشد.",
     "validationInvalidInstanceUrlScheme": "آدرس سرور باید با https:// یا http:// شروع شود.",
     "validationEmptyTitle": "عنوان درخواست ادغام نمی‌تواند خالی باشد.",
-    "validationTitleTooLong": "عنوان درخواست ادغام نمی‌تواند بیش از ۲۵۵ کاراکتر باشد."
+    "validationTitleTooLong": "عنوان درخواست ادغام نمی‌تواند بیش از ۲۵۵ کاراکتر باشد.",
+    "selectRepositoryPrompt": "یک مخزن از حساب‌های متصل انتخاب کنید یا نام مخزن (owner/repo) را برای بارگذاری وارد نمایید:",
+    "manualRepositoryPlaceholder": "نام کاربری/مخزن (مثلاً facebook/react)",
+    "noRemoteWarning": "هیچ ریموتی برای این مخزن محلی پیکربندی نشده است.",
+    "loadPullRequests": "بارگذاری درخواست‌های ادغام"
   }
 }

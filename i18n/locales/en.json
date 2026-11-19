@@ -595,6 +595,10 @@
     "validationInvalidInstanceUrl": "Instance URL must be a valid URL.",
     "validationInvalidInstanceUrlScheme": "Instance URL must begin with https:// or http://.",
     "validationEmptyTitle": "Pull request title cannot be empty.",
-    "validationTitleTooLong": "Pull request title cannot exceed 255 characters."
+    "validationTitleTooLong": "Pull request title cannot exceed 255 characters.",
+    "selectRepositoryPrompt": "Select a connected provider repository or enter owner/repo to load pull requests:",
+    "manualRepositoryPlaceholder": "owner/repository (e.g. facebook/react)",
+    "noRemoteWarning": "No remote configured for this local repository.",
+    "loadPullRequests": "Load Pull Requests"
   }
 }
