@@ -63,6 +63,7 @@ async function handleRemoveWorktree(worktreePath: string): Promise<void> {
 const isRenameModalOpen = ref(false)
 const branchToRename = ref('')
 const isPullRequestsModalOpen = ref(false)
+const hasRemotes = computed(() => (props.references?.remotes?.length ?? 0) > 0)
 
 function openRenameBranchModal(branchName: string): void {
   branchToRename.value = branchName
@@ -187,11 +188,12 @@ const existingBranchNames = computed(() => {
       </span>
       <div class="flex items-center gap-1">
         <UButton
+          v-if="hasRemotes"
           size="xs"
           color="neutral"
           variant="ghost"
           icon="i-lucide-git-pull-request"
-          class="h-6 w-6 text-primary"
+          class="h-6 w-6 text-primary cursor-pointer"
           :title="t('provider.pullRequests')"
           @click="isPullRequestsModalOpen = true"
         />
