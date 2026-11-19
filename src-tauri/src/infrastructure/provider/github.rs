@@ -228,7 +228,11 @@ impl GitHubClient {
         let url = format!("{}/repos/{}/{}/pulls", self.api_base_url, owner, repository_name);
         let headers = self.build_headers(token)?;
 
-        let state = state_filter.unwrap_or("all");
+        let state = match state_filter {
+            Some("open") => "open",
+            Some("closed") | Some("merged") => "closed",
+            _ => "all",
+        };
 
         let response = self.client.get(&url)
             .headers(headers)
@@ -248,12 +252,22 @@ impl GitHubClient {
 
         let mut pull_requests: Vec<RemotePullRequest> = raw_pulls
             .into_iter()
-            .map(|raw| {
+            .filter_map(|raw| {
                 let state = match raw.state.as_str() {
                     "closed" if raw.merged_at.is_some() => PullRequestState::Merged,
                     "closed" => PullRequestState::Closed,
                     _ => PullRequestState::Open,
                 };
+
+                // Filter specifically for merged vs closed if requested
+                if let Some(target_state) = state_filter {
+                    match target_state {
+                        "open" if state != PullRequestState::Open => return None,
+                        "closed" if state != PullRequestState::Closed => return None,
+                        "merged" if state != PullRequestState::Merged => return None,
+                        _ => {}
+                    }
+                }
 
                 let created_timestamp = chrono::DateTime::parse_from_rfc3339(&raw.created_at)
                     .map(|datetime| datetime.timestamp())
@@ -268,7 +282,7 @@ impl GitHubClient {
                     .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
                     .map(|datetime| datetime.timestamp());
 
-                RemotePullRequest {
+                Some(RemotePullRequest {
                     id: format!("github:{}", raw.id),
                     number: raw.number,
                     title: raw.title,
@@ -285,7 +299,7 @@ impl GitHubClient {
                     updated_at_timestamp: updated_timestamp,
                     merged_at_timestamp: merged_timestamp,
                     pipeline_status: None,
-                }
+                })
             })
             .collect();
 
