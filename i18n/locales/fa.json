@@ -360,7 +360,9 @@
     "closeComparison": "بستن مقایسه",
     "compareWithSelected": "مقایسه با انتخاب‌شده ({hash})",
     "compareWith": "مقایسه کامیت‌ها",
-    "noCommitSelected": "برای مشاهده جزئیات، یک کامیت را از نمودار انتخاب کنید"
+    "noCommitSelected": "برای مشاهده جزئیات، یک کامیت را از نمودار انتخاب کنید",
+    "validationEmptySummary": "خلاصه پیام کامیت نمی‌تواند خالی باشد.",
+    "validationSummaryTooLong": "خلاصه پیام کامیت بیش از حد طولانی است (حداکثر ۵۰۰ کاراکتر)."
   },
   "stash": {
     "title": "استش‌ها (Stashes)",
@@ -383,6 +385,7 @@
     "fetchFailed": "خطا در دریافت لیست استش‌ها",
     "savedSuccess": "تغییرات با موفقیت استش شدند",
     "saveFailed": "خطا در استش کردن تغییرات",
+    "validationMessageTooLong": "پیام استش بیش از حد طولانی است (حداکثر ۵۰۰ کاراکتر).",
     "appliedSuccess": "استش با موفقیت اعمال شد",
     "applyFailed": "خطا در اعمال استش",
     "poppedSuccess": "استش با موفقیت اعمال و از پشته حذف شد",
@@ -424,6 +427,7 @@
     "validationNoConsecutiveSeparators": "نام شاخه نباید حاوی اسلش متوالی (//) یا دو نقطه (..) باشد.",
     "validationCannotEndWithLock": "نام شاخه نمی‌تواند با lock. پایان یابد.",
     "validationInvalidCharacters": "نام شاخه حاوی کاراکترهای غیرمجاز است.",
+    "validationTooLong": "نام شاخه بیش از حد طولانی است (حداکثر ۲۵۰ کاراکتر).",
     "create": "ایجاد شاخه"
   },
   "conflict": {

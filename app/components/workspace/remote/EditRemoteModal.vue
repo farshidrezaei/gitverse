@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RemoteSummary } from '~/types/repository'
+import { validateRemoteWithSchema } from '~/schemas/remoteSchema'
 
 interface EditRemoteModalProps {
   open: boolean
@@ -43,26 +44,13 @@ function handleConfirm(): void {
   const sanitizedName = remoteName.value.trim()
   const sanitizedUrl = remoteUrl.value.trim()
 
-  if (!sanitizedName) {
-    errorMessage.value = t('remote.validationEmptyName')
-    return
-  }
+  const validationResult = validateRemoteWithSchema(sanitizedName, sanitizedUrl, {
+    existingRemoteNames: props.existingRemoteNames,
+    currentRemoteName: props.remote.name,
+  })
 
-  if (/\s/.test(sanitizedName)) {
-    errorMessage.value = t('remote.validationInvalidName')
-    return
-  }
-
-  if (
-    sanitizedName !== props.remote.name &&
-    props.existingRemoteNames?.includes(sanitizedName)
-  ) {
-    errorMessage.value = t('remote.validationDuplicateName')
-    return
-  }
-
-  if (!sanitizedUrl) {
-    errorMessage.value = t('remote.validationEmptyUrl')
+  if (!validationResult.isValid && validationResult.errorKey) {
+    errorMessage.value = t(validationResult.errorKey)
     return
   }
 

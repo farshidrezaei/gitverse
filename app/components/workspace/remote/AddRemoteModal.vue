@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { validateRemoteWithSchema } from '~/schemas/remoteSchema'
+
 interface AddRemoteModalProps {
   open: boolean
   existingRemoteNames?: string[]
@@ -40,23 +42,12 @@ function handleConfirm(): void {
   const sanitizedName = remoteName.value.trim()
   const sanitizedUrl = remoteUrl.value.trim()
 
-  if (!sanitizedName) {
-    errorMessage.value = t('remote.validationEmptyName')
-    return
-  }
+  const validationResult = validateRemoteWithSchema(sanitizedName, sanitizedUrl, {
+    existingRemoteNames: props.existingRemoteNames,
+  })
 
-  if (/\s/.test(sanitizedName)) {
-    errorMessage.value = t('remote.validationInvalidName')
-    return
-  }
-
-  if (props.existingRemoteNames?.includes(sanitizedName)) {
-    errorMessage.value = t('remote.validationDuplicateName')
-    return
-  }
-
-  if (!sanitizedUrl) {
-    errorMessage.value = t('remote.validationEmptyUrl')
+  if (!validationResult.isValid && validationResult.errorKey) {
+    errorMessage.value = t(validationResult.errorKey)
     return
   }
 

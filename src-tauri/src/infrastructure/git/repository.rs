@@ -4,7 +4,10 @@ use crate::domain::{
     ApplicationError, ConflictFileDetails, DirectoryListing, FolderEntry, GitWorktreeSummary, InteractiveRebaseRequest,
     MergeBranchOutcome, RebaseBranchOutcome, RebasePlanItem, RepositoryOperationState, RepositoryOverview, StashRecord,
 };
-use super::branch::validate_branch_name;
+use crate::domain::validation::{
+    validate_branch_name, validate_commit_message, validate_remote_name, validate_remote_url,
+    validate_stash_message, validate_worktree_path,
+};
 use super::process::GitProcessExecutor;
 use super::stash::parse_stash_list;
 use super::worktree::parse_worktree_list;
@@ -238,6 +241,7 @@ impl GitRepositoryInspector {
 
     /// Commits staged changes with a commit message and optional amend flag.
     pub async fn commit(&self, directory_path: &Path, message: &str, is_amend: bool) -> Result<String, ApplicationError> {
+        validate_commit_message(message)?;
         let mut arguments = vec!["commit", "-m", message];
         if is_amend {
             arguments.push("--amend");
@@ -713,16 +717,8 @@ impl GitRepositoryInspector {
     ) -> Result<String, ApplicationError> {
         let trimmed_name = name.trim();
         let trimmed_url = url.trim();
-        if trimmed_name.is_empty() {
-            return Err(ApplicationError::InvalidInput(
-                "Remote name cannot be empty".into(),
-            ));
-        }
-        if trimmed_url.is_empty() {
-            return Err(ApplicationError::InvalidInput(
-                "Remote URL cannot be empty".into(),
-            ));
-        }
+        validate_remote_name(trimmed_name)?;
+        validate_remote_url(trimmed_url)?;
         self.executor
             .execute_git_command(Some(directory_path), &["remote", "add", trimmed_name, trimmed_url])
             .await
@@ -735,11 +731,7 @@ impl GitRepositoryInspector {
         name: &str,
     ) -> Result<String, ApplicationError> {
         let trimmed_name = name.trim();
-        if trimmed_name.is_empty() {
-            return Err(ApplicationError::InvalidInput(
-                "Remote name cannot be empty".into(),
-            ));
-        }
+        validate_remote_name(trimmed_name)?;
         self.executor
             .execute_git_command(Some(directory_path), &["remote", "remove", trimmed_name])
             .await
@@ -754,11 +746,8 @@ impl GitRepositoryInspector {
     ) -> Result<String, ApplicationError> {
         let trimmed_old = old_name.trim();
         let trimmed_new = new_name.trim();
-        if trimmed_old.is_empty() || trimmed_new.is_empty() {
-            return Err(ApplicationError::InvalidInput(
-                "Remote names cannot be empty".into(),
-            ));
-        }
+        validate_remote_name(trimmed_old)?;
+        validate_remote_name(trimmed_new)?;
         self.executor
             .execute_git_command(Some(directory_path), &["remote", "rename", trimmed_old, trimmed_new])
             .await
@@ -774,16 +763,8 @@ impl GitRepositoryInspector {
     ) -> Result<String, ApplicationError> {
         let trimmed_name = name.trim();
         let trimmed_url = url.trim();
-        if trimmed_name.is_empty() {
-            return Err(ApplicationError::InvalidInput(
-                "Remote name cannot be empty".into(),
-            ));
-        }
-        if trimmed_url.is_empty() {
-            return Err(ApplicationError::InvalidInput(
-                "Remote URL cannot be empty".into(),
-            ));
-        }
+        validate_remote_name(trimmed_name)?;
+        validate_remote_url(trimmed_url)?;
         let arguments = if is_push_only {
             vec!["remote", "set-url", "--push", trimmed_name, trimmed_url]
         } else {
@@ -809,6 +790,9 @@ impl GitRepositoryInspector {
         message: Option<&str>,
         include_untracked: bool,
     ) -> Result<String, ApplicationError> {
+        if let Some(msg) = message {
+            validate_stash_message(msg)?;
+        }
         let mut arguments = vec!["stash", "push"];
         if include_untracked {
             arguments.push("--include-untracked");
@@ -1285,6 +1269,12 @@ impl GitRepositoryInspector {
         branch_name: Option<&str>,
         is_new_branch: bool,
     ) -> Result<String, ApplicationError> {
+        validate_worktree_path(worktree_path)?;
+        if is_new_branch {
+            if let Some(branch) = branch_name {
+                validate_branch_name(branch)?;
+            }
+        }
         let mut arguments = vec!["worktree", "add"];
         if is_new_branch {
             if let Some(branch) = branch_name {

@@ -1,0 +1,296 @@
+use crate::domain::ApplicationError;
+
+/// Validates a Git branch name according to git-check-ref-format specification.
+pub fn validate_branch_name(candidate_name: &str) -> Result<(), ApplicationError> {
+    let trimmed = candidate_name.trim();
+
+    if trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot be empty".into(),
+        ));
+    }
+
+    if trimmed.len() > 250 {
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot exceed 250 characters".into(),
+        ));
+    }
+
+    if trimmed.chars().any(|character| character.is_whitespace() || character.is_ascii_control()) {
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot contain whitespace or control characters".into(),
+        ));
+    }
+
+    if trimmed.starts_with('/') || trimmed.ends_with('/') {
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot start or end with a slash".into(),
+        ));
+    }
+
+    if trimmed.starts_with('-') || trimmed.ends_with('-') {
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot start or end with a hyphen".into(),
+        ));
+    }
+
+    if trimmed.starts_with('.') || trimmed.ends_with('.') {
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot start or end with a dot".into(),
+        ));
+    }
+
+    if trimmed.contains("//") || trimmed.contains("..") {
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot contain consecutive slashes (//) or dots (..)".into(),
+        ));
+    }
+
+    if trimmed.ends_with(".lock") {
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot end with .lock".into(),
+        ));
+    }
+
+    if trimmed.contains("@{") {
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot contain '@{'".into(),
+        ));
+    }
+
+    let has_invalid_characters = trimmed.chars().any(|character| {
+        matches!(character, '~' | '^' | ':' | '?' | '*' | '[' | '\\' | '@')
+    });
+
+    if has_invalid_characters {
+        return Err(ApplicationError::InvalidInput(
+            "Branch name contains invalid characters (~, ^, :, ?, *, [, \\, @)".into(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validates a Git remote name.
+pub fn validate_remote_name(candidate_name: &str) -> Result<(), ApplicationError> {
+    let trimmed = candidate_name.trim();
+
+    if trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Remote name cannot be empty".into(),
+        ));
+    }
+
+    if trimmed.len() > 100 {
+        return Err(ApplicationError::InvalidInput(
+            "Remote name cannot exceed 100 characters".into(),
+        ));
+    }
+
+    if trimmed.chars().any(|character| character.is_whitespace() || character.is_ascii_control()) {
+        return Err(ApplicationError::InvalidInput(
+            "Remote name cannot contain whitespace or control characters".into(),
+        ));
+    }
+
+    if trimmed == "." || trimmed == ".." {
+        return Err(ApplicationError::InvalidInput(
+            "Remote name cannot be '.' or '..'".into(),
+        ));
+    }
+
+    if trimmed.starts_with('/') || trimmed.ends_with('/') || trimmed.starts_with('-') || trimmed.ends_with('-') {
+        return Err(ApplicationError::InvalidInput(
+            "Remote name cannot start or end with a slash or hyphen".into(),
+        ));
+    }
+
+    if trimmed.contains("//") || trimmed.contains("..") {
+        return Err(ApplicationError::InvalidInput(
+            "Remote name cannot contain consecutive slashes (//) or dots (..)".into(),
+        ));
+    }
+
+    let has_invalid_characters = trimmed.chars().any(|character| {
+        matches!(character, '~' | '^' | ':' | '?' | '*' | '[' | '\\' | '@')
+    });
+
+    if has_invalid_characters {
+        return Err(ApplicationError::InvalidInput(
+            "Remote name contains invalid characters (~, ^, :, ?, *, [, \\, @)".into(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validates a Git remote URL.
+pub fn validate_remote_url(candidate_url: &str) -> Result<(), ApplicationError> {
+    let trimmed = candidate_url.trim();
+
+    if trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Remote URL cannot be empty".into(),
+        ));
+    }
+
+    if trimmed.len() > 2000 {
+        return Err(ApplicationError::InvalidInput(
+            "Remote URL cannot exceed 2000 characters".into(),
+        ));
+    }
+
+    if trimmed.chars().any(|character| character.is_whitespace() || character.is_ascii_control()) {
+        return Err(ApplicationError::InvalidInput(
+            "Remote URL cannot contain whitespace or control characters".into(),
+        ));
+    }
+
+    // Supported Git URL formats:
+    // 1. Standard protocol schemes: https://, http://, ssh://, git://, file://
+    // 2. SCP-like SSH syntax: user@host:path/to/repo.git or host:path/to/repo.git
+    // 3. Local filesystem paths: /absolute/path or ./relative or C:\path
+    let is_standard_url = trimmed.starts_with("https://")
+        || trimmed.starts_with("http://")
+        || trimmed.starts_with("ssh://")
+        || trimmed.starts_with("git://")
+        || trimmed.starts_with("file://");
+
+    let is_scp_ssh = trimmed.contains(':')
+        && !trimmed.contains("://")
+        && (trimmed.contains('@') || trimmed.chars().take_while(|c| *c != ':').all(|c| c.is_alphanumeric() || c == '.' || c == '-'));
+
+    let is_local_path = trimmed.starts_with('/')
+        || trimmed.starts_with("./")
+        || trimmed.starts_with("../")
+        || (trimmed.len() >= 3 && trimmed.chars().next().map_or(false, |c| c.is_ascii_alphabetic()) && &trimmed[1..3] == ":\\");
+
+    if !is_standard_url && !is_scp_ssh && !is_local_path {
+        return Err(ApplicationError::InvalidInput(
+            "Remote URL must be a valid Git URL (HTTPS, SSH, git://, or local path)".into(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validates a commit summary and description message.
+pub fn validate_commit_message(summary: &str) -> Result<(), ApplicationError> {
+    let trimmed = summary.trim();
+
+    if trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Commit summary cannot be empty".into(),
+        ));
+    }
+
+    if trimmed.len() > 1000 {
+        return Err(ApplicationError::InvalidInput(
+            "Commit summary cannot exceed 1000 characters".into(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validates an optional stash message.
+pub fn validate_stash_message(message: &str) -> Result<(), ApplicationError> {
+    let trimmed = message.trim();
+
+    if trimmed.len() > 500 {
+        return Err(ApplicationError::InvalidInput(
+            "Stash message cannot exceed 500 characters".into(),
+        ));
+    }
+
+    if trimmed.chars().any(|character| character.is_ascii_control() && character != '\n' && character != '\t') {
+        return Err(ApplicationError::InvalidInput(
+            "Stash message cannot contain control characters".into(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validates a worktree path.
+pub fn validate_worktree_path(path_str: &str) -> Result<(), ApplicationError> {
+    let trimmed = path_str.trim();
+
+    if trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Worktree destination path cannot be empty".into(),
+        ));
+    }
+
+    if trimmed.contains('\0') {
+        return Err(ApplicationError::InvalidInput(
+            "Worktree destination path cannot contain null bytes".into(),
+        ));
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_branch_name() {
+        assert!(validate_branch_name("main").is_ok());
+        assert!(validate_branch_name("feature/add-remotes").is_ok());
+        assert!(validate_branch_name("release-v1.0.0").is_ok());
+
+        assert!(validate_branch_name("").is_err());
+        assert!(validate_branch_name("   ").is_err());
+        assert!(validate_branch_name("feature branch").is_err());
+        assert!(validate_branch_name("/leading").is_err());
+        assert!(validate_branch_name("trailing/").is_err());
+        assert!(validate_branch_name("-hyphen").is_err());
+        assert!(validate_branch_name(".dot").is_err());
+        assert!(validate_branch_name("double//slash").is_err());
+        assert!(validate_branch_name("double..dot").is_err());
+        assert!(validate_branch_name("branch.lock").is_err());
+        assert!(validate_branch_name("branch@{upstream}").is_err());
+        assert!(validate_branch_name("branch~1").is_err());
+    }
+
+    #[test]
+    fn test_validate_remote_name() {
+        assert!(validate_remote_name("origin").is_ok());
+        assert!(validate_remote_name("upstream").is_ok());
+        assert!(validate_remote_name("fork_2026").is_ok());
+
+        assert!(validate_remote_name("").is_err());
+        assert!(validate_remote_name("origin with space").is_err());
+        assert!(validate_remote_name("/origin").is_err());
+        assert!(validate_remote_name(".").is_err());
+        assert!(validate_remote_name("..").is_err());
+        assert!(validate_remote_name("origin:bad").is_err());
+    }
+
+    #[test]
+    fn test_validate_remote_url() {
+        assert!(validate_remote_url("https://github.com/owner/repo.git").is_ok());
+        assert!(validate_remote_url("http://github.com/owner/repo.git").is_ok());
+        assert!(validate_remote_url("git@github.com:owner/repo.git").is_ok());
+        assert!(validate_remote_url("ssh://git@github.com:22/owner/repo.git").is_ok());
+        assert!(validate_remote_url("git://example.com/repo.git").is_ok());
+        assert!(validate_remote_url("/home/user/repos/local.git").is_ok());
+
+        assert!(validate_remote_url("").is_err());
+        assert!(validate_remote_url("   ").is_err());
+        assert!(validate_remote_url("not a url").is_err());
+        assert!(validate_remote_url("ftp://unsupported.com").is_err());
+    }
+
+    #[test]
+    fn test_validate_commit_and_stash_message() {
+        assert!(validate_commit_message("feat: initial commit").is_ok());
+        assert!(validate_commit_message("").is_err());
+        assert!(validate_commit_message("   ").is_err());
+
+        assert!(validate_stash_message("WIP on new feature").is_ok());
+        assert!(validate_stash_message("").is_ok());
+    }
+}

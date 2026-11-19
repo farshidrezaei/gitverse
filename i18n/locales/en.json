@@ -360,7 +360,9 @@
     "closeComparison": "Close Comparison",
     "compareWithSelected": "Compare with selected ({hash})",
     "compareWith": "Compare Commits",
-    "noCommitSelected": "Select a commit from the graph to inspect details"
+    "noCommitSelected": "Select a commit from the graph to inspect details",
+    "validationEmptySummary": "Commit summary cannot be empty.",
+    "validationSummaryTooLong": "Commit summary is too long (maximum 500 characters)."
   },
   "stash": {
     "title": "Stashes",
@@ -383,6 +385,7 @@
     "fetchFailed": "Failed to load stash entries",
     "savedSuccess": "Changes stashed successfully",
     "saveFailed": "Failed to stash changes",
+    "validationMessageTooLong": "Stash message is too long (maximum 500 characters).",
     "appliedSuccess": "Stash applied successfully",
     "applyFailed": "Failed to apply stash",
     "poppedSuccess": "Stash popped successfully",
@@ -424,6 +427,7 @@
     "validationNoConsecutiveSeparators": "Branch name cannot contain consecutive slashes (//) or dots (..).",
     "validationCannotEndWithLock": "Branch name cannot end with .lock.",
     "validationInvalidCharacters": "Branch name contains invalid characters.",
+    "validationTooLong": "Branch name is too long (maximum 250 characters).",
     "create": "Create branch"
   },
   "conflict": {

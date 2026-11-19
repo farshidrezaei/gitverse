@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { createStashInputSchema } from '~/schemas/stashSchema'
+
 const props = defineProps<{
   open: boolean
 }>()
@@ -13,6 +15,7 @@ const { t } = useI18n()
 const stashMessage = ref('')
 const includeUntracked = ref(true)
 const isSubmitting = ref(false)
+const errorMessage = ref<string | null>(null)
 
 watch(
   () => props.open,
@@ -20,12 +23,24 @@ watch(
     if (isOpen) {
       stashMessage.value = ''
       includeUntracked.value = true
+      errorMessage.value = null
       isSubmitting.value = false
     }
   }
 )
 
 function handleConfirm(): void {
+  const result = createStashInputSchema.safeParse({
+    message: stashMessage.value.trim() || undefined,
+    shouldIncludeUntracked: includeUntracked.value,
+  })
+
+  if (!result.success) {
+    const firstIssue = result.error.issues[0]
+    errorMessage.value = firstIssue ? t(firstIssue.message) : 'Invalid input'
+    return
+  }
+
   isSubmitting.value = true
   emit('save', stashMessage.value.trim(), includeUntracked.value)
   emit('update:open', false)
@@ -46,26 +61,30 @@ function handleClose(): void {
     @update:open="emit('update:open', $event)"
   >
     <template #content>
-      <div class="p-5 space-y-4">
-        <!-- Modal Header -->
-        <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <UIcon name="i-lucide-archive" class="h-5 w-5" />
+      <div class="flex flex-col select-none">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-default/70 px-5 py-3.5 bg-muted/20">
+          <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-archive" class="h-5 w-5 text-primary" />
+            <span class="text-sm font-semibold text-highlighted">{{ t('stash.createTitle') }}</span>
           </div>
-          <div class="min-w-0 flex-1">
-            <h3 class="text-sm font-bold text-highlighted">
-              {{ t('stash.createTitle') }}
-            </h3>
-            <p class="text-xs text-muted mt-0.5">
-              {{ t('stash.createDescription') }}
-            </p>
-          </div>
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-x"
+            @click="handleClose"
+          />
         </div>
 
-        <!-- Form Inputs -->
-        <div class="space-y-3 pt-1">
-          <div>
-            <label class="block text-xs font-semibold text-highlighted mb-1.5">
+        <!-- Form Body -->
+        <div class="p-5 space-y-4">
+          <p class="text-xs text-muted">
+            {{ t('stash.createDescription') }}
+          </p>
+
+          <div class="space-y-1.5">
+            <label class="block text-xs font-semibold text-highlighted">
               {{ t('stash.messageLabel') }}
             </label>
             <UInput
@@ -74,31 +93,35 @@ function handleClose(): void {
               :placeholder="t('stash.messagePlaceholder')"
               class="w-full"
               autofocus
-              @keydown.enter="handleConfirm"
+              @keydown.enter.prevent="handleConfirm"
             />
+            <p v-if="errorMessage" class="text-[11px] text-error font-medium">
+              {{ errorMessage }}
+            </p>
           </div>
 
-          <div class="flex items-center gap-2 pt-1">
+          <div class="pt-1">
             <UCheckbox
               v-model="includeUntracked"
               :label="t('stash.includeUntracked')"
-              size="sm"
+              class="text-xs font-medium text-highlighted"
             />
           </div>
         </div>
 
-        <!-- Modal Footer -->
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-default/70">
+        <!-- Footer -->
+        <div class="flex items-center justify-end gap-2 border-t border-default/70 px-5 py-3 bg-muted/10">
           <UButton
             size="sm"
             color="neutral"
-            variant="outline"
+            variant="ghost"
             :label="t('common.cancel')"
             @click="handleClose"
           />
           <UButton
             size="sm"
             color="primary"
+            variant="solid"
             icon="i-lucide-archive"
             :loading="isSubmitting"
             :label="t('stash.createConfirm')"

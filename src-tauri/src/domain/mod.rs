@@ -3,8 +3,10 @@ use thiserror::Error;
 
 pub mod branch;
 pub mod graph;
+pub mod validation;
 pub use branch::*;
 pub use graph::*;
+pub use validation::*;
 
 /// Domain errors representing failures across Git and workspace operations.
 #[derive(Debug, Error, Serialize, Deserialize)]

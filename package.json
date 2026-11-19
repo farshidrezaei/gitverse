@@ -8,7 +8,7 @@
     "dev": "nuxt dev",
     "build": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
+    "postinstall": "node scripts/patch-nuxt-ui.mjs && nuxt prepare",
     "typecheck": "nuxt typecheck",
     "validate:i18n": "node scripts/validate-i18n.mjs",
     "test:unit": "vitest run",
