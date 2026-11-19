@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RemotePullRequest, PullRequestState, ProviderAccount } from '~/types/provider'
 import type { RemoteSummary } from '~/types/repository'
+import ConnectProviderAccountModal from './ConnectProviderAccountModal.vue'
 
 interface WorkspacePullRequestsModalProps {
   open: boolean
@@ -24,6 +25,8 @@ const matchedAccount = ref<ProviderAccount | null>(null)
 const matchedRepositoryFullName = ref<string | null>(null)
 const manualRepositoryInput = ref('')
 const isManualSelectorVisible = ref(false)
+const detectedProviderKind = ref<'github' | 'gitlab'>('github')
+const isConnectAccountModalOpen = ref(false)
 
 function handleClose(): void {
   emit('update:open', false)
@@ -100,6 +103,7 @@ async function detectAndLoadPullRequests(): Promise<void> {
   }
 
   matchedRepositoryFullName.value = targetRepo.fullName
+  detectedProviderKind.value = targetRepo.host.includes('gitlab') ? 'gitlab' : 'github'
 
   // Match account by instance URL or host
   const account = accounts.value.find((acc) => {
@@ -108,7 +112,7 @@ async function detectAndLoadPullRequests(): Promise<void> {
     return acc.instance_url.toLowerCase().includes(targetRepo?.host || '')
   })
 
-  matchedAccount.value = account || accounts.value[0] || null
+  matchedAccount.value = account || null
 
   if (matchedAccount.value && matchedRepositoryFullName.value) {
     await loadPullRequestsForSelectedRepo()
@@ -269,8 +273,50 @@ const filteredPullRequests = computed(() => {
           </div>
         </div>
 
+        <!-- Content Split (List + Details) OR Not Connected Empty State -->
+        <div v-if="!matchedAccount" class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[var(--gv-background)]">
+          <div class="h-14 w-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-4 shadow-sm">
+            <UIcon
+              :name="detectedProviderKind === 'gitlab' ? 'i-simple-icons-gitlab' : 'i-simple-icons-github'"
+              class="h-7 w-7"
+            />
+          </div>
+
+          <h3 class="text-base font-bold text-highlighted mb-1">
+            {{ t('provider.accountNotConnectedTitle', { provider: detectedProviderKind === 'gitlab' ? 'GitLab' : 'GitHub' }) }}
+          </h3>
+
+          <p class="text-xs text-muted max-w-md mb-6 leading-relaxed">
+            {{ t('provider.accountNotConnectedDescription', {
+              provider: detectedProviderKind === 'gitlab' ? 'GitLab' : 'GitHub',
+              repository: matchedRepositoryFullName || 'this repository'
+            }) }}
+          </p>
+
+          <div class="flex items-center gap-3">
+            <UButton
+              size="sm"
+              color="primary"
+              variant="solid"
+              icon="i-lucide-link-2"
+              class="cursor-pointer"
+              :label="t('provider.connectProviderAction', { provider: detectedProviderKind === 'gitlab' ? 'GitLab' : 'GitHub' })"
+              @click="isConnectAccountModalOpen = true"
+            />
+            <UButton
+              size="sm"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-pencil"
+              class="cursor-pointer"
+              label="Choose Different Repository"
+              @click="isManualSelectorVisible = true"
+            />
+          </div>
+        </div>
+
         <!-- Content Split (List + Details) -->
-        <div class="flex flex-1 min-h-0 overflow-hidden">
+        <div v-else class="flex flex-1 min-h-0 overflow-hidden">
           <!-- PR List -->
           <div class="w-2/5 border-e border-default/60 overflow-y-auto p-2 space-y-1.5">
             <div v-if="isLoading" class="py-12 text-center text-muted">
@@ -445,4 +491,11 @@ const filteredPullRequests = computed(() => {
       </div>
     </template>
   </UModal>
+
+  <!-- Connect Account Modal (Prompted directly when needed) -->
+  <ConnectProviderAccountModal
+    v-model:open="isConnectAccountModalOpen"
+    :initial-provider="detectedProviderKind"
+    @account-connected="detectAndLoadPullRequests"
+  />
 </template>

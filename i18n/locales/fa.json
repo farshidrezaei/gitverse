@@ -599,6 +599,9 @@
     "selectRepositoryPrompt": "یک مخزن از حساب‌های متصل انتخاب کنید یا نام مخزن (owner/repo) را برای بارگذاری وارد نمایید:",
     "manualRepositoryPlaceholder": "نام کاربری/مخزن (مثلاً facebook/react)",
     "noRemoteWarning": "هیچ ریموتی برای این مخزن محلی پیکربندی نشده است.",
-    "loadPullRequests": "بارگذاری درخواست‌های ادغام"
+    "loadPullRequests": "بارگذاری درخواست‌های ادغام",
+    "accountNotConnectedTitle": "حساب {provider} متصل نیست",
+    "accountNotConnectedDescription": "برای مشاهده درخواست‌های ادغام، بازبینی‌ها و وضعیت CI مخزن {repository}، حساب {provider} خود را متصل کنید.",
+    "connectProviderAction": "اتصال حساب {provider}"
   }
 }
