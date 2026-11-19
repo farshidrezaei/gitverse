@@ -6,7 +6,7 @@ import {
   GITHUB_DEFAULT_INSTANCE_URL,
   GITLAB_DEFAULT_INSTANCE_URL,
 } from '~/schemas/providerSchema'
-import { openExternalUrl } from '~/utils/tauriClient'
+import { openExternalUrl, readClipboardText } from '~/utils/tauriClient'
 
 interface ConnectProviderAccountModalProps {
   open: boolean
@@ -53,11 +53,9 @@ async function handleOpenTokenGenerator(): Promise<void> {
 async function handlePasteFromClipboard(): Promise<void> {
   try {
     isPasting.value = true
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      const text = await navigator.clipboard.readText()
-      if (text && text.trim()) {
-        personalAccessToken.value = text.trim()
-      }
+    const text = await readClipboardText()
+    if (text && text.trim()) {
+      personalAccessToken.value = text.trim()
     }
   } catch {
     // Clipboard permission denied or unavailable

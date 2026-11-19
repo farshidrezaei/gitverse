@@ -655,6 +655,55 @@ pub async fn open_external_url(url: String) -> Result<(), ApplicationError> {
     Ok(())
 }
 
+/// Tauri IPC command to read plain text from the system clipboard.
+#[tauri::command]
+pub async fn read_clipboard_text() -> Result<String, ApplicationError> {
+    #[cfg(target_os = "linux")]
+    {
+        // Try wl-paste (Wayland)
+        if let Ok(output) = tokio::process::Command::new("wl-paste").output().await {
+            if output.status.success() {
+                return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
+            }
+        }
 
+        // Try xclip (X11)
+        if let Ok(output) = tokio::process::Command::new("xclip").args(["-selection", "clipboard", "-o"]).output().await {
+            if output.status.success() {
+                return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
+            }
+        }
+
+        // Try xsel (X11)
+        if let Ok(output) = tokio::process::Command::new("xsel").args(["--clipboard", "--output"]).output().await {
+            if output.status.success() {
+                return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
+            }
+        }
+
+        Err(ApplicationError::Unexpected("Clipboard command failed on Linux".into()))
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let output = tokio::process::Command::new("pbpaste")
+            .output()
+            .await
+            .map_err(|error| ApplicationError::Unexpected(format!("Failed to execute pbpaste: {}", error)))?;
+
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let output = tokio::process::Command::new("powershell")
+            .args(["-NoProfile", "-Command", "Get-Clipboard"])
+            .output()
+            .await
+            .map_err(|error| ApplicationError::Unexpected(format!("Failed to read clipboard: {}", error)))?;
+
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    }
+}
 
 

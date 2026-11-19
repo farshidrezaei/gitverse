@@ -58,3 +58,27 @@ export async function openExternalUrl(url: string): Promise<void> {
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 }
+
+/**
+ * Reads plain text from system clipboard using native Tauri command or browser API.
+ */
+export async function readClipboardText(): Promise<string> {
+  if (isTauriRuntime()) {
+    try {
+      const text = await invokeTauriCommand<string>('read_clipboard_text')
+      if (text) return text
+    } catch {
+      // Fallback to browser navigator.clipboard
+    }
+  }
+
+  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+    try {
+      return await navigator.clipboard.readText()
+    } catch {
+      return ''
+    }
+  }
+
+  return ''
+}

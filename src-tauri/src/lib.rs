@@ -112,6 +112,7 @@ pub fn run() {
             commands::get_commit_pipeline_summary,
             commands::list_check_runs,
             commands::open_external_url,
+            commands::read_clipboard_text,
         ])
         .run(tauri::generate_context!());
 
