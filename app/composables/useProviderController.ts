@@ -7,7 +7,7 @@ import type {
   PipelineSummary,
   CiCheckRun,
 } from '~/types/provider'
-import { invokeTauriIpc } from '~/utils/tauriClient'
+import { invokeTauriCommand } from '~/utils/tauriClient'
 
 export function useProviderController() {
   const accounts = useState<ProviderAccount[]>('provider-accounts', () => [])
@@ -21,7 +21,7 @@ export function useProviderController() {
     isLoading.value = true
     errorMessage.value = null
     try {
-      const result = await invokeTauriIpc<ProviderAccount[]>('list_provider_accounts')
+      const result = await invokeTauriCommand<ProviderAccount[]>('list_provider_accounts')
       accounts.value = result || []
       return accounts.value
     } catch (error) {
@@ -36,7 +36,7 @@ export function useProviderController() {
     isConnecting.value = true
     errorMessage.value = null
     try {
-      const account = await invokeTauriIpc<ProviderAccount>('connect_github_account', {
+      const account = await invokeTauriCommand<ProviderAccount>('connect_github_account', {
         personalAccessToken,
         instanceUrl: instanceUrl?.trim() || null,
       })
@@ -54,7 +54,7 @@ export function useProviderController() {
     isConnecting.value = true
     errorMessage.value = null
     try {
-      const account = await invokeTauriIpc<ProviderAccount>('connect_gitlab_account', {
+      const account = await invokeTauriCommand<ProviderAccount>('connect_gitlab_account', {
         personalAccessToken,
         instanceUrl: instanceUrl?.trim() || null,
       })
@@ -72,7 +72,7 @@ export function useProviderController() {
     isLoading.value = true
     errorMessage.value = null
     try {
-      const isSuccess = await invokeTauriIpc<boolean>('disconnect_provider_account', {
+      const isSuccess = await invokeTauriCommand<boolean>('disconnect_provider_account', {
         accountIdentifier,
       })
       if (isSuccess) {
@@ -91,7 +91,7 @@ export function useProviderController() {
     isLoading.value = true
     errorMessage.value = null
     try {
-      const repositories = await invokeTauriIpc<RemoteProjectRepository[]>('get_provider_repositories', {
+      const repositories = await invokeTauriCommand<RemoteProjectRepository[]>('get_provider_repositories', {
         accountIdentifier,
         page,
         perPage,
@@ -114,7 +114,7 @@ export function useProviderController() {
     isLoading.value = true
     errorMessage.value = null
     try {
-      const result = await invokeTauriIpc<RemotePullRequest[]>('get_provider_pull_requests', {
+      const result = await invokeTauriCommand<RemotePullRequest[]>('get_provider_pull_requests', {
         accountIdentifier,
         repositoryFullName,
         stateFilter: stateFilter || null,
@@ -135,7 +135,7 @@ export function useProviderController() {
     referenceOrSha: string,
   ): Promise<PipelineSummary | null> {
     try {
-      return await invokeTauriIpc<PipelineSummary | null>('get_commit_pipeline_summary', {
+      return await invokeTauriCommand<PipelineSummary | null>('get_commit_pipeline_summary', {
         accountIdentifier,
         repositoryFullName,
         referenceOrSha,
@@ -151,7 +151,7 @@ export function useProviderController() {
     referenceOrPipelineId: string,
   ): Promise<CiCheckRun[]> {
     try {
-      const result = await invokeTauriIpc<CiCheckRun[]>('list_check_runs', {
+      const result = await invokeTauriCommand<CiCheckRun[]>('list_check_runs', {
         accountIdentifier,
         repositoryFullName,
         referenceOrPipelineId,
