@@ -602,6 +602,10 @@
     "loadPullRequests": "Load Pull Requests",
     "accountNotConnectedTitle": "{provider} Account Not Connected",
     "accountNotConnectedDescription": "Connect your {provider} account to view pull requests, reviews, and CI status for {repository}.",
-    "connectProviderAction": "Connect {provider} Account"
+    "connectProviderAction": "Connect {provider} Account",
+    "generateTokenButton": "Generate token on {provider}",
+    "generateTokenHelper": "Opens {provider} in your browser with required scopes pre-selected.",
+    "pasteFromClipboard": "Paste from clipboard",
+    "tokenPastedSuccess": "Token pasted from clipboard."
   }
 }

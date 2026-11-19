@@ -9,27 +9,63 @@ import {
 
 interface ConnectProviderAccountModalProps {
   open: boolean
+  initialProvider?: ProviderKind
 }
 
-const props = defineProps<ConnectProviderAccountModalProps>()
+const props = withDefaults(defineProps<ConnectProviderAccountModalProps>(), {
+  initialProvider: 'github',
+})
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
+  accountConnected: []
   connected: []
 }>()
 
 const { t } = useI18n()
 const { connectGitHub, connectGitLab, isConnecting } = useProviderController()
 
-const selectedProvider = ref<ProviderKind>('github')
+const selectedProvider = ref<ProviderKind>(props.initialProvider || 'github')
 const personalAccessToken = ref('')
 const instanceUrl = ref('')
 const errorMessage = ref<string | null>(null)
+const isPasting = ref(false)
+
+const tokenGenerationUrl = computed(() => {
+  if (selectedProvider.value === 'github') {
+    const base = instanceUrl.value.trim() && !instanceUrl.value.includes('api.github.com')
+      ? instanceUrl.value.replace(/\/api\/v3\/?$/, '').replace(/\/+$/, '')
+      : 'https://github.com'
+    return `${base}/settings/tokens/new?description=GitVerse+Desktop&scopes=repo,read:user,user:email,workflow`
+  }
+
+  const base = instanceUrl.value.trim() && !instanceUrl.value.includes('gitlab.com/api')
+    ? instanceUrl.value.replace(/\/api\/v4\/?$/, '').replace(/\/+$/, '')
+    : 'https://gitlab.com'
+  return `${base}/-/user_settings/personal_access_tokens?name=GitVerse+Desktop&scopes=api,read_user,read_repository`
+})
+
+async function handlePasteFromClipboard(): Promise<void> {
+  try {
+    isPasting.value = true
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      const text = await navigator.clipboard.readText()
+      if (text && text.trim()) {
+        personalAccessToken.value = text.trim()
+      }
+    }
+  } catch {
+    // Clipboard permission denied or unavailable
+  } finally {
+    isPasting.value = false
+  }
+}
 
 watch(
   () => props.open,
   (isOpen) => {
     if (isOpen) {
+      selectedProvider.value = props.initialProvider || 'github'
       personalAccessToken.value = ''
       instanceUrl.value = selectedProvider.value === 'github' ? GITHUB_DEFAULT_INSTANCE_URL : GITLAB_DEFAULT_INSTANCE_URL
       errorMessage.value = null
@@ -64,6 +100,7 @@ async function handleConnect(): Promise<void> {
     try {
       await connectGitHub(result.data.personalAccessToken, result.data.instanceUrl)
       emit('connected')
+      emit('accountConnected')
       handleClose()
     } catch (error) {
       errorMessage.value = String(error)
@@ -83,6 +120,7 @@ async function handleConnect(): Promise<void> {
     try {
       await connectGitLab(result.data.personalAccessToken, result.data.instanceUrl)
       emit('connected')
+      emit('accountConnected')
       handleClose()
     } catch (error) {
       errorMessage.value = String(error)
@@ -146,23 +184,59 @@ async function handleConnect(): Promise<void> {
             </button>
           </div>
 
+          <!-- Pre-configured Token Generation Banner -->
+          <div class="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-semibold text-highlighted flex items-center gap-1.5">
+                <UIcon name="i-lucide-sparkles" class="h-3.5 w-3.5 text-primary" />
+                <span>{{ t('provider.generateTokenButton', { provider: selectedProvider === 'gitlab' ? 'GitLab' : 'GitHub' }) }}</span>
+              </span>
+              <a
+                :href="tokenGenerationUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary text-white text-[11px] font-semibold hover:bg-primary/90 transition-all cursor-pointer shadow-xs"
+              >
+                <span>Generate</span>
+                <UIcon name="i-lucide-external-link" class="h-3 w-3" />
+              </a>
+            </div>
+            <p class="text-[10px] text-muted leading-tight">
+              {{ t('provider.generateTokenHelper', { provider: selectedProvider === 'gitlab' ? 'GitLab' : 'GitHub' }) }}
+            </p>
+          </div>
+
           <!-- Personal Access Token Input -->
           <div class="space-y-1.5">
-            <label class="text-xs font-semibold text-highlighted">
-              {{ t('provider.personalAccessToken') }}
-            </label>
-            <UInput
-              v-model="personalAccessToken"
-              type="password"
-              size="sm"
-              icon="i-lucide-key"
-              class="w-full font-mono text-xs"
-              :placeholder="t('provider.personalAccessTokenPlaceholder')"
-              autofocus
-              @keydown.enter.prevent="handleConnect"
-            />
-            <p class="text-[11px] text-muted">
-              {{ selectedProvider === 'github' ? 'Requires repo, read:user permissions.' : 'Requires api, read_user permissions.' }}
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold text-highlighted">
+                {{ t('provider.personalAccessToken') }}
+              </label>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline cursor-pointer"
+                :title="t('provider.pasteFromClipboard')"
+                @click="handlePasteFromClipboard"
+              >
+                <UIcon name="i-lucide-clipboard" class="h-3 w-3" />
+                <span>{{ t('provider.pasteFromClipboard') }}</span>
+              </button>
+            </div>
+            <div class="relative">
+              <UInput
+                v-model="personalAccessToken"
+                type="password"
+                size="sm"
+                icon="i-lucide-key"
+                class="w-full font-mono text-xs"
+                :placeholder="t('provider.personalAccessTokenPlaceholder')"
+                autofocus
+                @keydown.enter.prevent="handleConnect"
+              />
+            </div>
+            <p class="text-[10px] text-muted flex items-center gap-1">
+              <UIcon name="i-lucide-shield-check" class="h-3 w-3 text-success shrink-0" />
+              <span>{{ selectedProvider === 'github' ? 'Scopes: repo, read:user, user:email, workflow.' : 'Scopes: api, read_user, read_repository.' }}</span>
             </p>
           </div>
 

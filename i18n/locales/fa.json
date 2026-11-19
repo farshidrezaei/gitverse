@@ -602,6 +602,10 @@
     "loadPullRequests": "بارگذاری درخواست‌های ادغام",
     "accountNotConnectedTitle": "حساب {provider} متصل نیست",
     "accountNotConnectedDescription": "برای مشاهده درخواست‌های ادغام، بازبینی‌ها و وضعیت CI مخزن {repository}، حساب {provider} خود را متصل کنید.",
-    "connectProviderAction": "اتصال حساب {provider}"
+    "connectProviderAction": "اتصال حساب {provider}",
+    "generateTokenButton": "ساخت مستقیم توکن در {provider}",
+    "generateTokenHelper": "صفحه {provider} با دسترسی‌های از پیش‌تعیین‌شده در مرورگر باز می‌شود.",
+    "pasteFromClipboard": "جای‌گذاری از کلیپ‌بورد",
+    "tokenPastedSuccess": "توکن از کلیپ‌بورد جای‌گذاری شد."
   }
 }
