@@ -14,7 +14,7 @@
 
 **GitVerse** combines the raw power of the native Git CLI with an in-house commit graph engine, interactive diff/patch manipulation, zero-layout-shift design, and seamless GitHub/GitLab integration into an ultra-fast desktop experience.
 
-[English](README.md) • [فارسی](docs/I18N.md) • [Architecture](docs/ARCHITECTURE.md) • [Design System](docs/DESIGN-SYSTEM.md) • [Testing](docs/TESTING.md)
+[English](README.md) • [فارسی](docs/I18N.md) • [Architecture](docs/ARCHITECTURE.md) • [Design System](docs/DESIGN-SYSTEM.md) • [Testing](docs/TESTING.md) • [Changelog](CHANGELOG.md)
 
 </div>
 
@@ -141,6 +141,9 @@ For deep architectural reviews and module guides, refer to the documentation sui
 - **[Testing Strategy](docs/TESTING.md)**: Table-driven tests, proptest property testing, and integration matrices.
 - **[Internationalization (i18n)](docs/I18N.md)**: English and Persian parity, RTL mirroring, and automated CI key validation.
 - **[Development Guide](docs/DEVELOPMENT.md)**: Setup, workflow, branching, and release practices.
+- **[Contributing Guide](CONTRIBUTING.md)**: Contribution standards, code style, and PR checklist.
+- **[Security Policy](SECURITY.md)**: Security architecture, credential handling, and vulnerability disclosure.
+- **[Changelog](CHANGELOG.md)**: Full version history and release notes.
 
 ---
 
