@@ -20,12 +20,12 @@ graph TD
     KEYCHAIN["OS Keyring (Encrypted Credentials)"]
     PROVIDERS["Cloud Providers (GitHub / GitLab REST APIs)"]
 
-    UI <-->|IPC Invocation| IPC
-    IPC <-->|Commands & Deserialization| CORE
-    CORE -->|Process Execution (Arg Arrays)| GIT
-    CORE <-->|Local State| SQLITE
-    CORE <-->|OAuth / PAT Storage| KEYCHAIN
-    CORE <-->|Reqwest Async Client| PROVIDERS
+    UI <--> IPC
+    IPC <--> CORE
+    CORE --> GIT
+    CORE <--> SQLITE
+    CORE <--> KEYCHAIN
+    CORE <--> PROVIDERS
 ```
 
 ---
