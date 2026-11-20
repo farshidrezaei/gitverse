@@ -176,6 +176,19 @@ impl ApplicationState {
         self.git_inspector.get_commit_template(&target_path).await
     }
 
+    /// Extracts repository reflog records with optional reference target and limit.
+    pub async fn get_reflog(
+        &self,
+        directory_path: Option<&str>,
+        reference: Option<String>,
+        limit: Option<usize>,
+    ) -> Result<Vec<crate::domain::ReflogRecord>, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .get_reflog(&target_path, reference.as_deref(), limit.unwrap_or(100))
+            .await
+    }
+
     /// Extracts commit history and builds deterministic commit graph DAG.
     pub async fn get_commit_graph(
         &self,

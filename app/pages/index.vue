@@ -16,6 +16,7 @@ import CreateBranchModal from '~/components/workspace/CreateBranchModal.vue'
 import CreateWorktreeModal from '~/components/workspace/CreateWorktreeModal.vue'
 import InteractiveRebaseModal from '~/components/workspace/commit/InteractiveRebaseModal.vue'
 import FolderPickerModal from '~/components/workspace/FolderPickerModal.vue'
+import ReflogExplorerModal from '~/components/workspace/history/ReflogExplorerModal.vue'
 import { useWorkspaceTabController } from '~/composables/useWorkspaceTabController'
 
 const { t } = useI18n()
@@ -136,6 +137,7 @@ async function handleCreateWorktree(
 const commitMessage = ref<string>('')
 const isAmend = ref<boolean>(false)
 const isBypassHooks = ref<boolean>(false)
+const isReflogModalOpen = ref<boolean>(false)
 const selectedBranchName = ref<string | null>(null)
 const activeGraphReference = ref<string | null>(null)
 
@@ -466,6 +468,7 @@ async function handlePush(): Promise<void> {
         @close-other-repositories="handleCloseOtherRepositories"
         @open-repository-prompt="isFolderPickerModalOpen = true"
         @open-recent-repository="openRepository"
+        @open-reflog="isReflogModalOpen = true"
       />
 
       <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip -->
@@ -668,6 +671,14 @@ async function handlePush(): Promise<void> {
     <FolderPickerModal
       v-model:open="isFolderPickerModalOpen"
       @select-folder="openRepository"
+    />
+
+    <!-- Git Reflog Explorer Modal -->
+    <ReflogExplorerModal
+      v-model:open="isReflogModalOpen"
+      @checkout-commit="checkoutBranch"
+      @create-branch="(sha) => { selectedCommitHash = sha; isCreateBranchModalOpen = true }"
+      @reset-to-commit="(sha, mode) => resetToCommit(sha, mode)"
     />
   </div>
 </template>

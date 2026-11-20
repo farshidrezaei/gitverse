@@ -246,6 +246,17 @@ pub struct StashRecord {
     pub timestamp_seconds: i64,
 }
 
+/// A single record in the repository's reference log (Reflog).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ReflogRecord {
+    pub selector: String,
+    pub commit_hash: String,
+    pub full_hash: String,
+    pub action: String,
+    pub timestamp_seconds: i64,
+    pub author_name: String,
+}
+
 /// Detailed view of a stash entry with changed files and statistics.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StashDetails {

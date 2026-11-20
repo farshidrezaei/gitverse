@@ -170,6 +170,19 @@ pub async fn get_commit_template(
     state.get_commit_template(directory_path.as_deref()).await
 }
 
+/// Tauri IPC command to extract Git reflog history for HEAD or a specific reference.
+#[tauri::command]
+pub async fn get_reflog(
+    state: State<'_, ApplicationState>,
+    reference: Option<String>,
+    limit: Option<usize>,
+    directory_path: Option<String>,
+) -> Result<Vec<crate::domain::ReflogRecord>, ApplicationError> {
+    state
+        .get_reflog(directory_path.as_deref(), reference, limit)
+        .await
+}
+
 /// Tauri IPC command to extract Git commit history and compute deterministic DAG layout.
 #[tauri::command]
 pub async fn get_commit_graph(

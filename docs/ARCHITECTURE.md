@@ -205,7 +205,7 @@ gitverse/
 │   │       ├── remote/               # Remote repository add/edit/manage modals
 │   │       ├── staging/              # Working tree changes, stash preview & diff inspection, conflict resolver
 │   │       └── tabs/                 # Top repository tab strip, scoped diff/PR tabs & external tool launchers
-│   ├── composables/                  # Modular state controllers (23 domain controllers)
+│   ├── composables/                  # Modular state controllers (24 domain controllers)
 │   ├── pages/                        # Nuxt routes (/ for workbench, /design-system, /settings)
 │   ├── schemas/                      # Zod validation schemas for inputs & forms
 │   ├── types/                        # Strict TypeScript interfaces matching Rust models
@@ -236,5 +236,5 @@ gitverse/
 │   │   ├── services/                 # Graph DAG computation algorithms & benchmarks
 │   │   ├── lib.rs                    # Plugin registration, invoke handlers, initialization
 │   │   └── main.rs                   # Desktop entrypoint
-└── test/                             # Frontend Vitest test suites (116 passing unit & E2E tests)
+└── test/                             # Frontend Vitest test suites (120 passing unit & E2E tests)
 ```

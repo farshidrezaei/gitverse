@@ -17,6 +17,7 @@ const emit = defineEmits<{
   closeOtherRepositories: [repositoryPath: string]
   openRepositoryPrompt: []
   openRecentRepository: [repositoryPath: string]
+  openReflog: []
 }>()
 
 const { t } = useI18n()
@@ -192,6 +193,18 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
 
     <!-- Quick External Tools Launchers -->
     <div v-if="properties.activeRepositoryPath" class="flex items-center gap-1 shrink-0 ps-2 border-s border-default/70">
+      <UTooltip :text="t('reflog.title')">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-history"
+          class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+          :aria-label="t('reflog.title')"
+          @click="emit('openReflog')"
+        />
+      </UTooltip>
+
       <UTooltip :text="t('externalTools.openTerminal')">
         <UButton
           size="xs"

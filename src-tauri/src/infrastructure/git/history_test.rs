@@ -126,4 +126,24 @@ pub mod tests {
         // Empty string
         assert_eq!(parse_commit_signature(""), None);
     }
+
+    #[test]
+    fn test_parse_reflog_output() {
+        use super::super::history::parse_reflog_output;
+
+        let sample_output = "HEAD@{0}\x1f4ba8dfc\x1f4ba8dfc1234567890abcdef\x1fcommit: feat: message\x1f1700000000\x1fAlice\x1eHEAD@{1}\x1fc751dff\x1fc751dff1234567890abcdef\x1fcheckout: moving from main to dev\x1f1699999900\x1fBob\x1e";
+        let records = parse_reflog_output(sample_output);
+
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].selector, "HEAD@{0}");
+        assert_eq!(records[0].commit_hash, "4ba8dfc");
+        assert_eq!(records[0].action, "commit: feat: message");
+        assert_eq!(records[0].author_name, "Alice");
+        assert_eq!(records[0].timestamp_seconds, 1700000000);
+
+        assert_eq!(records[1].selector, "HEAD@{1}");
+        assert_eq!(records[1].commit_hash, "c751dff");
+        assert_eq!(records[1].action, "checkout: moving from main to dev");
+        assert_eq!(records[1].author_name, "Bob");
+    }
 }

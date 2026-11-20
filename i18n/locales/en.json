@@ -697,5 +697,18 @@
     "openFileManager": "Reveal in File Manager",
     "openFileInEditor": "Open File in Editor",
     "revealInFileManager": "Reveal in File Manager"
+  },
+  "reflog": {
+    "title": "Git Reflog",
+    "subtitle": "Inspect reference history to recover lost commits, branches, or undone changes.",
+    "searchPlaceholder": "Filter reflog by action, commit hash, or author...",
+    "checkout": "Checkout",
+    "checkoutTooltip": "Checkout repository state at this reflog entry",
+    "branch": "New Branch",
+    "branchTooltip": "Create new branch starting at this commit",
+    "reset": "Reset State",
+    "resetTooltip": "Reset current HEAD to this reflog commit",
+    "empty": "No reflog records found matching filter",
+    "totalEntries": "{count} reference history records"
   }
 }

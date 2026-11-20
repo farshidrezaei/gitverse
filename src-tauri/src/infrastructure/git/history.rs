@@ -232,3 +232,37 @@ pub fn parse_commit_signature(output: &str) -> Option<crate::domain::CommitSigna
         key_id,
     })
 }
+
+/// Parses delimited reflog records produced with format `%gd%x1f%h%x1f%H%x1f%gs%x1f%ct%x1f%an%x1e`.
+pub fn parse_reflog_output(output: &str) -> Vec<crate::domain::ReflogRecord> {
+    let mut records = Vec::new();
+    for entry in output.split('\x1e') {
+        let trimmed = entry.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        let fields: Vec<&str> = trimmed.split('\x1f').collect();
+        if fields.len() < 6 {
+            continue;
+        }
+
+        let selector = fields[0].trim().to_string();
+        let commit_hash = fields[1].trim().to_string();
+        let full_hash = fields[2].trim().to_string();
+        let action = fields[3].trim().to_string();
+        let timestamp_seconds = fields[4].trim().parse::<i64>().unwrap_or(0);
+        let author_name = fields[5].trim().to_string();
+
+        records.push(crate::domain::ReflogRecord {
+            selector,
+            commit_hash,
+            full_hash,
+            action,
+            timestamp_seconds,
+            author_name,
+        });
+    }
+
+    records
+}

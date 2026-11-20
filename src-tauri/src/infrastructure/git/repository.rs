@@ -486,6 +486,28 @@ impl GitRepositoryInspector {
         Ok(None)
     }
 
+    /// Extracts repository reflog records with optional reference target and limit.
+    pub async fn get_reflog(
+        &self,
+        directory_path: &Path,
+        reference: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<crate::domain::ReflogRecord>, ApplicationError> {
+        let target_reference = reference.unwrap_or("HEAD");
+        let limit_argument = format!("-n{}", limit.clamp(1, 500));
+        let format_argument = "--format=%gd%x1f%h%x1f%H%x1f%gs%x1f%ct%x1f%an%x1e";
+
+        let raw_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["reflog", "show", &limit_argument, format_argument, target_reference],
+            )
+            .await?;
+
+        Ok(super::history::parse_reflog_output(&raw_output))
+    }
+
     /// Fetches unified diff for a single file in a commit or the entire commit.
     pub async fn get_commit_file_diff(
         &self,

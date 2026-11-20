@@ -232,6 +232,15 @@ export interface StashDetails {
   changed_files: CommitChangedFile[]
 }
 
+export interface ReflogRecord {
+  selector: string
+  commit_hash: string
+  full_hash: string
+  action: string
+  timestamp_seconds: number
+  author_name: string
+}
+
 export interface MergeBranchOutcome {
   is_successful: boolean
   has_conflicts: boolean
