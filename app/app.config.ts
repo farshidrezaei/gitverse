@@ -7,13 +7,13 @@ export default defineAppConfig({
     },
     modal: {
       slots: {
-        overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity',
-        content: 'bg-transparent ring-0 shadow-none border-0 divide-y-0',
+        overlay: 'fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity',
+        content: 'bg-[var(--gv-surface)] border border-[var(--gv-border)] shadow-2xl rounded-2xl overflow-hidden focus:outline-none',
       },
       variants: {
         fullscreen: {
           false: {
-            content: 'w-[calc(100vw-2rem)] ring-0 shadow-none',
+            content: 'w-[calc(100vw-2rem)]',
           },
         },
       },

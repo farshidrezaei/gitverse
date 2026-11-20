@@ -69,6 +69,16 @@ Split modules by domain responsibility:
 - Skeletons must mirror the exact geometry, hierarchy, borders, padding, avatar shapes, badges, and layout of the resolved content to guarantee **zero Cumulative Layout Shift (CLS)** and prevent jarring visual jumps.
 - Spinner loaders are strictly confined to inline button action states (`UButton :loading="..."`) during brief in-flight actions.
 
+### 2.8. Modal Architecture & Surface Contract
+- **Never render a modal or dialog without an opaque surface background (`bg-[var(--gv-surface)]`) and border (`border-[var(--gv-border)]` / `border-default/70`).**
+- Every modal container (`content` slot / root wrapper) must have:
+  - Background surface: `bg-[var(--gv-surface)]`
+  - Border and elevation: `border border-default/70 shadow-2xl rounded-2xl`
+  - Backdrop overlay: `fixed inset-0 bg-black/60`
+  - Proper padding, header with title and close button, body, and action footer.
+- The default `app.config.ts` modal slot defines `content: 'bg-[var(--gv-surface)] border border-[var(--gv-border)] shadow-2xl rounded-2xl overflow-hidden focus:outline-none'`. Never override it with `bg-transparent` or strip its background surface.
+
+
 ---
 
 ## 3. Internationalization (i18n) & Theme Matrix

@@ -74,15 +74,36 @@ async function handleConfirmMerge(): Promise<void> {
 <template>
   <UModal
     :open="props.open"
-    :title="`${t('provider.mergePullRequest')} #${props.pullRequest.number}`"
+    :ui="{
+      overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity',
+      content: 'sm:max-w-xl p-0 border border-default/70 bg-[var(--gv-surface)] shadow-2xl rounded-2xl overflow-hidden',
+    }"
     @update:open="emit('update:open', $event)"
   >
     <template #content>
-      <div class="p-6 space-y-4">
-        <!-- Error Alert -->
-        <div v-if="errorMessage" class="p-3 rounded-lg bg-error/15 border border-error/30 text-error text-xs">
-          {{ errorMessage }}
+      <div class="flex flex-col select-none">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-default/70 px-5 py-3.5 bg-muted/20">
+          <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-git-merge" class="h-5 w-5 text-success" />
+            <span class="text-sm font-semibold text-highlighted">
+              {{ t('provider.mergePullRequest') }} #{{ props.pullRequest.number }}
+            </span>
+          </div>
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-x"
+            @click="closeModal"
+          />
         </div>
+
+        <div class="p-5 space-y-4">
+          <!-- Error Alert -->
+          <div v-if="errorMessage" class="p-3 rounded-lg bg-error/15 border border-error/30 text-error text-xs">
+            {{ errorMessage }}
+          </div>
 
         <!-- Strategy Options -->
         <div class="space-y-2">
@@ -178,19 +199,20 @@ async function handleConfirmMerge(): Promise<void> {
             <span>{{ t('provider.deleteSourceBranch') }} (<code class="text-[11px] text-primary">{{ props.pullRequest.source_branch }}</code>)</span>
           </label>
         </div>
+      </div>
 
-        <!-- Actions -->
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-default/50">
+      <!-- Action Footer -->
+        <div class="flex items-center justify-end gap-2 border-t border-default/70 px-5 py-3 bg-muted/10">
           <UButton
-            size="xs"
+            size="sm"
             color="neutral"
             variant="ghost"
             :label="t('common.cancel')"
             @click="closeModal"
           />
           <UButton
-            size="xs"
-            color="primary"
+            size="sm"
+            color="success"
             variant="solid"
             :label="t('provider.confirmMerge')"
             icon="i-lucide-git-merge"
