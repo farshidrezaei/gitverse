@@ -1,4 +1,5 @@
 import type { DetailedRepositoryStatus } from '~/types/repository'
+import { formatApplicationError } from '~/utils/tauriClient'
 
 export interface SelectedDiffTarget {
   filePath: string
@@ -337,7 +338,11 @@ export function useStagingController() {
     }
   }
 
-  async function commitChanges(message: string, isAmend: boolean): Promise<boolean> {
+  async function commitChanges(
+    message: string,
+    isAmend: boolean,
+    bypassHooks: boolean = false
+  ): Promise<boolean> {
     if (!currentRepository.value || !message.trim()) return false
     try {
       let commitHash = ''
@@ -346,6 +351,7 @@ export function useStagingController() {
         commitHash = await invoke<string>('commit', {
           message,
           isAmend,
+          bypassHooks,
           directoryPath: currentRepository.value.path,
         })
       } else {
@@ -360,8 +366,8 @@ export function useStagingController() {
       )
       return true
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      notifyError(t('common.error'), errorMessage)
+      console.error('Failed to commit changes:', error)
+      notifyError(formatApplicationError(error))
       return false
     }
   }

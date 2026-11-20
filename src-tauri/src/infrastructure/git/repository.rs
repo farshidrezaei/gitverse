@@ -239,12 +239,21 @@ impl GitRepositoryInspector {
         Ok(())
     }
 
-    /// Commits staged changes with a commit message and optional amend flag.
-    pub async fn commit(&self, directory_path: &Path, message: &str, is_amend: bool) -> Result<String, ApplicationError> {
+    /// Commits staged changes with a commit message, optional amend, and optional hook bypass.
+    pub async fn commit(
+        &self,
+        directory_path: &Path,
+        message: &str,
+        is_amend: bool,
+        bypass_hooks: bool,
+    ) -> Result<String, ApplicationError> {
         validate_commit_message(message)?;
         let mut arguments = vec!["commit", "-m", message];
         if is_amend {
             arguments.push("--amend");
+        }
+        if bypass_hooks {
+            arguments.push("--no-verify");
         }
 
         self.executor

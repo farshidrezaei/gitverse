@@ -149,10 +149,16 @@ impl ApplicationState {
         self.git_inspector.discard_patch(&target_path, patch_content).await
     }
 
-    /// Commit staged changes.
-    pub async fn commit(&self, directory_path: Option<&str>, message: &str, is_amend: bool) -> Result<String, ApplicationError> {
+    /// Commit staged changes with optional amend and hook bypass.
+    pub async fn commit(
+        &self,
+        directory_path: Option<&str>,
+        message: &str,
+        is_amend: bool,
+        bypass_hooks: bool,
+    ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.commit(&target_path, message, is_amend).await
+        self.git_inspector.commit(&target_path, message, is_amend, bypass_hooks).await
     }
 
     /// Retrieves structured diff for a file.

@@ -137,9 +137,17 @@ pub async fn commit(
     state: State<'_, ApplicationState>,
     message: String,
     is_amend: bool,
+    bypass_hooks: Option<bool>,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.commit(directory_path.as_deref(), &message, is_amend).await
+    state
+        .commit(
+            directory_path.as_deref(),
+            &message,
+            is_amend,
+            bypass_hooks.unwrap_or(false),
+        )
+        .await
 }
 
 /// Tauri IPC command to get structured file diff.

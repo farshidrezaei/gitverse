@@ -43,12 +43,22 @@ std::process::Command::new("sh").arg("-c").arg(cmd).output();
 ### Mandated Execution Pattern
 ```rust
 // MANDATED: Isolated argument vectors with explicit working directory
+let mut arguments = vec!["commit", "-m", message];
+if is_amend {
+    arguments.push("--amend");
+}
+if bypass_hooks {
+    arguments.push("--no-verify");
+}
 let output = std::process::Command::new("git")
     .current_dir(&repository_path)
-    .args(&["checkout", branch_name])
+    .args(&arguments)
     .output()
     .map_err(|e| GitError::Io(e.to_string()))?;
 ```
+
+### Git Hook Bypass Policy (`--no-verify`)
+GitVerse supports user-toggled hook bypass via the `bypass_hooks` parameter (`--no-verify` flag). When enabled, pre-commit and commit-msg hooks are skipped, allowing developers to save work-in-progress states or unblock commits when local external hook runners fail.
 
 ---
 

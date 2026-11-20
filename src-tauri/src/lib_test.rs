@@ -365,4 +365,45 @@ mod tests {
 
         assert!(invalid_directory_result.is_err());
     }
+
+    #[tokio::test]
+    async fn test_commit_with_bypass_hooks() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        // Write a failing pre-commit hook that exits with 1
+        let hooks_dir = repository_path.join(".git").join("hooks");
+        std::fs::create_dir_all(&hooks_dir).expect("create hooks dir");
+        let pre_commit_path = hooks_dir.join("pre-commit");
+        std::fs::write(&pre_commit_path, "#!/bin/sh\nexit 1\n").expect("write pre-commit");
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut permissions = std::fs::metadata(&pre_commit_path).expect("metadata").permissions();
+            permissions.set_mode(0o755);
+            std::fs::set_permissions(&pre_commit_path, permissions).expect("set permissions");
+        }
+
+        std::fs::write(repository_path.join("hook_test.txt"), "testing hooks\n").expect("write file");
+        Command::new("git").args(["add", "hook_test.txt"]).current_dir(repository_path).output().expect("git add");
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        // Without bypass_hooks, the commit should fail because pre-commit exits with 1
+        let failed_commit = inspector.commit(repository_path, "failing hook commit", false, false).await;
+        assert!(failed_commit.is_err());
+
+        // With bypass_hooks = true (--no-verify), the commit should succeed!
+        let successful_commit = inspector.commit(repository_path, "bypassed hook commit", false, true).await;
+        assert!(successful_commit.is_ok());
+    }
 }

@@ -35,4 +35,42 @@ describe('commitOperations - reset modes and validation', () => {
     expect(getShortHash('5897482c17022d926b55574e2dc4c1b92d07b5d4')).toBe('5897482')
     expect(getShortHash('12345')).toBe('12345')
   })
+
+  it('correctly builds commit arguments with amend and bypassHooks flags', () => {
+    function buildCommitArguments(message: string, isAmend: boolean, bypassHooks: boolean): string[] {
+      const args = ['commit', '-m', message]
+      if (isAmend) {
+        args.push('--amend')
+      }
+      if (bypassHooks) {
+        args.push('--no-verify')
+      }
+      return args
+    }
+
+    expect(buildCommitArguments('feat: normal commit', false, false)).toEqual([
+      'commit',
+      '-m',
+      'feat: normal commit',
+    ])
+    expect(buildCommitArguments('feat: amend commit', true, false)).toEqual([
+      'commit',
+      '-m',
+      'feat: amend commit',
+      '--amend',
+    ])
+    expect(buildCommitArguments('feat: skip hooks', false, true)).toEqual([
+      'commit',
+      '-m',
+      'feat: skip hooks',
+      '--no-verify',
+    ])
+    expect(buildCommitArguments('feat: amend and skip hooks', true, true)).toEqual([
+      'commit',
+      '-m',
+      'feat: amend and skip hooks',
+      '--amend',
+      '--no-verify',
+    ])
+  })
 })

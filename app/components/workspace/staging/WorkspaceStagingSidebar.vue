@@ -19,14 +19,18 @@ interface WorkspaceStagingSidebarProps {
   isLoading: boolean
   commitMessage: string
   isAmend: boolean
+  isBypassHooks?: boolean
 }
 
-const props = defineProps<WorkspaceStagingSidebarProps>()
+const props = withDefaults(defineProps<WorkspaceStagingSidebarProps>(), {
+  isBypassHooks: false,
+})
 
 const emit = defineEmits<{
   'update:stagingViewMode': [mode: 'flat' | 'tree']
   'update:commitMessage': [value: string]
   'update:isAmend': [value: boolean]
+  'update:isBypassHooks': [value: boolean]
   stageFile: [filePath: string]
   unstageFile: [filePath: string]
   stageAll: []
@@ -713,13 +717,26 @@ function getFlatFileContextMenuItems(
         @update:model-value="emit('update:commitMessage', $event)"
       />
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-1.5">
-          <USwitch
-            :model-value="props.isAmend"
-            size="xs"
-            @update:model-value="emit('update:isAmend', $event)"
-          />
-          <span class="text-[11px] text-muted">Amend</span>
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1.5">
+            <USwitch
+              :model-value="props.isAmend"
+              size="xs"
+              @update:model-value="emit('update:isAmend', $event)"
+            />
+            <span class="text-[11px] text-muted">{{ t('git.amend') }}</span>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <USwitch
+              :model-value="props.isBypassHooks"
+              size="xs"
+              @update:model-value="emit('update:isBypassHooks', $event)"
+            />
+            <UTooltip :text="t('git.bypassHooksTooltip')">
+              <span class="text-[11px] text-muted cursor-help">{{ t('git.bypassHooks') }}</span>
+            </UTooltip>
+          </div>
         </div>
         <UButton
           color="primary"

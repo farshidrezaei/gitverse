@@ -135,6 +135,7 @@ async function handleCreateWorktree(
 }
 const commitMessage = ref<string>('')
 const isAmend = ref<boolean>(false)
+const isBypassHooks = ref<boolean>(false)
 const selectedBranchName = ref<string | null>(null)
 const activeGraphReference = ref<string | null>(null)
 
@@ -369,10 +370,15 @@ function handleOpenCommitDiffTab(filePath: string): void {
 
 async function handleCommit(): Promise<void> {
   if (!commitMessage.value.trim()) return
-  const success = await commitChanges(commitMessage.value, isAmend.value)
+  const success = await commitChanges(
+    commitMessage.value,
+    isAmend.value,
+    isBypassHooks.value
+  )
   if (success) {
     commitMessage.value = ''
     isAmend.value = false
+    isBypassHooks.value = false
   }
 }
 
@@ -595,9 +601,11 @@ async function handlePush(): Promise<void> {
                 :is-loading="isLoading"
                 :commit-message="commitMessage"
                 :is-amend="isAmend"
+                :is-bypass-hooks="isBypassHooks"
                 @update:staging-view-mode="stagingViewMode = $event"
                 @update:commit-message="commitMessage = $event"
                 @update:is-amend="isAmend = $event"
+                @update:is-bypass-hooks="isBypassHooks = $event"
                 @stage-file="stageFile"
                 @unstage-file="unstageFile"
                 @stage-all="stageAll"
