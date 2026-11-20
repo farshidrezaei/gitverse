@@ -1,8 +1,10 @@
 import type {
   WorkspaceRepositoryTab,
   WorkspaceDiffTab,
+  WorkspacePullRequestTab,
   OpenDiffTabOptions,
 } from '~/types/workspaceTab'
+import type { RemotePullRequest, ProviderAccount } from '~/types/provider'
 
 export const LAST_OPENED_REPOSITORY_STORAGE_KEY = 'gitverse_last_opened_repository_path'
 export const OPEN_REPOSITORY_TABS_STORAGE_KEY = 'gitverse_open_repository_tabs'
@@ -23,6 +25,10 @@ export function useWorkspaceTabController() {
   const diffTabs = safeState<WorkspaceDiffTab[]>('workspace-diff-tabs-list', () => [])
   const activeDiffTabId = safeState<string | null>('workspace-active-diff-tab-id', () => null)
 
+  // Dedicated Pull Request tabs (Scoped by repository path)
+  const pullRequestTabs = safeState<WorkspacePullRequestTab[]>('workspace-pull-request-tabs-list', () => [])
+  const activePullRequestTabId = safeState<string | null>('workspace-active-pr-tab-id', () => null)
+
   const activeRepositoryTab = computed<WorkspaceRepositoryTab | undefined>(() => {
     return repositoryTabs.value.find(tab => tab.repositoryPath === activeRepositoryPath.value) || repositoryTabs.value[0]
   })
@@ -32,10 +38,21 @@ export function useWorkspaceTabController() {
     return diffTabs.value.filter(tab => tab.repositoryPath === activeRepositoryPath.value)
   })
 
+  const currentRepositoryPullRequestTabs = computed<WorkspacePullRequestTab[]>(() => {
+    if (!activeRepositoryPath.value) return []
+    return pullRequestTabs.value.filter(tab => tab.repositoryPath === activeRepositoryPath.value)
+  })
+
   const activeDiffTab = computed<WorkspaceDiffTab | undefined>(() => {
     if (!activeDiffTabId.value) return undefined
     return currentRepositoryDiffTabs.value.find(tab => tab.id === activeDiffTabId.value)
   })
+
+  const activePullRequestTab = computed<WorkspacePullRequestTab | undefined>(() => {
+    if (!activePullRequestTabId.value) return undefined
+    return currentRepositoryPullRequestTabs.value.find(tab => tab.id === activePullRequestTabId.value)
+  })
+
 
   function getRepositoryTabIdentifier(repositoryPath: string): string {
     return `workspace:${repositoryPath}`
@@ -245,19 +262,87 @@ export function useWorkspaceTabController() {
 
   function activateDiffTab(tabIdentifier: string | null): void {
     activeDiffTabId.value = tabIdentifier
+    if (tabIdentifier) {
+      activePullRequestTabId.value = null
+    }
+  }
+
+  function openPullRequestTab(
+    pullRequest: RemotePullRequest,
+    account: ProviderAccount,
+    repositoryFullName: string,
+    repositoryPath: string,
+  ): WorkspacePullRequestTab {
+    const tabIdentifier = `pr:${repositoryPath}:${repositoryFullName}:${pullRequest.number}`
+    const existingIndex = pullRequestTabs.value.findIndex(tab => tab.id === tabIdentifier)
+
+    if (existingIndex !== -1) {
+      const existingTab = pullRequestTabs.value[existingIndex] as WorkspacePullRequestTab
+      existingTab.pullRequest = pullRequest
+      existingTab.account = account
+      existingTab.repositoryFullName = repositoryFullName
+      activePullRequestTabId.value = tabIdentifier
+      activeDiffTabId.value = null
+      return existingTab
+    }
+
+    const newTab: WorkspacePullRequestTab = {
+      id: tabIdentifier,
+      title: `#${pullRequest.number} ${pullRequest.title}`,
+      pullRequest,
+      account,
+      repositoryFullName,
+      repositoryPath,
+      isClosable: true,
+      isPinned: false,
+    }
+
+    pullRequestTabs.value.push(newTab)
+    activePullRequestTabId.value = newTab.id
+    activeDiffTabId.value = null
+    return newTab
+  }
+
+  function activatePullRequestTab(tabIdentifier: string | null): void {
+    activePullRequestTabId.value = tabIdentifier
+    if (tabIdentifier) {
+      activeDiffTabId.value = null
+    }
+  }
+
+  function closePullRequestTab(tabIdentifier: string): void {
+    const prTabs = currentRepositoryPullRequestTabs.value
+    const targetIndex = prTabs.findIndex(tab => tab.id === tabIdentifier)
+    if (targetIndex === -1) return
+
+    const isClosingActive = activePullRequestTabId.value === tabIdentifier
+    pullRequestTabs.value = pullRequestTabs.value.filter(tab => tab.id !== tabIdentifier)
+
+    if (isClosingActive) {
+      const remainingTabs = pullRequestTabs.value.filter(tab => tab.repositoryPath === activeRepositoryPath.value)
+      if (remainingTabs.length > 0) {
+        const nextActiveIndex = Math.max(0, targetIndex - 1)
+        activePullRequestTabId.value = remainingTabs[nextActiveIndex]?.id || null
+      } else {
+        activePullRequestTabId.value = null
+      }
+    }
   }
 
   function activateRepositoryTab(repositoryPath: string): void {
     activeRepositoryPath.value = repositoryPath
     activeDiffTabId.value = null
+    activePullRequestTabId.value = null
     persistTabsToStorage()
   }
 
   function resetTabs(): void {
     repositoryTabs.value = []
     diffTabs.value = []
+    pullRequestTabs.value = []
     activeRepositoryPath.value = ''
     activeDiffTabId.value = null
+    activePullRequestTabId.value = null
     persistTabsToStorage()
   }
 
@@ -269,6 +354,10 @@ export function useWorkspaceTabController() {
     activeDiffTabId,
     activeDiffTab,
     currentRepositoryDiffTabs,
+    pullRequestTabs,
+    activePullRequestTabId,
+    activePullRequestTab,
+    currentRepositoryPullRequestTabs,
     openRepositoryTab,
     closeRepositoryTab,
     closeOtherRepositoryTabs,
@@ -279,6 +368,9 @@ export function useWorkspaceTabController() {
     closeAllDiffTabs,
     closeOtherDiffTabs,
     activateDiffTab,
+    openPullRequestTab,
+    activatePullRequestTab,
+    closePullRequestTab,
     resetTabs,
   }
 }

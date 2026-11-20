@@ -1,4 +1,5 @@
 import type { FileChangeStatus } from '~/types/repository'
+import type { RemotePullRequest, ProviderAccount } from '~/types/provider'
 
 export interface WorkspaceRepositoryTab {
   id: string
@@ -21,6 +22,17 @@ export interface WorkspaceDiffTab {
   isPinned: boolean
 }
 
+export interface WorkspacePullRequestTab {
+  id: string
+  title: string
+  pullRequest: RemotePullRequest
+  account: ProviderAccount
+  repositoryFullName: string
+  repositoryPath: string
+  isClosable: boolean
+  isPinned: boolean
+}
+
 export interface OpenDiffTabOptions {
   filePath: string
   repositoryPath?: string
@@ -31,3 +43,4 @@ export interface OpenDiffTabOptions {
   changeStatus?: FileChangeStatus
   isPinned?: boolean
 }
+

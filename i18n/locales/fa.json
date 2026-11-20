@@ -642,6 +642,12 @@
     "openedPr": "این پول ریکوئست را باز کرد",
     "noDescriptionProvided": "توضیحاتی ثبت نشده است.",
     "noChecksFound": "هیچ تست خودکاری برای این پول ریکوئست گزارش نشده است.",
-    "binaryOrLargeFileDiff": "فایل باینری است یا تغییرات برای نمایش بزرگ است."
+    "binaryOrLargeFileDiff": "فایل باینری است یا تغییرات برای نمایش بزرگ است.",
+    "openAsTab": "باز کردن در تب مستقل",
+    "ciChecks": "تست‌های CI",
+    "author": "نویسنده",
+    "commentOnLine": "ثبت نظر روی این سطر",
+    "commentOnLineNumber": "ثبت نظر روی سطر {line}",
+    "commentOnLines": "ثبت نظر روی سطرهای {start} تا {end}"
   }
 }

@@ -1,4 +1,41 @@
 import { marked } from 'marked'
+import hljs from 'highlight.js'
+
+/**
+ * Configure marked renderer for code syntax highlighting.
+ */
+const customRenderer = new marked.Renderer()
+
+customRenderer.code = function ({ text, lang }: { text: string; lang?: string }): string {
+  const language = lang && hljs.getLanguage(lang) ? lang : undefined
+  let highlighted = ''
+
+  if (language) {
+    try {
+      highlighted = hljs.highlight(text, { language, ignoreIllegals: true }).value
+    } catch {
+      highlighted = escapeHtml(text)
+    }
+  } else {
+    try {
+      highlighted = hljs.highlightAuto(text).value
+    } catch {
+      highlighted = escapeHtml(text)
+    }
+  }
+
+  const languageClass = language ? ` hljs language-${escapeHtml(language)}` : ' hljs'
+  return `<pre><code class="${languageClass}">${highlighted}</code></pre>`
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
 
 /**
  * Strips script tags, iframe tags, and inline event handlers from HTML.
@@ -31,6 +68,7 @@ export function renderSafeMarkdown(markdownContent: string | null | undefined): 
       gfm: true,
       breaks: true,
       async: false,
+      renderer: customRenderer,
     }) as string
 
     return sanitizeHtmlSimple(rawHtml)
@@ -38,3 +76,4 @@ export function renderSafeMarkdown(markdownContent: string | null | undefined): 
     return markdownContent
   }
 }
+

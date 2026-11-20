@@ -33,4 +33,14 @@ describe('Markdown Renderer Unit Test Suite', () => {
     expect(sanitized).not.toContain('<script>')
     expect(sanitized).not.toContain('onerror')
   })
+
+  it('highlights code blocks with highlight.js syntax highlighting', () => {
+    const codeSnippet = '```typescript\nconst count: number = 42;\n```'
+    const rendered = renderSafeMarkdown(codeSnippet)
+
+    expect(rendered).toContain('<pre><code class="')
+    expect(rendered).toContain('hljs')
+    expect(rendered).toContain('language-typescript')
+    expect(rendered).toContain('hljs-keyword')
+  })
 })

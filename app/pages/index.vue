@@ -5,6 +5,7 @@ import type { WorkspaceDiffTab } from '~/types/workspaceTab'
 import WorkspaceRepositoryTabBar from '~/components/workspace/tabs/WorkspaceRepositoryTabBar.vue'
 import WorkspaceDiffTabBar from '~/components/workspace/tabs/WorkspaceDiffTabBar.vue'
 import WorkspaceDiffTabContent from '~/components/workspace/tabs/WorkspaceDiffTabContent.vue'
+import WorkspacePullRequestTabContent from '~/components/workspace/tabs/WorkspacePullRequestTabContent.vue'
 import WorkspaceBranchSidebar from '~/components/workspace/branch/WorkspaceBranchSidebar.vue'
 import WorkspaceStagingSidebar from '~/components/workspace/staging/WorkspaceStagingSidebar.vue'
 import WorkspaceCommitGraphViewport from '~/components/workspace/CommitGraphViewport.vue'
@@ -84,6 +85,10 @@ const {
   currentRepositoryDiffTabs,
   activeDiffTabId,
   activeDiffTab,
+  pullRequestTabs,
+  activePullRequestTabId,
+  activePullRequestTab,
+  currentRepositoryPullRequestTabs,
   openRepositoryTab,
   closeRepositoryTab,
   closeOtherRepositoryTabs,
@@ -94,6 +99,9 @@ const {
   closeAllDiffTabs,
   closeOtherDiffTabs,
   activateDiffTab,
+  openPullRequestTab,
+  activatePullRequestTab,
+  closePullRequestTab,
   resetTabs,
 } = useWorkspaceTabController()
 
@@ -454,14 +462,18 @@ async function handlePush(): Promise<void> {
         @open-recent-repository="openRepository"
       />
 
-      <!-- LEVEL 2: Scoped Diff Tab Strip (Only shown when repository has open diff tabs) -->
+      <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip -->
       <WorkspaceDiffTabBar
-        v-if="currentRepositoryDiffTabs.length > 0"
+        v-if="currentRepositoryDiffTabs.length > 0 || currentRepositoryPullRequestTabs.length > 0"
         :tabs="currentRepositoryDiffTabs"
         :active-tab-id="activeDiffTabId"
+        :pull-request-tabs="currentRepositoryPullRequestTabs"
+        :active-pull-request-tab-id="activePullRequestTabId"
         @select-diff-tab="activateDiffTab"
-        @select-workbench="activateDiffTab(null)"
+        @select-pull-request-tab="activatePullRequestTab"
+        @select-workbench="() => { activateDiffTab(null); activatePullRequestTab(null) }"
         @close-diff-tab="closeDiffTab"
+        @close-pull-request-tab="closePullRequestTab"
         @close-other-diff-tabs="closeOtherDiffTabs"
         @close-all-diff-tabs="closeAllDiffTabs"
         @pin-diff-tab="pinDiffTab"
@@ -471,7 +483,7 @@ async function handlePush(): Promise<void> {
       <div class="relative flex-1 overflow-hidden">
         <!-- Main Workspace Workbench Island (Preserved with v-show for instantaneous tab switching) -->
         <div
-          v-show="!activeDiffTab"
+          v-show="!activeDiffTab && !activePullRequestTab"
           class="h-full w-full"
         >
           <USplitter
@@ -609,6 +621,13 @@ async function handlePush(): Promise<void> {
           @unstage="unstageFile"
           @discard="handleDiscard"
           @close="closeDiffTab"
+        />
+
+        <!-- Full-Page Dedicated Pull Request Tab -->
+        <WorkspacePullRequestTabContent
+          v-if="activePullRequestTab"
+          :tab="activePullRequestTab"
+          @close="closePullRequestTab"
         />
       </div>
     </div>

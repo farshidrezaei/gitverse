@@ -30,6 +30,9 @@ const {
   fetchCheckRuns,
 } = useProviderController()
 
+const { openPullRequestTab } = useWorkspaceTabController()
+const { currentRepository } = useRepositoryWorkspace()
+
 const activeStateFilter = ref<PullRequestState | 'all'>('open')
 const searchQuery = ref('')
 const selectedPullRequest = ref<RemotePullRequest | null>(null)
@@ -49,6 +52,17 @@ const isLoadingChecks = ref(false)
 
 function handleClose(): void {
   emit('update:open', false)
+}
+
+function handleOpenInDedicatedTab(): void {
+  if (!selectedPullRequest.value || !matchedAccount.value || !matchedRepositoryFullName.value) return
+  openPullRequestTab(
+    selectedPullRequest.value,
+    matchedAccount.value,
+    matchedRepositoryFullName.value,
+    currentRepository.value?.path || '',
+  )
+  handleClose()
 }
 
 function parseRepositoryFromUrl(url: string): { host: string; fullName: string } | null {
@@ -665,6 +679,14 @@ async function handlePrMerged(): Promise<void> {
                 </div>
 
                 <div class="flex items-center gap-1.5">
+                  <UButton
+                    size="xs"
+                    color="primary"
+                    variant="soft"
+                    icon="i-lucide-maximize-2"
+                    :label="t('provider.openAsTab')"
+                    @click="handleOpenInDedicatedTab"
+                  />
                   <UButton
                     size="xs"
                     color="neutral"

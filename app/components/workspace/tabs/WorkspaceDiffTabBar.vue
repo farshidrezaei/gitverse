@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import type { ContextMenuItem } from '@nuxt/ui'
-import type { WorkspaceDiffTab } from '~/types/workspaceTab'
+import type { WorkspaceDiffTab, WorkspacePullRequestTab } from '~/types/workspaceTab'
 import SharedFileStatusBadge from '~/components/shared/FileStatusBadge.vue'
 
 interface WorkspaceDiffTabBarProperties {
   tabs: WorkspaceDiffTab[]
   activeTabId: string | null
+  pullRequestTabs?: WorkspacePullRequestTab[]
+  activePullRequestTabId?: string | null
 }
 
-const properties = defineProps<WorkspaceDiffTabBarProperties>()
+const properties = withDefaults(defineProps<WorkspaceDiffTabBarProperties>(), {
+  pullRequestTabs: () => [],
+  activePullRequestTabId: null,
+})
 
 const emit = defineEmits<{
   selectDiffTab: [tabIdentifier: string]
@@ -17,6 +22,8 @@ const emit = defineEmits<{
   closeOtherDiffTabs: [tabIdentifier: string]
   closeAllDiffTabs: []
   pinDiffTab: [tabIdentifier: string]
+  selectPullRequestTab: [tabIdentifier: string]
+  closePullRequestTab: [tabIdentifier: string]
 }>()
 
 const { t } = useI18n()
@@ -72,16 +79,16 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
 <template>
   <nav
     class="flex h-8 w-full shrink-0 items-center justify-between border-b border-default/70 bg-[var(--gv-surface)]/40 px-2 select-none text-xs"
-    aria-label="Diff Tabs"
+    aria-label="Diff and Pull Request Tabs"
   >
-    <!-- Left: Workbench Return Button + Diff Tabs -->
+    <!-- Left: Workbench Return Button + Diff Tabs + Pull Request Tabs -->
     <div class="flex items-center gap-1 overflow-x-auto no-scrollbar min-w-0 flex-1 h-full py-0.5">
       <!-- Workbench Root Tab (Workspace overview) -->
       <button
         type="button"
         class="flex h-6 items-center gap-1.5 rounded px-2 text-xs font-medium transition-all shrink-0 border"
         :class="[
-          properties.activeTabId === null
+          properties.activeTabId === null && properties.activePullRequestTabId === null
             ? 'bg-[var(--gv-surface)] text-highlighted border-default shadow-xs font-semibold'
             : 'border-transparent text-muted hover:bg-muted/30 hover:text-default',
         ]"
@@ -92,6 +99,49 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
       </button>
 
       <div class="h-3 w-px bg-default/40 mx-0.5 shrink-0" aria-hidden="true" />
+
+      <!-- Pull Request Tabs -->
+      <div
+        v-for="prTab in properties.pullRequestTabs"
+        :key="prTab.id"
+        class="group relative flex h-6 items-center gap-1.5 rounded px-2 text-xs font-medium transition-all cursor-pointer border shrink-0"
+        :class="[
+          properties.activePullRequestTabId === prTab.id
+            ? 'bg-[var(--gv-surface)] text-highlighted border-primary/50 shadow-xs'
+            : 'border-transparent text-muted hover:bg-muted/30 hover:text-default',
+        ]"
+        :title="prTab.title"
+        @click="emit('selectPullRequestTab', prTab.id)"
+      >
+        <UIcon name="i-lucide-git-pull-request" class="h-3 w-3 shrink-0 text-primary" />
+        <span class="truncate max-w-[160px] font-medium">
+          #{{ prTab.pullRequest.number }} {{ prTab.pullRequest.title }}
+        </span>
+
+        <UBadge
+          size="xs"
+          :color="prTab.pullRequest.state === 'open' ? 'success' : prTab.pullRequest.merged_at ? 'primary' : 'neutral'"
+          variant="subtle"
+          class="text-[9px] px-1 py-0 leading-none"
+        >
+          {{ prTab.pullRequest.state }}
+        </UBadge>
+
+        <button
+          type="button"
+          class="ms-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-xs text-muted opacity-60 transition-opacity hover:bg-muted/40 hover:text-highlighted hover:opacity-100 focus:outline-none"
+          :title="t('tabs.close')"
+          @click.stop="emit('closePullRequestTab', prTab.id)"
+        >
+          <UIcon name="i-lucide-x" class="h-2.5 w-2.5" />
+        </button>
+      </div>
+
+      <div
+        v-if="properties.pullRequestTabs.length > 0 && properties.tabs.length > 0"
+        class="h-3 w-px bg-default/40 mx-0.5 shrink-0"
+        aria-hidden="true"
+      />
 
       <!-- Active Diff Tabs -->
       <UContextMenu
@@ -174,3 +224,4 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
     </div>
   </nav>
 </template>
+

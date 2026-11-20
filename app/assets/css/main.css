@@ -619,6 +619,50 @@ div[data-state][class*="overlay"] {
   padding: 0;
 }
 
+/* Syntax highlighting in markdown codeblocks */
+.gv-markdown-content .hljs-keyword,
+.gv-markdown-content .hljs-selector-tag,
+.gv-markdown-content .hljs-built_in,
+.gv-markdown-content .hljs-name,
+.gv-markdown-content .hljs-tag {
+  color: #f472b6; /* pink-400 */
+}
+
+.gv-markdown-content .hljs-string,
+.gv-markdown-content .hljs-title,
+.gv-markdown-content .hljs-section,
+.gv-markdown-content .hljs-attribute,
+.gv-markdown-content .hljs-literal,
+.gv-markdown-content .hljs-template-tag,
+.gv-markdown-content .hljs-template-variable,
+.gv-markdown-content .hljs-type {
+  color: #38bdf8; /* sky-400 */
+}
+
+.gv-markdown-content .hljs-comment,
+.gv-markdown-content .hljs-quote,
+.gv-markdown-content .hljs-deletion {
+  color: #94a3b8; /* slate-400 */
+  font-style: italic;
+}
+
+.gv-markdown-content .hljs-number,
+.gv-markdown-content .hljs-regexp,
+.gv-markdown-content .hljs-link {
+  color: #fb923c; /* orange-400 */
+}
+
+.gv-markdown-content .hljs-variable,
+.gv-markdown-content .hljs-params {
+  color: #e2e8f0;
+}
+
+.gv-markdown-content .hljs-meta,
+.gv-markdown-content .hljs-symbol,
+.gv-markdown-content .hljs-bullet {
+  color: #a78bfa; /* purple-400 */
+}
+
 .gv-markdown-content blockquote {
   border-inline-start: 3px solid var(--gv-primary, #0284c7);
   padding-inline-start: 0.75rem;

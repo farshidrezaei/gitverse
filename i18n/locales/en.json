@@ -642,6 +642,12 @@
     "openedPr": "opened this pull request",
     "noDescriptionProvided": "No description provided.",
     "noChecksFound": "No automated checks reported for this pull request.",
-    "binaryOrLargeFileDiff": "Binary file or diff too large to display inline."
+    "binaryOrLargeFileDiff": "Binary file or diff too large to display inline.",
+    "openAsTab": "Open in Tab",
+    "ciChecks": "CI Checks",
+    "author": "Author",
+    "commentOnLine": "Comment on this line",
+    "commentOnLineNumber": "Comment on line {line}",
+    "commentOnLines": "Comment on lines {start}-{end}"
   }
 }
