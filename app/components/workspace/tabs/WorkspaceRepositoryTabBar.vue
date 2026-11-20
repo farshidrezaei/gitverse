@@ -20,6 +20,37 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const { openInEditor, openInTerminal, openInFileManager } = useExternalToolsController()
+
+const externalEditorMenuItems = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: 'Visual Studio Code',
+      icon: 'i-lucide-code-2',
+      onSelect: () => openInEditor('vscode'),
+    },
+    {
+      label: 'Cursor',
+      icon: 'i-lucide-sparkles',
+      onSelect: () => openInEditor('cursor'),
+    },
+    {
+      label: 'Zed',
+      icon: 'i-lucide-file-code',
+      onSelect: () => openInEditor('zed'),
+    },
+    {
+      label: 'Sublime Text',
+      icon: 'i-lucide-file-text',
+      onSelect: () => openInEditor('sublime'),
+    },
+    {
+      label: 'IntelliJ IDEA',
+      icon: 'i-lucide-layers',
+      onSelect: () => openInEditor('intellij'),
+    },
+  ],
+])
 
 function handleMiddleClick(event: MouseEvent, repositoryPath: string): void {
   if (event.button === 1) {
@@ -30,6 +61,18 @@ function handleMiddleClick(event: MouseEvent, repositoryPath: string): void {
 
 function getRepositoryContextMenu(tab: WorkspaceRepositoryTab): ContextMenuItem[][] {
   return [
+    [
+      {
+        label: t('externalTools.openTerminal'),
+        icon: 'i-lucide-terminal',
+        onSelect: () => openInTerminal(),
+      },
+      {
+        label: t('externalTools.openFileManager'),
+        icon: 'i-lucide-folder-open',
+        onSelect: () => openInFileManager(),
+      },
+    ],
     [
       {
         label: t('repository.closeRepository'),
@@ -145,6 +188,47 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
           :title="t('tabs.openNewWorkspaceTab')"
         />
       </UDropdownMenu>
+    </div>
+
+    <!-- Quick External Tools Launchers -->
+    <div v-if="properties.activeRepositoryPath" class="flex items-center gap-1 shrink-0 ps-2 border-s border-default/70">
+      <UTooltip :text="t('externalTools.openTerminal')">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-terminal"
+          class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+          :aria-label="t('externalTools.openTerminal')"
+          @click="openInTerminal"
+        />
+      </UTooltip>
+
+      <UDropdownMenu :items="externalEditorMenuItems" :content="{ align: 'end' }">
+        <UTooltip :text="t('externalTools.openEditor')">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-code-2"
+            trailing-icon="i-lucide-chevron-down"
+            class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+            :aria-label="t('externalTools.openEditor')"
+          />
+        </UTooltip>
+      </UDropdownMenu>
+
+      <UTooltip :text="t('externalTools.openFileManager')">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-folder-open"
+          class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+          :aria-label="t('externalTools.openFileManager')"
+          @click="() => openInFileManager()"
+        />
+      </UTooltip>
     </div>
   </nav>
 </template>

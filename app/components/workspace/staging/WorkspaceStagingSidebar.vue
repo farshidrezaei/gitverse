@@ -51,6 +51,7 @@ const {
 } = useStashController()
 
 const { confirmStandard } = useConfirmationDialog()
+const { openInEditor, openInFileManager } = useExternalToolsController()
 
 const isCreateStashModalOpen = ref(false)
 const isPreviewStashModalOpen = ref<boolean>(false)
@@ -169,6 +170,18 @@ function getFlatFileContextMenuItems(
               onSelect: () => emit('discardFile', filePath, isUntracked || false),
             },
           ]),
+    ],
+    [
+      {
+        label: t('externalTools.openFileInEditor'),
+        icon: 'i-lucide-code-2',
+        onSelect: () => openInEditor('vscode', filePath),
+      },
+      {
+        label: t('externalTools.revealInFileManager'),
+        icon: 'i-lucide-folder-open',
+        onSelect: () => openInFileManager(filePath),
+      },
     ],
     [
       {

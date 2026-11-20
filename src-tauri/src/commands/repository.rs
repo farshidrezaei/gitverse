@@ -746,4 +746,220 @@ pub async fn read_clipboard_text() -> Result<String, ApplicationError> {
     }
 }
 
+/// Tauri IPC command to open a directory or file in a designated external editor.
+#[tauri::command]
+pub async fn open_in_external_editor(
+    directory_path: String,
+    file_path: Option<String>,
+    editor_name: String,
+) -> Result<(), ApplicationError> {
+    let base_directory = std::path::Path::new(&directory_path);
+    if !base_directory.exists() {
+        return Err(ApplicationError::InvalidInput(format!(
+            "Directory does not exist: {}",
+            directory_path
+        )));
+    }
+
+    let binary_name = match editor_name.to_lowercase().as_str() {
+        "vscode" | "code" => "code",
+        "cursor" => "cursor",
+        "zed" => "zed",
+        "sublime" | "subl" => "subl",
+        "intellij" | "idea" => "idea",
+        _ => {
+            return Err(ApplicationError::InvalidInput(format!(
+                "Unsupported external editor: {}",
+                editor_name
+            )))
+        }
+    };
+
+    let target_path = if let Some(ref relative_or_absolute_file) = file_path {
+        let candidate_path = std::path::Path::new(relative_or_absolute_file);
+        if candidate_path.is_absolute() {
+            candidate_path.to_path_buf()
+        } else {
+            base_directory.join(candidate_path)
+        }
+    } else {
+        base_directory.to_path_buf()
+    };
+
+    tokio::process::Command::new(binary_name)
+        .arg(&target_path)
+        .current_dir(base_directory)
+        .spawn()
+        .map_err(|error| {
+            ApplicationError::Unexpected(format!(
+                "Failed to launch external editor '{}': {}",
+                binary_name, error
+            ))
+        })?;
+
+    Ok(())
+}
+
+/// Tauri IPC command to open the terminal in the given directory path.
+#[tauri::command]
+pub async fn open_in_terminal(directory_path: String) -> Result<(), ApplicationError> {
+    let target_directory = std::path::Path::new(&directory_path);
+    if !target_directory.exists() {
+        return Err(ApplicationError::InvalidInput(format!(
+            "Directory does not exist: {}",
+            directory_path
+        )));
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(terminal_from_environment) = std::env::var("TERMINAL") {
+            if tokio::process::Command::new(&terminal_from_environment)
+                .current_dir(target_directory)
+                .spawn()
+                .is_ok()
+            {
+                return Ok(());
+            }
+        }
+
+        let terminal_candidates = [
+            "x-terminal-emulator",
+            "gnome-terminal",
+            "kitty",
+            "alacritty",
+            "konsole",
+            "xfce4-terminal",
+            "tilix",
+            "xterm",
+        ];
+
+        for candidate_terminal in terminal_candidates {
+            if tokio::process::Command::new(candidate_terminal)
+                .current_dir(target_directory)
+                .spawn()
+                .is_ok()
+            {
+                return Ok(());
+            }
+        }
+
+        Err(ApplicationError::Unexpected(
+            "No suitable terminal emulator found on Linux system".into(),
+        ))
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        tokio::process::Command::new("open")
+            .args(["-a", "Terminal", &directory_path])
+            .current_dir(target_directory)
+            .spawn()
+            .map_err(|error| {
+                ApplicationError::Unexpected(format!("Failed to open Terminal: {}", error))
+            })?;
+        Ok(())
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        if tokio::process::Command::new("cmd")
+            .args(["/C", "start", "wt", "-d", &directory_path])
+            .current_dir(target_directory)
+            .spawn()
+            .is_ok()
+        {
+            return Ok(());
+        }
+
+        tokio::process::Command::new("cmd")
+            .args(["/C", "start", "powershell"])
+            .current_dir(target_directory)
+            .spawn()
+            .map_err(|error| {
+                ApplicationError::Unexpected(format!("Failed to launch terminal: {}", error))
+            })?;
+        Ok(())
+    }
+}
+
+/// Tauri IPC command to reveal a file or directory in the system file manager.
+#[tauri::command]
+pub async fn open_in_file_manager(
+    directory_path: String,
+    file_path: Option<String>,
+) -> Result<(), ApplicationError> {
+    let base_directory = std::path::Path::new(&directory_path);
+    if !base_directory.exists() {
+        return Err(ApplicationError::InvalidInput(format!(
+            "Directory does not exist: {}",
+            directory_path
+        )));
+    }
+
+    let target_path = if let Some(ref relative_or_absolute_file) = file_path {
+        let candidate_path = std::path::Path::new(relative_or_absolute_file);
+        if candidate_path.is_absolute() {
+            candidate_path.to_path_buf()
+        } else {
+            base_directory.join(candidate_path)
+        }
+    } else {
+        base_directory.to_path_buf()
+    };
+
+    #[cfg(target_os = "linux")]
+    {
+        tokio::process::Command::new("xdg-open")
+            .arg(&target_path)
+            .spawn()
+            .map_err(|error| {
+                ApplicationError::Unexpected(format!("Failed to open file manager: {}", error))
+            })?;
+        Ok(())
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        if file_path.is_some() {
+            tokio::process::Command::new("open")
+                .arg("-R")
+                .arg(&target_path)
+                .spawn()
+                .map_err(|error| {
+                    ApplicationError::Unexpected(format!("Failed to reveal file: {}", error))
+                })?;
+        } else {
+            tokio::process::Command::new("open")
+                .arg(&target_path)
+                .spawn()
+                .map_err(|error| {
+                    ApplicationError::Unexpected(format!("Failed to open directory: {}", error))
+                })?;
+        }
+        Ok(())
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        if file_path.is_some() {
+            tokio::process::Command::new("explorer")
+                .arg(format!("/select,{}", target_path.to_string_lossy()))
+                .spawn()
+                .map_err(|error| {
+                    ApplicationError::Unexpected(format!("Failed to reveal file: {}", error))
+                })?;
+        } else {
+            tokio::process::Command::new("explorer")
+                .arg(&target_path)
+                .spawn()
+                .map_err(|error| {
+                    ApplicationError::Unexpected(format!("Failed to open directory: {}", error))
+                })?;
+        }
+        Ok(())
+    }
+}
+
+
 

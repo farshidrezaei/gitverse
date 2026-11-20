@@ -664,5 +664,12 @@
     "commentOnLine": "ثبت نظر روی این سطر",
     "commentOnLineNumber": "ثبت نظر روی سطر {line}",
     "commentOnLines": "ثبت نظر روی سطرهای {start} تا {end}"
+  },
+  "externalTools": {
+    "openTerminal": "باز کردن در ترمینال",
+    "openEditor": "باز کردن در ویرایشگر خارجی",
+    "openFileManager": "نمایش در مدیریت فایل سیستم",
+    "openFileInEditor": "باز کردن فایل در ویرایشگر",
+    "revealInFileManager": "نمایش فایل در مدیریت فایل سیستم"
   }
 }

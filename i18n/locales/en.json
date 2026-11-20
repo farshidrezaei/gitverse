@@ -664,5 +664,12 @@
     "commentOnLine": "Comment on this line",
     "commentOnLineNumber": "Comment on line {line}",
     "commentOnLines": "Comment on lines {start}-{end}"
+  },
+  "externalTools": {
+    "openTerminal": "Open in Terminal",
+    "openEditor": "Open in External Editor",
+    "openFileManager": "Reveal in File Manager",
+    "openFileInEditor": "Open File in Editor",
+    "revealInFileManager": "Reveal in File Manager"
   }
 }

@@ -341,4 +341,28 @@ mod tests {
         assert_eq!(diff.total_additions, 1);
         assert_eq!(diff.total_deletions, 1);
     }
+
+    #[tokio::test]
+    async fn test_open_in_external_editor_validation() {
+        use crate::commands::repository::open_in_external_editor;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path().to_string_lossy().to_string();
+
+        let unsupported_result = open_in_external_editor(
+            repository_path.clone(),
+            None,
+            "unsupported_editor_name".to_string(),
+        ).await;
+
+        assert!(unsupported_result.is_err());
+
+        let invalid_directory_result = open_in_external_editor(
+            "/nonexistent/directory/path/that/cannot/exist/ever".to_string(),
+            None,
+            "vscode".to_string(),
+        ).await;
+
+        assert!(invalid_directory_result.is_err());
+    }
 }

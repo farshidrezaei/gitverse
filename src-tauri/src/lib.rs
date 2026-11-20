@@ -129,6 +129,9 @@ pub fn run() {
             commands::update_pull_request_state,
             commands::open_external_url,
             commands::read_clipboard_text,
+            commands::open_in_external_editor,
+            commands::open_in_terminal,
+            commands::open_in_file_manager,
         ])
         .run(tauri::generate_context!());
 

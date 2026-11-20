@@ -18,6 +18,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const { openInEditor, openInFileManager } = useExternalToolsController()
 const filterQuery = ref<string>('')
 const viewMode = ref<'flat' | 'tree'>('tree')
 
@@ -39,6 +40,18 @@ const treeNodes = computed(() => {
 
 function getFlatFileContextMenuItems(filePath: string): ContextMenuItem[][] {
   return [
+    [
+      {
+        label: t('externalTools.openFileInEditor'),
+        icon: 'i-lucide-code-2',
+        onSelect: () => openInEditor('vscode', filePath),
+      },
+      {
+        label: t('externalTools.revealInFileManager'),
+        icon: 'i-lucide-folder-open',
+        onSelect: () => openInFileManager(filePath),
+      },
+    ],
     [
       {
         label: t('git.copyPath'),
