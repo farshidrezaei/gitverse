@@ -1,10 +1,11 @@
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, USER_AGENT};
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use chrono::Utc;
 use crate::domain::{
     ApplicationError, CiCheckRun, PipelineState, PipelineSummary,
-    ProviderAccount, ProviderKind, RemoteProjectRepository, RemotePullRequest, PullRequestState,
+    ProviderAccount, ProviderKind, PullRequestChangedFile, PullRequestMergeResult,
+    PullRequestState, RemoteProjectRepository, RemotePullRequest, RemoteReviewComment,
 };
 
 const DEFAULT_GITHUB_API_URL: &str = "https://api.github.com";
@@ -458,5 +459,315 @@ impl GitHubClient {
         }).collect();
 
         Ok(checks)
+    }
+
+    pub async fn get_pull_request_comments(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        pull_number: u64,
+    ) -> Result<Vec<RemoteReviewComment>, ApplicationError> {
+        let url = format!("{}/repos/{}/{}/issues/{}/comments", self.api_base_url, owner, repository, pull_number);
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to fetch PR comments: {}", error_text)));
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubCommentItem {
+            id: u64,
+            body: Option<String>,
+            user: GitHubPullRequestUser,
+            created_at: String,
+            updated_at: String,
+        }
+
+        let items: Vec<GitHubCommentItem> = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse comments: {}", error))
+        })?;
+
+        let comments = items.into_iter().map(|item| {
+            let created_timestamp = chrono::DateTime::parse_from_rfc3339(&item.created_at)
+                .map(|datetime| datetime.timestamp())
+                .unwrap_or_else(|_| Utc::now().timestamp());
+            let updated_timestamp = chrono::DateTime::parse_from_rfc3339(&item.updated_at)
+                .map(|datetime| datetime.timestamp())
+                .unwrap_or_else(|_| Utc::now().timestamp());
+
+            RemoteReviewComment {
+                id: format!("github:{}", item.id),
+                author_username: item.user.login,
+                author_avatar_url: item.user.avatar_url,
+                body: item.body.unwrap_or_default(),
+                path: None,
+                line_number: None,
+                created_at_timestamp: created_timestamp,
+                updated_at_timestamp: updated_timestamp,
+            }
+        }).collect();
+
+        Ok(comments)
+    }
+
+    pub async fn create_pull_request_comment(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        pull_number: u64,
+        body: &str,
+    ) -> Result<RemoteReviewComment, ApplicationError> {
+        let url = format!("{}/repos/{}/{}/issues/{}/comments", self.api_base_url, owner, repository, pull_number);
+        let headers = self.build_headers(token)?;
+
+        #[derive(Serialize)]
+        struct NewCommentPayload<'a> {
+            body: &'a str,
+        }
+
+        let response = self.client.post(&url)
+            .headers(headers)
+            .json(&NewCommentPayload { body })
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to post comment: {}", error_text)));
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubCommentItem {
+            id: u64,
+            body: Option<String>,
+            user: GitHubPullRequestUser,
+            created_at: String,
+            updated_at: String,
+        }
+
+        let item: GitHubCommentItem = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse created comment: {}", error))
+        })?;
+
+        let created_timestamp = chrono::DateTime::parse_from_rfc3339(&item.created_at)
+            .map(|datetime| datetime.timestamp())
+            .unwrap_or_else(|_| Utc::now().timestamp());
+        let updated_timestamp = chrono::DateTime::parse_from_rfc3339(&item.updated_at)
+            .map(|datetime| datetime.timestamp())
+            .unwrap_or_else(|_| Utc::now().timestamp());
+
+        Ok(RemoteReviewComment {
+            id: format!("github:{}", item.id),
+            author_username: item.user.login,
+            author_avatar_url: item.user.avatar_url,
+            body: item.body.unwrap_or_default(),
+            path: None,
+            line_number: None,
+            created_at_timestamp: created_timestamp,
+            updated_at_timestamp: updated_timestamp,
+        })
+    }
+
+    pub async fn get_pull_request_files(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        pull_number: u64,
+    ) -> Result<Vec<PullRequestChangedFile>, ApplicationError> {
+        let url = format!("{}/repos/{}/{}/pulls/{}/files", self.api_base_url, owner, repository, pull_number);
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to fetch PR files: {}", error_text)));
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubFileItem {
+            filename: String,
+            previous_filename: Option<String>,
+            status: String,
+            additions: u32,
+            deletions: u32,
+            changes: u32,
+            patch: Option<String>,
+        }
+
+        let items: Vec<GitHubFileItem> = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse PR files: {}", error))
+        })?;
+
+        let files = items.into_iter().map(|item| {
+            PullRequestChangedFile {
+                file_path: item.filename,
+                previous_file_path: item.previous_filename,
+                status: item.status,
+                additions_count: item.additions,
+                deletions_count: item.deletions,
+                changes_count: item.changes,
+                patch: item.patch,
+            }
+        }).collect();
+
+        Ok(files)
+    }
+
+    pub async fn submit_pull_request_review(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        pull_number: u64,
+        action: &str,
+        body: Option<&str>,
+    ) -> Result<bool, ApplicationError> {
+        let url = format!("{}/repos/{}/{}/pulls/{}/reviews", self.api_base_url, owner, repository, pull_number);
+        let headers = self.build_headers(token)?;
+
+        #[derive(Serialize)]
+        struct ReviewPayload<'a> {
+            event: &'a str,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            body: Option<&'a str>,
+        }
+
+        let event = match action.to_uppercase().as_str() {
+            "APPROVE" => "APPROVE",
+            "REQUEST_CHANGES" => "REQUEST_CHANGES",
+            _ => "COMMENT",
+        };
+
+        let response = self.client.post(&url)
+            .headers(headers)
+            .json(&ReviewPayload {
+                event,
+                body: body.filter(|text| !text.trim().is_empty()),
+            })
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to submit review: {}", error_text)));
+        }
+
+        Ok(true)
+    }
+
+    pub async fn merge_pull_request(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        pull_number: u64,
+        merge_method: Option<&str>,
+        commit_title: Option<&str>,
+        commit_message: Option<&str>,
+    ) -> Result<PullRequestMergeResult, ApplicationError> {
+        let url = format!("{}/repos/{}/{}/pulls/{}/merge", self.api_base_url, owner, repository, pull_number);
+        let headers = self.build_headers(token)?;
+
+        #[derive(Serialize)]
+        struct MergePayload<'a> {
+            #[serde(skip_serializing_if = "Option::is_none")]
+            commit_title: Option<&'a str>,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            commit_message: Option<&'a str>,
+            merge_method: &'a str,
+        }
+
+        let normalized_method = match merge_method.unwrap_or("merge") {
+            "squash" => "squash",
+            "rebase" => "rebase",
+            _ => "merge",
+        };
+
+        let response = self.client.put(&url)
+            .headers(headers)
+            .json(&MergePayload {
+                commit_title: commit_title.filter(|text| !text.trim().is_empty()),
+                commit_message: commit_message.filter(|text| !text.trim().is_empty()),
+                merge_method: normalized_method,
+            })
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        #[derive(Deserialize)]
+        struct GitHubMergeApiResponse {
+            sha: Option<String>,
+            merged: Option<bool>,
+            message: Option<String>,
+        }
+
+        let status = response.status();
+        let payload: GitHubMergeApiResponse = response.json().await.unwrap_or(GitHubMergeApiResponse {
+            sha: None,
+            merged: Some(status.is_success()),
+            message: None,
+        });
+
+        if !status.is_success() && payload.merged != Some(true) {
+            return Err(ApplicationError::ProviderError(
+                payload.message.unwrap_or_else(|| "Failed to merge pull request".into())
+            ));
+        }
+
+        Ok(PullRequestMergeResult {
+            is_merged: payload.merged.unwrap_or(true),
+            message: payload.message.unwrap_or_else(|| "Pull request merged successfully".into()),
+            commit_sha: payload.sha,
+        })
+    }
+
+    pub async fn update_pull_request_state(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        pull_number: u64,
+        new_state: &str,
+    ) -> Result<bool, ApplicationError> {
+        let url = format!("{}/repos/{}/{}/pulls/{}", self.api_base_url, owner, repository, pull_number);
+        let headers = self.build_headers(token)?;
+
+        #[derive(Serialize)]
+        struct StatePayload<'a> {
+            state: &'a str,
+        }
+
+        let target_state = if new_state == "open" { "open" } else { "closed" };
+
+        let response = self.client.patch(&url)
+            .headers(headers)
+            .json(&StatePayload { state: target_state })
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to update PR state: {}", error_text)));
+        }
+
+        Ok(true)
     }
 }

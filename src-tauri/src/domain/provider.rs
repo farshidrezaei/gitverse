@@ -138,6 +138,44 @@ pub struct RemoteReviewComment {
     pub updated_at_timestamp: i64,
 }
 
+/// Changed file in a remote pull request with diff stats.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PullRequestChangedFile {
+    pub file_path: String,
+    pub previous_file_path: Option<String>,
+    pub status: String,
+    pub additions_count: u32,
+    pub deletions_count: u32,
+    pub changes_count: u32,
+    pub patch: Option<String>,
+}
+
+/// Action taken when submitting a formal pull request review.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PullRequestReviewAction {
+    Approve,
+    RequestChanges,
+    Comment,
+}
+
+/// Merge strategy method for merging a remote pull request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PullRequestMergeMethod {
+    Merge,
+    Squash,
+    Rebase,
+}
+
+/// Result returned from executing a remote pull request merge.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PullRequestMergeResult {
+    pub is_merged: bool,
+    pub message: String,
+    pub commit_sha: Option<String>,
+}
+
 /// Remote repository project discovered from an authenticated provider account.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RemoteProjectRepository {

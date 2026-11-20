@@ -1,10 +1,11 @@
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, USER_AGENT};
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use chrono::Utc;
 use crate::domain::{
     ApplicationError, CiCheckRun, PipelineState, PipelineSummary,
-    ProviderAccount, ProviderKind, RemoteProjectRepository, RemotePullRequest, PullRequestState,
+    ProviderAccount, ProviderKind, PullRequestChangedFile, PullRequestMergeResult,
+    PullRequestState, RemoteProjectRepository, RemotePullRequest, RemoteReviewComment,
 };
 
 const DEFAULT_GITLAB_API_URL: &str = "https://gitlab.com/api/v4";
@@ -431,6 +432,323 @@ impl GitLabClient {
         }).collect();
 
         Ok(checks)
+    }
+
+    pub async fn get_merge_request_comments(
+        &self,
+        token: &str,
+        project_full_name: &str,
+        mr_iid: u64,
+    ) -> Result<Vec<RemoteReviewComment>, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_full_name);
+        let url = format!("{}/projects/{}/merge_requests/{}/notes", self.api_base_url, encoded_project, mr_iid);
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to fetch MR comments: {}", error_text)));
+        }
+
+        #[derive(Deserialize)]
+        struct GitLabNoteItem {
+            id: u64,
+            body: String,
+            system: bool,
+            author: GitLabMergeRequestAuthor,
+            created_at: String,
+            updated_at: String,
+        }
+
+        let items: Vec<GitLabNoteItem> = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse MR comments: {}", error))
+        })?;
+
+        let comments = items.into_iter()
+            .filter(|item| !item.system)
+            .map(|item| {
+                let created_timestamp = chrono::DateTime::parse_from_rfc3339(&item.created_at)
+                    .map(|datetime| datetime.timestamp())
+                    .unwrap_or_else(|_| Utc::now().timestamp());
+                let updated_timestamp = chrono::DateTime::parse_from_rfc3339(&item.updated_at)
+                    .map(|datetime| datetime.timestamp())
+                    .unwrap_or_else(|_| Utc::now().timestamp());
+
+                RemoteReviewComment {
+                    id: format!("gitlab:{}", item.id),
+                    author_username: item.author.username,
+                    author_avatar_url: item.author.avatar_url,
+                    body: item.body,
+                    path: None,
+                    line_number: None,
+                    created_at_timestamp: created_timestamp,
+                    updated_at_timestamp: updated_timestamp,
+                }
+            })
+            .collect();
+
+        Ok(comments)
+    }
+
+    pub async fn create_merge_request_comment(
+        &self,
+        token: &str,
+        project_full_name: &str,
+        mr_iid: u64,
+        body: &str,
+    ) -> Result<RemoteReviewComment, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_full_name);
+        let url = format!("{}/projects/{}/merge_requests/{}/notes", self.api_base_url, encoded_project, mr_iid);
+        let headers = self.build_headers(token)?;
+
+        #[derive(Serialize)]
+        struct NewNotePayload<'a> {
+            body: &'a str,
+        }
+
+        let response = self.client.post(&url)
+            .headers(headers)
+            .json(&NewNotePayload { body })
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to post MR comment: {}", error_text)));
+        }
+
+        #[derive(Deserialize)]
+        struct GitLabNoteItem {
+            id: u64,
+            body: String,
+            author: GitLabMergeRequestAuthor,
+            created_at: String,
+            updated_at: String,
+        }
+
+        let item: GitLabNoteItem = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse created comment: {}", error))
+        })?;
+
+        let created_timestamp = chrono::DateTime::parse_from_rfc3339(&item.created_at)
+            .map(|datetime| datetime.timestamp())
+            .unwrap_or_else(|_| Utc::now().timestamp());
+        let updated_timestamp = chrono::DateTime::parse_from_rfc3339(&item.updated_at)
+            .map(|datetime| datetime.timestamp())
+            .unwrap_or_else(|_| Utc::now().timestamp());
+
+        Ok(RemoteReviewComment {
+            id: format!("gitlab:{}", item.id),
+            author_username: item.author.username,
+            author_avatar_url: item.author.avatar_url,
+            body: item.body,
+            path: None,
+            line_number: None,
+            created_at_timestamp: created_timestamp,
+            updated_at_timestamp: updated_timestamp,
+        })
+    }
+
+    pub async fn get_merge_request_files(
+        &self,
+        token: &str,
+        project_full_name: &str,
+        mr_iid: u64,
+    ) -> Result<Vec<PullRequestChangedFile>, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_full_name);
+        let url = format!("{}/projects/{}/merge_requests/{}/diffs", self.api_base_url, encoded_project, mr_iid);
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to fetch MR diffs: {}", error_text)));
+        }
+
+        #[derive(Deserialize)]
+        struct GitLabDiffItem {
+            old_path: String,
+            new_path: String,
+            new_file: bool,
+            renamed_file: bool,
+            deleted_file: bool,
+            diff: String,
+        }
+
+        let items: Vec<GitLabDiffItem> = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse MR diffs: {}", error))
+        })?;
+
+        let files = items.into_iter().map(|item| {
+            let additions = item.diff.lines().filter(|line| line.starts_with('+') && !line.starts_with("+++")).count() as u32;
+            let deletions = item.diff.lines().filter(|line| line.starts_with('-') && !line.starts_with("---")).count() as u32;
+            let status = if item.new_file {
+                "added".to_string()
+            } else if item.deleted_file {
+                "deleted".to_string()
+            } else if item.renamed_file {
+                "renamed".to_string()
+            } else {
+                "modified".to_string()
+            };
+
+            PullRequestChangedFile {
+                file_path: item.new_path,
+                previous_file_path: if item.renamed_file { Some(item.old_path) } else { None },
+                status,
+                additions_count: additions,
+                deletions_count: deletions,
+                changes_count: additions + deletions,
+                patch: Some(item.diff),
+            }
+        }).collect();
+
+        Ok(files)
+    }
+
+    pub async fn submit_merge_request_review(
+        &self,
+        token: &str,
+        project_full_name: &str,
+        mr_iid: u64,
+        action: &str,
+        body: Option<&str>,
+    ) -> Result<bool, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_full_name);
+        let headers = self.build_headers(token)?;
+
+        match action.to_uppercase().as_str() {
+            "APPROVE" => {
+                let url = format!("{}/projects/{}/merge_requests/{}/approve", self.api_base_url, encoded_project, mr_iid);
+                let response = self.client.post(&url)
+                    .headers(headers.clone())
+                    .send()
+                    .await
+                    .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+                if !response.status().is_success() {
+                    let error_text = response.text().await.unwrap_or_default();
+                    return Err(ApplicationError::ProviderError(format!("Failed to approve MR: {}", error_text)));
+                }
+            }
+            "REQUEST_CHANGES" => {
+                let url = format!("{}/projects/{}/merge_requests/{}/unapprove", self.api_base_url, encoded_project, mr_iid);
+                let _ = self.client.post(&url)
+                    .headers(headers.clone())
+                    .send()
+                    .await;
+            }
+            _ => {}
+        }
+
+        if let Some(comment_text) = body.filter(|text| !text.trim().is_empty()) {
+            self.create_merge_request_comment(token, project_full_name, mr_iid, comment_text).await?;
+        }
+
+        Ok(true)
+    }
+
+    pub async fn merge_merge_request(
+        &self,
+        token: &str,
+        project_full_name: &str,
+        mr_iid: u64,
+        commit_message: Option<&str>,
+        squash: Option<bool>,
+        delete_source_branch: Option<bool>,
+    ) -> Result<PullRequestMergeResult, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_full_name);
+        let url = format!("{}/projects/{}/merge_requests/{}/merge", self.api_base_url, encoded_project, mr_iid);
+        let headers = self.build_headers(token)?;
+
+        #[derive(Serialize)]
+        struct MergePayload<'a> {
+            #[serde(skip_serializing_if = "Option::is_none")]
+            merge_commit_message: Option<&'a str>,
+            squash: bool,
+            should_remove_source_branch: bool,
+        }
+
+        let response = self.client.put(&url)
+            .headers(headers)
+            .json(&MergePayload {
+                merge_commit_message: commit_message.filter(|text| !text.trim().is_empty()),
+                squash: squash.unwrap_or(false),
+                should_remove_source_branch: delete_source_branch.unwrap_or(false),
+            })
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        #[derive(Deserialize)]
+        struct GitLabMergeApiResponse {
+            state: Option<String>,
+            merge_commit_sha: Option<String>,
+            message: Option<String>,
+        }
+
+        let status = response.status();
+        let payload: GitLabMergeApiResponse = response.json().await.unwrap_or(GitLabMergeApiResponse {
+            state: None,
+            merge_commit_sha: None,
+            message: None,
+        });
+
+        if !status.is_success() && payload.state.as_deref() != Some("merged") {
+            return Err(ApplicationError::ProviderError(
+                payload.message.unwrap_or_else(|| "Failed to merge merge request".into())
+            ));
+        }
+
+        Ok(PullRequestMergeResult {
+            is_merged: true,
+            message: payload.message.unwrap_or_else(|| "Merge request merged successfully".into()),
+            commit_sha: payload.merge_commit_sha,
+        })
+    }
+
+    pub async fn update_merge_request_state(
+        &self,
+        token: &str,
+        project_full_name: &str,
+        mr_iid: u64,
+        new_state: &str,
+    ) -> Result<bool, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_full_name);
+        let url = format!("{}/projects/{}/merge_requests/{}", self.api_base_url, encoded_project, mr_iid);
+        let headers = self.build_headers(token)?;
+
+        #[derive(Serialize)]
+        struct StatePayload<'a> {
+            state_event: &'a str,
+        }
+
+        let state_event = if new_state == "open" { "reopen" } else { "close" };
+
+        let response = self.client.put(&url)
+            .headers(headers)
+            .json(&StatePayload { state_event })
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to update MR state: {}", error_text)));
+        }
+
+        Ok(true)
     }
 }
 

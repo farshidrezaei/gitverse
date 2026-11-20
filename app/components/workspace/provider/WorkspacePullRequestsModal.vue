@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import type { RemotePullRequest, PullRequestState, ProviderAccount } from '~/types/provider'
+import type { RemotePullRequest, PullRequestState, ProviderAccount, CiCheckRun } from '~/types/provider'
 import type { RemoteSummary } from '~/types/repository'
 import ConnectProviderAccountModal from './ConnectProviderAccountModal.vue'
-import { renderSafeMarkdown } from '~/utils/markdownRenderer'
+import PullRequestCommentsTimeline from './PullRequestCommentsTimeline.vue'
+import PullRequestFilesChangedView from './PullRequestFilesChangedView.vue'
+import PullRequestReviewModal from './PullRequestReviewModal.vue'
+import PullRequestMergeModal from './PullRequestMergeModal.vue'
 
 interface WorkspacePullRequestsModalProps {
   open: boolean
@@ -17,7 +20,15 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { accounts, loadAccounts, fetchPullRequests, pullRequests, isLoading } = useProviderController()
+const {
+  accounts,
+  loadAccounts,
+  fetchPullRequests,
+  pullRequests,
+  isLoading,
+  updatePullRequestState,
+  fetchCheckRuns,
+} = useProviderController()
 
 const activeStateFilter = ref<PullRequestState | 'all'>('open')
 const searchQuery = ref('')
@@ -28,6 +39,13 @@ const manualRepositoryInput = ref('')
 const isManualSelectorVisible = ref(false)
 const detectedProviderKind = ref<'github' | 'gitlab'>('github')
 const isConnectAccountModalOpen = ref(false)
+
+const activeDetailTab = ref<'conversation' | 'files' | 'checks'>('conversation')
+const isReviewModalOpen = ref(false)
+const isMergeModalOpen = ref(false)
+const isUpdatingState = ref(false)
+const checkRuns = ref<CiCheckRun[]>([])
+const isLoadingChecks = ref(false)
 
 function handleClose(): void {
   emit('update:open', false)
@@ -147,6 +165,57 @@ const filteredPullRequests = computed(() => {
       pr.source_branch.toLowerCase().includes(query),
   )
 })
+
+async function loadChecksForSelectedPr(): Promise<void> {
+  if (!matchedAccount.value || !matchedRepositoryFullName.value || !selectedPullRequest.value) return
+  isLoadingChecks.value = true
+  try {
+    const refOrSha = selectedPullRequest.value.source_branch || String(selectedPullRequest.value.number)
+    checkRuns.value = await fetchCheckRuns(matchedAccount.value.id, matchedRepositoryFullName.value, refOrSha)
+  } finally {
+    isLoadingChecks.value = false
+  }
+}
+
+watch(activeDetailTab, (tab) => {
+  if (tab === 'checks') {
+    void loadChecksForSelectedPr()
+  }
+})
+
+watch(selectedPullRequest, (pr) => {
+  if (pr) {
+    activeDetailTab.value = 'conversation'
+  }
+})
+
+async function handleTogglePrState(): Promise<void> {
+  if (!matchedAccount.value || !matchedRepositoryFullName.value || !selectedPullRequest.value) return
+  const currentPr = selectedPullRequest.value
+  const targetState = currentPr.state === 'open' ? 'closed' : 'open'
+  isUpdatingState.value = true
+  try {
+    const success = await updatePullRequestState(
+      matchedAccount.value.id,
+      matchedRepositoryFullName.value,
+      currentPr.number,
+      targetState,
+    )
+    if (success) {
+      currentPr.state = targetState
+      await loadPullRequestsForSelectedRepo()
+    }
+  } finally {
+    isUpdatingState.value = false
+  }
+}
+
+async function handlePrMerged(): Promise<void> {
+  if (selectedPullRequest.value) {
+    selectedPullRequest.value.state = 'merged'
+  }
+  await loadPullRequestsForSelectedRepo()
+}
 </script>
 
 <template>
@@ -154,12 +223,12 @@ const filteredPullRequests = computed(() => {
     :open="props.open"
     :ui="{
       overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity',
-      content: 'sm:max-w-4xl max-h-[85vh] p-0 border border-default/70 bg-[var(--gv-surface)] shadow-2xl rounded-2xl overflow-hidden',
+      content: 'sm:max-w-6xl max-h-[90vh] p-0 border border-default/70 bg-[var(--gv-surface)] shadow-2xl rounded-2xl overflow-hidden',
     }"
     @update:open="emit('update:open', $event)"
   >
     <template #content>
-      <div class="flex flex-col h-[75vh] select-none text-xs">
+      <div class="flex flex-col h-[82vh] select-none text-xs">
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-default/70 px-5 py-3.5 bg-muted/20 shrink-0">
           <div class="flex items-center gap-2.5">
@@ -559,40 +628,188 @@ const filteredPullRequests = computed(() => {
                 </div>
               </div>
 
-              <!-- Quick Actions -->
-              <div class="flex items-center gap-2 pt-2 border-t border-default/60">
-                <a
-                  :href="selectedPullRequest.html_url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-default/70 bg-muted/20 hover:bg-muted/40 font-semibold text-xs text-highlighted transition-colors"
+              <!-- Quick Actions Bar -->
+              <div class="flex items-center justify-between gap-2 pt-2 border-t border-default/60 flex-wrap">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <!-- Submit Review Action -->
+                  <UButton
+                    size="xs"
+                    color="primary"
+                    variant="subtle"
+                    icon="i-lucide-check-square"
+                    :label="t('provider.review')"
+                    @click="isReviewModalOpen = true"
+                  />
+
+                  <!-- Merge Action (Only for open PRs) -->
+                  <UButton
+                    v-if="selectedPullRequest.state === 'open'"
+                    size="xs"
+                    color="success"
+                    variant="solid"
+                    icon="i-lucide-git-merge"
+                    :label="t('provider.merge')"
+                    @click="isMergeModalOpen = true"
+                  />
+
+                  <!-- Close or Reopen PR Action -->
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="outline"
+                    :icon="selectedPullRequest.state === 'open' ? 'i-lucide-x-circle' : 'i-lucide-rotate-ccw'"
+                    :label="selectedPullRequest.state === 'open' ? t('provider.closePullRequest') : t('provider.reopenPullRequest')"
+                    :loading="isUpdatingState"
+                    @click="handleTogglePrState"
+                  />
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    icon="i-lucide-git-branch"
+                    label="Checkout"
+                    @click="emit('checkoutBranch', selectedPullRequest.source_branch)"
+                  />
+                  <a
+                    :href="selectedPullRequest.html_url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-default/70 bg-muted/20 hover:bg-muted/40 font-semibold text-xs text-highlighted transition-colors"
+                  >
+                    <UIcon name="i-lucide-external-link" class="h-3.5 w-3.5" />
+                    <span>Browser</span>
+                  </a>
+                </div>
+              </div>
+
+              <!-- PR Section Tabs -->
+              <div class="flex items-center gap-1 border-b border-default/60 pb-2 pt-1">
+                <button
+                  type="button"
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                  :class="activeDetailTab === 'conversation' ? 'bg-primary/15 text-primary' : 'text-muted hover:text-highlighted hover:bg-muted/20'"
+                  @click="activeDetailTab = 'conversation'"
                 >
-                  <UIcon name="i-lucide-external-link" class="h-3.5 w-3.5" />
-                  <span>Open in Browser</span>
-                </a>
-                <UButton
-                  size="xs"
-                  color="neutral"
-                  variant="outline"
-                  icon="i-lucide-git-branch"
-                  label="Checkout Branch"
-                  @click="emit('checkoutBranch', selectedPullRequest.source_branch)"
+                  <UIcon name="i-lucide-message-square" class="h-3.5 w-3.5" />
+                  <span>{{ t('provider.conversation') }}</span>
+                  <UBadge size="xs" variant="subtle" color="neutral" class="text-[10px] py-0 px-1">
+                    {{ selectedPullRequest.comments_count }}
+                  </UBadge>
+                </button>
+
+                <button
+                  type="button"
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                  :class="activeDetailTab === 'files' ? 'bg-primary/15 text-primary' : 'text-muted hover:text-highlighted hover:bg-muted/20'"
+                  @click="activeDetailTab = 'files'"
+                >
+                  <UIcon name="i-lucide-files" class="h-3.5 w-3.5" />
+                  <span>{{ t('provider.filesChanged') }}</span>
+                </button>
+
+                <button
+                  type="button"
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                  :class="activeDetailTab === 'checks' ? 'bg-primary/15 text-primary' : 'text-muted hover:text-highlighted hover:bg-muted/20'"
+                  @click="activeDetailTab = 'checks'"
+                >
+                  <UIcon name="i-lucide-check-circle-2" class="h-3.5 w-3.5" />
+                  <span>{{ t('provider.checks') }}</span>
+                  <UBadge
+                    v-if="selectedPullRequest.pipeline_status"
+                    size="xs"
+                    :color="selectedPullRequest.pipeline_status.state === 'success' ? 'success' : selectedPullRequest.pipeline_status.state === 'failed' ? 'error' : 'primary'"
+                    variant="subtle"
+                    class="capitalize text-[10px] py-0 px-1"
+                  >
+                    {{ selectedPullRequest.pipeline_status.state }}
+                  </UBadge>
+                </button>
+              </div>
+
+              <!-- Tab 1: Conversation -->
+              <div v-if="activeDetailTab === 'conversation'">
+                <PullRequestCommentsTimeline
+                  v-if="matchedAccount && matchedRepositoryFullName"
+                  :account-identifier="matchedAccount.id"
+                  :repository-full-name="matchedRepositoryFullName"
+                  :pull-request="selectedPullRequest"
                 />
               </div>
 
-              <!-- Description Body -->
-              <div class="space-y-2 pt-2 border-t border-default/60">
-                <h4 class="text-xs font-bold text-highlighted uppercase tracking-wider">Description</h4>
-                <div
-                  v-if="selectedPullRequest.description"
-                  class="gv-markdown-content p-4 rounded-xl border border-default/70 bg-muted/10 text-xs text-toned leading-relaxed max-h-80 overflow-y-auto"
-                  v-html="renderSafeMarkdown(selectedPullRequest.description)"
+              <!-- Tab 2: Files Changed -->
+              <div v-else-if="activeDetailTab === 'files'">
+                <PullRequestFilesChangedView
+                  v-if="matchedAccount && matchedRepositoryFullName"
+                  :account-identifier="matchedAccount.id"
+                  :repository-full-name="matchedRepositoryFullName"
+                  :pull-request-number="selectedPullRequest.number"
                 />
-                <div
-                  v-else
-                  class="p-4 rounded-xl border border-default/70 bg-muted/10 text-xs text-muted italic"
-                >
-                  No description provided.
+              </div>
+
+              <!-- Tab 3: Checks & CI -->
+              <div v-else-if="activeDetailTab === 'checks'" class="space-y-3">
+                <div v-if="isLoadingChecks" class="space-y-2 animate-pulse">
+                  <div
+                    v-for="i in 4"
+                    :key="`ci-skeleton-${i}`"
+                    class="flex items-center justify-between p-3 rounded-xl border border-default/60 bg-surface/30"
+                  >
+                    <div class="flex items-center gap-2">
+                      <USkeleton class="h-4 w-4 rounded-full" />
+                      <USkeleton class="h-3.5 w-40 rounded" />
+                    </div>
+                    <USkeleton class="h-4 w-16 rounded-full" />
+                  </div>
+                </div>
+
+                <div v-else-if="checkRuns.length === 0" class="py-12 text-center text-muted text-xs space-y-1">
+                  <UIcon name="i-lucide-shield-check" class="h-8 w-8 mx-auto mb-1 opacity-30" />
+                  <p>{{ t('provider.noChecksFound') }}</p>
+                </div>
+
+                <div v-else class="space-y-2">
+                  <div
+                    v-for="run in checkRuns"
+                    :key="run.id"
+                    class="flex items-center justify-between p-3 rounded-xl border border-default/70 bg-surface/40 hover:bg-surface/70 transition-colors"
+                  >
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <UIcon
+                        :name="run.conclusion === 'success' ? 'i-lucide-check-circle-2' :
+                               run.conclusion === 'failure' ? 'i-lucide-x-circle' :
+                               run.status === 'in_progress' ? 'i-lucide-loader-2' : 'i-lucide-circle'"
+                        class="h-4 w-4 shrink-0"
+                        :class="run.conclusion === 'success' ? 'text-success' :
+                                run.conclusion === 'failure' ? 'text-error' :
+                                run.status === 'in_progress' ? 'text-primary animate-spin' : 'text-muted'"
+                      />
+                      <span class="text-xs font-semibold text-highlighted truncate">{{ run.name }}</span>
+                    </div>
+                    <div class="flex items-center gap-3 shrink-0">
+                      <UBadge
+                        size="xs"
+                        :color="run.conclusion === 'success' ? 'success' : run.conclusion === 'failure' ? 'error' : 'neutral'"
+                        variant="subtle"
+                        class="capitalize text-[10px]"
+                      >
+                        {{ run.conclusion || run.status }}
+                      </UBadge>
+                      <a
+                        v-if="run.html_url"
+                        :href="run.html_url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="p-1 rounded text-muted hover:text-highlighted hover:bg-muted/30 transition-colors"
+                        title="Open job logs"
+                      >
+                        <UIcon name="i-lucide-external-link" class="h-3.5 w-3.5" />
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -601,6 +818,26 @@ const filteredPullRequests = computed(() => {
       </div>
     </template>
   </UModal>
+
+  <!-- Submit Review Modal -->
+  <PullRequestReviewModal
+    v-if="selectedPullRequest && matchedAccount && matchedRepositoryFullName"
+    v-model:open="isReviewModalOpen"
+    :pull-request="selectedPullRequest"
+    :account-identifier="matchedAccount.id"
+    :repository-full-name="matchedRepositoryFullName"
+    @review-submitted="loadPullRequestsForSelectedRepo"
+  />
+
+  <!-- Merge Pull Request Modal -->
+  <PullRequestMergeModal
+    v-if="selectedPullRequest && matchedAccount && matchedRepositoryFullName"
+    v-model:open="isMergeModalOpen"
+    :pull-request="selectedPullRequest"
+    :account-identifier="matchedAccount.id"
+    :repository-full-name="matchedRepositoryFullName"
+    @merged="handlePrMerged"
+  />
 
   <!-- Connect Account Modal (Prompted directly when needed) -->
   <ConnectProviderAccountModal

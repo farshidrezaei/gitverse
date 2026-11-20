@@ -5,7 +5,7 @@ use tauri::AppHandle;
 use tokio::sync::RwLock;
 use crate::domain::{
     ApplicationDiagnostics, ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
-    GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome, ProviderAccount, ProviderKind, RebaseBranchOutcome, RebasePlanItem, RecentRepositoryRecord, RemoteProjectRepository, RemotePullRequest, RepositoryOverview, StashRecord,
+    GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome, ProviderAccount, ProviderKind, PullRequestChangedFile, PullRequestMergeResult, RebaseBranchOutcome, RebasePlanItem, RecentRepositoryRecord, RemoteProjectRepository, RemotePullRequest, RemoteReviewComment, RepositoryOverview, StashRecord,
 };
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
 use crate::infrastructure::provider::{GitHubClient, GitLabClient};
@@ -833,6 +833,213 @@ impl ApplicationState {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
                 let pipeline_id = reference_or_pipeline_id.parse::<u64>().unwrap_or(0);
                 client.list_pipeline_jobs(&token, repository_full_name, pipeline_id).await
+            }
+        }
+    }
+
+    /// Fetches all comments and review notes for a pull or merge request.
+    pub async fn get_pull_request_comments(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        pull_request_number: u64,
+    ) -> Result<Vec<RemoteReviewComment>, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.get_pull_request_comments(&token, parts[0], parts[1], pull_request_number).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.get_merge_request_comments(&token, repository_full_name, pull_request_number).await
+            }
+        }
+    }
+
+    /// Posts a new comment to a pull or merge request.
+    pub async fn create_pull_request_comment(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        pull_request_number: u64,
+        body: &str,
+    ) -> Result<RemoteReviewComment, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.create_pull_request_comment(&token, parts[0], parts[1], pull_request_number, body).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.create_merge_request_comment(&token, repository_full_name, pull_request_number, body).await
+            }
+        }
+    }
+
+    /// Retrieves list of changed files and diff patches for a pull or merge request.
+    pub async fn get_pull_request_files(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        pull_request_number: u64,
+    ) -> Result<Vec<PullRequestChangedFile>, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.get_pull_request_files(&token, parts[0], parts[1], pull_request_number).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.get_merge_request_files(&token, repository_full_name, pull_request_number).await
+            }
+        }
+    }
+
+    /// Submits a review (Approve, Request Changes, Comment) on a pull or merge request.
+    pub async fn submit_pull_request_review(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        pull_request_number: u64,
+        action: &str,
+        body: Option<&str>,
+    ) -> Result<bool, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.submit_pull_request_review(&token, parts[0], parts[1], pull_request_number, action, body).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.submit_merge_request_review(&token, repository_full_name, pull_request_number, action, body).await
+            }
+        }
+    }
+
+    /// Merges a pull request or merge request with chosen method.
+    pub async fn merge_provider_pull_request(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        pull_request_number: u64,
+        merge_method: Option<&str>,
+        commit_title: Option<&str>,
+        commit_message: Option<&str>,
+        delete_source_branch: Option<bool>,
+    ) -> Result<PullRequestMergeResult, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.merge_pull_request(&token, parts[0], parts[1], pull_request_number, merge_method, commit_title, commit_message).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                let is_squash = merge_method == Some("squash");
+                client.merge_merge_request(&token, repository_full_name, pull_request_number, commit_message, Some(is_squash), delete_source_branch).await
+            }
+        }
+    }
+
+    /// Updates pull request lifecycle state (closed or open).
+    pub async fn update_pull_request_state(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        pull_request_number: u64,
+        new_state: &str,
+    ) -> Result<bool, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.update_pull_request_state(&token, parts[0], parts[1], pull_request_number, new_state).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.update_merge_request_state(&token, repository_full_name, pull_request_number, new_state).await
             }
         }
     }

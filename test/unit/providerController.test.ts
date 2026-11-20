@@ -164,5 +164,109 @@ describe('Provider Controller & Schemas Test Suite', () => {
         state: 'open',
       })
     })
+
+    it('retrieves pull request comments and posts new comment', async () => {
+      const mockComments = [
+        {
+          id: 'comment-1',
+          author_username: 'reviewer',
+          author_avatar_url: null,
+          body: 'Please add tests for edge cases',
+          path: null,
+          line_number: null,
+          created_at_timestamp: 1700000000,
+          updated_at_timestamp: 1700000000,
+        },
+      ]
+
+      mockInvoke.mockResolvedValueOnce(mockComments)
+      const commentsResult = await mockInvoke('get_pull_request_comments', {
+        accountIdentifier: 'acc-gh-1',
+        repositoryFullName: 'org/repo',
+        pullRequestNumber: 42,
+      })
+      expect(commentsResult).toEqual(mockComments)
+
+      const newComment = {
+        id: 'comment-2',
+        author_username: 'developer',
+        author_avatar_url: null,
+        body: 'Tests added in latest commit!',
+        path: null,
+        line_number: null,
+        created_at_timestamp: 1700000100,
+        updated_at_timestamp: 1700000100,
+      }
+      mockInvoke.mockResolvedValueOnce(newComment)
+      const postResult = await mockInvoke('create_pull_request_comment', {
+        accountIdentifier: 'acc-gh-1',
+        repositoryFullName: 'org/repo',
+        pullRequestNumber: 42,
+        body: 'Tests added in latest commit!',
+      })
+      expect(postResult).toEqual(newComment)
+    })
+
+    it('retrieves pull request changed files', async () => {
+      const mockFiles = [
+        {
+          file_path: 'src/lib.rs',
+          previous_file_path: null,
+          status: 'modified',
+          additions_count: 20,
+          deletions_count: 5,
+          changes_count: 25,
+          patch: '@@ -1,4 +1,20 @@',
+        },
+      ]
+
+      mockInvoke.mockResolvedValueOnce(mockFiles)
+      const filesResult = await mockInvoke('get_pull_request_files', {
+        accountIdentifier: 'acc-gh-1',
+        repositoryFullName: 'org/repo',
+        pullRequestNumber: 42,
+      })
+      expect(filesResult).toEqual(mockFiles)
+    })
+
+    it('submits review and merges pull request', async () => {
+      mockInvoke.mockResolvedValueOnce(true)
+      const reviewResult = await mockInvoke('submit_pull_request_review', {
+        accountIdentifier: 'acc-gh-1',
+        repositoryFullName: 'org/repo',
+        pullRequestNumber: 42,
+        action: 'APPROVE',
+        body: 'Looks great!',
+      })
+      expect(reviewResult).toBe(true)
+
+      const mockMergeResult = {
+        is_merged: true,
+        message: 'Pull request successfully merged',
+        commit_sha: 'abcdef1234567890',
+      }
+      mockInvoke.mockResolvedValueOnce(mockMergeResult)
+      const mergeOutcome = await mockInvoke('merge_provider_pull_request', {
+        accountIdentifier: 'acc-gh-1',
+        repositoryFullName: 'org/repo',
+        pullRequestNumber: 42,
+        mergeMethod: 'squash',
+        commitTitle: 'feat: add gitlab integration (#42)',
+        commitMessage: 'Squash commit body',
+        deleteSourceBranch: true,
+      })
+      expect(mergeOutcome).toEqual(mockMergeResult)
+    })
+
+    it('updates pull request state between open and closed', async () => {
+      mockInvoke.mockResolvedValueOnce(true)
+      const updateResult = await mockInvoke('update_pull_request_state', {
+        accountIdentifier: 'acc-gh-1',
+        repositoryFullName: 'org/repo',
+        pullRequestNumber: 42,
+        newState: 'closed',
+      })
+      expect(updateResult).toBe(true)
+    })
   })
 })

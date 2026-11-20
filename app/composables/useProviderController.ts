@@ -6,6 +6,11 @@ import type {
   PullRequestState,
   PipelineSummary,
   CiCheckRun,
+  PullRequestChangedFile,
+  PullRequestMergeResult,
+  PullRequestReviewAction,
+  PullRequestMergeMethod,
+  RemoteReviewComment,
 } from '~/types/provider'
 import { invokeTauriCommand } from '~/utils/tauriClient'
 
@@ -163,6 +168,126 @@ export function useProviderController() {
     }
   }
 
+  async function fetchPullRequestComments(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    pullRequestNumber: number,
+  ): Promise<RemoteReviewComment[]> {
+    try {
+      const result = await invokeTauriCommand<RemoteReviewComment[]>('get_pull_request_comments', {
+        accountIdentifier,
+        repositoryFullName,
+        pullRequestNumber,
+      })
+      return result || []
+    } catch (error) {
+      errorMessage.value = String(error)
+      return []
+    }
+  }
+
+  async function createPullRequestComment(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    pullRequestNumber: number,
+    body: string,
+  ): Promise<RemoteReviewComment | null> {
+    try {
+      return await invokeTauriCommand<RemoteReviewComment>('create_pull_request_comment', {
+        accountIdentifier,
+        repositoryFullName,
+        pullRequestNumber,
+        body,
+      })
+    } catch (error) {
+      errorMessage.value = String(error)
+      return null
+    }
+  }
+
+  async function fetchPullRequestFiles(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    pullRequestNumber: number,
+  ): Promise<PullRequestChangedFile[]> {
+    try {
+      const result = await invokeTauriCommand<PullRequestChangedFile[]>('get_pull_request_files', {
+        accountIdentifier,
+        repositoryFullName,
+        pullRequestNumber,
+      })
+      return result || []
+    } catch (error) {
+      errorMessage.value = String(error)
+      return []
+    }
+  }
+
+  async function submitPullRequestReview(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    pullRequestNumber: number,
+    action: PullRequestReviewAction,
+    body?: string,
+  ): Promise<boolean> {
+    try {
+      return await invokeTauriCommand<boolean>('submit_pull_request_review', {
+        accountIdentifier,
+        repositoryFullName,
+        pullRequestNumber,
+        action,
+        body: body || null,
+      })
+    } catch (error) {
+      errorMessage.value = String(error)
+      return false
+    }
+  }
+
+  async function mergePullRequest(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    pullRequestNumber: number,
+    mergeMethod?: PullRequestMergeMethod,
+    commitTitle?: string,
+    commitMessage?: string,
+    deleteSourceBranch?: boolean,
+  ): Promise<PullRequestMergeResult | null> {
+    try {
+      return await invokeTauriCommand<PullRequestMergeResult>('merge_provider_pull_request', {
+        accountIdentifier,
+        repositoryFullName,
+        pullRequestNumber,
+        mergeMethod: mergeMethod || null,
+        commitTitle: commitTitle || null,
+        commitMessage: commitMessage || null,
+        deleteSourceBranch: deleteSourceBranch ?? null,
+      })
+    } catch (error) {
+      errorMessage.value = String(error)
+      return null
+    }
+  }
+
+  async function updatePullRequestState(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    pullRequestNumber: number,
+    newState: 'open' | 'closed',
+  ): Promise<boolean> {
+    try {
+      return await invokeTauriCommand<boolean>('update_pull_request_state', {
+        accountIdentifier,
+        repositoryFullName,
+        pullRequestNumber,
+        newState,
+      })
+    } catch (error) {
+      errorMessage.value = String(error)
+      return false
+    }
+  }
+
   return {
     accounts,
     isLoading,
@@ -178,5 +303,11 @@ export function useProviderController() {
     fetchPullRequests,
     fetchCommitPipelineSummary,
     fetchCheckRuns,
+    fetchPullRequestComments,
+    createPullRequestComment,
+    fetchPullRequestFiles,
+    submitPullRequestReview,
+    mergePullRequest,
+    updatePullRequestState,
   }
 }

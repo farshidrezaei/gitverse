@@ -111,6 +111,12 @@ pub fn run() {
             commands::get_provider_pull_requests,
             commands::get_commit_pipeline_summary,
             commands::list_check_runs,
+            commands::get_pull_request_comments,
+            commands::create_pull_request_comment,
+            commands::get_pull_request_files,
+            commands::submit_pull_request_review,
+            commands::merge_provider_pull_request,
+            commands::update_pull_request_state,
             commands::open_external_url,
             commands::read_clipboard_text,
         ])

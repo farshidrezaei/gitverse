@@ -1,6 +1,9 @@
 use tauri::State;
 use crate::application::ApplicationState;
-use crate::domain::{ApplicationError, ProviderAccount, RemoteProjectRepository, RemotePullRequest};
+use crate::domain::{
+    ApplicationError, ProviderAccount, PullRequestChangedFile, PullRequestMergeResult,
+    RemoteProjectRepository, RemotePullRequest, RemoteReviewComment,
+};
 
 /// Tauri IPC command to connect a GitHub account via personal access token.
 #[tauri::command]
@@ -81,4 +84,86 @@ pub async fn list_check_runs(
     reference_or_pipeline_id: String,
 ) -> Result<Vec<crate::domain::CiCheckRun>, ApplicationError> {
     state.list_check_runs(&account_identifier, &repository_full_name, &reference_or_pipeline_id).await
+}
+
+/// Tauri IPC command to fetch comments on a pull or merge request.
+#[tauri::command]
+pub async fn get_pull_request_comments(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    pull_request_number: u64,
+) -> Result<Vec<RemoteReviewComment>, ApplicationError> {
+    state.get_pull_request_comments(&account_identifier, &repository_full_name, pull_request_number).await
+}
+
+/// Tauri IPC command to post a new comment to a pull or merge request.
+#[tauri::command]
+pub async fn create_pull_request_comment(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    pull_request_number: u64,
+    body: String,
+) -> Result<RemoteReviewComment, ApplicationError> {
+    state.create_pull_request_comment(&account_identifier, &repository_full_name, pull_request_number, &body).await
+}
+
+/// Tauri IPC command to fetch changed files and diff patches for a pull request.
+#[tauri::command]
+pub async fn get_pull_request_files(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    pull_request_number: u64,
+) -> Result<Vec<PullRequestChangedFile>, ApplicationError> {
+    state.get_pull_request_files(&account_identifier, &repository_full_name, pull_request_number).await
+}
+
+/// Tauri IPC command to submit a formal review (Approve, Request Changes, Comment) on a PR.
+#[tauri::command]
+pub async fn submit_pull_request_review(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    pull_request_number: u64,
+    action: String,
+    body: Option<String>,
+) -> Result<bool, ApplicationError> {
+    state.submit_pull_request_review(&account_identifier, &repository_full_name, pull_request_number, &action, body.as_deref()).await
+}
+
+/// Tauri IPC command to merge a pull or merge request.
+#[tauri::command]
+pub async fn merge_provider_pull_request(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    pull_request_number: u64,
+    merge_method: Option<String>,
+    commit_title: Option<String>,
+    commit_message: Option<String>,
+    delete_source_branch: Option<bool>,
+) -> Result<PullRequestMergeResult, ApplicationError> {
+    state.merge_provider_pull_request(
+        &account_identifier,
+        &repository_full_name,
+        pull_request_number,
+        merge_method.as_deref(),
+        commit_title.as_deref(),
+        commit_message.as_deref(),
+        delete_source_branch,
+    ).await
+}
+
+/// Tauri IPC command to update pull request state (closed or open).
+#[tauri::command]
+pub async fn update_pull_request_state(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    pull_request_number: u64,
+    new_state: String,
+) -> Result<bool, ApplicationError> {
+    state.update_pull_request_state(&account_identifier, &repository_full_name, pull_request_number, &new_state).await
 }

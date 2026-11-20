@@ -78,6 +78,26 @@ export interface RemoteReviewComment {
   updated_at_timestamp: number
 }
 
+export interface PullRequestChangedFile {
+  file_path: string
+  previous_file_path: string | null
+  status: string
+  additions_count: number
+  deletions_count: number
+  changes_count: number
+  patch: string | null
+}
+
+export type PullRequestReviewAction = 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'
+
+export type PullRequestMergeMethod = 'merge' | 'squash' | 'rebase'
+
+export interface PullRequestMergeResult {
+  is_merged: boolean
+  message: string
+  commit_sha: string | null
+}
+
 export interface RemoteProjectRepository {
   id: string
   name: string
