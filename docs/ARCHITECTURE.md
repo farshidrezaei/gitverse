@@ -96,7 +96,7 @@ flowchart LR
 | **Type Validation & Schemas** | Runtime parameter validation using Zod for frontend and serde/domain validators for Rust. | `app/schemas/`, `src-tauri/src/domain/validation.rs` |
 | **Rust Tauri Commands** | Structured command dispatch, argument validation, and error propagation via `thiserror`. | `src-tauri/src/commands/repository.rs`, `commands/provider.rs` |
 | **Domain Services** | Computational algorithms (DAG generation, deterministic lane assignment, diff parsing). | `src-tauri/src/services/graph.rs`, `infrastructure/git/diff.rs` |
-| **Infrastructure Adapters** | External boundaries: Git CLI process executor, SQLite database manager, OS Keyring, Reqwest HTTP client. | `infrastructure/git/`, `infrastructure/storage/`, `infrastructure/security/`, `infrastructure/provider/` |
+| **Infrastructure Adapters** | External boundaries: Git CLI process executor, SQLite database manager, OS Keyring, Reqwest HTTP client, privacy-safe logger & diagnostics. | `infrastructure/git/`, `infrastructure/storage/`, `infrastructure/security/`, `infrastructure/provider/`, `infrastructure/diagnostics.rs` |
 
 ---
 
@@ -231,9 +231,9 @@ gitverse/
 │   │   ├── application/              # Application lifecycle, state containers
 │   │   ├── commands/                 # Tauri IPC command dispatchers
 │   │   ├── domain/                   # Pure business entities, enums, and validators
-│   │   ├── infrastructure/           # Process runner, SQLite, Keyring, Git adapters
-│   │   ├── services/                 # Graph DAG computation algorithms
+│   │   ├── infrastructure/           # Process runner, SQLite, Keyring, Git adapters, diagnostics logger
+│   │   ├── services/                 # Graph DAG computation algorithms & benchmarks
 │   │   ├── lib.rs                    # Plugin registration, invoke handlers, initialization
 │   │   └── main.rs                   # Desktop entrypoint
-└── test/                             # Frontend Vitest test suites (97 passing unit tests)
+└── test/                             # Frontend Vitest test suites (107 passing unit & E2E tests)
 ```

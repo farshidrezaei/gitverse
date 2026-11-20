@@ -621,6 +621,14 @@ pub async fn get_application_diagnostics(
     state.get_application_diagnostics().await
 }
 
+/// Tauri IPC command to export a sanitized diagnostic bundle for troubleshooting.
+#[tauri::command]
+pub async fn export_diagnostic_bundle(
+    state: State<'_, ApplicationState>,
+) -> Result<crate::infrastructure::diagnostics::DiagnosticBundle, ApplicationError> {
+    state.export_diagnostic_bundle().await
+}
+
 /// Tauri IPC command to open an external URL in the default system browser.
 #[tauri::command]
 pub async fn open_external_url(url: String) -> Result<(), ApplicationError> {

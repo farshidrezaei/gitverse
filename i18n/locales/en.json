@@ -243,6 +243,8 @@
       "copyDiagnostics": "Copy Diagnostics",
       "copied": "Copied!",
       "diagnosticsCopied": "Copied system diagnostics to clipboard",
+      "exportDiagnostics": "Export Bundle",
+      "diagnosticsExported": "Diagnostics bundle exported successfully",
       "osArchLabel": "OS / Architecture",
       "gitVersionLabel": "Git Version",
       "gitPathLabel": "Git Binary Path",

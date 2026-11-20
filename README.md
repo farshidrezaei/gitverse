@@ -108,11 +108,17 @@ npm run tauri dev
 ### Running Test Suites
 
 ```bash
-# Run all frontend tests (97 Vitest unit tests)
-npm run test
+# Run all frontend tests (107 Vitest unit & E2E tests)
+npm run test:unit
 
-# Run Rust tests (39 unit, matrix, and property tests)
+# Run Rust tests (46 unit, integration, benchmark, and property tests)
 cargo test --manifest-path src-tauri/Cargo.toml
+
+# Validate internationalization dictionary parity (en & fa)
+npm run validate:i18n
+
+# Typecheck TypeScript codebase
+npm run typecheck
 
 # Production verification build
 npm run build

@@ -117,4 +117,60 @@ mod tests {
             prop_assert_eq!(result1.nodes.len(), chain_length);
         }
     }
+
+    #[test]
+    fn test_benchmark_graph_construction_2000_commits() {
+        use std::time::Instant;
+
+        let total_commits = 2000;
+        let mut commits = Vec::with_capacity(total_commits);
+
+        for index in (1..=total_commits).rev() {
+            let mut parents = Vec::new();
+            if index > 1 {
+                parents.push(format!("hash_{}", index - 1));
+            }
+            if index % 5 == 0 && index > 10 {
+                parents.push(format!("hash_{}", index - 8));
+            }
+
+            commits.push(create_test_commit(&format!("hash_{}", index), parents.iter().map(|s| s.as_str()).collect()));
+        }
+
+        let start_time = Instant::now();
+        let graph = CommitGraphEngine::build_graph(commits);
+        let duration = start_time.elapsed();
+
+        assert_eq!(graph.nodes.len(), total_commits);
+        assert!(graph.max_lane_index >= 1);
+        assert!(duration.as_millis() < 250, "Graph layout for 2,000 commits must complete within 250ms, took {:?}", duration);
+    }
+
+    #[test]
+    fn test_benchmark_graph_construction_10000_commits() {
+        use std::time::Instant;
+
+        let total_commits = 10000;
+        let mut commits = Vec::with_capacity(total_commits);
+
+        for index in (1..=total_commits).rev() {
+            let mut parents = Vec::new();
+            if index > 1 {
+                parents.push(format!("hash_{}", index - 1));
+            }
+            if index % 7 == 0 && index > 15 {
+                parents.push(format!("hash_{}", index - 12));
+            }
+
+            commits.push(create_test_commit(&format!("hash_{}", index), parents.iter().map(|s| s.as_str()).collect()));
+        }
+
+        let start_time = Instant::now();
+        let graph = CommitGraphEngine::build_graph(commits);
+        let duration = start_time.elapsed();
+
+        assert_eq!(graph.nodes.len(), total_commits);
+        assert!(graph.max_lane_index >= 1);
+        assert!(duration.as_millis() < 1200, "Graph layout for 10,000 commits must complete within 1200ms, took {:?}", duration);
+    }
 }

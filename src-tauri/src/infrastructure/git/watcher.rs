@@ -69,7 +69,9 @@ impl RepositoryWatcherManager {
             };
 
             if let Err(error) = debouncer.watcher().watch(&repo_path, RecursiveMode::Recursive) {
-                tracing::error!("Failed to watch repository directory {:?}: {:?}", repo_path, error);
+                let message = format!("Failed to watch repository directory {:?}: {:?}", repo_path, error);
+                crate::infrastructure::diagnostics::append_diagnostic_log("warn", &message);
+                tracing::error!("{}", message);
                 return;
             }
 
@@ -88,7 +90,9 @@ impl RepositoryWatcherManager {
                         }
                     }
                     Ok(DebounceEventResult::Err(errors)) => {
-                        tracing::warn!("Watcher error events: {:?}", errors);
+                        let message = format!("Watcher error events: {:?}", errors);
+                        crate::infrastructure::diagnostics::append_diagnostic_log("warn", &message);
+                        tracing::warn!("{}", message);
                     }
                     Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                         if let Ok(guard) = target_path_clone.lock() {

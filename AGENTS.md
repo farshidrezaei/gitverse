@@ -103,6 +103,13 @@ A feature is **not** complete when it compiles. Required coverage:
 
 ## 5. Mandatory Project Documentation
 
+### 5.1. Mandatory Documentation Synchronization Contract
+Every contributor and coding agent is bound to this permanent contract:
+- **Zero Drift Principle**: Whenever code is added, updated, or removed (Tauri IPC commands, Rust domain modules/services, frontend components, composables, stores, or configuration), all affected documentation (`AGENTS.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md`, `docs/modules/*`, etc.) **MUST be updated synchronously within the same task or commit**.
+- Submitting code changes without updating corresponding documentation violates the engineering constitution and fails the Definition of Done.
+- Documentation must always reflect actual live code symbols, accurate test metrics, and current architectural reality.
+
+### 5.2. Monitored Documentation Suite
 Keep these documents synchronized with every architectural or behavioral change:
 - `AGENTS.md` — Permanent engineering constitution
 - `README.md` — Product overview, architecture, development workflow
@@ -110,8 +117,9 @@ Keep these documents synchronized with every architectural or behavioral change:
 - `docs/DECISIONS.md` — Architectural Decision Records (ADRs)
 - `docs/DESIGN-SYSTEM.md` — Design tokens, customizable themes, and UI standards
 - `docs/I18N.md` — Localization structure, RTL/LTR rules, CI validation
-- `docs/TESTING.md` — Testing strategy, fixtures, commands
+- `docs/TESTING.md` — Testing strategy, fixtures, benchmarks, commands
 - `docs/DEVELOPMENT.md` — Local environment, build, and contribution workflow
+- `docs/modules/` — Deep architectural domain module specifications
 
 ---
 
@@ -129,4 +137,4 @@ Before marking any task complete, verify all applicable items:
 9. High-fidelity zero-CLS skeletons (`USkeleton`) implemented for all loading states (strictly no generic content spinners or "Loading..." text), plus complete empty and error states.
 10. Table-driven, matrix, property, or integration tests written and passing.
 11. Formatting, linting, type checking, and test suites executed after final edits.
-12. Documentation updated if contracts or behavior changed.
+12. **Documentation synchronously updated across all relevant docs files for any added, modified, or removed code/features (mandatory contract).**

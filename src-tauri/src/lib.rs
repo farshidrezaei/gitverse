@@ -35,6 +35,12 @@ pub fn run() {
                 let _ = fs::create_dir_all(&app_data_directory);
             }
 
+            let logs_directory = app_data_directory.join("logs");
+            let _ = fs::create_dir_all(&logs_directory);
+            let log_file_path = logs_directory.join("gitverse.log");
+            crate::infrastructure::diagnostics::configure_diagnostic_log_file(log_file_path);
+            crate::infrastructure::diagnostics::append_diagnostic_log("info", "GitVerse desktop application runtime initializing...");
+
             let database_path = app_data_directory.join("gitverse_workspace.sqlite");
             let state = ApplicationState::new(&database_path).map_err(|error| {
                 tracing::error!("Failed to initialize ApplicationState: {:?}", error);
@@ -103,6 +109,7 @@ pub fn run() {
             commands::get_rebase_commits,
             commands::execute_interactive_rebase,
             commands::get_application_diagnostics,
+            commands::export_diagnostic_bundle,
             commands::connect_github_account,
             commands::connect_gitlab_account,
             commands::list_provider_accounts,

@@ -243,6 +243,8 @@
       "copyDiagnostics": "کپی مشخصات سیستم",
       "copied": "کپی شد!",
       "diagnosticsCopied": "مشخصات عیب‌یابی سیستم در کلیپ‌بورد ذخیره شد",
+      "exportDiagnostics": "خروجی بسته گزارش",
+      "diagnosticsExported": "بسته گزارش عیب‌یابی با موفقیت ذخیره شد",
       "osArchLabel": "سیستم‌عامل و معماری",
       "gitVersionLabel": "نسخه گیت",
       "gitPathLabel": "مسیر باینری گیت",

@@ -656,6 +656,31 @@ impl ApplicationState {
         })
     }
 
+    /// Exports a complete, sanitized diagnostic bundle with environment info and recent logs.
+    pub async fn export_diagnostic_bundle(&self) -> Result<crate::infrastructure::diagnostics::DiagnosticBundle, ApplicationError> {
+        let git_info = self.discover_git(None).await?;
+        let current_repo = self.current_repository.read().await;
+        let repo_path = current_repo.as_ref().map(|r| r.path.clone());
+        let accounts = self.store.list_provider_accounts().unwrap_or_default();
+        let connected_providers = accounts
+            .into_iter()
+            .map(|account| format!("{}: {}", account.provider, account.username))
+            .collect();
+        let recent_logs = crate::infrastructure::diagnostics::get_recent_diagnostic_logs(100);
+
+        Ok(crate::infrastructure::diagnostics::DiagnosticBundle {
+            application_version: env!("CARGO_PKG_VERSION").to_string(),
+            operating_system: std::env::consts::OS.to_string(),
+            architecture: std::env::consts::ARCH.to_string(),
+            git_binary_path: git_info.executable_path,
+            git_version: git_info.version_string,
+            current_repository_path: repo_path,
+            generated_at_iso: chrono::Utc::now().to_rfc3339(),
+            connected_providers,
+            recent_log_entries: recent_logs,
+        })
+    }
+
     /// Connects and validates a GitHub account using personal access token.
     pub async fn connect_github_account(
         &self,
@@ -831,7 +856,16 @@ impl ApplicationState {
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                let pipeline_id = reference_or_pipeline_id.parse::<u64>().unwrap_or(0);
+                let mut pipeline_id = reference_or_pipeline_id.parse::<u64>().unwrap_or(0);
+                if pipeline_id == 0 {
+                    if let Ok(Some(summary)) = client.get_commit_pipeline_summary(&token, repository_full_name, reference_or_pipeline_id).await {
+                        if let Some(ref web_url) = summary.web_url {
+                            if let Some(last_segment) = web_url.split('/').last() {
+                                pipeline_id = last_segment.parse::<u64>().unwrap_or(0);
+                            }
+                        }
+                    }
+                }
                 client.list_pipeline_jobs(&token, repository_full_name, pipeline_id).await
             }
         }

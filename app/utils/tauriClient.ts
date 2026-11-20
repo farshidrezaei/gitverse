@@ -82,3 +82,49 @@ export async function readClipboardText(): Promise<string> {
 
   return ''
 }
+
+/**
+ * Unpacks any backend IPC or frontend runtime error into a clean, human-readable message.
+ * Completely eliminates "[object Object]" toasts and unhandled crashes.
+ */
+export function formatApplicationError(error: unknown, fallbackMessage?: string): string {
+  if (!error) {
+    return fallbackMessage || 'An unexpected error occurred'
+  }
+
+  if (typeof error === 'string') {
+    const trimmed = error.trim()
+    return trimmed.length > 0 ? trimmed : (fallbackMessage || 'An unexpected error occurred')
+  }
+
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (typeof error === 'object') {
+    const record = error as Record<string, unknown>
+    if (typeof record.message === 'string' && record.message.trim().length > 0) {
+      return record.message.trim()
+    }
+    if (typeof record.error === 'string' && record.error.trim().length > 0) {
+      return record.error.trim()
+    }
+    if (typeof record.stderr === 'string' && record.stderr.trim().length > 0) {
+      return record.stderr.trim()
+    }
+    if (typeof record.type === 'string' && record.type.trim().length > 0) {
+      return record.type.trim()
+    }
+  }
+
+  try {
+    const serialized = JSON.stringify(error)
+    if (serialized && serialized !== '{}') {
+      return serialized
+    }
+  } catch {
+    // Ignore stringify errors
+  }
+
+  return fallbackMessage || 'An unexpected error occurred'
+}

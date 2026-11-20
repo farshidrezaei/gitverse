@@ -7,6 +7,7 @@ const { notifySuccess, notifyError } = useNotificationService()
 const diagnostics = ref<ApplicationDiagnostics | null>(null)
 const isLoadingDiagnostics = ref<boolean>(false)
 const isCopied = ref<boolean>(false)
+const isExporting = ref<boolean>(false)
 
 async function isTauriEnvironment(): Promise<boolean> {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
@@ -62,6 +63,48 @@ async function copyDiagnostics(): Promise<void> {
   }
 }
 
+async function exportDiagnosticsBundle(): Promise<void> {
+  isExporting.value = true
+  try {
+    let bundle: unknown
+    if (await isTauriEnvironment()) {
+      const { invoke } = await import('@tauri-apps/api/core')
+      bundle = await invoke('export_diagnostic_bundle')
+    } else {
+      bundle = {
+        application_version: '0.1.0',
+        operating_system: 'linux',
+        architecture: 'x86_64',
+        git_binary_path: '/usr/bin/git',
+        git_version: 'git version 2.43.0',
+        current_repository_path: '/home/farshid/Desktop/self/gitverse',
+        generated_at_iso: new Date().toISOString(),
+        connected_providers: [],
+        recent_log_entries: [
+          { timestamp: new Date().toISOString(), level: 'INFO', message: 'Diagnostics snapshot generated.' },
+        ],
+      }
+    }
+
+    const jsonString = JSON.stringify(bundle, null, 2)
+    const blob = new Blob([jsonString], { type: 'application/json' })
+    const downloadUrl = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = downloadUrl
+    anchor.download = `gitverse-diagnostics-${new Date().toISOString().replace(/[:.]/g, '-')}.json`
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
+    URL.revokeObjectURL(downloadUrl)
+
+    notifySuccess(t('settings.about.diagnosticsExported'))
+  } catch (error) {
+    notifyError(String(error))
+  } finally {
+    isExporting.value = false
+  }
+}
+
 onMounted(() => {
   void loadDiagnostics()
 })
@@ -109,15 +152,27 @@ onMounted(() => {
           </h3>
         </div>
 
-        <UButton
-          size="xs"
-          :color="isCopied ? 'success' : 'neutral'"
-          :variant="isCopied ? 'soft' : 'outline'"
-          :icon="isCopied ? 'i-lucide-check' : 'i-lucide-copy'"
-          :label="isCopied ? t('settings.about.copied') : t('settings.about.copyDiagnostics')"
-          :loading="isLoadingDiagnostics"
-          @click="copyDiagnostics"
-        />
+        <div class="flex items-center gap-2">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-download"
+            :label="t('settings.about.exportDiagnostics')"
+            :loading="isExporting"
+            @click="exportDiagnosticsBundle"
+          />
+
+          <UButton
+            size="xs"
+            :color="isCopied ? 'success' : 'neutral'"
+            :variant="isCopied ? 'soft' : 'outline'"
+            :icon="isCopied ? 'i-lucide-check' : 'i-lucide-copy'"
+            :label="isCopied ? t('settings.about.copied') : t('settings.about.copyDiagnostics')"
+            :loading="isLoadingDiagnostics"
+            @click="copyDiagnostics"
+          />
+        </div>
       </div>
 
       <div v-if="diagnostics" class="divide-y divide-default/50 pt-2 font-mono text-[11px]">

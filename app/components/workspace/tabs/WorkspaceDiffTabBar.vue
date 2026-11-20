@@ -120,7 +120,7 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
 
         <UBadge
           size="xs"
-          :color="prTab.pullRequest.state === 'open' ? 'success' : prTab.pullRequest.merged_at ? 'primary' : 'neutral'"
+          :color="prTab.pullRequest.state === 'open' ? 'success' : prTab.pullRequest.state === 'merged' ? 'primary' : 'neutral'"
           variant="subtle"
           class="text-[9px] px-1 py-0 leading-none"
         >

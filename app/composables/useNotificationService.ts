@@ -43,14 +43,8 @@ export function useNotificationService() {
   }
 
   function notifyError(title: string, errorOrMessage?: unknown): void {
-    let description: string | undefined
-    if (typeof errorOrMessage === 'string') {
-      description = errorOrMessage
-    } else if (errorOrMessage instanceof Error) {
-      description = errorOrMessage.message
-    } else if (errorOrMessage && typeof errorOrMessage === 'object' && 'message' in errorOrMessage) {
-      description = String((errorOrMessage as { message: unknown }).message)
-    }
+    const formatted = formatApplicationError(errorOrMessage)
+    const description = formatted === title ? undefined : formatted
 
     showNotification({
       title,

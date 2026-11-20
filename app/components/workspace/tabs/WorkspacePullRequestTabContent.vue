@@ -30,7 +30,6 @@ const isLoadingChecks = ref(false)
 const pullRequest = computed<RemotePullRequest>(() => properties.tab.pullRequest)
 
 async function loadChecks(): Promise<void> {
-  if (properties.tab.account.provider_kind !== 'github') return
   isLoadingChecks.value = true
   try {
     checkRuns.value = await fetchCheckRuns(
@@ -55,14 +54,16 @@ watch(
 async function handleToggleState(action: 'close' | 'reopen'): Promise<void> {
   isUpdatingState.value = true
   try {
-    const updated = await updatePullRequestState(
+    const targetState: 'open' | 'closed' = action === 'close' ? 'closed' : 'open'
+    const isSuccess = await updatePullRequestState(
       properties.tab.account.id,
       properties.tab.repositoryFullName,
       pullRequest.value.number,
-      action,
+      targetState,
     )
-    pullRequest.value.state = updated.state
-    pullRequest.value.closed_at = updated.closed_at
+    if (isSuccess) {
+      pullRequest.value.state = targetState
+    }
   } finally {
     isUpdatingState.value = false
   }
@@ -72,9 +73,9 @@ function handleReviewSubmitted(): void {
   // Trigger refresh of comments if on conversation tab
 }
 
-function handleMerged(mergedPr: RemotePullRequest): void {
-  pullRequest.value.state = mergedPr.state
-  pullRequest.value.merged_at = mergedPr.merged_at
+function handleMerged(): void {
+  pullRequest.value.state = 'merged'
+  pullRequest.value.merged_at_timestamp = Date.now()
 }
 </script>
 
@@ -85,11 +86,11 @@ function handleMerged(mergedPr: RemotePullRequest): void {
       <div class="flex items-center gap-3 min-w-0">
         <UBadge
           size="md"
-          :color="pullRequest.state === 'open' ? 'success' : pullRequest.merged_at ? 'primary' : 'neutral'"
+          :color="pullRequest.state === 'open' ? 'success' : pullRequest.state === 'merged' ? 'primary' : 'neutral'"
           variant="subtle"
           class="font-semibold capitalize px-2 py-0.5 text-xs shrink-0"
         >
-          {{ pullRequest.merged_at ? t('provider.merged') : pullRequest.state }}
+          {{ pullRequest.state === 'merged' ? t('provider.merged') : pullRequest.state }}
         </UBadge>
 
         <h1 class="text-base font-bold text-highlighted truncate">
@@ -131,7 +132,7 @@ function handleMerged(mergedPr: RemotePullRequest): void {
         />
 
         <UButton
-          v-else-if="!pullRequest.merged_at"
+          v-else-if="pullRequest.state !== 'merged'"
           size="xs"
           color="neutral"
           variant="outline"
@@ -275,7 +276,6 @@ function handleMerged(mergedPr: RemotePullRequest): void {
               />
               <div>
                 <h4 class="text-sm font-semibold text-highlighted">{{ run.name }}</h4>
-                <p v-if="run.summary" class="text-xs text-muted">{{ run.summary }}</p>
               </div>
             </div>
 
@@ -289,12 +289,12 @@ function handleMerged(mergedPr: RemotePullRequest): void {
                 {{ run.conclusion || run.status }}
               </UBadge>
               <UButton
-                v-if="run.details_url"
+                v-if="run.html_url"
                 size="xs"
                 color="neutral"
                 variant="ghost"
                 icon="i-lucide-external-link"
-                :to="run.details_url"
+                :to="run.html_url"
                 target="_blank"
               />
             </div>
