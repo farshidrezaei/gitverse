@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use base64::Engine;
 use crate::domain::{
     ApplicationError, BisectState, ConflictFileDetails, DirectoryListing, FolderEntry, GitWorktreeSummary, InteractiveRebaseRequest,
-    MergeBranchOutcome, RebaseBranchOutcome, RebasePlanItem, RepositoryOperationState, RepositoryOverview, StashRecord,
+    MergeBranchOutcome, PatchCheckResult, RebaseBranchOutcome, RebasePlanItem, RepositoryOperationState, RepositoryOverview, StashRecord,
 };
 use crate::domain::validation::{
     validate_branch_name, validate_commit_message, validate_remote_name, validate_remote_url,
@@ -1855,6 +1855,139 @@ impl GitRepositoryInspector {
 
         self.executor
             .execute_git_command(Some(directory_path), &["bisect", "reset"])
+            .await?;
+
+        Ok(())
+    }
+
+    /// Exports repository changes or a specific commit as a unified patch string.
+    pub async fn export_patch(
+        &self,
+        directory_path: &Path,
+        scope: &str,
+        commit_hash: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        match scope.trim().to_lowercase().as_str() {
+            "staged" => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["diff", "--cached"])
+                    .await
+            }
+            "unstaged" => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["diff"])
+                    .await
+            }
+            "working_tree" => {
+                self.executor
+                    .execute_git_command(Some(directory_path), &["diff", "HEAD"])
+                    .await
+            }
+            "commit" => {
+                let hash = commit_hash.ok_or_else(|| {
+                    ApplicationError::InvalidInput("Commit hash is required when exporting commit patch".to_string())
+                })?;
+                self.executor
+                    .execute_git_command(Some(directory_path), &["format-patch", "-1", hash.trim(), "--stdout"])
+                    .await
+            }
+            other => Err(ApplicationError::InvalidInput(format!(
+                "Invalid patch export scope: {other}. Expected 'staged', 'unstaged', 'working_tree', or 'commit'."
+            ))),
+        }
+    }
+
+    /// Validates if a unified diff patch can be applied cleanly without conflicts.
+    pub async fn check_patch(
+        &self,
+        directory_path: &Path,
+        patch_content: &str,
+    ) -> Result<PatchCheckResult, ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        let mut affected_files = Vec::new();
+        for line in patch_content.lines() {
+            if let Some(rest) = line.strip_prefix("diff --git a/") {
+                if let Some(space_index) = rest.find(" b/") {
+                    let file_path = rest[..space_index].to_string();
+                    if !affected_files.contains(&file_path) {
+                        affected_files.push(file_path);
+                    }
+                }
+            }
+        }
+
+        let check_result = self
+            .executor
+            .execute_git_command_with_stdin(
+                Some(directory_path),
+                &["apply", "--check", "--whitespace=nowarn", "-"],
+                patch_content.as_bytes(),
+            )
+            .await;
+
+        match check_result {
+            Ok(_) => Ok(PatchCheckResult {
+                can_apply: true,
+                error_message: None,
+                affected_files,
+            }),
+            Err(error) => {
+                let error_message = match error {
+                    ApplicationError::GitExecutionFailed { message, .. } => message,
+                    other => other.to_string(),
+                };
+                Ok(PatchCheckResult {
+                    can_apply: false,
+                    error_message: Some(error_message),
+                    affected_files,
+                })
+            }
+        }
+    }
+
+    /// Applies a unified diff patch to the repository (either working tree or staging index).
+    pub async fn apply_patch_file(
+        &self,
+        directory_path: &Path,
+        patch_content: &str,
+        is_cached: bool,
+        is_reverse: bool,
+    ) -> Result<(), ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        let mut arguments: Vec<&str> = vec!["apply", "--recount", "--whitespace=nowarn"];
+        if is_cached {
+            arguments.push("--cached");
+        }
+        if is_reverse {
+            arguments.push("--reverse");
+        }
+        arguments.push("-");
+
+        self.executor
+            .execute_git_command_with_stdin(
+                Some(directory_path),
+                &arguments,
+                patch_content.as_bytes(),
+            )
             .await?;
 
         Ok(())

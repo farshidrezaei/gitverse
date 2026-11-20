@@ -390,6 +390,15 @@ pub struct BisectState {
     pub log_output: String,
 }
 
+/// Result of verifying if a patch file applies cleanly without conflicts.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PatchCheckResult {
+    pub can_apply: bool,
+    pub error_message: Option<String>,
+    pub affected_files: Vec<String>,
+}
+
+
 
 
 

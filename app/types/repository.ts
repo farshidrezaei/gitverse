@@ -252,6 +252,14 @@ export interface BisectState {
   log_output: string
 }
 
+export type PatchExportScope = 'staged' | 'unstaged' | 'working_tree' | 'commit'
+
+export interface PatchCheckResult {
+  can_apply: boolean
+  error_message?: string | null
+  affected_files: string[]
+}
+
 export interface MergeBranchOutcome {
   is_successful: boolean
   has_conflicts: boolean

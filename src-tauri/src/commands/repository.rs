@@ -131,6 +131,50 @@ pub async fn discard_patch(
     state.discard_patch(directory_path.as_deref(), &patch_content).await
 }
 
+/// Tauri IPC command to export repository changes or a commit as a patch.
+#[tauri::command]
+pub async fn export_patch(
+    state: State<'_, ApplicationState>,
+    scope: String,
+    commit_hash: Option<String>,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state
+        .export_patch(directory_path.as_deref(), &scope, commit_hash.as_deref())
+        .await
+}
+
+/// Tauri IPC command to test if a patch can apply cleanly without conflicts.
+#[tauri::command]
+pub async fn check_patch(
+    state: State<'_, ApplicationState>,
+    patch_content: String,
+    directory_path: Option<String>,
+) -> Result<crate::domain::PatchCheckResult, ApplicationError> {
+    state
+        .check_patch(directory_path.as_deref(), &patch_content)
+        .await
+}
+
+/// Tauri IPC command to apply a unified diff patch to working tree or staging index.
+#[tauri::command]
+pub async fn apply_patch_file(
+    state: State<'_, ApplicationState>,
+    patch_content: String,
+    is_cached: bool,
+    is_reverse: bool,
+    directory_path: Option<String>,
+) -> Result<(), ApplicationError> {
+    state
+        .apply_patch_file(
+            directory_path.as_deref(),
+            &patch_content,
+            is_cached,
+            is_reverse,
+        )
+        .await
+}
+
 /// Tauri IPC command to commit staged changes.
 #[tauri::command]
 pub async fn commit(

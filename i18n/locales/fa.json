@@ -740,5 +740,38 @@
       "culpritFound": "اولین کامیت ایجادکننده باگ شناسایی شد!",
       "reset": "جلسه Git Bisect متوقف و به وضعیت اولیه بازگردانده شد"
     }
+  },
+  "patch": {
+    "exportTitle": "خروجی فایل پچ (Patch)",
+    "exportSubtitle": "تولید فایل‌های استاندارد diff یا format-patch جهت اشتراک‌گذاری یا آرشیو تغییرات.",
+    "applyTitle": "اعمال فایل پچ (Apply Patch)",
+    "applySubtitle": "وارد کردن و اعمال فایل پچ با اعتبارسنجی پیش از اجرا و بررسی عدم تداخل.",
+    "scopeLabel": "محدوده تغییرات",
+    "scopeWorkingTree": "کل محیط کاری",
+    "scopeStaged": "فقط Stage شده",
+    "scopeUnstaged": "فقط Stage نشده",
+    "scopeCommit": "کامیت مشخص",
+    "commitHashLabel": "هش یا مرجع کامیت هدف",
+    "previewLabel": "پیش‌نمایش محتوای پچ",
+    "linesCount": "خط",
+    "emptyPatch": "بدون تغییرات",
+    "noChangesToExport": "هیچ تغییری در محدوده انتخابی یافت نشد.",
+    "copyPatch": "کپی محتوای پچ",
+    "downloadFile": "ذخیره فایل patch.",
+    "pasteOrUploadLabel": "متن یا فایل پچ",
+    "chooseFile": "انتخاب فایل patch.",
+    "inputPlaceholder": "محتوای diff یا پچ را اینجا قرار دهید (شروع با diff --git یا From)...",
+    "checkSuccess": "پچ کاملاً تمیز و بدون هیچ‌گونه تداخل قابل اعمال است",
+    "checkFailed": "پچ دارای تداخل است و امکان اعمال تمیز وجود ندارد",
+    "affectedFiles": "فایل‌های تحت تاثیر",
+    "applyToStaged": "اعمال مستقیم روی فهرست تغییرات (--cached)",
+    "reversePatch": "اعمال به صورت معکوس (--reverse)",
+    "validateAction": "بررسی صحت پچ",
+    "applyAction": "اعمال نهایی پچ",
+    "notifications": {
+      "copied": "محتوای پچ در حافظه کلیپ‌بورد کپی شد",
+      "downloaded": "فایل پچ با موفقیت ذخیره شد",
+      "applied": "پچ با موفقیت روی مخزن اعمال شد"
+    }
   }
 }

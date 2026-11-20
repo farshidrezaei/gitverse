@@ -476,4 +476,52 @@ mod tests {
         let final_status = inspector.get_bisect_status(repository_path).await.expect("get bisect status after reset");
         assert!(!final_status.is_active);
     }
+
+    #[tokio::test]
+    async fn test_export_check_and_apply_patch() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        std::fs::write(repository_path.join("file.txt"), "line 1\nline 2\n").expect("write file");
+        Command::new("git").args(["add", "file.txt"]).current_dir(repository_path).output().expect("git add");
+        Command::new("git").args(["commit", "-m", "initial commit"]).current_dir(repository_path).output().expect("git commit");
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        // Modify file
+        std::fs::write(repository_path.join("file.txt"), "line 1\nmodified line 2\nline 3\n").expect("write file");
+
+        // Export patch for unstaged changes
+        let patch = inspector.export_patch(repository_path, "unstaged", None).await.expect("export patch");
+        assert!(patch.contains("modified line 2"));
+
+        // Restore clean working tree
+        Command::new("git").args(["checkout", "--", "."]).current_dir(repository_path).output().expect("git checkout");
+        let clean_content = std::fs::read_to_string(repository_path.join("file.txt")).expect("read file");
+        assert_eq!(clean_content, "line 1\nline 2\n");
+
+        // Pre-check valid patch
+        let check_clean = inspector.check_patch(repository_path, &patch).await.expect("check patch");
+        assert!(check_clean.can_apply);
+        assert_eq!(check_clean.affected_files, vec!["file.txt"]);
+
+        // Apply patch
+        inspector.apply_patch_file(repository_path, &patch, false, false).await.expect("apply patch");
+        let applied_content = std::fs::read_to_string(repository_path.join("file.txt")).expect("read file");
+        assert_eq!(applied_content, "line 1\nmodified line 2\nline 3\n");
+
+        // Verify invalid patch check fails gracefully
+        let invalid_patch = patch.replace("line 1", "nonexistent line");
+        let check_invalid = inspector.check_patch(repository_path, &invalid_patch).await.expect("check invalid patch");
+        assert!(!check_invalid.can_apply);
+        assert!(check_invalid.error_message.is_some());
+    }
 }

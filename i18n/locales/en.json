@@ -740,5 +740,38 @@
       "culpritFound": "Regression culprit commit found!",
       "reset": "Git bisect session ended and reset"
     }
+  },
+  "patch": {
+    "exportTitle": "Export Patch File",
+    "exportSubtitle": "Generate standard unified diff or format-patch files to share or archive changes.",
+    "applyTitle": "Apply Patch File",
+    "applySubtitle": "Import and apply unified diff patches with pre-flight conflict validation.",
+    "scopeLabel": "Changes Scope",
+    "scopeWorkingTree": "Working Tree",
+    "scopeStaged": "Staged Only",
+    "scopeUnstaged": "Unstaged Only",
+    "scopeCommit": "Specific Commit",
+    "commitHashLabel": "Target Commit Hash / Ref",
+    "previewLabel": "Unified Patch Preview",
+    "linesCount": "lines",
+    "emptyPatch": "No diff content",
+    "noChangesToExport": "No changes found for the selected scope.",
+    "copyPatch": "Copy Diff",
+    "downloadFile": "Save .patch File",
+    "pasteOrUploadLabel": "Patch Content or File",
+    "chooseFile": "Upload .patch",
+    "inputPlaceholder": "Paste diff / patch content starting with 'diff --git...' or 'From <commit>...'",
+    "checkSuccess": "Patch applies cleanly without conflicts",
+    "checkFailed": "Patch cannot be applied cleanly",
+    "affectedFiles": "Affected Files",
+    "applyToStaged": "Apply directly to staging index (--cached)",
+    "reversePatch": "Apply in reverse (--reverse)",
+    "validateAction": "Pre-check Patch",
+    "applyAction": "Apply Patch",
+    "notifications": {
+      "copied": "Patch copied to clipboard",
+      "downloaded": "Patch file downloaded",
+      "applied": "Patch successfully applied to repository"
+    }
   }
 }

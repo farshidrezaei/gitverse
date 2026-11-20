@@ -743,6 +743,45 @@ impl ApplicationState {
         self.git_inspector.bisect_reset(&target_path).await
     }
 
+    /// Exports repository changes or a commit as a patch string.
+    pub async fn export_patch(
+        &self,
+        directory_path: Option<&str>,
+        scope: &str,
+        commit_hash: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .export_patch(&target_path, scope, commit_hash)
+            .await
+    }
+
+    /// Validates if a unified diff patch can be cleanly applied.
+    pub async fn check_patch(
+        &self,
+        directory_path: Option<&str>,
+        patch_content: &str,
+    ) -> Result<crate::domain::PatchCheckResult, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .check_patch(&target_path, patch_content)
+            .await
+    }
+
+    /// Applies a patch to working tree or staging index.
+    pub async fn apply_patch_file(
+        &self,
+        directory_path: Option<&str>,
+        patch_content: &str,
+        is_cached: bool,
+        is_reverse: bool,
+    ) -> Result<(), ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .apply_patch_file(&target_path, patch_content, is_cached, is_reverse)
+            .await
+    }
+
     /// Collects system diagnostics and environment details for voluntary bug reporting.
     pub async fn get_application_diagnostics(&self) -> Result<ApplicationDiagnostics, ApplicationError> {
         let git_info = self.discover_git(None).await?;

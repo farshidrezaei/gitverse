@@ -18,6 +18,8 @@ import InteractiveRebaseModal from '~/components/workspace/commit/InteractiveReb
 import FolderPickerModal from '~/components/workspace/FolderPickerModal.vue'
 import ReflogExplorerModal from '~/components/workspace/history/ReflogExplorerModal.vue'
 import BisectModal from '~/components/workspace/bisect/BisectModal.vue'
+import ExportPatchModal from '~/components/workspace/patch/ExportPatchModal.vue'
+import ApplyPatchModal from '~/components/workspace/patch/ApplyPatchModal.vue'
 import { useWorkspaceTabController } from '~/composables/useWorkspaceTabController'
 
 const { t } = useI18n()
@@ -140,6 +142,8 @@ const isAmend = ref<boolean>(false)
 const isBypassHooks = ref<boolean>(false)
 const isReflogModalOpen = ref<boolean>(false)
 const isBisectModalOpen = ref<boolean>(false)
+const isExportPatchModalOpen = ref<boolean>(false)
+const isApplyPatchModalOpen = ref<boolean>(false)
 const selectedBranchName = ref<string | null>(null)
 const activeGraphReference = ref<string | null>(null)
 
@@ -472,6 +476,8 @@ async function handlePush(): Promise<void> {
         @open-recent-repository="openRepository"
         @open-reflog="isReflogModalOpen = true"
         @open-bisect="isBisectModalOpen = true"
+        @open-export-patch="isExportPatchModalOpen = true"
+        @open-apply-patch="isApplyPatchModalOpen = true"
       />
 
       <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip -->
@@ -688,6 +694,16 @@ async function handlePush(): Promise<void> {
     <BisectModal
       v-model:open="isBisectModalOpen"
       @locate-commit="(sha) => { selectCommit(sha) }"
+    />
+
+    <!-- Export Patch Modal -->
+    <ExportPatchModal
+      v-model:open="isExportPatchModalOpen"
+    />
+
+    <!-- Apply Patch Modal -->
+    <ApplyPatchModal
+      v-model:open="isApplyPatchModalOpen"
     />
   </div>
 </template>

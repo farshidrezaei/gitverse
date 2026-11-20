@@ -19,10 +19,27 @@ const emit = defineEmits<{
   openRecentRepository: [repositoryPath: string]
   openReflog: []
   openBisect: []
+  openExportPatch: []
+  openApplyPatch: []
 }>()
 
 const { t } = useI18n()
 const { openInEditor, openInTerminal, openInFileManager } = useExternalToolsController()
+
+const patchMenuItems = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: t('patch.exportTitle'),
+      icon: 'i-lucide-file-diff',
+      onSelect: () => emit('openExportPatch'),
+    },
+    {
+      label: t('patch.applyTitle'),
+      icon: 'i-lucide-file-input',
+      onSelect: () => emit('openApplyPatch'),
+    },
+  ],
+])
 
 const externalEditorMenuItems = computed<DropdownMenuItem[][]>(() => [
   [
@@ -217,6 +234,19 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
           @click="emit('openBisect')"
         />
       </UTooltip>
+
+      <UDropdownMenu :items="patchMenuItems" :content="{ align: 'end' }">
+        <UTooltip :text="t('patch.exportTitle')">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-file-diff"
+            class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+            :aria-label="t('patch.exportTitle')"
+          />
+        </UTooltip>
+      </UDropdownMenu>
 
       <UTooltip :text="t('externalTools.openTerminal')">
         <UButton
