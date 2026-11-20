@@ -453,7 +453,17 @@ const existingBranchNames = computed(() => {
               </button>
             </div>
           </div>
-          <div class="flex flex-col gap-0.5 mt-1">
+          <!-- Worktrees Skeleton Loading -->
+          <div v-if="isLoadingWorktrees && worktreeList.length === 0" class="space-y-1 mt-1 animate-pulse">
+            <div v-for="wIndex in 2" :key="`worktree-skeleton-${wIndex}`" class="flex items-center justify-between rounded-lg px-2 py-1">
+              <div class="flex items-center gap-1.5">
+                <USkeleton class="h-3.5 w-3.5 rounded shrink-0" />
+                <USkeleton class="h-3 w-28 rounded" />
+              </div>
+              <USkeleton class="h-4 w-10 rounded" />
+            </div>
+          </div>
+          <div v-else class="flex flex-col gap-0.5 mt-1">
             <div
               v-for="worktree in worktreeList"
               :key="worktree.directory_path"

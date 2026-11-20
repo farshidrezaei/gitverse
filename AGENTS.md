@@ -63,6 +63,12 @@ Split modules by domain responsibility:
 - **Nuxt UI first**: Always check official Nuxt UI components before writing custom UI primitives.
 - **Minimal custom CSS**: Use Nuxt UI props/variants, Tailwind v4 utilities, and centralized CSS tokens. Use CSS logical properties (`ms-*`, `me-*`, `ps-*`, `pe-*`, `start-*`, `end-*`, `text-start`, `text-end`) for automatic LTR/RTL symmetry.
 
+### 2.7. Zero-CLS Skeleton Loading Standard
+- **Never use generic spinners (`UIcon` spinner, CSS spinner) or text labels (e.g. `Loading...`) for views, modal bodies, sidebars, cards, panels, or lists.**
+- Every loading state must be a high-fidelity, dimension-accurate skeleton built with `USkeleton`.
+- Skeletons must mirror the exact geometry, hierarchy, borders, padding, avatar shapes, badges, and layout of the resolved content to guarantee **zero Cumulative Layout Shift (CLS)** and prevent jarring visual jumps.
+- Spinner loaders are strictly confined to inline button action states (`UButton :loading="..."`) during brief in-flight actions.
+
 ---
 
 ## 3. Internationalization (i18n) & Theme Matrix
@@ -110,7 +116,7 @@ Before marking any task complete, verify all applicable items:
 6. Complete `en` and `fa` translations passing validation script.
 7. Verified in RTL (`fa`) and LTR (`en`).
 8. Verified in Light, Dark, and Custom themes.
-9. Loading, empty, and error states implemented.
+9. High-fidelity zero-CLS skeletons (`USkeleton`) implemented for all loading states (strictly no generic content spinners or "Loading..." text), plus complete empty and error states.
 10. Table-driven, matrix, property, or integration tests written and passing.
 11. Formatting, linting, type checking, and test suites executed after final edits.
 12. Documentation updated if contracts or behavior changed.

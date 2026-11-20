@@ -52,9 +52,25 @@ async function confirmDisconnect(): Promise<void> {
       </template>
 
       <!-- Accounts list -->
-      <div v-if="isLoading && accounts.length === 0" class="py-6 text-center text-muted">
-        <UIcon name="i-lucide-loader-2" class="h-5 w-5 animate-spin mx-auto mb-2 text-primary" />
-        <span>{{ t('common.loading') }}</span>
+      <!-- Zero-CLS Skeleton Loading state -->
+      <div v-if="isLoading && accounts.length === 0" class="space-y-3 animate-pulse">
+        <div
+          v-for="index in 2"
+          :key="`provider-skeleton-${index}`"
+          class="flex items-center justify-between p-3 rounded-xl border border-default/70 bg-muted/10"
+        >
+          <div class="flex items-center gap-3">
+            <USkeleton class="h-9 w-9 rounded-full shrink-0" />
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-2">
+                <USkeleton class="h-4 w-28 rounded" />
+                <USkeleton class="h-4 w-16 rounded-full" />
+              </div>
+              <USkeleton class="h-3 w-36 rounded" />
+            </div>
+          </div>
+          <USkeleton class="h-7 w-20 rounded-lg shrink-0" />
+        </div>
       </div>
 
       <div v-else-if="accounts.length === 0" class="py-8 text-center space-y-3">

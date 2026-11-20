@@ -97,7 +97,16 @@ GitVerse uses a developer-focused, technical, high-contrast visual identity:
 
 ---
 
-## 5. Living Showcase (`/design-system`)
+## 5. Zero-CLS Skeleton Loading Standard
+
+- **No Generic Spinners for Content**: Modal bodies, sidebars, viewport panels, cards, and list views must never render plain spinner icons or "Loading..." text strings.
+- **High-Fidelity Skeletons**: Every asynchronous loading state must be rendered using `USkeleton` primitives configured to exact dimensions, borders, and margins matching the resolved content.
+- **Layout Shift Immunity**: Skeletons must prevent Cumulative Layout Shift (CLS), visual flicker, and structural jumps when async data resolves.
+- **Button-Only Spinners**: Spinners are strictly permitted only inside action buttons (`UButton :loading="isSubmitting"`) during active user-triggered submissions.
+
+---
+
+## 6. Living Showcase (`/design-system`)
 
 The `/design-system` route serves as the living source of truth displaying:
 1. Color tokens (brand, surfaces, Git statuses, diff highlights, commit graph lanes).

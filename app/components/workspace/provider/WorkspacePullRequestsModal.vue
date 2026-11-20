@@ -320,9 +320,35 @@ const filteredPullRequests = computed(() => {
         <div v-else class="flex flex-1 min-h-0 overflow-hidden">
           <!-- PR List -->
           <div class="w-2/5 border-e border-default/60 overflow-y-auto p-2 space-y-1.5">
-            <div v-if="isLoading" class="py-12 text-center text-muted">
-              <UIcon name="i-lucide-loader-2" class="h-5 w-5 animate-spin mx-auto mb-2 text-primary" />
-              <span>{{ t('common.loading') }}</span>
+            <!-- Zero-CLS Skeleton Loading for PR List -->
+            <div v-if="isLoading" class="space-y-1.5 p-0.5 animate-pulse">
+              <div
+                v-for="index in 5"
+                :key="`pr-item-skeleton-${index}`"
+                class="p-2.5 rounded-xl border border-default/50 space-y-2 bg-muted/10"
+              >
+                <div class="flex items-center justify-between gap-1">
+                  <div class="flex items-center gap-1.5">
+                    <USkeleton class="h-3.5 w-8 rounded" />
+                    <USkeleton class="h-3.5 w-12 rounded-full" />
+                  </div>
+                  <USkeleton class="h-4 w-12 rounded-full" />
+                </div>
+                <USkeleton
+                  class="h-3.5 rounded"
+                  :class="index % 2 === 0 ? 'w-4/5' : 'w-full'"
+                />
+                <div class="flex items-center justify-between pt-0.5">
+                  <div class="flex items-center gap-1.5">
+                    <USkeleton class="h-3.5 w-3.5 rounded-full" />
+                    <USkeleton class="h-2.5 w-14 rounded" />
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <USkeleton class="h-2.5 w-16 rounded" />
+                    <USkeleton class="h-2.5 w-6 rounded" />
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div v-else-if="filteredPullRequests.length === 0" class="py-12 text-center text-muted space-y-1">
@@ -404,7 +430,69 @@ const filteredPullRequests = computed(() => {
 
           <!-- PR Details View -->
           <div class="flex-1 overflow-y-auto p-5 bg-[var(--gv-background)]">
-            <div v-if="!selectedPullRequest" class="h-full flex flex-col items-center justify-center text-muted space-y-2">
+            <!-- Zero-CLS Details Skeleton when Loading -->
+            <div v-if="isLoading" class="space-y-5 animate-pulse">
+              <!-- PR Title & State Skeleton -->
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <USkeleton class="h-6 w-16 rounded-md" />
+                  <USkeleton class="h-4 w-10 rounded" />
+                  <USkeleton class="h-5 w-24 rounded-full" />
+                </div>
+
+                <div class="space-y-1.5 pt-1">
+                  <USkeleton class="h-5 w-3/4 rounded" />
+                  <USkeleton class="h-5 w-1/3 rounded" />
+                </div>
+
+                <div class="flex items-center gap-3 pt-1">
+                  <div class="flex items-center gap-1.5">
+                    <USkeleton class="h-4 w-4 rounded-full" />
+                    <USkeleton class="h-3.5 w-20 rounded" />
+                  </div>
+                  <USkeleton class="h-4 w-24 rounded" />
+                  <USkeleton class="h-4 w-24 rounded" />
+                </div>
+              </div>
+
+              <!-- Quick Actions Skeleton -->
+              <div class="flex items-center gap-2 pt-2 border-t border-default/60">
+                <USkeleton class="h-7 w-28 rounded-lg" />
+                <USkeleton class="h-7 w-28 rounded-lg" />
+              </div>
+
+              <!-- Pipeline Status Box Skeleton -->
+              <div class="rounded-xl border border-default/60 p-3 space-y-2.5 bg-surface/30">
+                <div class="flex items-center justify-between">
+                  <USkeleton class="h-4 w-32 rounded" />
+                  <USkeleton class="h-4 w-20 rounded-full" />
+                </div>
+                <div class="space-y-1.5">
+                  <div v-for="ciIndex in 3" :key="`ci-check-skeleton-${ciIndex}`" class="flex items-center justify-between p-1.5 rounded-lg bg-muted/10">
+                    <div class="flex items-center gap-2">
+                      <USkeleton class="h-3 w-3 rounded-full" />
+                      <USkeleton class="h-3.5 w-36 rounded" />
+                    </div>
+                    <USkeleton class="h-3 w-16 rounded" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Description Body Skeleton -->
+              <div class="space-y-2 pt-2 border-t border-default/60">
+                <USkeleton class="h-4 w-24 rounded mb-2" />
+                <USkeleton class="h-3.5 w-full rounded" />
+                <USkeleton class="h-3.5 w-11/12 rounded" />
+                <USkeleton class="h-3.5 w-4/5 rounded" />
+                <div class="space-y-1.5 pt-2">
+                  <USkeleton class="h-3.5 w-full rounded" />
+                  <USkeleton class="h-3.5 w-3/4 rounded" />
+                  <USkeleton class="h-3.5 w-5/6 rounded" />
+                </div>
+              </div>
+            </div>
+
+            <div v-else-if="!selectedPullRequest" class="h-full flex flex-col items-center justify-center text-muted space-y-2">
               <UIcon name="i-lucide-mouse-pointer-click" class="h-8 w-8 opacity-30" />
               <p>Select a pull request from the list to view details.</p>
             </div>

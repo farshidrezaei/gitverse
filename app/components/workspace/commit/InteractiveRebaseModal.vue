@@ -114,9 +114,26 @@ async function handleConfirmRebase(): Promise<void> {
             <span>{{ planItems.length }} {{ t('rebase.commitsCount') }}</span>
           </div>
 
-          <!-- Loading state -->
-          <div v-if="isLoadingCommits" class="flex items-center justify-center py-10 text-muted">
-            <UIcon name="i-lucide-loader-2" class="h-6 w-6 animate-spin text-primary" />
+          <!-- Zero-CLS Skeleton Loading state -->
+          <div v-if="isLoadingCommits" class="space-y-2 animate-pulse">
+            <div
+              v-for="index in 4"
+              :key="`rebase-skeleton-${index}`"
+              class="flex flex-col gap-2 rounded-xl border border-default/70 bg-surface/50 p-2.5"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <USkeleton class="h-6 w-16 rounded-md" />
+                  <USkeleton class="h-6 w-20 rounded-md" />
+                  <USkeleton class="h-4 w-16 rounded" />
+                </div>
+                <USkeleton class="h-3 w-20 rounded" />
+              </div>
+              <USkeleton
+                class="h-4 rounded"
+                :class="index % 2 === 0 ? 'w-3/4' : 'w-4/5'"
+              />
+            </div>
           </div>
 
           <!-- Empty list -->

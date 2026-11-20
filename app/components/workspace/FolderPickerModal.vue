@@ -175,12 +175,28 @@ const filteredFolders = computed(() => {
 
           <!-- Folders Only List -->
           <div class="h-64 rounded-lg border border-default bg-[var(--gv-surface)]/60 overflow-y-auto p-1 space-y-1">
+            <!-- Zero-CLS Skeleton Loading for Folders List -->
             <div
               v-if="isLoadingFolders"
-              class="flex h-full items-center justify-center text-muted gap-2"
+              class="space-y-1 p-1 animate-pulse"
             >
-              <UIcon name="i-lucide-loader-2" class="h-4 w-4 animate-spin" />
-              <span>{{ t('common.loading') }}</span>
+              <div
+                v-for="index in 6"
+                :key="`folder-skeleton-${index}`"
+                class="flex items-center justify-between rounded-md px-2.5 py-1.5"
+              >
+                <div class="flex items-center gap-2">
+                  <USkeleton class="h-4 w-4 rounded shrink-0" />
+                  <USkeleton
+                    class="h-3.5 rounded"
+                    :class="[
+                      index % 3 === 0 ? 'w-36' :
+                      index % 2 === 0 ? 'w-24' : 'w-48'
+                    ]"
+                  />
+                </div>
+                <USkeleton v-if="index % 2 === 0" class="h-4 w-12 rounded-full shrink-0" />
+              </div>
             </div>
 
             <template v-else-if="filteredFolders.length > 0">
