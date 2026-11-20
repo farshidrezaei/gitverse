@@ -411,6 +411,34 @@ pub struct GitSubmoduleSummary {
     pub has_revision_divergence: bool,
 }
 
+/// Individual contributor commit volume metrics.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ContributorInsight {
+    pub name: String,
+    pub email: String,
+    pub commit_count: u32,
+    pub percentage: f32,
+}
+
+/// Aggregated commit activity count by weekday (0 = Sunday, 1 = Monday, ... 6 = Saturday).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ActivityDay {
+    pub day_of_week: u8,
+    pub count: u32,
+}
+
+/// Comprehensive analytics, velocity metrics, and commit statistics for a repository.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RepositoryInsights {
+    pub total_commits: u32,
+    pub total_contributors: u32,
+    pub top_contributors: Vec<ContributorInsight>,
+    pub activity_by_weekday: Vec<ActivityDay>,
+    pub lines_added: u64,
+    pub lines_deleted: u64,
+}
+
+
 
 
 

@@ -220,6 +220,15 @@ pub async fn sync_submodules(
         .await
 }
 
+/// Tauri IPC command to compute repository analytics, commit velocity, and contributors.
+#[tauri::command]
+pub async fn get_repository_insights(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+) -> Result<crate::domain::RepositoryInsights, ApplicationError> {
+    state.get_repository_insights(directory_path.as_deref()).await
+}
+
 /// Tauri IPC command to commit staged changes.
 #[tauri::command]
 pub async fn commit(

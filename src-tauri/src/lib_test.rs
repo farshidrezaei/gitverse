@@ -577,4 +577,35 @@ mod tests {
         let update_result = inspector.update_submodules(&parent_path, None, true, true).await;
         assert!(update_result.is_ok());
     }
+
+    #[tokio::test]
+    async fn test_repository_insights_extraction() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "tester@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        for index in 0..3 {
+            std::fs::write(repository_path.join(format!("file_{index}.txt")), format!("line {index}\n")).expect("write file");
+            Command::new("git").args(["add", "."]).current_dir(repository_path).output().expect("git add");
+            Command::new("git").args(["commit", "-m", &format!("commit {index}")]).current_dir(repository_path).output().expect("git commit");
+        }
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        let insights = inspector.get_repository_insights(repository_path).await.expect("get insights");
+        assert_eq!(insights.total_commits, 3);
+        assert_eq!(insights.total_contributors, 1);
+        assert_eq!(insights.top_contributors[0].name, "Tester");
+        assert_eq!(insights.top_contributors[0].commit_count, 3);
+        assert_eq!(insights.activity_by_weekday.len(), 7);
+        let total_activity: u32 = insights.activity_by_weekday.iter().map(|day| day.count).sum();
+        assert_eq!(total_activity, 3);
+    }
 }

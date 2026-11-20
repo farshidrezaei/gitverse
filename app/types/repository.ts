@@ -271,6 +271,27 @@ export interface GitSubmoduleSummary {
   has_revision_divergence: boolean
 }
 
+export interface ContributorInsight {
+  name: string
+  email: string
+  commit_count: number
+  percentage: number
+}
+
+export interface ActivityDay {
+  day_of_week: number
+  count: number
+}
+
+export interface RepositoryInsights {
+  total_commits: number
+  total_contributors: number
+  top_contributors: ContributorInsight[]
+  activity_by_weekday: ActivityDay[]
+  lines_added: number
+  lines_deleted: number
+}
+
 export interface MergeBranchOutcome {
   is_successful: boolean
   has_conflicts: boolean

@@ -22,6 +22,7 @@ const emit = defineEmits<{
   openExportPatch: []
   openApplyPatch: []
   openSubmodules: []
+  openInsights: []
 }>()
 
 const { t } = useI18n()
@@ -258,6 +259,18 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
           class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
           :aria-label="t('submodule.modalTitle')"
           @click="emit('openSubmodules')"
+        />
+      </UTooltip>
+
+      <UTooltip :text="t('insights.modalTitle')">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-bar-chart-3"
+          class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+          :aria-label="t('insights.modalTitle')"
+          @click="emit('openInsights')"
         />
       </UTooltip>
 

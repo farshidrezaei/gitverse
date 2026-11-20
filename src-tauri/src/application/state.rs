@@ -818,6 +818,15 @@ impl ApplicationState {
             .await
     }
 
+    /// Computes repository analytics and contributor velocity metrics.
+    pub async fn get_repository_insights(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<crate::domain::RepositoryInsights, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_repository_insights(&target_path).await
+    }
+
     /// Collects system diagnostics and environment details for voluntary bug reporting.
     pub async fn get_application_diagnostics(&self) -> Result<ApplicationDiagnostics, ApplicationError> {
         let git_info = self.discover_git(None).await?;

@@ -2103,4 +2103,54 @@ impl GitRepositoryInspector {
 
         Ok(())
     }
+
+    /// Computes repository analytics, contributor velocity, and commit distribution.
+    pub async fn get_repository_insights(
+        &self,
+        directory_path: &Path,
+    ) -> Result<crate::domain::RepositoryInsights, ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        let total_commits = self
+            .executor
+            .execute_git_command(Some(directory_path), &["rev-list", "--count", "HEAD"])
+            .await
+            .unwrap_or_else(|_| "0".to_string())
+            .trim()
+            .parse::<u32>()
+            .unwrap_or(0);
+
+        let shortlog_output = self
+            .executor
+            .execute_git_command(Some(directory_path), &["shortlog", "-sne", "HEAD"])
+            .await
+            .unwrap_or_default();
+
+        let timestamps_output = self
+            .executor
+            .execute_git_command(Some(directory_path), &["log", "-n", "1000", "--format=%ct"])
+            .await
+            .unwrap_or_default();
+
+        let shortstat_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["diff", "--shortstat", "4b825dc642cb6eb9a060e54bf8d69288fbee4904", "HEAD"],
+            )
+            .await
+            .unwrap_or_default();
+
+        Ok(super::insights::assemble_repository_insights(
+            &shortlog_output,
+            &timestamps_output,
+            &shortstat_output,
+            total_commits,
+        ))
+    }
 }

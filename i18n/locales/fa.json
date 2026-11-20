@@ -793,5 +793,27 @@
       "updated": "زیرمخزن‌ها با موفقیت بروزرسانی شدند",
       "synced": "آدرس‌های زیرمخزن‌ها با موفقیت همگام‌سازی شد"
     }
+  },
+  "insights": {
+    "modalTitle": "آمار و تحلیل سرعت مخزن (Insights)",
+    "modalSubtitle": "تغییرات کد، الگوهای فعالیت هفتگی و رتبه‌بندی مشارکت‌کنندگان.",
+    "totalCommits": "مجموع کامیت‌ها",
+    "contributors": "مشارکت‌کنندگان",
+    "linesAdded": "خطوط اضافه‌شده",
+    "linesDeleted": "خطوط حذف‌شده",
+    "activityByWeekday": "توزیع فعالیت در روزهای هفته",
+    "recentDistribution": "بر اساس تاریخچه کامیت‌ها",
+    "topContributors": "برترین مشارکت‌کنندگان",
+    "byCommitCount": "مرتب‌شده بر اساس تعداد کامیت",
+    "commits": "کامیت",
+    "weekdays": {
+      "sunday": "یک‌شنبه",
+      "monday": "دوشنبه",
+      "tuesday": "سه‌شنبه",
+      "wednesday": "چهارشنبه",
+      "thursday": "پنج‌شنبه",
+      "friday": "جمعه",
+      "saturday": "شنبه"
+    }
   }
 }

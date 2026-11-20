@@ -793,5 +793,27 @@
       "updated": "Submodules updated successfully",
       "synced": "Submodules synchronized successfully"
     }
+  },
+  "insights": {
+    "modalTitle": "Repository Insights & Velocity",
+    "modalSubtitle": "Code churn, weekly activity patterns, and contributor leaderboard.",
+    "totalCommits": "Total Commits",
+    "contributors": "Contributors",
+    "linesAdded": "Lines Added",
+    "linesDeleted": "Lines Deleted",
+    "activityByWeekday": "Commit Activity by Weekday",
+    "recentDistribution": "Based on commit history",
+    "topContributors": "Top Contributors",
+    "byCommitCount": "Ranked by total commits",
+    "commits": "commits",
+    "weekdays": {
+      "sunday": "Sun",
+      "monday": "Mon",
+      "tuesday": "Tue",
+      "wednesday": "Wed",
+      "thursday": "Thu",
+      "friday": "Fri",
+      "saturday": "Sat"
+    }
   }
 }
