@@ -161,12 +161,12 @@ function handleMerged(mergedPr: RemotePullRequest): void {
         <span class="text-muted">{{ t('provider.author') }}:</span>
         <div class="flex items-center gap-1.5 font-medium">
           <UAvatar
-            v-if="pullRequest.author.avatar_url"
-            :src="pullRequest.author.avatar_url"
-            :alt="pullRequest.author.name"
+            v-if="pullRequest.author_avatar_url"
+            :src="pullRequest.author_avatar_url"
+            :alt="pullRequest.author_username"
             size="2xs"
           />
-          <span class="text-highlighted">{{ pullRequest.author.name }}</span>
+          <span class="text-highlighted">{{ pullRequest.author_username }}</span>
         </div>
 
         <span class="text-muted mx-1">•</span>
