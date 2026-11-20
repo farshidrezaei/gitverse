@@ -406,4 +406,29 @@ mod tests {
         let successful_commit = inspector.commit(repository_path, "bypassed hook commit", false, true).await;
         assert!(successful_commit.is_ok());
     }
+
+    #[tokio::test]
+    async fn test_get_commit_template() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        // Initially no template
+        let empty_template = inspector.get_commit_template(repository_path).await.expect("template check");
+        assert_eq!(empty_template, None);
+
+        // Create .gitmessage fallback
+        let message_content = "feat: type short summary here\n\nDetailed description...";
+        std::fs::write(repository_path.join(".gitmessage"), message_content).expect("write .gitmessage");
+
+        let detected_template = inspector.get_commit_template(repository_path).await.expect("detected template");
+        assert_eq!(detected_template, Some(message_content.to_string()));
+    }
 }

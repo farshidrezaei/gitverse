@@ -167,6 +167,15 @@ impl ApplicationState {
         self.git_inspector.get_file_diff(&target_path, file_path, is_staged).await
     }
 
+    /// Retrieves configured commit template from repository or git config.
+    pub async fn get_commit_template(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<Option<String>, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_commit_template(&target_path).await
+    }
+
     /// Extracts commit history and builds deterministic commit graph DAG.
     pub async fn get_commit_graph(
         &self,

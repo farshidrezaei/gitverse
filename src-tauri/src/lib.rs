@@ -67,6 +67,7 @@ pub fn run() {
             commands::discard_patch,
             commands::commit,
             commands::get_file_diff,
+            commands::get_commit_template,
             commands::get_commit_graph,
             commands::get_repository_references,
             commands::checkout_branch,

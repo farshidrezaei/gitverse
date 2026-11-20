@@ -236,5 +236,5 @@ gitverse/
 │   │   ├── services/                 # Graph DAG computation algorithms & benchmarks
 │   │   ├── lib.rs                    # Plugin registration, invoke handlers, initialization
 │   │   └── main.rs                   # Desktop entrypoint
-└── test/                             # Frontend Vitest test suites (112 passing unit & E2E tests)
+└── test/                             # Frontend Vitest test suites (116 passing unit & E2E tests)
 ```

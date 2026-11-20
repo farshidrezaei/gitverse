@@ -8,6 +8,7 @@ import FileStatusBadge from '~/components/shared/FileStatusBadge.vue'
 import CreateStashModal from './CreateStashModal.vue'
 import ConflictResolverModal from './ConflictResolverModal.vue'
 import StashPreviewModal from './StashPreviewModal.vue'
+import ConventionalCommitBuilderModal from './ConventionalCommitBuilderModal.vue'
 import { useStashController } from '~/composables/useStashController'
 import { useConflictController } from '~/composables/useConflictController'
 import { formatStashDisplayMessage, formatStashRelativeTime } from '~/utils/stash'
@@ -59,6 +60,7 @@ const { openInEditor, openInFileManager } = useExternalToolsController()
 
 const isCreateStashModalOpen = ref(false)
 const isPreviewStashModalOpen = ref<boolean>(false)
+const isConventionalBuilderModalOpen = ref<boolean>(false)
 const selectedStashIndexForPreview = ref<number | null>(null)
 const selectedStashIdentifierForPreview = ref<string | null>(null)
 const isStashSectionOpen = ref(true)
@@ -709,6 +711,23 @@ function getFlatFileContextMenuItems(
 
     <!-- Commit Box (Docked at Bottom) -->
     <div class="border-t border-default/70 p-3 bg-muted/10 flex flex-col gap-2 shrink-0">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-semibold text-highlighted uppercase tracking-wider">
+          {{ t('git.commit') }}
+        </span>
+        <UTooltip :text="t('commit.conventionalHelper')">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-wand-2"
+            class="h-6 px-1.5 text-xs text-muted hover:text-primary transition-colors"
+            :aria-label="t('commit.conventionalHelper')"
+            @click="isConventionalBuilderModalOpen = true"
+          />
+        </UTooltip>
+      </div>
+
       <UTextarea
         :model-value="props.commitMessage"
         :rows="3"
@@ -754,6 +773,12 @@ function getFlatFileContextMenuItems(
     <CreateStashModal
       v-model:open="isCreateStashModalOpen"
       @save="saveStash"
+    />
+
+    <!-- Conventional Commit Builder Modal -->
+    <ConventionalCommitBuilderModal
+      v-model:open="isConventionalBuilderModalOpen"
+      @apply="emit('update:commitMessage', $event)"
     />
 
     <!-- Stash Preview Modal -->

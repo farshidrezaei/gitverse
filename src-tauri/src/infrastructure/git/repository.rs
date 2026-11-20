@@ -449,6 +449,43 @@ impl GitRepositoryInspector {
         })
     }
 
+    /// Reads configured Git commit template (from git config commit.template or .gitmessage).
+    pub async fn get_commit_template(
+        &self,
+        directory_path: &Path,
+    ) -> Result<Option<String>, ApplicationError> {
+        // 1. Check git config commit.template
+        if let Ok(config_path) = self
+            .executor
+            .execute_git_command(Some(directory_path), &["config", "--get", "commit.template"])
+            .await
+        {
+            let trimmed_path = config_path.trim();
+            if !trimmed_path.is_empty() {
+                let candidate_path = Path::new(trimmed_path);
+                let full_path = if candidate_path.is_absolute() {
+                    candidate_path.to_path_buf()
+                } else {
+                    directory_path.join(candidate_path)
+                };
+
+                if let Ok(content) = tokio::fs::read_to_string(&full_path).await {
+                    return Ok(Some(content));
+                }
+            }
+        }
+
+        // 2. Check fallback .gitmessage in repository root
+        let default_gitmessage_path = directory_path.join(".gitmessage");
+        if default_gitmessage_path.exists() {
+            if let Ok(content) = tokio::fs::read_to_string(&default_gitmessage_path).await {
+                return Ok(Some(content));
+            }
+        }
+
+        Ok(None)
+    }
+
     /// Fetches unified diff for a single file in a commit or the entire commit.
     pub async fn get_commit_file_diff(
         &self,

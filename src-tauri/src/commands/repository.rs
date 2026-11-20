@@ -161,6 +161,15 @@ pub async fn get_file_diff(
     state.get_file_diff(directory_path.as_deref(), &file_path, is_staged).await
 }
 
+/// Tauri IPC command to retrieve configured commit template from repository or git config.
+#[tauri::command]
+pub async fn get_commit_template(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+) -> Result<Option<String>, ApplicationError> {
+    state.get_commit_template(directory_path.as_deref()).await
+}
+
 /// Tauri IPC command to extract Git commit history and compute deterministic DAG layout.
 #[tauri::command]
 pub async fn get_commit_graph(
