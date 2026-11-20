@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use base64::Engine;
 use crate::domain::{
-    ApplicationError, BisectState, ConflictFileDetails, DirectoryListing, FolderEntry, GitWorktreeSummary, InteractiveRebaseRequest,
+    ApplicationError, BisectState, ConflictFileDetails, DirectoryListing, FolderEntry, GitSubmoduleSummary, GitWorktreeSummary, InteractiveRebaseRequest,
     MergeBranchOutcome, PatchCheckResult, RebaseBranchOutcome, RebasePlanItem, RepositoryOperationState, RepositoryOverview, StashRecord,
 };
 use crate::domain::validation::{
@@ -11,6 +11,7 @@ use crate::domain::validation::{
 use super::bisect::parse_bisect_step_output;
 use super::process::GitProcessExecutor;
 use super::stash::parse_stash_list;
+use super::submodule::parse_submodule_status;
 use super::worktree::parse_worktree_list;
 
 /// Service responsible for querying Git repository state, references, and working tree status.
@@ -1988,6 +1989,116 @@ impl GitRepositoryInspector {
                 &arguments,
                 patch_content.as_bytes(),
             )
+            .await?;
+
+        Ok(())
+    }
+
+    /// Fetches all registered Git submodules and their current status.
+    pub async fn get_submodules(
+        &self,
+        directory_path: &Path,
+    ) -> Result<Vec<GitSubmoduleSummary>, ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        let status_output = self
+            .executor
+            .execute_git_command(Some(directory_path), &["submodule", "status", "--recursive"])
+            .await
+            .unwrap_or_default();
+
+        let mut submodules = parse_submodule_status(&status_output);
+
+        // Enrich with URLs and configured branches from .gitmodules if present
+        let url_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["config", "--file", ".gitmodules", "--get-regexp", "url"],
+            )
+            .await
+            .unwrap_or_default();
+
+        for line in url_output.lines() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 2 {
+                let key = parts[0];
+                let url = parts[1].to_string();
+                if let Some(submodule_identifier) = key.strip_prefix("submodule.").and_then(|k| k.strip_suffix(".url")) {
+                    for submodule in &mut submodules {
+                        if submodule.name == submodule_identifier || submodule.path == submodule_identifier {
+                            submodule.url = Some(url.clone());
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(submodules)
+    }
+
+    /// Updates one or all Git submodules.
+    pub async fn update_submodules(
+        &self,
+        directory_path: &Path,
+        submodule_path: Option<&str>,
+        is_init: bool,
+        is_recursive: bool,
+    ) -> Result<(), ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        let mut arguments = vec!["submodule", "update"];
+        if is_init {
+            arguments.push("--init");
+        }
+        if is_recursive {
+            arguments.push("--recursive");
+        }
+        if let Some(path) = submodule_path {
+            arguments.push(path);
+        }
+
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await?;
+
+        Ok(())
+    }
+
+    /// Synchronizes submodules remote URL configuration setting to .gitmodules values.
+    pub async fn sync_submodules(
+        &self,
+        directory_path: &Path,
+        submodule_path: Option<&str>,
+        is_recursive: bool,
+    ) -> Result<(), ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        let mut arguments = vec!["submodule", "sync"];
+        if is_recursive {
+            arguments.push("--recursive");
+        }
+        if let Some(path) = submodule_path {
+            arguments.push(path);
+        }
+
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
             .await?;
 
         Ok(())

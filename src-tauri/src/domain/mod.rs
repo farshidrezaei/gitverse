@@ -398,6 +398,20 @@ pub struct PatchCheckResult {
     pub affected_files: Vec<String>,
 }
 
+/// Represents a Git submodule linked within a repository.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GitSubmoduleSummary {
+    pub path: String,
+    pub name: String,
+    pub url: Option<String>,
+    pub branch: Option<String>,
+    pub current_commit_hash: String,
+    pub is_initialized: bool,
+    pub has_uncommitted_changes: bool,
+    pub has_revision_divergence: bool,
+}
+
+
 
 
 

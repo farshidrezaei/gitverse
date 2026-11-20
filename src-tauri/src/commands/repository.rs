@@ -175,6 +175,51 @@ pub async fn apply_patch_file(
         .await
 }
 
+/// Tauri IPC command to fetch all Git submodules and their status.
+#[tauri::command]
+pub async fn get_submodules(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+) -> Result<Vec<crate::domain::GitSubmoduleSummary>, ApplicationError> {
+    state.get_submodules(directory_path.as_deref()).await
+}
+
+/// Tauri IPC command to update one or all Git submodules.
+#[tauri::command]
+pub async fn update_submodules(
+    state: State<'_, ApplicationState>,
+    submodule_path: Option<String>,
+    is_init: bool,
+    is_recursive: bool,
+    directory_path: Option<String>,
+) -> Result<(), ApplicationError> {
+    state
+        .update_submodules(
+            directory_path.as_deref(),
+            submodule_path.as_deref(),
+            is_init,
+            is_recursive,
+        )
+        .await
+}
+
+/// Tauri IPC command to synchronize Git submodules URL configuration.
+#[tauri::command]
+pub async fn sync_submodules(
+    state: State<'_, ApplicationState>,
+    submodule_path: Option<String>,
+    is_recursive: bool,
+    directory_path: Option<String>,
+) -> Result<(), ApplicationError> {
+    state
+        .sync_submodules(
+            directory_path.as_deref(),
+            submodule_path.as_deref(),
+            is_recursive,
+        )
+        .await
+}
+
 /// Tauri IPC command to commit staged changes.
 #[tauri::command]
 pub async fn commit(

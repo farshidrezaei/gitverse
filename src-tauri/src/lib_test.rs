@@ -524,4 +524,57 @@ mod tests {
         assert!(!check_invalid.can_apply);
         assert!(check_invalid.error_message.is_some());
     }
+
+    #[tokio::test]
+    async fn test_submodules_operations() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let root_path = temporary_dir.path();
+
+        let sub_path = root_path.join("child");
+        let parent_path = root_path.join("parent");
+        std::fs::create_dir_all(&sub_path).expect("create child dir");
+        std::fs::create_dir_all(&parent_path).expect("create parent dir");
+
+        // Init child repo
+        Command::new("git").args(["init", "-b", "main"]).current_dir(&sub_path).output().expect("child init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(&sub_path).output().expect("child name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(&sub_path).output().expect("child email");
+        std::fs::write(sub_path.join("child_file.txt"), "hello submodule\n").expect("write child file");
+        Command::new("git").args(["add", "child_file.txt"]).current_dir(&sub_path).output().expect("child add");
+        Command::new("git").args(["commit", "-m", "child initial"]).current_dir(&sub_path).output().expect("child commit");
+
+        // Init parent repo
+        Command::new("git").args(["init", "-b", "main"]).current_dir(&parent_path).output().expect("parent init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(&parent_path).output().expect("parent name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(&parent_path).output().expect("parent email");
+        std::fs::write(parent_path.join("parent_file.txt"), "hello parent\n").expect("write parent file");
+        Command::new("git").args(["add", "parent_file.txt"]).current_dir(&parent_path).output().expect("parent add");
+        Command::new("git").args(["commit", "-m", "parent initial"]).current_dir(&parent_path).output().expect("parent commit");
+
+        // Add submodule
+        let add_output = Command::new("git")
+            .args(["-c", "protocol.file.allow=always", "submodule", "add", sub_path.to_str().unwrap(), "libs/child"])
+            .current_dir(&parent_path)
+            .output()
+            .expect("submodule add");
+        assert!(add_output.status.success());
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        let submodules = inspector.get_submodules(&parent_path).await.expect("get submodules");
+        assert_eq!(submodules.len(), 1);
+        assert_eq!(submodules[0].path, "libs/child");
+        assert_eq!(submodules[0].name, "child");
+        assert!(submodules[0].is_initialized);
+
+        let sync_result = inspector.sync_submodules(&parent_path, None, true).await;
+        assert!(sync_result.is_ok());
+
+        let update_result = inspector.update_submodules(&parent_path, None, true, true).await;
+        assert!(update_result.is_ok());
+    }
 }

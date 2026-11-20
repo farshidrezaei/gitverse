@@ -773,5 +773,25 @@
       "downloaded": "فایل پچ با موفقیت ذخیره شد",
       "applied": "پچ با موفقیت روی مخزن اعمال شد"
     }
+  },
+  "submodule": {
+    "modalTitle": "زیرمخزن‌ها (Git Submodules)",
+    "modalSubtitle": "مدیریت، همگام‌سازی و بروزرسانی بازگشتی مخازن تودرتو.",
+    "totalCount": "{count} زیرمخزن ثبت‌شده",
+    "syncAll": "همگام‌سازی همه",
+    "updateAll": "بروزرسانی بازگشتی همه",
+    "emptyTitle": "هیچ زیرمخزنی تعریف نشده است",
+    "emptySubtitle": "این مخزن هیچ زیرمخزن ثبت‌شده‌ای در فایل gitmodules. ندارد.",
+    "initialized": "آماده‌سازی شده",
+    "uninitialized": "آماده‌نشده",
+    "diverged": "تغییر یافته",
+    "conflicted": "دارای تداخل",
+    "syncAction": "همگام‌سازی آدرس",
+    "updateAction": "بروزرسانی",
+    "openAsRepoAction": "باز کردن مخزن",
+    "notifications": {
+      "updated": "زیرمخزن‌ها با موفقیت بروزرسانی شدند",
+      "synced": "آدرس‌های زیرمخزن‌ها با موفقیت همگام‌سازی شد"
+    }
   }
 }

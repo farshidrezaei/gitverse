@@ -21,6 +21,7 @@ const emit = defineEmits<{
   openBisect: []
   openExportPatch: []
   openApplyPatch: []
+  openSubmodules: []
 }>()
 
 const { t } = useI18n()
@@ -247,6 +248,18 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
           />
         </UTooltip>
       </UDropdownMenu>
+
+      <UTooltip :text="t('submodule.modalTitle')">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-folder-git-2"
+          class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+          :aria-label="t('submodule.modalTitle')"
+          @click="emit('openSubmodules')"
+        />
+      </UTooltip>
 
       <UTooltip :text="t('externalTools.openTerminal')">
         <UButton

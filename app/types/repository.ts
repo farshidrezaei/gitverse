@@ -260,6 +260,17 @@ export interface PatchCheckResult {
   affected_files: string[]
 }
 
+export interface GitSubmoduleSummary {
+  path: string
+  name: string
+  url?: string | null
+  branch?: string | null
+  current_commit_hash: string
+  is_initialized: boolean
+  has_uncommitted_changes: boolean
+  has_revision_divergence: boolean
+}
+
 export interface MergeBranchOutcome {
   is_successful: boolean
   has_conflicts: boolean

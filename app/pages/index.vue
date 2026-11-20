@@ -20,6 +20,7 @@ import ReflogExplorerModal from '~/components/workspace/history/ReflogExplorerMo
 import BisectModal from '~/components/workspace/bisect/BisectModal.vue'
 import ExportPatchModal from '~/components/workspace/patch/ExportPatchModal.vue'
 import ApplyPatchModal from '~/components/workspace/patch/ApplyPatchModal.vue'
+import SubmoduleManagerModal from '~/components/workspace/submodule/SubmoduleManagerModal.vue'
 import { useWorkspaceTabController } from '~/composables/useWorkspaceTabController'
 
 const { t } = useI18n()
@@ -144,6 +145,7 @@ const isReflogModalOpen = ref<boolean>(false)
 const isBisectModalOpen = ref<boolean>(false)
 const isExportPatchModalOpen = ref<boolean>(false)
 const isApplyPatchModalOpen = ref<boolean>(false)
+const isSubmoduleModalOpen = ref<boolean>(false)
 const selectedBranchName = ref<string | null>(null)
 const activeGraphReference = ref<string | null>(null)
 
@@ -478,6 +480,7 @@ async function handlePush(): Promise<void> {
         @open-bisect="isBisectModalOpen = true"
         @open-export-patch="isExportPatchModalOpen = true"
         @open-apply-patch="isApplyPatchModalOpen = true"
+        @open-submodules="isSubmoduleModalOpen = true"
       />
 
       <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip -->
@@ -704,6 +707,11 @@ async function handlePush(): Promise<void> {
     <!-- Apply Patch Modal -->
     <ApplyPatchModal
       v-model:open="isApplyPatchModalOpen"
+    />
+
+    <!-- Git Submodules Manager Modal -->
+    <SubmoduleManagerModal
+      v-model:open="isSubmoduleModalOpen"
     />
   </div>
 </template>

@@ -6,6 +6,7 @@ pub mod process;
 pub mod repository;
 pub mod stash;
 pub mod status;
+pub mod submodule;
 pub mod watcher;
 pub mod worktree;
 
@@ -22,6 +23,8 @@ mod stash_test;
 #[cfg(test)]
 mod status_test;
 #[cfg(test)]
+mod submodule_test;
+#[cfg(test)]
 mod worktree_test;
 
 pub use bisect::parse_bisect_step_output;
@@ -32,6 +35,7 @@ pub use process::GitProcessExecutor;
 pub use repository::GitRepositoryInspector;
 pub use stash::parse_stash_list;
 pub use status::parse_porcelain_v2_status;
+pub use submodule::parse_submodule_status;
 pub use watcher::RepositoryWatcherManager;
 pub use worktree::parse_worktree_list;
 

@@ -773,5 +773,25 @@
       "downloaded": "Patch file downloaded",
       "applied": "Patch successfully applied to repository"
     }
+  },
+  "submodule": {
+    "modalTitle": "Git Submodules",
+    "modalSubtitle": "Inspect, synchronize, and recursively update nested repositories.",
+    "totalCount": "{count} submodules registered",
+    "syncAll": "Sync All",
+    "updateAll": "Update All (Recursive)",
+    "emptyTitle": "No Submodules Configured",
+    "emptySubtitle": "This repository does not define any nested submodules in .gitmodules.",
+    "initialized": "Initialized",
+    "uninitialized": "Uninitialized",
+    "diverged": "Diverged",
+    "conflicted": "Conflict",
+    "syncAction": "Sync URL",
+    "updateAction": "Update",
+    "openAsRepoAction": "Open Repo",
+    "notifications": {
+      "updated": "Submodules updated successfully",
+      "synced": "Submodules synchronized successfully"
+    }
   }
 }

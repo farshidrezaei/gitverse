@@ -782,6 +782,42 @@ impl ApplicationState {
             .await
     }
 
+    /// Fetches all registered Git submodules and their status.
+    pub async fn get_submodules(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<Vec<crate::domain::GitSubmoduleSummary>, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_submodules(&target_path).await
+    }
+
+    /// Updates one or all Git submodules.
+    pub async fn update_submodules(
+        &self,
+        directory_path: Option<&str>,
+        submodule_path: Option<&str>,
+        is_init: bool,
+        is_recursive: bool,
+    ) -> Result<(), ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .update_submodules(&target_path, submodule_path, is_init, is_recursive)
+            .await
+    }
+
+    /// Synchronizes submodules' remote URL configuration setting.
+    pub async fn sync_submodules(
+        &self,
+        directory_path: Option<&str>,
+        submodule_path: Option<&str>,
+        is_recursive: bool,
+    ) -> Result<(), ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .sync_submodules(&target_path, submodule_path, is_recursive)
+            .await
+    }
+
     /// Collects system diagnostics and environment details for voluntary bug reporting.
     pub async fn get_application_diagnostics(&self) -> Result<ApplicationDiagnostics, ApplicationError> {
         let git_info = self.discover_git(None).await?;

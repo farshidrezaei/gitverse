@@ -204,11 +204,12 @@ gitverse/
 │   │       ├── history/              # Reflog explorer & lost commit recovery
 │   │       ├── bisect/               # Interactive Git bisect assistant & regression debugger
 │   │       ├── patch/                # Export & apply unified diff and format-patch files
+│   │       ├── submodule/            # Nested Git submodules status, sync, and recursive updates
 │   │       ├── provider/             # Pull request explorer, code review, merge modals
 │   │       ├── remote/               # Remote repository add/edit/manage modals
 │   │       ├── staging/              # Working tree changes, stash preview & diff inspection, conflict resolver
 │   │       └── tabs/                 # Top repository tab strip, scoped diff/PR tabs & external tool launchers
-│   ├── composables/                  # Modular state controllers (27 domain controllers)
+│   ├── composables/                  # Modular state controllers (28 domain controllers)
 │   ├── pages/                        # Nuxt routes (/ for workbench, /design-system, /settings)
 │   ├── schemas/                      # Zod validation schemas for inputs & forms
 │   ├── types/                        # Strict TypeScript interfaces matching Rust models
@@ -235,9 +236,9 @@ gitverse/
 │   │   ├── application/              # Application lifecycle, state containers
 │   │   ├── commands/                 # Tauri IPC command dispatchers
 │   │   ├── domain/                   # Pure business entities, enums, and validators
-│   │   ├── infrastructure/           # Process runner, SQLite, Keyring, Git adapters, diagnostics logger, bisect & patch
+│   │   ├── infrastructure/           # Process runner, SQLite, Keyring, Git adapters, diagnostics logger, bisect, patch, submodule
 │   │   ├── services/                 # Graph DAG computation algorithms & benchmarks
 │   │   ├── lib.rs                    # Plugin registration, invoke handlers, initialization
 │   │   └── main.rs                   # Desktop entrypoint
-└── test/                             # Frontend Vitest test suites (126 passing unit & E2E tests; 58 Rust unit/integration tests)
+└── test/                             # Frontend Vitest test suites (128 passing unit & E2E tests; 62 Rust unit/integration tests)
 ```
