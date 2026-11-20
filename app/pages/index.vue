@@ -17,6 +17,7 @@ import CreateWorktreeModal from '~/components/workspace/CreateWorktreeModal.vue'
 import InteractiveRebaseModal from '~/components/workspace/commit/InteractiveRebaseModal.vue'
 import FolderPickerModal from '~/components/workspace/FolderPickerModal.vue'
 import ReflogExplorerModal from '~/components/workspace/history/ReflogExplorerModal.vue'
+import BisectModal from '~/components/workspace/bisect/BisectModal.vue'
 import { useWorkspaceTabController } from '~/composables/useWorkspaceTabController'
 
 const { t } = useI18n()
@@ -138,6 +139,7 @@ const commitMessage = ref<string>('')
 const isAmend = ref<boolean>(false)
 const isBypassHooks = ref<boolean>(false)
 const isReflogModalOpen = ref<boolean>(false)
+const isBisectModalOpen = ref<boolean>(false)
 const selectedBranchName = ref<string | null>(null)
 const activeGraphReference = ref<string | null>(null)
 
@@ -469,6 +471,7 @@ async function handlePush(): Promise<void> {
         @open-repository-prompt="isFolderPickerModalOpen = true"
         @open-recent-repository="openRepository"
         @open-reflog="isReflogModalOpen = true"
+        @open-bisect="isBisectModalOpen = true"
       />
 
       <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip -->
@@ -679,6 +682,12 @@ async function handlePush(): Promise<void> {
       @checkout-commit="checkoutBranch"
       @create-branch="(sha) => { selectedCommitHash = sha; isCreateBranchModalOpen = true }"
       @reset-to-commit="(sha, mode) => resetToCommit(sha, mode)"
+    />
+
+    <!-- Interactive Git Bisect Assistant Modal -->
+    <BisectModal
+      v-model:open="isBisectModalOpen"
+      @locate-commit="(sha) => { selectCommit(sha) }"
     />
   </div>
 </template>

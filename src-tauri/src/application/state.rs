@@ -700,6 +700,49 @@ impl ApplicationState {
         self.git_inspector.get_file_blame(&target_path, file_path, revision).await
     }
 
+    /// Queries the current bisect status for a repository.
+    pub async fn get_bisect_status(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<crate::domain::BisectState, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_bisect_status(&target_path).await
+    }
+
+    /// Starts a Git bisect session.
+    pub async fn bisect_start(
+        &self,
+        directory_path: Option<&str>,
+        bad_commit_hash: &str,
+        good_commit_hash: &str,
+    ) -> Result<crate::domain::BisectState, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .bisect_start(&target_path, bad_commit_hash, good_commit_hash)
+            .await
+    }
+
+    /// Advances a Git bisect session with a decision (good, bad, skip).
+    pub async fn bisect_step(
+        &self,
+        directory_path: Option<&str>,
+        decision: &str,
+    ) -> Result<crate::domain::BisectState, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .bisect_step(&target_path, decision)
+            .await
+    }
+
+    /// Resets the Git bisect session.
+    pub async fn bisect_reset(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<(), ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.bisect_reset(&target_path).await
+    }
+
     /// Collects system diagnostics and environment details for voluntary bug reporting.
     pub async fn get_application_diagnostics(&self) -> Result<ApplicationDiagnostics, ApplicationError> {
         let git_info = self.discover_git(None).await?;

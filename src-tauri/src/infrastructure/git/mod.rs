@@ -1,3 +1,4 @@
+pub mod bisect;
 pub mod branch;
 pub mod diff;
 pub mod history;
@@ -8,6 +9,8 @@ pub mod status;
 pub mod watcher;
 pub mod worktree;
 
+#[cfg(test)]
+mod bisect_test;
 #[cfg(test)]
 mod branch_test;
 #[cfg(test)]
@@ -21,6 +24,7 @@ mod status_test;
 #[cfg(test)]
 mod worktree_test;
 
+pub use bisect::parse_bisect_step_output;
 pub use branch::{parse_local_branches, parse_remote_branches, parse_remotes, parse_tags, validate_branch_name};
 pub use diff::parse_unified_diff;
 pub use history::parse_delimited_git_log;

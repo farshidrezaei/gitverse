@@ -198,14 +198,16 @@ gitverse/
 │   │   ├── shared/                   # Atomic UI primitives (badges, pills, dialogs, logos)
 │   │   └── workspace/                # Primary Git workbench islands
 │   │       ├── branch/               # Branch tree sidebar & reference managers
-│   │       ├── commit/               # Commit header, inspector, changed file list
-│   │       ├── diff/                 # Unified & split diff viewers, media viewers
+│   │       ├── commit/               # Commit header, inspector, changed file list, conventional builder
+│   │       ├── diff/                 # Unified & split diff viewers, media viewers, interactive file blame
 │   │       ├── graph/                # Virtualized SVG canvas & commit rows
+│   │       ├── history/              # Reflog explorer & lost commit recovery
+│   │       ├── bisect/               # Interactive Git bisect assistant & regression debugger
 │   │       ├── provider/             # Pull request explorer, code review, merge modals
 │   │       ├── remote/               # Remote repository add/edit/manage modals
 │   │       ├── staging/              # Working tree changes, stash preview & diff inspection, conflict resolver
 │   │       └── tabs/                 # Top repository tab strip, scoped diff/PR tabs & external tool launchers
-│   ├── composables/                  # Modular state controllers (24 domain controllers)
+│   ├── composables/                  # Modular state controllers (26 domain controllers)
 │   ├── pages/                        # Nuxt routes (/ for workbench, /design-system, /settings)
 │   ├── schemas/                      # Zod validation schemas for inputs & forms
 │   ├── types/                        # Strict TypeScript interfaces matching Rust models
@@ -232,9 +234,9 @@ gitverse/
 │   │   ├── application/              # Application lifecycle, state containers
 │   │   ├── commands/                 # Tauri IPC command dispatchers
 │   │   ├── domain/                   # Pure business entities, enums, and validators
-│   │   ├── infrastructure/           # Process runner, SQLite, Keyring, Git adapters, diagnostics logger
+│   │   ├── infrastructure/           # Process runner, SQLite, Keyring, Git adapters, diagnostics logger, bisect parser
 │   │   ├── services/                 # Graph DAG computation algorithms & benchmarks
 │   │   ├── lib.rs                    # Plugin registration, invoke handlers, initialization
 │   │   └── main.rs                   # Desktop entrypoint
-└── test/                             # Frontend Vitest test suites (120 passing unit & E2E tests)
+└── test/                             # Frontend Vitest test suites (123 passing unit & E2E tests; 57 Rust unit/integration tests)
 ```

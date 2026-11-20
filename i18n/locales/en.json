@@ -710,5 +710,35 @@
     "resetTooltip": "Reset current HEAD to this reflog commit",
     "empty": "No reflog records found matching filter",
     "totalEntries": "{count} reference history records"
+  },
+  "bisect": {
+    "modalTitle": "Interactive Git Bisect",
+    "modalSubtitle": "Binary search through commit history to identify regressions and bugs.",
+    "culpritFound": "Culprit Commit Identified!",
+    "viewCommit": "Locate",
+    "finishAndReset": "Finish & Reset",
+    "testingCommit": "Currently Testing Commit",
+    "stepsRemaining": "{revisions} revisions left (~{steps} steps)",
+    "unknownSummary": "No commit message available",
+    "testPrompt": "Test your build or test suite on this revision, then mark it accordingly:",
+    "markGood": "Mark Good",
+    "markBad": "Mark Bad",
+    "skip": "Skip",
+    "toggleLog": "Bisect Execution Log",
+    "startDescription": "Git bisect uses binary search to quickly locate the commit that introduced a bug.",
+    "badCommitLabel": "Bad Commit (or reference)",
+    "badCommitPlaceholder": "HEAD, main, or commit hash",
+    "badCommitHint": "The latest known revision where the bug is present.",
+    "goodCommitLabel": "Good Commit (or reference)",
+    "goodCommitPlaceholder": "v1.0.0, commit hash, etc.",
+    "goodCommitHint": "An older known revision where the bug did not exist.",
+    "guideTip": "Git will checkout the midpoint commit for testing. Mark each step as Good or Bad until the offending commit is isolated.",
+    "abortBisect": "Abort Bisect",
+    "startAction": "Start Bisecting",
+    "notifications": {
+      "started": "Git bisect session started",
+      "culpritFound": "Regression culprit commit found!",
+      "reset": "Git bisect session ended and reset"
+    }
   }
 }

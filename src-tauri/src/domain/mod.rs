@@ -377,6 +377,20 @@ pub struct GitWorktreeSummary {
     pub is_main: bool,
 }
 
+/// Represents the state of an interactive Git bisect session.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BisectState {
+    pub is_active: bool,
+    pub current_commit_hash: Option<String>,
+    pub current_commit_summary: Option<String>,
+    pub revisions_remaining: Option<u32>,
+    pub estimated_steps_remaining: Option<u32>,
+    pub culprit_commit_hash: Option<String>,
+    pub culprit_commit_summary: Option<String>,
+    pub log_output: String,
+}
+
+
 
 
 

@@ -1,13 +1,14 @@
 use std::path::{Path, PathBuf};
 use base64::Engine;
 use crate::domain::{
-    ApplicationError, ConflictFileDetails, DirectoryListing, FolderEntry, GitWorktreeSummary, InteractiveRebaseRequest,
+    ApplicationError, BisectState, ConflictFileDetails, DirectoryListing, FolderEntry, GitWorktreeSummary, InteractiveRebaseRequest,
     MergeBranchOutcome, RebaseBranchOutcome, RebasePlanItem, RepositoryOperationState, RepositoryOverview, StashRecord,
 };
 use crate::domain::validation::{
     validate_branch_name, validate_commit_message, validate_remote_name, validate_remote_url,
     validate_stash_message, validate_worktree_path,
 };
+use super::bisect::parse_bisect_step_output;
 use super::process::GitProcessExecutor;
 use super::stash::parse_stash_list;
 use super::worktree::parse_worktree_list;
@@ -1640,5 +1641,222 @@ impl GitRepositoryInspector {
             file_path: file_path.to_string(),
             lines,
         })
+    }
+
+    /// Queries the current Git bisect state and log for the given repository.
+    pub async fn get_bisect_status(
+        &self,
+        directory_path: &Path,
+    ) -> Result<BisectState, ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        let log_result = self
+            .executor
+            .execute_git_command(Some(directory_path), &["bisect", "log"])
+            .await;
+
+        match log_result {
+            Err(_) => Ok(BisectState {
+                is_active: false,
+                current_commit_hash: None,
+                current_commit_summary: None,
+                revisions_remaining: None,
+                estimated_steps_remaining: None,
+                culprit_commit_hash: None,
+                culprit_commit_summary: None,
+                log_output: String::new(),
+            }),
+            Ok(log_output) => {
+                let current_commit_hash = self
+                    .executor
+                    .execute_git_command(Some(directory_path), &["rev-parse", "HEAD"])
+                    .await
+                    .map(|hash| hash.trim().to_string())
+                    .ok();
+
+                let current_commit_summary = if let Some(ref hash) = current_commit_hash {
+                    self.executor
+                        .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", hash])
+                        .await
+                        .map(|summary| summary.trim().to_string())
+                        .ok()
+                } else {
+                    None
+                };
+
+                let mut state = parse_bisect_step_output(
+                    &log_output,
+                    true,
+                    current_commit_hash,
+                    current_commit_summary,
+                    log_output.clone(),
+                );
+
+                if let Some(ref culprit_hash) = state.culprit_commit_hash {
+                    state.culprit_commit_summary = self
+                        .executor
+                        .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", culprit_hash])
+                        .await
+                        .map(|summary| summary.trim().to_string())
+                        .ok();
+                }
+
+                Ok(state)
+            }
+        }
+    }
+
+    /// Starts a Git bisect session between a known bad and good commit.
+    pub async fn bisect_start(
+        &self,
+        directory_path: &Path,
+        bad_commit_hash: &str,
+        good_commit_hash: &str,
+    ) -> Result<BisectState, ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        let start_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["bisect", "start", bad_commit_hash.trim(), good_commit_hash.trim()],
+            )
+            .await?;
+
+        let log_output = self
+            .executor
+            .execute_git_command(Some(directory_path), &["bisect", "log"])
+            .await
+            .unwrap_or_default();
+
+        let current_commit_hash = self
+            .executor
+            .execute_git_command(Some(directory_path), &["rev-parse", "HEAD"])
+            .await
+            .map(|hash| hash.trim().to_string())
+            .ok();
+
+        let current_commit_summary = if let Some(ref hash) = current_commit_hash {
+            self.executor
+                .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", hash])
+                .await
+                .map(|summary| summary.trim().to_string())
+                .ok()
+        } else {
+            None
+        };
+
+        let mut state = parse_bisect_step_output(
+            &start_output,
+            true,
+            current_commit_hash,
+            current_commit_summary,
+            log_output,
+        );
+
+        if let Some(ref culprit_hash) = state.culprit_commit_hash {
+            state.culprit_commit_summary = self
+                .executor
+                .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", culprit_hash])
+                .await
+                .map(|summary| summary.trim().to_string())
+                .ok();
+        }
+
+        Ok(state)
+    }
+
+    /// Records a bisect step decision (good, bad, or skip) and advances the bisect session.
+    pub async fn bisect_step(
+        &self,
+        directory_path: &Path,
+        decision: &str,
+    ) -> Result<BisectState, ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        let normalized_decision = decision.trim().to_lowercase();
+        if normalized_decision != "good" && normalized_decision != "bad" && normalized_decision != "skip" {
+            return Err(ApplicationError::InvalidInput(format!(
+                "Invalid bisect decision: {decision}. Must be 'good', 'bad', or 'skip'."
+            )));
+        }
+
+        let step_output = self
+            .executor
+            .execute_git_command(Some(directory_path), &["bisect", &normalized_decision])
+            .await?;
+
+        let log_output = self
+            .executor
+            .execute_git_command(Some(directory_path), &["bisect", "log"])
+            .await
+            .unwrap_or_default();
+
+        let current_commit_hash = self
+            .executor
+            .execute_git_command(Some(directory_path), &["rev-parse", "HEAD"])
+            .await
+            .map(|hash| hash.trim().to_string())
+            .ok();
+
+        let current_commit_summary = if let Some(ref hash) = current_commit_hash {
+            self.executor
+                .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", hash])
+                .await
+                .map(|summary| summary.trim().to_string())
+                .ok()
+        } else {
+            None
+        };
+
+        let mut state = parse_bisect_step_output(
+            &step_output,
+            true,
+            current_commit_hash,
+            current_commit_summary,
+            log_output,
+        );
+
+        if let Some(ref culprit_hash) = state.culprit_commit_hash {
+            state.culprit_commit_summary = self
+                .executor
+                .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", culprit_hash])
+                .await
+                .map(|summary| summary.trim().to_string())
+                .ok();
+        }
+
+        Ok(state)
+    }
+
+    /// Resets the current Git bisect session, checking out the original branch HEAD.
+    pub async fn bisect_reset(&self, directory_path: &Path) -> Result<(), ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        self.executor
+            .execute_git_command(Some(directory_path), &["bisect", "reset"])
+            .await?;
+
+        Ok(())
     }
 }

@@ -18,6 +18,7 @@ const emit = defineEmits<{
   openRepositoryPrompt: []
   openRecentRepository: [repositoryPath: string]
   openReflog: []
+  openBisect: []
 }>()
 
 const { t } = useI18n()
@@ -202,6 +203,18 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
           class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
           :aria-label="t('reflog.title')"
           @click="emit('openReflog')"
+        />
+      </UTooltip>
+
+      <UTooltip :text="t('bisect.modalTitle')">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-crosshair"
+          class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+          :aria-label="t('bisect.modalTitle')"
+          @click="emit('openBisect')"
         />
       </UTooltip>
 

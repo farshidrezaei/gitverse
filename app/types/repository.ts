@@ -241,6 +241,17 @@ export interface ReflogRecord {
   author_name: string
 }
 
+export interface BisectState {
+  is_active: boolean
+  current_commit_hash?: string | null
+  current_commit_summary?: string | null
+  revisions_remaining?: number | null
+  estimated_steps_remaining?: number | null
+  culprit_commit_hash?: string | null
+  culprit_commit_summary?: string | null
+  log_output: string
+}
+
 export interface MergeBranchOutcome {
   is_successful: boolean
   has_conflicts: boolean

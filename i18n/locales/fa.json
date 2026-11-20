@@ -710,5 +710,35 @@
     "resetTooltip": "ریست کردن وضعیت فعلی مخزن به این کامیت",
     "empty": "هیچ رکوردی در رف‌لاگ مطابق جستجو یافت نشد",
     "totalEntries": "{count} سابقه در رف‌لاگ"
+  },
+  "bisect": {
+    "modalTitle": "ردیابی گام‌به‌گام باگ (Git Bisect)",
+    "modalSubtitle": "جستجوی دودویی در تاریخچه کامیت‌ها برای شناسایی اولین کامیت معیوب.",
+    "culpritFound": "کامیت ایجادکننده باگ شناسایی شد!",
+    "viewCommit": "نمایش کامیت",
+    "finishAndReset": "پایان و ریست وضعیت",
+    "testingCommit": "کامیت در حال بررسی",
+    "stepsRemaining": "{revisions} کامیت باقی‌مانده (حدود {steps} گام)",
+    "unknownSummary": "بدون پیام کامیت",
+    "testPrompt": "پروژه یا تست‌های خود را در این نسخه بررسی کنید و نتیجه را ثبت کنید:",
+    "markGood": "ثبت به عنوان سالم (Good)",
+    "markBad": "ثبت به عنوان معیوب (Bad)",
+    "skip": "رد کردن (Skip)",
+    "toggleLog": "مشاهده لاگ اجرای Bisect",
+    "startDescription": "ابزار Git Bisect با الگوریتم جستجوی دودویی کامیت ایجادکننده خرابی را به سرعت پیدا می‌کند.",
+    "badCommitLabel": "کامیت معیوب (یا مرجع)",
+    "badCommitPlaceholder": "HEAD، main یا هش کامیت",
+    "badCommitHint": "آخرین نسخه‌ای که می‌دانید باگ در آن وجود دارد.",
+    "goodCommitLabel": "کامیت سالم (یا مرجع)",
+    "goodCommitPlaceholder": "v1.0.0 یا هش کامیت سالم",
+    "goodCommitHint": "نسخه قدیمی‌تری که مطمئن هستید بدون باگ بوده است.",
+    "guideTip": "گیت کامیت میانی را برای تست انتخاب می‌کند. در هر مرحله وضعیت را سالم یا معیوب اعلام کنید تا اولین کامیت مشکل‌دار پیدا شود.",
+    "abortBisect": "لغو و توقف Bisect",
+    "startAction": "شروع جستجو",
+    "notifications": {
+      "started": "عملیات Git Bisect آغاز شد",
+      "culpritFound": "اولین کامیت ایجادکننده باگ شناسایی شد!",
+      "reset": "جلسه Git Bisect متوقف و به وضعیت اولیه بازگردانده شد"
+    }
   }
 }

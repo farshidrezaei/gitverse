@@ -431,4 +431,49 @@ mod tests {
         let detected_template = inspector.get_commit_template(repository_path).await.expect("detected template");
         assert_eq!(detected_template, Some(message_content.to_string()));
     }
+
+    #[tokio::test]
+    async fn test_git_bisect_workflow() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        let mut commit_hashes = Vec::new();
+        for index in 0..5 {
+            std::fs::write(repository_path.join("file.txt"), format!("content {index}\n")).expect("write file");
+            Command::new("git").args(["add", "file.txt"]).current_dir(repository_path).output().expect("git add");
+            Command::new("git").args(["commit", "-m", &format!("commit {index}")]).current_dir(repository_path).output().expect("git commit");
+            let output = Command::new("git").args(["rev-parse", "HEAD"]).current_dir(repository_path).output().expect("rev-parse");
+            commit_hashes.push(String::from_utf8_lossy(&output.stdout).trim().to_string());
+        }
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        // Verify inactive initially
+        let initial_status = inspector.get_bisect_status(repository_path).await.expect("get bisect status");
+        assert!(!initial_status.is_active);
+
+        // Start bisect with bad = commit_hashes[4] and good = commit_hashes[0]
+        let started_status = inspector
+            .bisect_start(repository_path, &commit_hashes[4], &commit_hashes[0])
+            .await
+            .expect("bisect start");
+
+        assert!(started_status.is_active);
+        assert!(started_status.current_commit_hash.is_some());
+
+        // Reset bisect session
+        let reset_result = inspector.bisect_reset(repository_path).await;
+        assert!(reset_result.is_ok());
+
+        let final_status = inspector.get_bisect_status(repository_path).await.expect("get bisect status after reset");
+        assert!(!final_status.is_active);
+    }
 }

@@ -183,6 +183,53 @@ pub async fn get_reflog(
         .await
 }
 
+/// Tauri IPC command to inspect the current Git bisect state and log.
+#[tauri::command]
+pub async fn get_bisect_status(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+) -> Result<crate::domain::BisectState, ApplicationError> {
+    state.get_bisect_status(directory_path.as_deref()).await
+}
+
+/// Tauri IPC command to start a Git bisect session.
+#[tauri::command]
+pub async fn bisect_start(
+    state: State<'_, ApplicationState>,
+    bad_commit_hash: String,
+    good_commit_hash: String,
+    directory_path: Option<String>,
+) -> Result<crate::domain::BisectState, ApplicationError> {
+    state
+        .bisect_start(
+            directory_path.as_deref(),
+            &bad_commit_hash,
+            &good_commit_hash,
+        )
+        .await
+}
+
+/// Tauri IPC command to record a Git bisect decision (good, bad, skip).
+#[tauri::command]
+pub async fn bisect_step(
+    state: State<'_, ApplicationState>,
+    decision: String,
+    directory_path: Option<String>,
+) -> Result<crate::domain::BisectState, ApplicationError> {
+    state
+        .bisect_step(directory_path.as_deref(), &decision)
+        .await
+}
+
+/// Tauri IPC command to reset a Git bisect session.
+#[tauri::command]
+pub async fn bisect_reset(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+) -> Result<(), ApplicationError> {
+    state.bisect_reset(directory_path.as_deref()).await
+}
+
 /// Tauri IPC command to extract Git commit history and compute deterministic DAG layout.
 #[tauri::command]
 pub async fn get_commit_graph(
