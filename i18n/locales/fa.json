@@ -399,7 +399,15 @@
     "poppedSuccess": "استش با موفقیت اعمال و از پشته حذف شد",
     "popFailed": "خطا در پاپ کردن استش",
     "droppedSuccess": "استش با موفقیت حذف شد",
-    "dropFailed": "خطا در حذف استش"
+    "dropFailed": "خطا در حذف استش",
+    "inspect": "مشاهده تغییرات",
+    "inspectTooltip": "مشاهده فایل‌ها و دیف تغییرات ذخیره موقت",
+    "previewTitle": "جزئیات ذخیره موقت (Stash)",
+    "previewFiles": "فایل‌های تغییر یافته",
+    "previewNoFiles": "هیچ فایلی در این ذخیره موقت تغییر نیافته است",
+    "previewSelectFile": "برای مشاهده دیف، یک فایل را انتخاب کنید",
+    "searchFiles": "جستجوی فایل‌ها...",
+    "filesChanged": "{count} فایل تغییر یافته"
   },
   "branch": {
     "mergeIntoCurrent": "ادغام «{source}» در «{target}»",

@@ -1,4 +1,5 @@
-import type { StashRecord } from '~/types/repository'
+import type { FileDiff, StashDetails, StashRecord } from '~/types/repository'
+import { formatApplicationError } from '~/utils/tauriClient'
 
 export function useStashController() {
   const { currentRepository } = useRepositoryWorkspace()
@@ -144,10 +145,56 @@ export function useStashController() {
       return true
     } catch (error) {
       console.error('Failed to drop stash:', error)
-      notifyError(t('stash.dropFailed'))
+      notifyError(formatApplicationError(error))
       return false
     } finally {
       isLoadingStashes.value = false
+    }
+  }
+
+  async function fetchStashDetails(stashIndex: number): Promise<StashDetails | null> {
+    if (!currentRepository.value) {
+      return null
+    }
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        return await invoke<StashDetails>('get_stash_details', {
+          stashIndex,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+      return null
+    } catch (error) {
+      console.error('Failed to fetch stash details:', error)
+      notifyError(formatApplicationError(error))
+      return null
+    }
+  }
+
+  async function fetchStashFileDiff(
+    stashIndex: number,
+    filePath: string
+  ): Promise<FileDiff | null> {
+    if (!currentRepository.value) {
+      return null
+    }
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        return await invoke<FileDiff>('get_stash_file_diff', {
+          stashIndex,
+          filePath,
+          directoryPath: currentRepository.value.path,
+        })
+      }
+      return null
+    } catch (error) {
+      console.error('Failed to fetch stash file diff:', error)
+      notifyError(formatApplicationError(error))
+      return null
     }
   }
 
@@ -159,5 +206,7 @@ export function useStashController() {
     applyStash,
     popStash,
     dropStash,
+    fetchStashDetails,
+    fetchStashFileDiff,
   }
 }

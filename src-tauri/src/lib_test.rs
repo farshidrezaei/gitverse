@@ -301,4 +301,44 @@ mod tests {
         assert_eq!(blame.lines[1].final_line_number, 2);
         assert_eq!(blame.lines[1].line_content, "Second line");
     }
+
+    #[tokio::test]
+    async fn test_get_stash_details_and_diff() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        std::fs::write(repository_path.join("file.txt"), "Original text\n").expect("write file");
+        Command::new("git").args(["add", "file.txt"]).current_dir(repository_path).output().expect("git add");
+        Command::new("git").args(["commit", "-m", "initial commit"]).current_dir(repository_path).output().expect("git commit");
+
+        std::fs::write(repository_path.join("file.txt"), "Modified stash text\n").expect("modify file");
+        Command::new("git").args(["stash", "push", "-m", "work in progress"]).current_dir(repository_path).output().expect("git stash");
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        let details = inspector.get_stash_details(repository_path, 0)
+            .await
+            .expect("Get stash details");
+
+        assert_eq!(details.index, 0);
+        assert!(details.message.contains("work in progress"));
+        assert_eq!(details.changed_files.len(), 1);
+        assert_eq!(details.changed_files[0].path, "file.txt");
+
+        let diff = inspector.get_stash_file_diff(repository_path, 0, "file.txt")
+            .await
+            .expect("Get stash file diff");
+
+        assert_eq!(diff.new_path, "file.txt");
+        assert_eq!(diff.total_additions, 1);
+        assert_eq!(diff.total_deletions, 1);
+    }
 }

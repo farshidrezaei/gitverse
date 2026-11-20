@@ -399,7 +399,15 @@
     "poppedSuccess": "Stash popped successfully",
     "popFailed": "Failed to pop stash",
     "droppedSuccess": "Stash dropped successfully",
-    "dropFailed": "Failed to drop stash"
+    "dropFailed": "Failed to drop stash",
+    "inspect": "Inspect Diff",
+    "inspectTooltip": "View stash changes and diff",
+    "previewTitle": "Stash Details",
+    "previewFiles": "Changed Files",
+    "previewNoFiles": "No files modified in this stash",
+    "previewSelectFile": "Select a file to inspect diff",
+    "searchFiles": "Filter files...",
+    "filesChanged": "{count} files changed"
   },
   "branch": {
     "mergeIntoCurrent": "Merge '{source}' into '{target}'",

@@ -434,6 +434,27 @@ impl ApplicationState {
         self.git_inspector.drop_stash(&target_path, stash_index).await
     }
 
+    /// Retrieves detailed stash inspection including changed files list.
+    pub async fn get_stash_details(
+        &self,
+        directory_path: Option<&str>,
+        stash_index: usize,
+    ) -> Result<crate::domain::StashDetails, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_stash_details(&target_path, stash_index).await
+    }
+
+    /// Retrieves file diff within a stash entry.
+    pub async fn get_stash_file_diff(
+        &self,
+        directory_path: Option<&str>,
+        stash_index: usize,
+        file_path: &str,
+    ) -> Result<FileDiff, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_stash_file_diff(&target_path, stash_index, file_path).await
+    }
+
     /// Cherry-picks a commit onto current branch.
     pub async fn cherry_pick_commit(
         &self,

@@ -831,6 +831,67 @@ impl GitRepositoryInspector {
             .await
     }
 
+    /// Extracts detailed information and changed files for a specific stash entry.
+    pub async fn get_stash_details(
+        &self,
+        directory_path: &Path,
+        stash_index: usize,
+    ) -> Result<crate::domain::StashDetails, ApplicationError> {
+        let stash_identifier = format!("stash@{{{}}}", stash_index);
+        let parent_identifier = format!("stash@{{{}}}^1", stash_index);
+
+        let log_output = self.executor
+            .execute_git_command(Some(directory_path), &["log", "-1", "--format=%H%x1f%s%x1f%ct", &stash_identifier])
+            .await?;
+        let parts: Vec<&str> = log_output.trim().split('\x1f').collect();
+        let (commit_hash, message, timestamp) = if parts.len() >= 3 {
+            (parts[0].to_string(), parts[1].to_string(), parts[2].parse::<i64>().unwrap_or(0))
+        } else {
+            (String::new(), format!("Stash {}", stash_index), 0)
+        };
+
+        let name_status_output = self.executor
+            .execute_git_command(Some(directory_path), &["diff", "--name-status", &parent_identifier, &stash_identifier])
+            .await
+            .unwrap_or_default();
+
+        let numstat_output = self.executor
+            .execute_git_command(Some(directory_path), &["diff", "--numstat", &parent_identifier, &stash_identifier])
+            .await
+            .unwrap_or_default();
+
+        let changed_files = super::history::parse_commit_changed_files(&name_status_output, &numstat_output);
+        let total_additions = changed_files.iter().map(|file| file.additions).sum();
+        let total_deletions = changed_files.iter().map(|file| file.deletions).sum();
+
+        Ok(crate::domain::StashDetails {
+            index: stash_index,
+            stash_identifier,
+            message,
+            commit_hash,
+            timestamp_seconds: timestamp,
+            total_additions,
+            total_deletions,
+            changed_files,
+        })
+    }
+
+    /// Extracts unified diff for a single file within a stash entry.
+    pub async fn get_stash_file_diff(
+        &self,
+        directory_path: &Path,
+        stash_index: usize,
+        file_path: &str,
+    ) -> Result<crate::domain::FileDiff, ApplicationError> {
+        let stash_identifier = format!("stash@{{{}}}", stash_index);
+        let parent_identifier = format!("stash@{{{}}}^1", stash_index);
+        let raw_diff = self.executor
+            .execute_git_command(Some(directory_path), &["diff", "-p", &parent_identifier, &stash_identifier, "--", file_path])
+            .await?;
+
+        Ok(super::diff::parse_unified_diff(&raw_diff, file_path))
+    }
+
     /// Cherry-picks a commit onto the current branch.
     pub async fn cherry_pick_commit(
         &self,

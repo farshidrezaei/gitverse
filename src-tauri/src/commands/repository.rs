@@ -432,6 +432,27 @@ pub async fn drop_stash(
     state.drop_stash(directory_path.as_deref(), stash_index).await
 }
 
+/// Tauri IPC command to get detailed changed files within a stash.
+#[tauri::command]
+pub async fn get_stash_details(
+    state: State<'_, ApplicationState>,
+    stash_index: usize,
+    directory_path: Option<String>,
+) -> Result<crate::domain::StashDetails, ApplicationError> {
+    state.get_stash_details(directory_path.as_deref(), stash_index).await
+}
+
+/// Tauri IPC command to get unified diff for a single file within a stash.
+#[tauri::command]
+pub async fn get_stash_file_diff(
+    state: State<'_, ApplicationState>,
+    stash_index: usize,
+    file_path: String,
+    directory_path: Option<String>,
+) -> Result<crate::domain::FileDiff, ApplicationError> {
+    state.get_stash_file_diff(directory_path.as_deref(), stash_index, &file_path).await
+}
+
 /// Tauri IPC command to cherry-pick a commit.
 #[tauri::command]
 pub async fn cherry_pick_commit(

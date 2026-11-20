@@ -92,6 +92,8 @@ pub fn run() {
             commands::apply_stash,
             commands::pop_stash,
             commands::drop_stash,
+            commands::get_stash_details,
+            commands::get_stash_file_diff,
             commands::cherry_pick_commit,
             commands::revert_commit,
             commands::reset_to_commit,

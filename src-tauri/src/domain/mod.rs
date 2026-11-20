@@ -228,6 +228,19 @@ pub struct StashRecord {
     pub timestamp_seconds: i64,
 }
 
+/// Detailed view of a stash entry with changed files and statistics.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct StashDetails {
+    pub index: usize,
+    pub stash_identifier: String,
+    pub message: String,
+    pub commit_hash: String,
+    pub timestamp_seconds: i64,
+    pub total_additions: u32,
+    pub total_deletions: u32,
+    pub changed_files: Vec<CommitChangedFile>,
+}
+
 /// Represents the outcome of merging a branch.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MergeBranchOutcome {

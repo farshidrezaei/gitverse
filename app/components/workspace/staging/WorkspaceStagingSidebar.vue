@@ -7,6 +7,7 @@ import StagingTreeNodeItem from '../StagingTreeNodeItem.vue'
 import FileStatusBadge from '~/components/shared/FileStatusBadge.vue'
 import CreateStashModal from './CreateStashModal.vue'
 import ConflictResolverModal from './ConflictResolverModal.vue'
+import StashPreviewModal from './StashPreviewModal.vue'
 import { useStashController } from '~/composables/useStashController'
 import { useConflictController } from '~/composables/useConflictController'
 import { formatStashDisplayMessage, formatStashRelativeTime } from '~/utils/stash'
@@ -52,7 +53,16 @@ const {
 const { confirmStandard } = useConfirmationDialog()
 
 const isCreateStashModalOpen = ref(false)
+const isPreviewStashModalOpen = ref<boolean>(false)
+const selectedStashIndexForPreview = ref<number | null>(null)
+const selectedStashIdentifierForPreview = ref<string | null>(null)
 const isStashSectionOpen = ref(true)
+
+function openStashPreview(stashIndex: number, stashIdentifier: string): void {
+  selectedStashIndexForPreview.value = stashIndex
+  selectedStashIdentifierForPreview.value = stashIdentifier
+  isPreviewStashModalOpen.value = true
+}
 
 function toggleStashSection(): void {
   isStashSectionOpen.value = !isStashSectionOpen.value
@@ -624,8 +634,18 @@ function getFlatFileContextMenuItems(
                 </div>
               </div>
 
-              <!-- Action buttons: Apply, Pop, Drop -->
+              <!-- Action buttons: Inspect, Apply, Pop, Drop -->
               <div class="flex items-center gap-0.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                <UTooltip :text="t('stash.inspectTooltip')">
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    icon="i-lucide-file-search"
+                    :aria-label="t('stash.inspect')"
+                    @click="openStashPreview(stashItem.index, stashItem.stash_identifier)"
+                  />
+                </UTooltip>
                 <UTooltip :text="t('stash.applyTooltip')">
                   <UButton
                     size="xs"
@@ -704,6 +724,16 @@ function getFlatFileContextMenuItems(
     <CreateStashModal
       v-model:open="isCreateStashModalOpen"
       @save="saveStash"
+    />
+
+    <!-- Stash Preview Modal -->
+    <StashPreviewModal
+      v-model:open="isPreviewStashModalOpen"
+      :stash-index="selectedStashIndexForPreview"
+      :stash-identifier="selectedStashIdentifierForPreview"
+      @apply="applyStash"
+      @pop="popStash"
+      @drop="dropStash"
     />
 
     <!-- Conflict Resolver Modal -->

@@ -212,6 +212,17 @@ export interface StashRecord {
   timestamp_seconds: number
 }
 
+export interface StashDetails {
+  index: number
+  stash_identifier: string
+  message: string
+  commit_hash: string
+  timestamp_seconds: number
+  total_additions: number
+  total_deletions: number
+  changed_files: CommitChangedFile[]
+}
+
 export interface MergeBranchOutcome {
   is_successful: boolean
   has_conflicts: boolean

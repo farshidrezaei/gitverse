@@ -54,4 +54,26 @@ describe('stash utilities', () => {
       expect(formatStashRelativeTime(now - 172800, now)).toBe('2d ago')
     })
   })
+
+  describe('stash details filtering', () => {
+    it('filters changed files by file path search query', () => {
+      const changedFiles = [
+        { path: 'src/main.rs', original_path: null, status: 'modified' as const, additions: 5, deletions: 2 },
+        { path: 'src/lib.rs', original_path: null, status: 'modified' as const, additions: 10, deletions: 0 },
+        { path: 'package.json', original_path: null, status: 'modified' as const, additions: 1, deletions: 1 },
+      ]
+
+      const filterFiles = (query: string) => {
+        const normalized = query.trim().toLowerCase()
+        if (!normalized) return changedFiles
+        return changedFiles.filter((file) => file.path.toLowerCase().includes(normalized))
+      }
+
+      expect(filterFiles('')).toHaveLength(3)
+      expect(filterFiles('main')).toHaveLength(1)
+      expect(filterFiles('main')[0]?.path).toBe('src/main.rs')
+      expect(filterFiles('src')).toHaveLength(2)
+      expect(filterFiles('nonexistent')).toHaveLength(0)
+    })
+  })
 })

@@ -203,7 +203,7 @@ gitverse/
 │   │       ├── graph/                # Virtualized SVG canvas & commit rows
 │   │       ├── provider/             # Pull request explorer, code review, merge modals
 │   │       ├── remote/               # Remote repository add/edit/manage modals
-│   │       ├── staging/              # Working tree changes, stash, conflict resolver
+│   │       ├── staging/              # Working tree changes, stash preview & diff inspection, conflict resolver
 │   │       └── tabs/                 # Top repository tab strip & scoped diff/PR tabs
 │   ├── composables/                  # Modular state controllers (22 domain controllers)
 │   ├── pages/                        # Nuxt routes (/ for workbench, /design-system, /settings)
@@ -235,5 +235,5 @@ gitverse/
 │   │   ├── services/                 # Graph DAG computation algorithms & benchmarks
 │   │   ├── lib.rs                    # Plugin registration, invoke handlers, initialization
 │   │   └── main.rs                   # Desktop entrypoint
-└── test/                             # Frontend Vitest test suites (107 passing unit & E2E tests)
+└── test/                             # Frontend Vitest test suites (108 passing unit & E2E tests)
 ```
