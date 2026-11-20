@@ -373,7 +373,11 @@
     "compareWith": "Compare Commits",
     "noCommitSelected": "Select a commit from the graph to inspect details",
     "validationEmptySummary": "Commit summary cannot be empty.",
-    "validationSummaryTooLong": "Commit summary is too long (maximum 500 characters)."
+    "validationSummaryTooLong": "Commit summary is too long (maximum 500 characters).",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "verifiedTooltip": "Cryptographically verified digital signature",
+    "unverifiedTooltip": "Cryptographic signature could not be verified or key is unknown"
   },
   "stash": {
     "title": "Stashes",

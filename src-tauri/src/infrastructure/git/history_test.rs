@@ -94,4 +94,36 @@ pub mod tests {
         assert_eq!(changed_files[3].additions, 0);
         assert_eq!(changed_files[3].deletions, 0);
     }
+
+    #[test]
+    fn test_parse_commit_signature() {
+        use super::super::history::parse_commit_signature;
+        use crate::domain::CommitSignatureStatus;
+
+        // Verified GPG signature
+        let good_sig = "G\x1fAlice Signer\x1f4AEE18F83AFDEB23";
+        let parsed_good = parse_commit_signature(good_sig).expect("parsed good signature");
+        assert_eq!(parsed_good.status, CommitSignatureStatus::Verified);
+        assert_eq!(parsed_good.signer_name, Some("Alice Signer".to_string()));
+        assert_eq!(parsed_good.key_id, Some("4AEE18F83AFDEB23".to_string()));
+
+        // Untrusted/unknown validity key (U) is also classified as verified
+        let untrusted_key = "U\x1fBob Developer\x1f";
+        let parsed_untrusted = parse_commit_signature(untrusted_key).expect("parsed untrusted key");
+        assert_eq!(parsed_untrusted.status, CommitSignatureStatus::Verified);
+        assert_eq!(parsed_untrusted.signer_name, Some("Bob Developer".to_string()));
+        assert_eq!(parsed_untrusted.key_id, None);
+
+        // Bad signature (B)
+        let bad_sig = "B\x1fAttacker\x1f12345678";
+        let parsed_bad = parse_commit_signature(bad_sig).expect("parsed bad signature");
+        assert_eq!(parsed_bad.status, CommitSignatureStatus::Unverified);
+
+        // No signature (N)
+        let no_sig = "N\x1f\x1f";
+        assert_eq!(parse_commit_signature(no_sig), None);
+
+        // Empty string
+        assert_eq!(parse_commit_signature(""), None);
+    }
 }

@@ -419,6 +419,17 @@ impl GitRepositoryInspector {
         let total_additions = changed_files.iter().map(|file| file.additions).sum();
         let total_deletions = changed_files.iter().map(|file| file.deletions).sum();
 
+        // Query cryptographic signature verification status (%G? = code, %GS = signer, %GK = key id)
+        let signature_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["log", "-1", "--format=%G?%x1f%GS%x1f%GK", commit_hash],
+            )
+            .await
+            .unwrap_or_default();
+        let signature = super::history::parse_commit_signature(&signature_output);
+
         Ok(crate::domain::CommitDetails {
             hash: commit.hash,
             parent_hashes: commit.parent_hashes,
@@ -434,6 +445,7 @@ impl GitRepositoryInspector {
             total_additions,
             total_deletions,
             changed_files,
+            signature,
         })
     }
 

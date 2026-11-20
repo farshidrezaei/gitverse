@@ -193,3 +193,42 @@ pub fn parse_commit_changed_files(name_status_output: &str, numstat_output: &str
 
     changed_files
 }
+
+/// Parses Git %G?%x1f%GS%x1f%GK signature format into a structured CommitSignature.
+pub fn parse_commit_signature(output: &str) -> Option<crate::domain::CommitSignature> {
+    let trimmed = output.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let parts: Vec<&str> = trimmed.split('\x1f').collect();
+    let status_code = parts.first().copied().unwrap_or("N").trim();
+
+    let status = match status_code {
+        "G" | "U" => crate::domain::CommitSignatureStatus::Verified,
+        "B" | "E" | "X" | "Y" | "R" => crate::domain::CommitSignatureStatus::Unverified,
+        _ => crate::domain::CommitSignatureStatus::None,
+    };
+
+    if status == crate::domain::CommitSignatureStatus::None {
+        return None;
+    }
+
+    let signer_name = parts
+        .get(1)
+        .map(|name| name.trim())
+        .filter(|name| !name.is_empty())
+        .map(String::from);
+
+    let key_id = parts
+        .get(2)
+        .map(|key| key.trim())
+        .filter(|key| !key.is_empty())
+        .map(String::from);
+
+    Some(crate::domain::CommitSignature {
+        status,
+        signer_name,
+        key_id,
+    })
+}

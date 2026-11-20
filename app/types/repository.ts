@@ -187,6 +187,14 @@ export interface CommitChangedFile {
   deletions: number
 }
 
+export type CommitSignatureStatus = 'verified' | 'unverified' | 'none'
+
+export interface CommitSignature {
+  status: CommitSignatureStatus
+  signer_name: string | null
+  key_id: string | null
+}
+
 export interface CommitDetails {
   hash: string
   parent_hashes: string[]
@@ -202,6 +210,7 @@ export interface CommitDetails {
   total_additions: number
   total_deletions: number
   changed_files: CommitChangedFile[]
+  signature?: CommitSignature | null
 }
 
 export interface StashRecord {

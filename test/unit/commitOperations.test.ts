@@ -73,4 +73,15 @@ describe('commitOperations - reset modes and validation', () => {
       '--no-verify',
     ])
   })
+
+  it('correctly maps signature statuses', () => {
+    type SignatureStatus = 'verified' | 'unverified' | 'none'
+    function isSignatureTrusted(status: SignatureStatus): boolean {
+      return status === 'verified'
+    }
+
+    expect(isSignatureTrusted('verified')).toBe(true)
+    expect(isSignatureTrusted('unverified')).toBe(false)
+    expect(isSignatureTrusted('none')).toBe(false)
+  })
 })

@@ -373,7 +373,11 @@
     "compareWith": "مقایسه کامیت‌ها",
     "noCommitSelected": "برای مشاهده جزئیات، یک کامیت را از نمودار انتخاب کنید",
     "validationEmptySummary": "خلاصه پیام کامیت نمی‌تواند خالی باشد.",
-    "validationSummaryTooLong": "خلاصه پیام کامیت بیش از حد طولانی است (حداکثر ۵۰۰ کاراکتر)."
+    "validationSummaryTooLong": "خلاصه پیام کامیت بیش از حد طولانی است (حداکثر ۵۰۰ کاراکتر).",
+    "verified": "امضا معتبر",
+    "unverified": "امضا نامعتبر",
+    "verifiedTooltip": "امضای دیجیتال کامیت با موفقیت تایید شد",
+    "unverifiedTooltip": "امضای دیجیتال کامیت نامعتبر است یا کلید ناشناخته است"
   },
   "stash": {
     "title": "استش‌ها (Stashes)",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CommitDetails } from '~/types/repository'
+import type { CommitDetails, CommitSignature } from '~/types/repository'
 import CommitHashPill from '~/components/shared/CommitHashPill.vue'
 
 interface CommitDetailsHeaderProps {
@@ -18,6 +18,16 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+function formatSignatureTooltip(signature?: CommitSignature | null): string {
+  if (!signature) return ''
+  if (signature.status === 'verified') {
+    const signer = signature.signer_name ? ` (${signature.signer_name})` : ''
+    const key = signature.key_id ? ` [Key: ${signature.key_id}]` : ''
+    return `${t('commit.verifiedTooltip')}${signer}${key}`
+  }
+  return t('commit.unverifiedTooltip')
+}
 
 const moreActions = computed(() => [
   [
@@ -128,7 +138,37 @@ function formatRelativeTime(timestampInSeconds: number): string {
         <h3 class="text-xs font-bold text-highlighted leading-relaxed break-words flex-1">
           {{ props.commitDetails.subject }}
         </h3>
-        <CommitHashPill :hash="props.commitDetails.hash" />
+        <div class="flex items-center gap-1.5 shrink-0">
+          <CommitHashPill :hash="props.commitDetails.hash" />
+          <UTooltip
+            v-if="props.commitDetails.signature && props.commitDetails.signature.status === 'verified'"
+            :text="formatSignatureTooltip(props.commitDetails.signature)"
+          >
+            <UBadge
+              size="xs"
+              color="success"
+              variant="subtle"
+              icon="i-lucide-shield-check"
+              class="font-medium cursor-help"
+            >
+              {{ t('commit.verified') }}
+            </UBadge>
+          </UTooltip>
+          <UTooltip
+            v-else-if="props.commitDetails.signature && props.commitDetails.signature.status === 'unverified'"
+            :text="formatSignatureTooltip(props.commitDetails.signature)"
+          >
+            <UBadge
+              size="xs"
+              color="warning"
+              variant="subtle"
+              icon="i-lucide-shield-alert"
+              class="font-medium cursor-help"
+            >
+              {{ t('commit.unverified') }}
+            </UBadge>
+          </UTooltip>
+        </div>
       </div>
 
       <!-- Extended commit body if present -->

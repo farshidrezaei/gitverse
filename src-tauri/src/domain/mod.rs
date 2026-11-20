@@ -199,6 +199,23 @@ pub struct CommitChangedFile {
     pub deletions: u32,
 }
 
+/// Digital signature status of a Git commit (GPG / SSH / S/MIME).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CommitSignatureStatus {
+    Verified,
+    Unverified,
+    None,
+}
+
+/// Information about a commit's cryptographic signature.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CommitSignature {
+    pub status: CommitSignatureStatus,
+    pub signer_name: Option<String>,
+    pub key_id: Option<String>,
+}
+
 /// Comprehensive commit inspection details including metadata and changed files list.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CommitDetails {
@@ -216,6 +233,7 @@ pub struct CommitDetails {
     pub total_additions: u32,
     pub total_deletions: u32,
     pub changed_files: Vec<CommitChangedFile>,
+    pub signature: Option<CommitSignature>,
 }
 
 /// Represents an entry in the repository stash stack.
