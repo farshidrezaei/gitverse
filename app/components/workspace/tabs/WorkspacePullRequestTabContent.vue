@@ -305,15 +305,17 @@ function handleMerged(mergedPr: RemotePullRequest): void {
 
     <!-- Review Modal -->
     <PullRequestReviewModal
+      v-if="pullRequest"
       v-model:open="isReviewModalOpen"
       :account-identifier="properties.tab.account.id"
       :repository-full-name="properties.tab.repositoryFullName"
-      :pull-request-number="pullRequest.number"
-      @submitted="handleReviewSubmitted"
+      :pull-request="pullRequest"
+      @review-submitted="handleReviewSubmitted"
     />
 
     <!-- Merge Modal -->
     <PullRequestMergeModal
+      v-if="pullRequest"
       v-model:open="isMergeModalOpen"
       :account-identifier="properties.tab.account.id"
       :repository-full-name="properties.tab.repositoryFullName"
