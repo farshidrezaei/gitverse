@@ -5,7 +5,6 @@ import PullRequestCommentsTimeline from '~/components/workspace/provider/PullReq
 import PullRequestFilesChangedView from '~/components/workspace/provider/PullRequestFilesChangedView.vue'
 import PullRequestReviewModal from '~/components/workspace/provider/PullRequestReviewModal.vue'
 import PullRequestMergeModal from '~/components/workspace/provider/PullRequestMergeModal.vue'
-import SharedZeroLayoutShiftSkeleton from '~/components/shared/ZeroLayoutShiftSkeleton.vue'
 
 interface WorkspacePullRequestTabContentProperties {
   tab: WorkspacePullRequestTab
@@ -239,7 +238,20 @@ function handleMerged(mergedPr: RemotePullRequest): void {
       <!-- 3. Checks Tab -->
       <div v-else-if="activeDetailTab === 'checks'" class="h-full overflow-y-auto p-6 max-w-4xl mx-auto">
         <div v-if="isLoadingChecks" class="space-y-3">
-          <SharedZeroLayoutShiftSkeleton :lines="6" height="h-12" />
+          <div
+            v-for="skeletonIndex in 6"
+            :key="`check-skeleton-${skeletonIndex}`"
+            class="flex items-center justify-between p-3.5 rounded-xl border border-default/60 bg-[var(--gv-surface)] animate-pulse"
+          >
+            <div class="flex items-center gap-3">
+              <USkeleton class="h-5 w-5 rounded-full" />
+              <div class="space-y-1">
+                <USkeleton class="h-4 w-36 rounded" />
+                <USkeleton class="h-3 w-48 rounded" />
+              </div>
+            </div>
+            <USkeleton class="h-5 w-20 rounded-full" />
+          </div>
         </div>
 
         <div v-else-if="checkRuns.length === 0" class="flex flex-col items-center justify-center py-20 text-muted space-y-2">
