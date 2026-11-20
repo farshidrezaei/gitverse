@@ -216,6 +216,7 @@ gitverse/
 │   ├── DESIGN-SYSTEM.md              # Design tokens, color system, and UI guidelines
 │   ├── DEVELOPMENT.md                # Local environment setup and developer guide
 │   ├── I18N.md                       # Localization, translation parity, and RTL standards
+│   ├── PORTABLE-DISTRIBUTION.md      # Portable packaging & installation specifications
 │   ├── TESTING.md                    # Verification matrix, test suites, and proptests
 │   └── modules/                      # Deep-dive module specifications
 │       ├── COMMIT-GRAPH.md           # Custom DAG layout & virtualization engine

@@ -141,6 +141,7 @@ For deep architectural reviews and module guides, refer to the documentation sui
 - **[Testing Strategy](docs/TESTING.md)**: Table-driven tests, proptest property testing, and integration matrices.
 - **[Internationalization (i18n)](docs/I18N.md)**: English and Persian parity, RTL mirroring, and automated CI key validation.
 - **[Development Guide](docs/DEVELOPMENT.md)**: Setup, workflow, branching, and release practices.
+- **[Portable Distribution & Installation](docs/PORTABLE-DISTRIBUTION.md)**: Standalone AppImage, DMG, and portable Windows executable guides.
 - **[Contributing Guide](CONTRIBUTING.md)**: Contribution standards, code style, and PR checklist.
 - **[Security Policy](SECURITY.md)**: Security architecture, credential handling, and vulnerability disclosure.
 - **[Changelog](CHANGELOG.md)**: Full version history and release notes.
