@@ -132,6 +132,7 @@ watch(
 )
 
 watch(activeStateFilter, async () => {
+  selectedPullRequest.value = null
   await loadPullRequestsForSelectedRepo()
 })
 
@@ -357,75 +358,77 @@ const filteredPullRequests = computed(() => {
               <p class="text-[11px] text-muted">No requests matching this state filter.</p>
             </div>
 
-            <div
-              v-for="pr in filteredPullRequests"
-              :key="pr.id"
-              class="p-2.5 rounded-xl border transition-all cursor-pointer space-y-1"
-              :class="selectedPullRequest?.id === pr.id
-                ? 'bg-primary/10 border-primary/40 shadow-xs'
-                : 'border-default/50 hover:bg-muted/20 hover:border-default'"
-              @click="selectedPullRequest = pr"
-            >
-              <div class="flex items-center justify-between gap-1">
-                <div class="flex items-center gap-1.5 min-w-0">
-                  <span class="font-mono text-[10px] font-semibold text-muted">#{{ pr.number }}</span>
-                  <!-- CI Pipeline Badge if present -->
-                  <span
-                    v-if="pr.pipeline_status"
-                    class="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1 py-0.2 rounded shrink-0"
-                    :class="[
-                      pr.pipeline_status.state === 'success' ? 'bg-success/20 text-success' :
-                      pr.pipeline_status.state === 'failed' ? 'bg-error/20 text-error' :
-                      pr.pipeline_status.state === 'running' ? 'bg-primary/20 text-primary animate-pulse' :
-                      'bg-muted/30 text-muted'
-                    ]"
-                    :title="`CI: ${pr.pipeline_status.state} (${pr.pipeline_status.successful_checks_count}/${pr.pipeline_status.total_checks_count})`"
+            <template v-else>
+              <div
+                v-for="pr in filteredPullRequests"
+                :key="pr.id"
+                class="p-2.5 rounded-xl border transition-all cursor-pointer space-y-1"
+                :class="selectedPullRequest?.id === pr.id
+                  ? 'bg-primary/10 border-primary/40 shadow-xs'
+                  : 'border-default/50 hover:bg-muted/20 hover:border-default'"
+                @click="selectedPullRequest = pr"
+              >
+                <div class="flex items-center justify-between gap-1">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="font-mono text-[10px] font-semibold text-muted">#{{ pr.number }}</span>
+                    <!-- CI Pipeline Badge if present -->
+                    <span
+                      v-if="pr.pipeline_status"
+                      class="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1 py-0.2 rounded shrink-0"
+                      :class="[
+                        pr.pipeline_status.state === 'success' ? 'bg-success/20 text-success' :
+                        pr.pipeline_status.state === 'failed' ? 'bg-error/20 text-error' :
+                        pr.pipeline_status.state === 'running' ? 'bg-primary/20 text-primary animate-pulse' :
+                        'bg-muted/30 text-muted'
+                      ]"
+                      :title="`CI: ${pr.pipeline_status.state} (${pr.pipeline_status.successful_checks_count}/${pr.pipeline_status.total_checks_count})`"
+                    >
+                      <UIcon
+                        :name="pr.pipeline_status.state === 'success' ? 'i-lucide-check-circle-2' :
+                               pr.pipeline_status.state === 'failed' ? 'i-lucide-x-circle' :
+                               pr.pipeline_status.state === 'running' ? 'i-lucide-loader-2' : 'i-lucide-circle'"
+                        class="h-2.5 w-2.5"
+                      />
+                      <span>CI</span>
+                    </span>
+                  </div>
+                  <UBadge
+                    size="xs"
+                    :color="pr.state === 'open' ? 'success' : pr.state === 'merged' ? 'primary' : 'neutral'"
+                    variant="subtle"
+                    class="capitalize text-[10px] py-0 shrink-0"
                   >
-                    <UIcon
-                      :name="pr.pipeline_status.state === 'success' ? 'i-lucide-check-circle-2' :
-                             pr.pipeline_status.state === 'failed' ? 'i-lucide-x-circle' :
-                             pr.pipeline_status.state === 'running' ? 'i-lucide-loader-2' : 'i-lucide-circle'"
-                      class="h-2.5 w-2.5"
+                    {{ pr.state }}
+                  </UBadge>
+                </div>
+
+                <p class="text-xs font-semibold text-highlighted line-clamp-2 leading-tight">
+                  {{ pr.title }}
+                </p>
+
+                <div class="flex items-center justify-between text-[10px] text-muted pt-0.5">
+                  <span class="flex items-center gap-1.5 font-medium truncate max-w-[130px]">
+                    <UAvatar
+                      :src="pr.author_avatar_url || undefined"
+                      :alt="pr.author_username"
+                      size="3xs"
                     />
-                    <span>CI</span>
+                    <span class="truncate">{{ pr.author_username }}</span>
                   </span>
-                </div>
-                <UBadge
-                  size="xs"
-                  :color="pr.state === 'open' ? 'success' : pr.state === 'merged' ? 'primary' : 'neutral'"
-                  variant="subtle"
-                  class="capitalize text-[10px] py-0 shrink-0"
-                >
-                  {{ pr.state }}
-                </UBadge>
-              </div>
-
-              <p class="text-xs font-semibold text-highlighted line-clamp-2 leading-tight">
-                {{ pr.title }}
-              </p>
-
-              <div class="flex items-center justify-between text-[10px] text-muted pt-0.5">
-                <span class="flex items-center gap-1.5 font-medium truncate max-w-[130px]">
-                  <UAvatar
-                    :src="pr.author_avatar_url || undefined"
-                    :alt="pr.author_username"
-                    size="3xs"
-                  />
-                  <span class="truncate">{{ pr.author_username }}</span>
-                </span>
-                <div class="flex items-center gap-2 shrink-0">
-                  <span class="flex items-center gap-1 font-mono text-[9px] opacity-75">
-                    <span>{{ pr.source_branch }}</span>
-                    <UIcon name="i-lucide-arrow-right" class="h-2 w-2 rtl:rotate-180" />
-                    <span>{{ pr.target_branch }}</span>
-                  </span>
-                  <span class="flex items-center gap-0.5">
-                    <UIcon name="i-lucide-message-square" class="h-2.5 w-2.5" />
-                    <span>{{ pr.comments_count }}</span>
-                  </span>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="flex items-center gap-1 font-mono text-[9px] opacity-75">
+                      <span>{{ pr.source_branch }}</span>
+                      <UIcon name="i-lucide-arrow-right" class="h-2 w-2 rtl:rotate-180" />
+                      <span>{{ pr.target_branch }}</span>
+                    </span>
+                    <span class="flex items-center gap-0.5">
+                      <UIcon name="i-lucide-message-square" class="h-2.5 w-2.5" />
+                      <span>{{ pr.comments_count }}</span>
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </template>
           </div>
 
           <!-- PR Details View -->

@@ -36,6 +36,7 @@ describe('Zero-CLS Skeleton Loading Standard', () => {
     expect(fileContent).toContain('USkeleton')
     expect(fileContent).toContain('pr-item-skeleton')
     expect(fileContent).toContain('ci-check-skeleton')
+    expect(fileContent).toContain('<template v-else>')
     expect(fileContent).not.toContain("t('common.loading')")
   })
 

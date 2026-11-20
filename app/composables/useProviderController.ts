@@ -112,6 +112,7 @@ export function useProviderController() {
     stateFilter?: PullRequestState,
   ): Promise<RemotePullRequest[]> {
     isLoading.value = true
+    pullRequests.value = []
     errorMessage.value = null
     try {
       const result = await invokeTauriCommand<RemotePullRequest[]>('get_provider_pull_requests', {
