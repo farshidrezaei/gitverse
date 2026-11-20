@@ -1,32 +1,99 @@
-# GitVerse — Testing Strategy & Quality Assurance
+# GitVerse — Testing Constitution & Quality Assurance
 
-## 1. Testing Pyramid
+> Testing philosophy, test pyramid, coverage requirements, property testing, and verification procedures for GitVerse.
 
-- **Rust Unit & Property Tests**:
-  - `proptest` for Git DAG normalization, lane assignment stability, and hash parsing.
-  - Table-driven unit tests for status porcelain v2 parsing and diff hunk parsing.
-  - Process runner timeout, cancellation, and argument array isolation tests.
-- **Rust Integration Tests**:
-  - Real Git tests using `tempfile` scratch repositories creating linear, merge, and conflicted histories.
-- **Frontend Unit Tests (`Vitest`)**:
-  - Component rendering in LTR and RTL.
-  - Theme switching and custom palette CSS injection.
-  - Form validation with Zod schemas.
-- **E2E Tests (`Playwright`)**:
-  - Full desktop flow: repository opening, staging, commit creation, graph selection.
+---
 
-## 2. Testing Commands
+## 1. Testing Constitution & Quality Gates
+
+In accordance with **AGENTS.md Section 4**:
+> **A feature is not complete when it compiles.** Every feature, bug fix, and refactoring requires comprehensive automated verification across multiple test tiers.
+
+### Quality Gate Checkpoints:
+1. `node scripts/validate-i18n.mjs` — Zero missing translation keys or mismatched interpolation placeholders.
+2. `npm run test` (Vitest) — 100% of frontend unit tests passing.
+3. `cargo test --manifest-path src-tauri/Cargo.toml` — 100% of Rust unit, integration, and proptests passing.
+4. `npm run build` — Clean production build without warnings or compilation failures.
+
+---
+
+## 2. Test Hierarchy & Pyramid
+
+```mermaid
+graph TD
+    Manual["Interactive Matrix Verification (L/D themes, RTL/LTR)"]
+    FrontendUnit["Frontend Unit & Integration Tests (Vitest / Happy-DOM)"]
+    RustIntegration["Real Git CLI Integration Tests (Temp Repositories)"]
+    RustProperty["Property-Based Tests (proptest DAG determinism)"]
+    RustUnit["Rust Unit & Domain Validation Tests"]
+
+    RustUnit --> RustProperty
+    RustProperty --> RustIntegration
+    RustIntegration --> FrontendUnit
+    FrontendUnit --> Manual
+```
+
+### Coverage by Tier
+
+| Tier | Tooling | Focus Areas | Current Tests |
+|---|---|---|---|
+| **Rust Unit Tests** | `cargo test` | Commit parsing, porcelain v2 status, unified diff hunks, validation rules, error mapping. | 25 tests |
+| **Rust Property Tests** | `proptest` | Commit graph DAG determinism, lane allocation stability with random topologies. | 2 tests |
+| **Rust Integration Tests** | `tempfile`, native `git` | Scratch repositories with real commits, branches, merges, stashes, and remotes. | 12 tests |
+| **Frontend Unit Tests** | `vitest`, `happy-dom` | Composables, patch generator, Zod schemas, file tree algorithms, markdown renderer, confirmation controller. | 97 tests |
+| **Translation Validation** | Node.js | Key count parity, placeholder matching across `en.json` and `fa.json`. | Automated script |
+
+---
+
+## 3. Real Git Scratch Repository Testing
+
+Integration tests in `src-tauri/src/lib_test.rs` create isolated temporary repositories on disk using `tempfile`:
+
+```rust
+fn create_test_repository() -> (tempfile::TempDir, std::path::PathBuf) {
+    let temp_dir = tempfile::tempdir().expect("Failed to create temporary directory");
+    let repo_path = temp_dir.path().to_path_buf();
+
+    // Initialize Git repo with safe user defaults
+    run_git_cmd(&repo_path, &["init"]);
+    run_git_cmd(&repo_path, &["config", "user.name", "Test User"]);
+    run_git_cmd(&repo_path, &["config", "user.email", "test@gitverse.test"]);
+    run_git_cmd(&repo_path, &["config", "commit.gpgsign", "false"]);
+
+    (temp_dir, repo_path)
+}
+```
+
+This guarantees that:
+- Real Git commands run against real filesystem inodes.
+- Edge cases (dirty index, detached HEAD, merge conflicts, CRLF vs LF line endings) are verified under realistic conditions.
+- Temporary files are automatically cleaned up when `temp_dir` is dropped.
+
+---
+
+## 4. Property-Based Testing (`proptest`)
+
+The commit graph engine uses property-based tests to ensure determinism:
+- Random DAG structures are synthesized with varying branch counts and merge topologies.
+- The property test verifies that passing the same commit history in topological order **always yields the exact same lane assignments and edge trajectories**.
+
+---
+
+## 5. Verification Commands
 
 ```bash
-# Frontend unit tests
-npm run test:unit
+# 1. Run all frontend unit tests
+npm run test
 
-# i18n parity check
+# 2. Run all Rust unit and integration tests
+cargo test --manifest-path src-tauri/Cargo.toml
+
+# 3. Run i18n parity check
 npm run validate:i18n
 
-# Type checking
-npm run typecheck
+# 4. Run type check
+npx vue-tsc --noEmit
 
-# Rust unit & integration tests
-cargo test --manifest-path src-tauri/Cargo.toml
+# 5. Run production Nuxt build
+npm run build
 ```
