@@ -283,6 +283,22 @@ export interface ApplicationDiagnostics {
   current_repository_path: string | null
 }
 
+export interface BlameHunk {
+  commit_hash: string
+  author_name: string
+  author_email: string
+  author_timestamp: number
+  commit_summary: string
+  original_line_number: number
+  final_line_number: number
+  line_content: string
+}
+
+export interface FileBlame {
+  file_path: string
+  lines: BlameHunk[]
+}
+
 
 
 

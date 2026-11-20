@@ -301,6 +301,11 @@
     "laneColors": "Graph Lane Colors",
     "resetDefaults": "Reset to Default Palette"
   },
+  "blame": {
+    "title": "File Blame",
+    "filterPlaceholder": "Filter lines, author, commit...",
+    "viewBlame": "View File Blame"
+  },
   "diff": {
     "viewInline": "Inline",
     "viewSideBySide": "Side-by-Side",

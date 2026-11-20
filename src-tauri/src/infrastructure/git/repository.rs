@@ -1417,4 +1417,87 @@ impl GitRepositoryInspector {
             }
         }
     }
+
+    /// Extracts line-by-line Git blame history for a file at an optional revision.
+    pub async fn get_file_blame(
+        &self,
+        directory_path: &Path,
+        file_path: &str,
+        revision: Option<&str>,
+    ) -> Result<crate::domain::FileBlame, ApplicationError> {
+        let mut arguments = vec!["blame", "--porcelain"];
+        if let Some(rev) = revision {
+            if !rev.trim().is_empty() {
+                arguments.push(rev);
+            }
+        }
+        arguments.push("--");
+        arguments.push(file_path);
+
+        let output = self.executor.execute_git_command(Some(directory_path), &arguments).await?;
+
+        let mut lines = Vec::new();
+        let mut commit_metadata: std::collections::HashMap<String, (String, String, i64, String)> = std::collections::HashMap::new();
+
+        let mut current_hash = String::new();
+        let mut current_orig_line: u32 = 0;
+        let mut current_final_line: u32 = 0;
+
+        let mut temp_author = String::new();
+        let mut temp_email = String::new();
+        let mut temp_time: i64 = 0;
+        let mut temp_summary = String::new();
+
+        for line in output.lines() {
+            if let Some(content) = line.strip_prefix('\t') {
+                let (author, email, time, summary) = if let Some(meta) = commit_metadata.get(&current_hash) {
+                    meta.clone()
+                } else {
+                    let meta = (
+                        if temp_author.is_empty() { "Unknown".to_string() } else { temp_author.clone() },
+                        temp_email.clone(),
+                        temp_time,
+                        temp_summary.clone(),
+                    );
+                    commit_metadata.insert(current_hash.clone(), meta.clone());
+                    meta
+                };
+
+                lines.push(crate::domain::BlameHunk {
+                    commit_hash: current_hash.clone(),
+                    author_name: author,
+                    author_email: email,
+                    author_timestamp: time,
+                    commit_summary: summary,
+                    original_line_number: current_orig_line,
+                    final_line_number: current_final_line,
+                    line_content: content.to_string(),
+                });
+            } else if let Some(author) = line.strip_prefix("author ") {
+                temp_author = author.trim().to_string();
+            } else if let Some(mail) = line.strip_prefix("author-mail ") {
+                temp_email = mail.trim().trim_matches(['<', '>']).to_string();
+            } else if let Some(time_str) = line.strip_prefix("author-time ") {
+                temp_time = time_str.trim().parse::<i64>().unwrap_or(0);
+            } else if let Some(summary) = line.strip_prefix("summary ") {
+                temp_summary = summary.trim().to_string();
+            } else {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if (parts.len() == 3 || parts.len() == 4) && parts[0].len() == 40 {
+                    current_hash = parts[0].to_string();
+                    current_orig_line = parts[1].parse::<u32>().unwrap_or(0);
+                    current_final_line = parts[2].parse::<u32>().unwrap_or(0);
+                    temp_author.clear();
+                    temp_email.clear();
+                    temp_time = 0;
+                    temp_summary.clear();
+                }
+            }
+        }
+
+        Ok(crate::domain::FileBlame {
+            file_path: file_path.to_string(),
+            lines,
+        })
+    }
 }

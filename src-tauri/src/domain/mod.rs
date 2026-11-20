@@ -302,6 +302,26 @@ pub struct DirectoryListing {
     pub is_current_git_repository: bool,
 }
 
+/// A single annotated line within a Git file blame.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BlameHunk {
+    pub commit_hash: String,
+    pub author_name: String,
+    pub author_email: String,
+    pub author_timestamp: i64,
+    pub commit_summary: String,
+    pub original_line_number: u32,
+    pub final_line_number: u32,
+    pub line_content: String,
+}
+
+/// Complete annotated history of all lines in a file.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FileBlame {
+    pub file_path: String,
+    pub lines: Vec<BlameHunk>,
+}
+
 /// Represents a Git worktree linked to a repository.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct GitWorktreeSummary {

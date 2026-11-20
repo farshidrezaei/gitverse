@@ -108,6 +108,7 @@ pub fn run() {
             commands::remove_worktree,
             commands::get_rebase_commits,
             commands::execute_interactive_rebase,
+            commands::get_file_blame,
             commands::get_application_diagnostics,
             commands::export_diagnostic_bundle,
             commands::connect_github_account,

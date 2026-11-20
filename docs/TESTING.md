@@ -37,7 +37,7 @@ graph TD
 
 | Tier | Tooling | Focus Areas | Current Tests |
 |---|---|---|---|
-| **Rust Unit Tests** | `cargo test` | Commit parsing, porcelain v2 status, unified diff hunks, validation rules, token sanitization, diagnostics. | 30 tests |
+| **Rust Unit Tests** | `cargo test` | Commit parsing, porcelain v2 status, unified diff hunks, file blame extraction, validation rules, token sanitization, diagnostics. | 31 tests |
 | **Rust Property Tests** | `proptest` | Commit graph DAG determinism, lane allocation stability with random topologies. | 2 tests |
 | **Rust Benchmark Tests** | `cargo test` | 2,000 & 10,000 commit DAG layout generation stress tests (< 30ms total execution). | 2 tests |
 | **Rust Integration Tests** | `tempfile`, native `git` | Scratch repositories with real commits, branches, merges, stashes, and remotes. | 12 tests |
@@ -99,7 +99,7 @@ cargo test --manifest-path src-tauri/Cargo.toml test_benchmark
 # 1. Run all frontend unit & E2E tests (107 tests)
 npm run test:unit
 
-# 2. Run all Rust unit, integration, and property tests (46 tests)
+# 2. Run all Rust unit, integration, and property tests (47 tests)
 cargo test --manifest-path src-tauri/Cargo.toml
 
 # 3. Run i18n parity check

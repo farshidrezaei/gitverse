@@ -301,6 +301,11 @@
     "laneColors": "رنگ‌های خطوط گراف",
     "resetDefaults": "بازگشت به پالت پیش‌فرض"
   },
+  "blame": {
+    "title": "تاریخچه خطوط (Blame)",
+    "filterPlaceholder": "فیلتر خطوط، نویسنده یا کامیت...",
+    "viewBlame": "مشاهده تاریخچه خطوط"
+  },
   "diff": {
     "viewInline": "یکپارچه (Inline)",
     "viewSideBySide": "کنار هم (Side-by-Side)",

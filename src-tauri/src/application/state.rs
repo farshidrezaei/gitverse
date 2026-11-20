@@ -640,6 +640,17 @@ impl ApplicationState {
         self.git_inspector.execute_interactive_rebase(&target_path, &request).await
     }
 
+    /// Retrieves file blame annotations for a file path.
+    pub async fn get_file_blame(
+        &self,
+        directory_path: Option<&str>,
+        file_path: &str,
+        revision: Option<&str>,
+    ) -> Result<crate::domain::FileBlame, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_file_blame(&target_path, file_path, revision).await
+    }
+
     /// Collects system diagnostics and environment details for voluntary bug reporting.
     pub async fn get_application_diagnostics(&self) -> Result<ApplicationDiagnostics, ApplicationError> {
         let git_info = self.discover_git(None).await?;

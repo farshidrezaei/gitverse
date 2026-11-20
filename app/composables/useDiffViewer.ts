@@ -1,4 +1,5 @@
-import type { FileDiff } from '~/types/repository'
+import type { FileBlame, FileDiff } from '~/types/repository'
+import { formatApplicationError } from '~/utils/tauriClient'
 
 export function useDiffViewer() {
   const { currentRepository } = useRepositoryWorkspace()
@@ -97,12 +98,49 @@ export function useDiffViewer() {
         return mockDiff
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = formatApplicationError(error)
       notifyError(t('common.error'), errorMessage)
       currentDiff.value = null
       return null
     } finally {
       isLoadingDiff.value = false
+    }
+  }
+
+  async function fetchFileBlame(filePath: string, revision?: string): Promise<FileBlame | null> {
+    if (!currentRepository.value) {
+      return null
+    }
+
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        return await invoke<FileBlame>('get_file_blame', {
+          filePath,
+          revision,
+          directoryPath: currentRepository.value.path,
+        })
+      } else {
+        return {
+          file_path: filePath,
+          lines: [
+            {
+              commit_hash: 'abc1234567890123456789012345678901234567',
+              author_name: 'Developer',
+              author_email: 'dev@example.com',
+              author_timestamp: Math.floor(Date.now() / 1000) - 86400,
+              commit_summary: 'Initial implementation of file',
+              original_line_number: 1,
+              final_line_number: 1,
+              line_content: 'export function hello() {}',
+            },
+          ],
+        }
+      }
+    } catch (error) {
+      const message = formatApplicationError(error, 'Failed to fetch file blame')
+      notifyError(t('common.error'), message)
+      return null
     }
   }
 
@@ -119,6 +157,7 @@ export function useDiffViewer() {
     isLoadingDiff,
     diffViewMode,
     fetchFileDiff,
+    fetchFileBlame,
     setDiffViewMode,
     clearDiff,
   }

@@ -6,6 +6,7 @@ import DiffUnifiedView from './diff/DiffUnifiedView.vue'
 import DiffSplitView from './diff/DiffSplitView.vue'
 import DiffViewerSkeleton from './diff/DiffViewerSkeleton.vue'
 import DiffMediaViewer from './diff/DiffMediaViewer.vue'
+import FileBlameModal from './diff/FileBlameModal.vue'
 
 const props = defineProps<{
   diff: FileDiff | null
@@ -13,10 +14,11 @@ const props = defineProps<{
   isLoading: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   stage: [filePath: string]
   unstage: [filePath: string]
   discard: [filePath: string, isUntracked: boolean]
+  selectCommit: [commitHash: string]
 }>()
 
 const { t } = useI18n()
@@ -28,6 +30,12 @@ const {
   unstageSelectedLines,
   discardSelectedLines,
 } = useWorkspaceManager()
+
+const isBlameModalOpen = ref<boolean>(false)
+
+const currentFilePath = computed<string>(() => {
+  return props.selectedTarget?.filePath || props.diff?.new_path || props.diff?.old_path || ''
+})
 
 const isTargetStaged = computed<boolean | null>(() => {
   if (!props.selectedTarget) return null
@@ -41,10 +49,6 @@ type ImageDiffMode = 'side-by-side' | 'swipe' | 'onion'
 const viewMode = ref<DiffViewMode>('inline')
 const imageDiffMode = ref<ImageDiffMode>('side-by-side')
 const isWordWrap = ref<boolean>(false)
-
-const currentFilePath = computed<string>(() => {
-  return props.selectedTarget?.filePath || props.diff?.new_path || ''
-})
 
 const currentFileExtension = computed<string>(() => {
   const parts = currentFilePath.value.split('.')
@@ -103,6 +107,7 @@ watch(isWordWrap, (newWrap) => {
       @update:is-word-wrap="isWordWrap = $event"
       @stage="$emit('stage', $event)"
       @unstage="$emit('unstage', $event)"
+      @open-blame="isBlameModalOpen = true"
     />
 
     <!-- Main Diff Body Container -->
@@ -182,5 +187,13 @@ watch(isWordWrap, (newWrap) => {
         @discard-line="(hunkIndex, lineIndex) => discardSelectedLines(hunkIndex, [lineIndex])"
       />
     </div>
+
+    <!-- File Blame Modal -->
+    <FileBlameModal
+      v-if="currentFilePath"
+      v-model:open="isBlameModalOpen"
+      :file-path="currentFilePath"
+      @inspect-commit="emit('selectCommit', $event)"
+    />
   </div>
 </template>

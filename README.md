@@ -111,7 +111,7 @@ npm run tauri dev
 # Run all frontend tests (107 Vitest unit & E2E tests)
 npm run test:unit
 
-# Run Rust tests (46 unit, integration, benchmark, and property tests)
+# Run Rust tests (47 unit, integration, benchmark, and property tests)
 cargo test --manifest-path src-tauri/Cargo.toml
 
 # Validate internationalization dictionary parity (en & fa)

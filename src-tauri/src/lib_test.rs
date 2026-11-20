@@ -267,4 +267,38 @@ mod tests {
         let references_cleaned = inspector.get_repository_references(repository_path).await.expect("refs cleaned");
         assert!(references_cleaned.remotes.is_empty());
     }
+
+    #[tokio::test]
+    async fn test_get_file_blame_extraction() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        let test_file = repository_path.join("tracked.txt");
+        std::fs::write(&test_file, "First line\nSecond line\n").expect("write file");
+
+        Command::new("git").args(["add", "tracked.txt"]).current_dir(repository_path).output().expect("git add");
+        Command::new("git").args(["commit", "-m", "initial commit of tracked file"]).current_dir(repository_path).output().expect("git commit");
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        let blame = inspector.get_file_blame(repository_path, "tracked.txt", None)
+            .await
+            .expect("Extract file blame");
+
+        assert_eq!(blame.file_path, "tracked.txt");
+        assert_eq!(blame.lines.len(), 2);
+        assert_eq!(blame.lines[0].final_line_number, 1);
+        assert_eq!(blame.lines[0].line_content, "First line");
+        assert_eq!(blame.lines[0].commit_summary, "initial commit of tracked file");
+        assert_eq!(blame.lines[1].final_line_number, 2);
+        assert_eq!(blame.lines[1].line_content, "Second line");
+    }
 }

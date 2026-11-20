@@ -23,6 +23,7 @@ const emit = defineEmits<{
   'update:isWordWrap': [enabled: boolean]
   stage: [filePath: string]
   unstage: [filePath: string]
+  openBlame: []
 }>()
 
 const { t } = useI18n()
@@ -241,6 +242,18 @@ const fileIconName = computed<string>(() => {
             icon="i-lucide-wrap-text"
             :aria-label="t('diff.wordWrap')"
             @click="emit('update:isWordWrap', !props.isWordWrap)"
+          />
+        </UTooltip>
+
+        <!-- Git Blame Action -->
+        <UTooltip :text="t('blame.title')">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-history"
+            :aria-label="t('blame.title')"
+            @click="emit('openBlame')"
           />
         </UTooltip>
       </template>

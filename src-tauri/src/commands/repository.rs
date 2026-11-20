@@ -613,6 +613,17 @@ pub async fn execute_interactive_rebase(
     state.execute_interactive_rebase(directory_path.as_deref(), request).await
 }
 
+/// Tauri IPC command to extract file blame annotations.
+#[tauri::command]
+pub async fn get_file_blame(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+    file_path: String,
+    revision: Option<String>,
+) -> Result<crate::domain::FileBlame, ApplicationError> {
+    state.get_file_blame(directory_path.as_deref(), &file_path, revision.as_deref()).await
+}
+
 /// Tauri IPC command to get system and application diagnostics.
 #[tauri::command]
 pub async fn get_application_diagnostics(
