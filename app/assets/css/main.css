@@ -14,6 +14,7 @@
 /* =========================================================================
    1. FONT SIZE SCALING
    Dynamically scales all Tailwind & Nuxt UI text utilities via root rem & variables
+   Using integer pixel base font sizes prevents fractional subpixel font blurring
    ========================================================================= */
 html {
   font-size: 14px;
@@ -23,10 +24,10 @@ html {
 }
 
 html[data-font-size="compact"] {
-  font-size: 12.5px;
-  --text-xs: 0.72rem;
-  --text-sm: 0.82rem;
-  --text-base: 0.92rem;
+  font-size: 13px;
+  --text-xs: 0.75rem;
+  --text-sm: 0.85rem;
+  --text-base: 0.95rem;
 }
 
 html[data-font-size="normal"] {
@@ -37,17 +38,17 @@ html[data-font-size="normal"] {
 }
 
 html[data-font-size="relaxed"] {
-  font-size: 15.5px;
-  --text-xs: 0.78rem;
-  --text-sm: 0.92rem;
-  --text-base: 1.05rem;
+  font-size: 15px;
+  --text-xs: 0.8rem;
+  --text-sm: 0.9rem;
+  --text-base: 1rem;
 }
 
 html[data-font-size="large"] {
-  font-size: 17px;
-  --text-xs: 0.82rem;
-  --text-sm: 0.98rem;
-  --text-base: 1.12rem;
+  font-size: 16px;
+  --text-xs: 0.85rem;
+  --text-sm: 0.95rem;
+  --text-base: 1.1rem;
 }
 
 /* =========================================================================
@@ -574,6 +575,17 @@ div[role="dialog"] {
   animation: none !important;
   transition: opacity 150ms ease-out !important;
   will-change: opacity;
+}
+
+/* Sharpen muted and toned text contrast inside modal dialogs to prevent eye strain */
+[data-slot="content"] .text-muted,
+div[role="dialog"] .text-muted {
+  color: #94a3b8 !important; /* slate-400 instead of dark slate-500 for clear legibility */
+}
+
+[data-slot="content"] .text-toned,
+div[role="dialog"] .text-toned {
+  color: #cbd5e1 !important; /* slate-300 instead of slate-400 */
 }
 
 /* Ensure body and underlying workspace preserve crisp font antialiasing when modal is open */
