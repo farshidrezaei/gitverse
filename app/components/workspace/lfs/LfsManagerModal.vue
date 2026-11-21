@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { trackLfsPatternInputSchema } from '~/schemas/lfsSchema'
+
 interface LfsManagerModalProps {
   open: boolean
 }
@@ -19,11 +21,13 @@ const {
 } = useLfsController()
 
 const newPatternInput = ref<string>('')
+const errorMessage = ref<string | null>(null)
 
 watch(
   () => props.open,
   async (isOpen) => {
     if (isOpen) {
+      errorMessage.value = null
       await fetchLfsOverview()
     }
   },
@@ -31,14 +35,25 @@ watch(
 )
 
 async function handleAddPattern(): Promise<void> {
-  if (!newPatternInput.value.trim()) return
-  const success = await trackPattern(newPatternInput.value)
+  errorMessage.value = null
+  const parseResult = trackLfsPatternInputSchema.safeParse({
+    pattern: newPatternInput.value,
+  })
+
+  if (!parseResult.success) {
+    const firstIssue = parseResult.error.issues[0]
+    errorMessage.value = firstIssue ? t(firstIssue.message) : t('common.invalidInput')
+    return
+  }
+
+  const success = await trackPattern(parseResult.data.pattern)
   if (success) {
     newPatternInput.value = ''
   }
 }
 
 async function handleRemovePattern(pattern: string): Promise<void> {
+  errorMessage.value = null
   await untrackPattern(pattern)
 }
 
@@ -122,6 +137,15 @@ function handleClose(): void {
             <h3 class="text-xs font-semibold text-highlighted uppercase tracking-wider">
               {{ t('lfs.trackedPatternsTitle') }}
             </h3>
+
+            <!-- Error Alert Banner -->
+            <div
+              v-if="errorMessage"
+              class="p-3 rounded-xl border border-error/40 bg-error/10 text-error text-xs flex items-center gap-2"
+            >
+              <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" />
+              <span>{{ errorMessage }}</span>
+            </div>
 
             <!-- Add new pattern form -->
             <form class="flex items-center gap-2" @submit.prevent="handleAddPattern">

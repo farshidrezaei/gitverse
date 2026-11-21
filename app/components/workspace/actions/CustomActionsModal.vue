@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CustomActionDefinition } from '~/types/repository'
+import { customActionSchema } from '~/schemas/customActionSchema'
 
 interface CustomActionsModalProps {
   open: boolean
@@ -29,11 +30,13 @@ const formDisplayName = ref<string>('')
 const formCommandString = ref<string>('')
 const formIconName = ref<string>('i-lucide-play')
 const formDescriptionText = ref<string>('')
+const errorMessage = ref<string | null>(null)
 
 watch(
   () => props.open,
   async (isOpen) => {
     if (isOpen) {
+      errorMessage.value = null
       await fetchCustomActions()
       isEditorOpen.value = false
     }
@@ -42,6 +45,7 @@ watch(
 )
 
 function openCreateForm(): void {
+  errorMessage.value = null
   editingId.value = `action_${Date.now()}`
   formDisplayName.value = ''
   formCommandString.value = ''
@@ -51,6 +55,7 @@ function openCreateForm(): void {
 }
 
 function openEditForm(action: CustomActionDefinition): void {
+  errorMessage.value = null
   editingId.value = action.action_identifier
   formDisplayName.value = action.display_name
   formCommandString.value = action.command_string
@@ -60,17 +65,22 @@ function openEditForm(action: CustomActionDefinition): void {
 }
 
 async function handleSave(): Promise<void> {
-  if (!formDisplayName.value.trim() || !formCommandString.value.trim()) return
-
-  const action: CustomActionDefinition = {
+  errorMessage.value = null
+  const parseResult = customActionSchema.safeParse({
     action_identifier: editingId.value,
-    display_name: formDisplayName.value.trim(),
-    command_string: formCommandString.value.trim(),
-    icon_name: formIconName.value.trim() || 'i-lucide-play',
-    description_text: formDescriptionText.value.trim(),
+    display_name: formDisplayName.value,
+    command_string: formCommandString.value,
+    icon_name: formIconName.value || 'i-lucide-play',
+    description_text: formDescriptionText.value || '',
+  })
+
+  if (!parseResult.success) {
+    const firstIssue = parseResult.error.issues[0]
+    errorMessage.value = firstIssue ? t(firstIssue.message) : t('common.invalidInput')
+    return
   }
 
-  const success = await saveAction(action)
+  const success = await saveAction(parseResult.data)
   if (success) {
     isEditorOpen.value = false
   }
@@ -146,6 +156,15 @@ function handleClose(): void {
 
         <!-- Form Editor Subview -->
         <div v-else-if="isEditorOpen" class="space-y-4">
+          <!-- Error Alert Banner -->
+          <div
+            v-if="errorMessage"
+            class="p-3 rounded-xl border border-error/40 bg-error/10 text-error text-xs flex items-center gap-2"
+          >
+            <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" />
+            <span>{{ errorMessage }}</span>
+          </div>
+
           <div class="space-y-1.5">
             <label class="text-xs font-medium text-highlighted">
               {{ t('actions.displayNameLabel') }}

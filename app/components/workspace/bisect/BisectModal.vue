@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { startBisectInputSchema, bisectDecisionSchema } from '~/schemas/bisectSchema'
+
 interface BisectModalProps {
   open: boolean
 }
@@ -23,11 +25,13 @@ const {
 const badCommitInput = ref<string>('HEAD')
 const goodCommitInput = ref<string>('')
 const showLog = ref<boolean>(false)
+const errorMessage = ref<string | null>(null)
 
 watch(
   () => props.open,
   async (isOpen) => {
     if (isOpen) {
+      errorMessage.value = null
       await fetchBisectStatus()
     }
   },
@@ -39,12 +43,29 @@ const canStartBisect = computed(() => {
 })
 
 async function handleStartBisect() {
-  if (!canStartBisect.value) return
-  await startBisect(badCommitInput.value.trim(), goodCommitInput.value.trim())
+  errorMessage.value = null
+  const parseResult = startBisectInputSchema.safeParse({
+    badCommitHash: badCommitInput.value,
+    goodCommitHash: goodCommitInput.value,
+  })
+
+  if (!parseResult.success) {
+    const firstIssue = parseResult.error.issues[0]
+    errorMessage.value = firstIssue ? t(firstIssue.message) : t('common.invalidInput')
+    return
+  }
+
+  await startBisect(parseResult.data.badCommitHash, parseResult.data.goodCommitHash)
 }
 
 async function handleStep(decision: 'good' | 'bad' | 'skip') {
-  await stepBisect(decision)
+  errorMessage.value = null
+  const parseResult = bisectDecisionSchema.safeParse(decision)
+  if (!parseResult.success) {
+    errorMessage.value = t('common.invalidInput')
+    return
+  }
+  await stepBisect(parseResult.data)
 }
 
 async function handleReset() {
@@ -261,6 +282,15 @@ function handleLocate(commitHash: string) {
 
       <!-- Start Bisect Form (when inactive) -->
       <div v-else class="p-6 space-y-5">
+        <!-- Error Alert Banner -->
+        <div
+          v-if="errorMessage"
+          class="p-3 rounded-xl border border-error/40 bg-error/10 text-error text-xs flex items-center gap-2"
+        >
+          <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" />
+          <span>{{ errorMessage }}</span>
+        </div>
+
         <p class="text-xs text-muted">
           {{ t('bisect.startDescription') }}
         </p>

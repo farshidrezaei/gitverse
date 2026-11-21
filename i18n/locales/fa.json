@@ -31,6 +31,7 @@
     "save": "ذخیره",
     "edit": "ویرایش",
     "delete": "حذف",
+    "invalidInput": "ورودی وارد شده نامعتبر است",
     "refresh": "بازنشانی",
     "search": "جستجو",
     "filter": "فیلتر",
@@ -758,7 +759,11 @@
       "started": "عملیات Git Bisect آغاز شد",
       "culpritFound": "اولین کامیت ایجادکننده باگ شناسایی شد!",
       "reset": "جلسه Git Bisect متوقف و به وضعیت اولیه بازگردانده شد"
-    }
+    },
+    "validationBadCommitEmpty": "کامیت معیوب نمی‌تواند خالی باشد",
+    "validationGoodCommitEmpty": "کامیت سالم نمی‌تواند خالی باشد",
+    "validationCommitTooLong": "طول شناسه کامیت بیش از حد مجاز است",
+    "validationCommitInvalid": "شناسه کامیت شامل کاراکترهای نامعتبر است"
   },
   "patch": {
     "exportTitle": "خروجی فایل پچ (Patch)",
@@ -791,7 +796,9 @@
       "copied": "محتوای پچ در حافظه کلیپ‌بورد کپی شد",
       "downloaded": "فایل پچ با موفقیت ذخیره شد",
       "applied": "پچ با موفقیت روی مخزن اعمال شد"
-    }
+    },
+    "validationPatchEmpty": "محتوای پچ نمی‌تواند خالی باشد",
+    "validationPatchTooLarge": "حجم محتوای پچ بیش از حد مجاز است"
   },
   "submodule": {
     "modalTitle": "زیرمخزن‌ها (Git Submodules)",
@@ -866,7 +873,10 @@
     "noMatchesDescription": "متن جستجو، فیلتر مسیر یا تنظیمات حساسیت به حروف را بررسی کنید.",
     "summary": "{count} مورد منطبق در {files} فایل پیدا شد",
     "matchCopied": "خط منطبق در کلیپ‌بورد کپی شد",
-    "keyboardShortcutHint": "برای اجرای جستجو Enter را بزنید"
+    "keyboardShortcutHint": "برای اجرای جستجو Enter را بزنید",
+    "validationQueryEmpty": "عبارت جستجو نمی‌تواند خالی باشد",
+    "validationQueryTooLong": "طول عبارت جستجو بیش از حد مجاز است",
+    "validationQueryNullByte": "عبارت جستجو نمی‌تواند شامل بایت تهی باشد"
   },
   "commitQueue": {
     "toolbarTitle": "صف چری‌پیک و ریورت کامیت‌ها",
@@ -912,7 +922,14 @@
     "archiveReferenceHint": "نام شاخه، هش کامیت یا برچسب مورد نظر را وارد کنید.",
     "exportArchive": "ایجاد آرشیو",
     "bundleCreatedSuccess": "بسته آفلاین گیت با موفقیت ساخته شد",
-    "archiveExportedSuccess": "آرشیو سورس‌کد با موفقیت صادر شد"
+    "archiveExportedSuccess": "آرشیو سورس‌کد با موفقیت صادر شد",
+    "validationBundlePathEmpty": "مسیر فایل بسته نمی‌تواند خالی باشد",
+    "validationArchivePathEmpty": "مسیر فایل آرشیو نمی‌تواند خالی باشد",
+    "validationPathTooLong": "طول مسیر فایل بیش از حد مجاز است",
+    "validationPathNullByte": "مسیر فایل نمی‌تواند شامل بایت تهی باشد",
+    "validationRevisionRangeTooLong": "محدوده نسخه‌ها بیش از حد مجاز است",
+    "validationReferenceEmpty": "مرجع یا برچسب آرشیو نمی‌تواند خالی باشد",
+    "validationReferenceTooLong": "طول مرجع آرشیو بیش از حد مجاز است"
   },
   "lfs": {
     "toolbarTitle": "مدیریت فایل‌های حجیم Git LFS",
@@ -930,7 +947,11 @@
     "patternUntrackedSuccess": "الگو با موفقیت از Git LFS حذف شد",
     "noTrackedPatterns": "هیچ الگوی ردیابی فایل حجیم پیکربندی نشده است.",
     "activeLocksTitle": "قفل‌های فایل",
-    "noLocksFound": "هیچ فایل قفل‌شده‌ای یافت نشد."
+    "noLocksFound": "هیچ فایل قفل‌شده‌ای یافت نشد.",
+    "validationPatternEmpty": "الگوی فایل نمی‌تواند خالی باشد",
+    "validationPatternTooLong": "طول الگوی فایل بیش از حد مجاز است",
+    "validationPatternNullByte": "الگوی فایل نمی‌تواند شامل بایت تهی باشد",
+    "validationPatternNoNewlines": "الگوی فایل نمی‌تواند شامل خط جدید باشد"
   },
   "actions": {
     "toolbarTitle": "اجراکننده‌های اکشن‌های سفارشی",
@@ -946,6 +967,15 @@
     "actionSavedSuccess": "اکشن سفارشی ذخیره شد",
     "actionDeletedSuccess": "اکشن سفارشی حذف شد",
     "actionExecutedSuccess": "اکشن با موفقیت اجرا شد",
-    "actionFailed": "خطا در اجرای اکشن"
+    "actionFailed": "خطا در اجرای اکشن",
+    "validationIdentifierEmpty": "شناسه اقدام نمی‌تواند خالی باشد",
+    "validationIdentifierTooLong": "طول شناسه اقدام بیش از حد مجاز است",
+    "validationIdentifierInvalid": "شناسه اقدام فقط می‌تواند شامل حروف، اعداد، خط تیره و زیرخط باشد",
+    "validationDisplayNameEmpty": "عنوان نمایشی اقدام نمی‌تواند خالی باشد",
+    "validationDisplayNameTooLong": "طول عنوان نمایشی اقدام بیش از حد مجاز است",
+    "validationCommandEmpty": "دستور اجرایی اقدام نمی‌تواند خالی باشد",
+    "validationCommandTooLong": "طول دستور اجرایی اقدام بیش از حد مجاز است",
+    "validationIconEmpty": "آیکون اقدام نمی‌تواند خالی باشد",
+    "validationDescriptionTooLong": "طول توضیحات اقدام بیش از حد مجاز است"
   }
 }

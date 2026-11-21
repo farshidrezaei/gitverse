@@ -15,6 +15,16 @@ import {
   connectGitLabAccountSchema,
   createPullRequestInputSchema,
 } from '../../app/schemas/providerSchema'
+import {
+  createBundleInputSchema,
+  verifyBundleInputSchema,
+  exportArchiveInputSchema,
+} from '../../app/schemas/archiveSchema'
+import { trackLfsPatternInputSchema } from '../../app/schemas/lfsSchema'
+import { customActionSchema } from '../../app/schemas/customActionSchema'
+import { searchRepositoryInputSchema } from '../../app/schemas/searchSchema'
+import { startBisectInputSchema, bisectDecisionSchema } from '../../app/schemas/bisectSchema'
+import { applyPatchInputSchema, patchContentSchema } from '../../app/schemas/patchSchema'
 
 describe('Zod Schemas Validation Suite', () => {
   describe('Branch Name Validation', () => {
@@ -164,6 +174,84 @@ describe('Zod Schemas Validation Suite', () => {
           targetBranch: 'main',
         }).success,
       ).toBe(false)
+    })
+  })
+
+  describe('Archive & Bundle Input Validation', () => {
+    it('validates bundle create and verify schemas', () => {
+      expect(createBundleInputSchema.safeParse({ outputBundlePath: '/tmp/repo.bundle', revisionRange: '--all' }).success).toBe(true)
+      expect(createBundleInputSchema.safeParse({ outputBundlePath: '' }).success).toBe(false)
+      expect(verifyBundleInputSchema.safeParse({ bundlePath: '/tmp/repo.bundle' }).success).toBe(true)
+      expect(verifyBundleInputSchema.safeParse({ bundlePath: '' }).success).toBe(false)
+    })
+
+    it('validates export archive schema', () => {
+      expect(exportArchiveInputSchema.safeParse({ outputArchivePath: '/tmp/archive.zip', reference: 'HEAD' }).success).toBe(true)
+      expect(exportArchiveInputSchema.safeParse({ outputArchivePath: '', reference: 'HEAD' }).success).toBe(false)
+      expect(exportArchiveInputSchema.safeParse({ outputArchivePath: '/tmp/archive.zip', reference: '' }).success).toBe(false)
+    })
+  })
+
+  describe('Git LFS & Custom Action Validation', () => {
+    it('validates Git LFS pattern schema', () => {
+      expect(trackLfsPatternInputSchema.safeParse({ pattern: '*.psd' }).success).toBe(true)
+      expect(trackLfsPatternInputSchema.safeParse({ pattern: 'assets/*.bin' }).success).toBe(true)
+      expect(trackLfsPatternInputSchema.safeParse({ pattern: '' }).success).toBe(false)
+      expect(trackLfsPatternInputSchema.safeParse({ pattern: 'bad\npattern' }).success).toBe(false)
+    })
+
+    it('validates Custom Action schema', () => {
+      expect(
+        customActionSchema.safeParse({
+          action_identifier: 'run_tests',
+          display_name: 'Run Unit Tests',
+          command_string: 'npm test',
+          icon_name: 'i-lucide-play',
+          description_text: 'Executes vitest suite',
+        }).success,
+      ).toBe(true)
+
+      expect(
+        customActionSchema.safeParse({
+          action_identifier: 'invalid identifier with spaces',
+          display_name: 'Action',
+          command_string: 'echo hi',
+        }).success,
+      ).toBe(false)
+
+      expect(
+        customActionSchema.safeParse({
+          action_identifier: 'valid_id',
+          display_name: '',
+          command_string: 'echo hi',
+        }).success,
+      ).toBe(false)
+    })
+  })
+
+  describe('Search, Bisect & Patch Validation', () => {
+    it('validates repository search schema', () => {
+      expect(searchRepositoryInputSchema.safeParse({ query: 'myFunction', isCaseSensitive: true }).success).toBe(true)
+      expect(searchRepositoryInputSchema.safeParse({ query: '' }).success).toBe(false)
+      expect(searchRepositoryInputSchema.safeParse({ query: 'bad\0null' }).success).toBe(false)
+    })
+
+    it('validates bisect start and decision schemas', () => {
+      expect(startBisectInputSchema.safeParse({ badCommitHash: 'HEAD', goodCommitHash: 'v1.0.0' }).success).toBe(true)
+      expect(startBisectInputSchema.safeParse({ badCommitHash: '', goodCommitHash: 'v1.0.0' }).success).toBe(false)
+      expect(startBisectInputSchema.safeParse({ badCommitHash: 'bad hash with spaces', goodCommitHash: 'v1.0.0' }).success).toBe(false)
+
+      expect(bisectDecisionSchema.safeParse('good').success).toBe(true)
+      expect(bisectDecisionSchema.safeParse('bad').success).toBe(true)
+      expect(bisectDecisionSchema.safeParse('skip').success).toBe(true)
+      expect(bisectDecisionSchema.safeParse('invalid_decision').success).toBe(false)
+    })
+
+    it('validates patch content and application schemas', () => {
+      expect(patchContentSchema.safeParse('diff --git a/f b/f\n--- a/f\n+++ b/f').success).toBe(true)
+      expect(patchContentSchema.safeParse('').success).toBe(false)
+      expect(applyPatchInputSchema.safeParse({ patchContent: 'diff content', isCached: true, isReverse: false }).success).toBe(true)
+      expect(applyPatchInputSchema.safeParse({ patchContent: '' }).success).toBe(false)
     })
   })
 })

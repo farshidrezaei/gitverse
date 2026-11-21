@@ -231,6 +231,178 @@ pub fn validate_worktree_path(path_str: &str) -> Result<(), ApplicationError> {
     Ok(())
 }
 
+/// Validates an archive or bundle filesystem path.
+pub fn validate_archive_path(path_str: &str) -> Result<(), ApplicationError> {
+    let trimmed = path_str.trim();
+
+    if trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Archive or bundle path cannot be empty".into(),
+        ));
+    }
+
+    if trimmed.len() > 1000 {
+        return Err(ApplicationError::InvalidInput(
+            "Archive or bundle path cannot exceed 1000 characters".into(),
+        ));
+    }
+
+    if trimmed.contains('\0') {
+        return Err(ApplicationError::InvalidInput(
+            "Archive or bundle path cannot contain null bytes".into(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validates a Git LFS file pattern.
+pub fn validate_lfs_pattern(pattern: &str) -> Result<(), ApplicationError> {
+    let trimmed = pattern.trim();
+
+    if trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Git LFS pattern cannot be empty".into(),
+        ));
+    }
+
+    if trimmed.len() > 500 {
+        return Err(ApplicationError::InvalidInput(
+            "Git LFS pattern cannot exceed 500 characters".into(),
+        ));
+    }
+
+    if trimmed.contains('\0') || trimmed.contains('\n') || trimmed.contains('\r') {
+        return Err(ApplicationError::InvalidInput(
+            "Git LFS pattern cannot contain control characters or newlines".into(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validates a custom action definition.
+pub fn validate_custom_action_definition(
+    action: &crate::domain::CustomActionDefinition,
+) -> Result<(), ApplicationError> {
+    let id_trimmed = action.action_identifier.trim();
+    if id_trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Custom action identifier cannot be empty".into(),
+        ));
+    }
+
+    if id_trimmed.len() > 100 {
+        return Err(ApplicationError::InvalidInput(
+            "Custom action identifier cannot exceed 100 characters".into(),
+        ));
+    }
+
+    if !id_trimmed
+        .chars()
+        .all(|character| character.is_ascii_alphanumeric() || character == '_' || character == '-')
+    {
+        return Err(ApplicationError::InvalidInput(
+            "Custom action identifier can only contain alphanumeric characters, underscores, and hyphens".into(),
+        ));
+    }
+
+    let name_trimmed = action.display_name.trim();
+    if name_trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Custom action display name cannot be empty".into(),
+        ));
+    }
+
+    if name_trimmed.len() > 100 {
+        return Err(ApplicationError::InvalidInput(
+            "Custom action display name cannot exceed 100 characters".into(),
+        ));
+    }
+
+    let command_trimmed = action.command_string.trim();
+    if command_trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Custom action command string cannot be empty".into(),
+        ));
+    }
+
+    if command_trimmed.len() > 2000 {
+        return Err(ApplicationError::InvalidInput(
+            "Custom action command string cannot exceed 2000 characters".into(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validates a Git search query.
+pub fn validate_search_query(query: &str) -> Result<(), ApplicationError> {
+    let trimmed = query.trim();
+
+    if trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Search query cannot be empty".into(),
+        ));
+    }
+
+    if trimmed.len() > 1000 {
+        return Err(ApplicationError::InvalidInput(
+            "Search query cannot exceed 1000 characters".into(),
+        ));
+    }
+
+    if trimmed.contains('\0') {
+        return Err(ApplicationError::InvalidInput(
+            "Search query cannot contain null bytes".into(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validates a Git commit reference or hash for bisect / checkout.
+pub fn validate_commit_reference(reference: &str) -> Result<(), ApplicationError> {
+    let trimmed = reference.trim();
+
+    if trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Commit reference cannot be empty".into(),
+        ));
+    }
+
+    if trimmed.len() > 250 {
+        return Err(ApplicationError::InvalidInput(
+            "Commit reference cannot exceed 250 characters".into(),
+        ));
+    }
+
+    if trimmed.contains('\0') || trimmed.chars().any(|character| character.is_whitespace()) {
+        return Err(ApplicationError::InvalidInput(
+            "Commit reference cannot contain whitespace or null bytes".into(),
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validates patch content to be applied.
+pub fn validate_patch_content(patch: &str) -> Result<(), ApplicationError> {
+    if patch.trim().is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Patch content cannot be empty".into(),
+        ));
+    }
+
+    if patch.len() > 10_000_000 {
+        return Err(ApplicationError::InvalidInput(
+            "Patch content cannot exceed 10 megabytes".into(),
+        ));
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -292,5 +464,30 @@ mod tests {
 
         assert!(validate_stash_message("WIP on new feature").is_ok());
         assert!(validate_stash_message("").is_ok());
+    }
+
+    #[test]
+    fn test_validate_archive_and_lfs_and_search() {
+        assert!(validate_archive_path("/tmp/bundle.bundle").is_ok());
+        assert!(validate_archive_path("").is_err());
+        assert!(validate_archive_path("/tmp/bad\0path").is_err());
+
+        assert!(validate_lfs_pattern("*.psd").is_ok());
+        assert!(validate_lfs_pattern("assets/*.bin").is_ok());
+        assert!(validate_lfs_pattern("").is_err());
+        assert!(validate_lfs_pattern("bad\npattern").is_err());
+
+        assert!(validate_search_query("my_function").is_ok());
+        assert!(validate_search_query("").is_err());
+        assert!(validate_search_query("bad\0query").is_err());
+
+        assert!(validate_commit_reference("HEAD").is_ok());
+        assert!(validate_commit_reference("a1b2c3d4e5f6").is_ok());
+        assert!(validate_commit_reference("v1.0.0").is_ok());
+        assert!(validate_commit_reference("").is_err());
+        assert!(validate_commit_reference("bad ref with spaces").is_err());
+
+        assert!(validate_patch_content("diff --git a/f b/f").is_ok());
+        assert!(validate_patch_content("").is_err());
     }
 }

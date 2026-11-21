@@ -5,8 +5,9 @@ use crate::domain::{
     MergeBranchOutcome, PatchCheckResult, RebaseBranchOutcome, RebasePlanItem, RepositoryOperationState, RepositoryOverview, StashRecord,
 };
 use crate::domain::validation::{
-    validate_branch_name, validate_commit_message, validate_remote_name, validate_remote_url,
-    validate_stash_message, validate_worktree_path,
+    validate_archive_path, validate_branch_name, validate_commit_message, validate_commit_reference,
+    validate_lfs_pattern, validate_patch_content, validate_remote_name, validate_remote_url,
+    validate_search_query, validate_stash_message, validate_worktree_path,
 };
 use super::bisect::parse_bisect_step_output;
 use super::process::GitProcessExecutor;
@@ -1719,6 +1720,9 @@ impl GitRepositoryInspector {
         bad_commit_hash: &str,
         good_commit_hash: &str,
     ) -> Result<BisectState, ApplicationError> {
+        validate_commit_reference(bad_commit_hash)?;
+        validate_commit_reference(good_commit_hash)?;
+
         let is_valid = self.verify_repository_path(directory_path).await?;
         if !is_valid {
             return Err(ApplicationError::InvalidRepository(
@@ -1918,6 +1922,8 @@ impl GitRepositoryInspector {
             ));
         }
 
+        validate_patch_content(patch_content)?;
+
         let mut affected_files = Vec::new();
         for line in patch_content.lines() {
             if let Some(rest) = line.strip_prefix("diff --git a/") {
@@ -1967,6 +1973,8 @@ impl GitRepositoryInspector {
         is_cached: bool,
         is_reverse: bool,
     ) -> Result<(), ApplicationError> {
+        validate_patch_content(patch_content)?;
+
         let is_valid = self.verify_repository_path(directory_path).await?;
         if !is_valid {
             return Err(ApplicationError::InvalidRepository(
@@ -2231,6 +2239,11 @@ impl GitRepositoryInspector {
         is_word_match: bool,
         is_regex: bool,
     ) -> Result<crate::domain::RepositorySearchResult, ApplicationError> {
+        validate_search_query(query)?;
+        if let Some(r) = reference {
+            validate_commit_reference(r)?;
+        }
+
         let is_valid = self.verify_repository_path(directory_path).await?;
         if !is_valid {
             return Err(ApplicationError::InvalidRepository(
@@ -2411,7 +2424,10 @@ impl GitRepositoryInspector {
         output_bundle_path: &Path,
         revision_range: Option<&str>,
     ) -> Result<String, ApplicationError> {
-        let mut arguments = vec!["bundle", "create", output_bundle_path.to_str().unwrap_or_default()];
+        let bundle_str = output_bundle_path.to_str().unwrap_or_default();
+        validate_archive_path(bundle_str)?;
+
+        let mut arguments = vec!["bundle", "create", bundle_str];
         let range = revision_range.unwrap_or("--all");
         arguments.push(range);
 
@@ -2425,6 +2441,8 @@ impl GitRepositoryInspector {
         bundle_path: &Path,
     ) -> Result<crate::domain::GitBundleVerificationResult, ApplicationError> {
         let bundle_str = bundle_path.to_str().unwrap_or_default();
+        validate_archive_path(bundle_str)?;
+
         let outcome = self
             .executor
             .execute_git_command(Some(directory_path), &["bundle", "verify", bundle_str])
@@ -2464,6 +2482,9 @@ impl GitRepositoryInspector {
         reference: &str,
     ) -> Result<String, ApplicationError> {
         let archive_str = output_archive_path.to_str().unwrap_or_default();
+        validate_archive_path(archive_str)?;
+        validate_commit_reference(reference)?;
+
         let arguments = ["archive", "--output", archive_str, reference];
         self.executor.execute_git_command(Some(directory_path), &arguments).await
     }
@@ -2518,6 +2539,7 @@ impl GitRepositoryInspector {
         directory_path: &Path,
         pattern: &str,
     ) -> Result<String, ApplicationError> {
+        validate_lfs_pattern(pattern)?;
         self.executor.execute_git_command(Some(directory_path), &["lfs", "track", pattern]).await
     }
 
@@ -2527,6 +2549,7 @@ impl GitRepositoryInspector {
         directory_path: &Path,
         pattern: &str,
     ) -> Result<String, ApplicationError> {
+        validate_lfs_pattern(pattern)?;
         self.executor.execute_git_command(Some(directory_path), &["lfs", "untrack", pattern]).await
     }
 

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { exportArchiveInputSchema } from '~/schemas/archiveSchema'
+
 interface ExportArchiveModalProps {
   open: boolean
 }
@@ -14,10 +16,34 @@ const { isOperating, exportSourceArchive } = useArchiveController()
 
 const outputArchivePath = ref<string>('')
 const archiveReference = ref<string>('HEAD')
+const errorMessage = ref<string | null>(null)
+
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) {
+      errorMessage.value = null
+    }
+  }
+)
 
 async function handleExport(): Promise<void> {
-  if (!outputArchivePath.value.trim()) return
-  const result = await exportSourceArchive(outputArchivePath.value, archiveReference.value)
+  errorMessage.value = null
+  const parseResult = exportArchiveInputSchema.safeParse({
+    outputArchivePath: outputArchivePath.value,
+    reference: archiveReference.value,
+  })
+
+  if (!parseResult.success) {
+    const firstIssue = parseResult.error.issues[0]
+    errorMessage.value = firstIssue ? t(firstIssue.message) : t('common.invalidInput')
+    return
+  }
+
+  const result = await exportSourceArchive(
+    parseResult.data.outputArchivePath,
+    parseResult.data.reference
+  )
   if (result) {
     emit('update:open', false)
   }
@@ -66,6 +92,15 @@ function handleClose(): void {
 
       <!-- Main Form -->
       <div class="p-6 space-y-4 flex-1 overflow-y-auto">
+        <!-- Error Alert Banner -->
+        <div
+          v-if="errorMessage"
+          class="p-3 rounded-xl border border-error/40 bg-error/10 text-error text-xs flex items-center gap-2"
+        >
+          <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" />
+          <span>{{ errorMessage }}</span>
+        </div>
+
         <!-- Zero-CLS Skeleton while in flight -->
         <div v-if="isOperating" class="space-y-4">
           <USkeleton class="h-5 w-1/3 rounded" />

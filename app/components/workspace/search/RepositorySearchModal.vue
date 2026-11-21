@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SearchMatchEntry } from '~/types/repository'
+import { searchRepositoryInputSchema } from '~/schemas/searchSchema'
 
 interface RepositorySearchModalProps {
   open: boolean
@@ -22,6 +23,16 @@ const revisionReference = ref<string>('')
 const isCaseSensitive = ref<boolean>(false)
 const isWordMatch = ref<boolean>(false)
 const isRegex = ref<boolean>(false)
+const errorMessage = ref<string | null>(null)
+
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) {
+      errorMessage.value = null
+    }
+  }
+)
 
 interface GroupedFileMatches {
   filePath: string
@@ -47,13 +58,28 @@ const groupedMatches = computed<GroupedFileMatches[]>(() => {
 })
 
 async function handleSearch(): Promise<void> {
-  if (!searchQuery.value.trim()) return
-  await searchRepository(searchQuery.value, {
-    reference: revisionReference.value.trim() || null,
-    pathPattern: pathPattern.value.trim() || null,
+  errorMessage.value = null
+  const parseResult = searchRepositoryInputSchema.safeParse({
+    query: searchQuery.value,
+    reference: revisionReference.value || null,
+    pathPattern: pathPattern.value || null,
     isCaseSensitive: isCaseSensitive.value,
     isWordMatch: isWordMatch.value,
     isRegex: isRegex.value,
+  })
+
+  if (!parseResult.success) {
+    const firstIssue = parseResult.error.issues[0]
+    errorMessage.value = firstIssue ? t(firstIssue.message) : t('common.invalidInput')
+    return
+  }
+
+  await searchRepository(parseResult.data.query, {
+    reference: parseResult.data.reference,
+    pathPattern: parseResult.data.pathPattern,
+    isCaseSensitive: parseResult.data.isCaseSensitive,
+    isWordMatch: parseResult.data.isWordMatch,
+    isRegex: parseResult.data.isRegex,
   })
 }
 
@@ -107,6 +133,15 @@ function handleClose(): void {
 
       <!-- Controls & Search Form -->
       <div class="p-6 border-b border-default/40 space-y-4 bg-muted/5">
+        <!-- Error Alert Banner -->
+        <div
+          v-if="errorMessage"
+          class="p-3 rounded-xl border border-error/40 bg-error/10 text-error text-xs flex items-center gap-2"
+        >
+          <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" />
+          <span>{{ errorMessage }}</span>
+        </div>
+
         <form class="space-y-3" @submit.prevent="handleSearch">
           <div class="flex items-center gap-2">
             <div class="relative flex-1">

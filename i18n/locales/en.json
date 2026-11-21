@@ -31,6 +31,7 @@
     "save": "Save",
     "edit": "Edit",
     "delete": "Delete",
+    "invalidInput": "Invalid input provided",
     "refresh": "Refresh",
     "search": "Search",
     "filter": "Filter",
@@ -758,7 +759,11 @@
       "started": "Git bisect session started",
       "culpritFound": "Regression culprit commit found!",
       "reset": "Git bisect session ended and reset"
-    }
+    },
+    "validationBadCommitEmpty": "Bad commit revision cannot be empty",
+    "validationGoodCommitEmpty": "Good commit revision cannot be empty",
+    "validationCommitTooLong": "Commit revision exceeds maximum allowed length",
+    "validationCommitInvalid": "Commit revision contains invalid characters"
   },
   "patch": {
     "exportTitle": "Export Patch File",
@@ -791,7 +796,9 @@
       "copied": "Patch copied to clipboard",
       "downloaded": "Patch file downloaded",
       "applied": "Patch successfully applied to repository"
-    }
+    },
+    "validationPatchEmpty": "Patch content cannot be empty",
+    "validationPatchTooLarge": "Patch content exceeds maximum allowed size"
   },
   "submodule": {
     "modalTitle": "Git Submodules",
@@ -866,7 +873,10 @@
     "noMatchesDescription": "Try adjusting your query, pattern, or case sensitivity options.",
     "summary": "Found {count} matches across {files} files",
     "matchCopied": "Match line copied to clipboard",
-    "keyboardShortcutHint": "Press Enter to run query"
+    "keyboardShortcutHint": "Press Enter to run query",
+    "validationQueryEmpty": "Search query cannot be empty",
+    "validationQueryTooLong": "Search query exceeds maximum allowed length",
+    "validationQueryNullByte": "Search query cannot contain null bytes"
   },
   "commitQueue": {
     "toolbarTitle": "Cherry-Pick & Revert Queue",
@@ -912,7 +922,14 @@
     "archiveReferenceHint": "Specify branch name, commit hash, or tag.",
     "exportArchive": "Export Archive",
     "bundleCreatedSuccess": "Git bundle created successfully",
-    "archiveExportedSuccess": "Source archive exported successfully"
+    "archiveExportedSuccess": "Source archive exported successfully",
+    "validationBundlePathEmpty": "Bundle output path cannot be empty",
+    "validationArchivePathEmpty": "Archive output path cannot be empty",
+    "validationPathTooLong": "Output path exceeds maximum allowed length",
+    "validationPathNullByte": "Path cannot contain null bytes",
+    "validationRevisionRangeTooLong": "Revision range exceeds maximum allowed length",
+    "validationReferenceEmpty": "Archive reference cannot be empty",
+    "validationReferenceTooLong": "Archive reference exceeds maximum allowed length"
   },
   "lfs": {
     "toolbarTitle": "Git LFS Large File Storage",
@@ -930,7 +947,11 @@
     "patternUntrackedSuccess": "Pattern untracked from Git LFS",
     "noTrackedPatterns": "No LFS tracked patterns configured.",
     "activeLocksTitle": "File Locks",
-    "noLocksFound": "No active file locks recorded."
+    "noLocksFound": "No active file locks recorded.",
+    "validationPatternEmpty": "File pattern cannot be empty",
+    "validationPatternTooLong": "File pattern exceeds maximum allowed length",
+    "validationPatternNullByte": "File pattern cannot contain null bytes",
+    "validationPatternNoNewlines": "File pattern cannot contain newline characters"
   },
   "actions": {
     "toolbarTitle": "Custom Action Runners",
@@ -946,6 +967,15 @@
     "actionSavedSuccess": "Custom action saved",
     "actionDeletedSuccess": "Custom action deleted",
     "actionExecutedSuccess": "Action executed successfully",
-    "actionFailed": "Action execution failed"
+    "actionFailed": "Action execution failed",
+    "validationIdentifierEmpty": "Action identifier cannot be empty",
+    "validationIdentifierTooLong": "Action identifier exceeds maximum length",
+    "validationIdentifierInvalid": "Action identifier can only contain alphanumeric characters, underscores, and hyphens",
+    "validationDisplayNameEmpty": "Action display name cannot be empty",
+    "validationDisplayNameTooLong": "Action display name exceeds maximum length",
+    "validationCommandEmpty": "Action command cannot be empty",
+    "validationCommandTooLong": "Action command exceeds maximum length",
+    "validationIconEmpty": "Action icon cannot be empty",
+    "validationDescriptionTooLong": "Action description exceeds maximum length"
   }
 }

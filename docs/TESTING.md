@@ -41,7 +41,7 @@ graph TD
 | **Rust Property Tests** | `proptest` | Commit graph DAG determinism, lane allocation stability with random topologies. | 2 tests |
 | **Rust Benchmark Tests** | `cargo test` | 2,000 & 10,000 commit DAG layout generation stress tests (< 30ms total execution). | 2 tests |
 | **Rust Integration Tests** | `tempfile`, native `git` | Scratch repositories with real commits, branches, merges, stashes, and remotes. | 12 tests |
-| **Frontend Unit & E2E Tests** | `vitest`, `happy-dom` | Complete workflow simulation, composables, patch generator, Zod schemas, file tree algorithms, markdown renderer, crash prevention & error formatting. | 107 tests |
+| **Frontend Unit & E2E Tests** | `vitest`, `happy-dom` | Complete workflow simulation, composables, patch generator, Zod schemas, file tree algorithms, markdown renderer, crash prevention & error formatting. | 149 tests |
 | **Translation Validation** | Node.js | Key count parity, placeholder matching across `en.json` and `fa.json`. | Automated script |
 
 ---

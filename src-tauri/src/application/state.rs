@@ -1433,6 +1433,7 @@ impl ApplicationState {
 
     /// Saves or updates a custom action.
     pub fn save_custom_action(&self, action: crate::domain::CustomActionDefinition) -> Result<(), ApplicationError> {
+        crate::domain::validation::validate_custom_action_definition(&action)?;
         self.store.save_custom_action(&action)
     }
 

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { PatchCheckResult } from '~/types/repository'
+import { applyPatchInputSchema, patchContentSchema } from '~/schemas/patchSchema'
 
 interface ApplyPatchModalProps {
   open: boolean
 }
 
-defineProps<ApplyPatchModalProps>()
+const props = defineProps<ApplyPatchModalProps>()
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
@@ -18,26 +19,56 @@ const patchContentInput = ref<string>('')
 const checkResult = ref<PatchCheckResult | null>(null)
 const isApplyToStaged = ref<boolean>(false)
 const isReverse = ref<boolean>(false)
+const errorMessage = ref<string | null>(null)
 
 watch(
   patchContentInput,
   () => {
     // Invalidate previous check result when content changes
     checkResult.value = null
+    errorMessage.value = null
+  }
+)
+
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) {
+      errorMessage.value = null
+    }
   }
 )
 
 async function handleValidate() {
-  if (!patchContentInput.value.trim()) return
-  checkResult.value = await checkPatch(patchContentInput.value)
+  errorMessage.value = null
+  const parseResult = patchContentSchema.safeParse(patchContentInput.value)
+  if (!parseResult.success) {
+    const firstIssue = parseResult.error.issues[0]
+    errorMessage.value = firstIssue ? t(firstIssue.message) : t('common.invalidInput')
+    return
+  }
+
+  checkResult.value = await checkPatch(parseResult.data)
 }
 
 async function handleApply() {
-  if (!patchContentInput.value.trim()) return
+  errorMessage.value = null
+  const parseResult = applyPatchInputSchema.safeParse({
+    patchContent: patchContentInput.value,
+    isCached: isApplyToStaged.value,
+    isReverse: isReverse.value,
+  })
+
+  if (!parseResult.success) {
+    const firstIssue = parseResult.error.issues[0]
+    errorMessage.value = firstIssue ? t(firstIssue.message) : t('common.invalidInput')
+    return
+  }
+
   const success = await applyPatch(
-    patchContentInput.value,
-    isApplyToStaged.value,
-    isReverse.value
+    parseResult.data.patchContent,
+    parseResult.data.isCached,
+    parseResult.data.isReverse
   )
   if (success) {
     emit('update:open', false)
@@ -92,6 +123,14 @@ function handleFileUpload(event: Event) {
 
       <!-- Body -->
       <div class="p-6 space-y-4">
+        <!-- Error Alert Banner -->
+        <div
+          v-if="errorMessage"
+          class="p-3 rounded-xl border border-error/40 bg-error/10 text-error text-xs flex items-center gap-2"
+        >
+          <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" />
+          <span>{{ errorMessage }}</span>
+        </div>
         <!-- Input instructions and file upload button -->
         <div class="flex items-center justify-between">
           <label class="text-xs font-medium text-highlighted">

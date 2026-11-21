@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { GitBundleVerificationResult } from '~/types/repository'
+import { createBundleInputSchema, verifyBundleInputSchema } from '~/schemas/archiveSchema'
 
 interface GitBundleModalProps {
   open: boolean
@@ -23,18 +24,52 @@ const activeTab = ref<'create' | 'verify'>('create')
 const outputBundlePath = ref<string>('')
 const revisionRange = ref<string>('--all')
 const verifyFilePath = ref<string>('')
+const errorMessage = ref<string | null>(null)
+
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) {
+      errorMessage.value = null
+    }
+  }
+)
 
 async function handleCreateBundle(): Promise<void> {
-  if (!outputBundlePath.value.trim()) return
-  const result = await createGitBundle(outputBundlePath.value, revisionRange.value)
+  errorMessage.value = null
+  const parseResult = createBundleInputSchema.safeParse({
+    outputBundlePath: outputBundlePath.value,
+    revisionRange: revisionRange.value,
+  })
+
+  if (!parseResult.success) {
+    const firstIssue = parseResult.error.issues[0]
+    errorMessage.value = firstIssue ? t(firstIssue.message) : t('common.invalidInput')
+    return
+  }
+
+  const result = await createGitBundle(
+    parseResult.data.outputBundlePath,
+    parseResult.data.revisionRange
+  )
   if (result) {
     emit('update:open', false)
   }
 }
 
 async function handleVerifyBundle(): Promise<void> {
-  if (!verifyFilePath.value.trim()) return
-  await verifyGitBundle(verifyFilePath.value)
+  errorMessage.value = null
+  const parseResult = verifyBundleInputSchema.safeParse({
+    bundlePath: verifyFilePath.value,
+  })
+
+  if (!parseResult.success) {
+    const firstIssue = parseResult.error.issues[0]
+    errorMessage.value = firstIssue ? t(firstIssue.message) : t('common.invalidInput')
+    return
+  }
+
+  await verifyGitBundle(parseResult.data.bundlePath)
 }
 
 function handleClose(): void {
@@ -100,6 +135,15 @@ function handleClose(): void {
 
       <!-- Main Body -->
       <div class="p-6 space-y-4 flex-1 overflow-y-auto">
+        <!-- Error Alert Banner -->
+        <div
+          v-if="errorMessage"
+          class="p-3 rounded-xl border border-error/40 bg-error/10 text-error text-xs flex items-center gap-2"
+        >
+          <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" />
+          <span>{{ errorMessage }}</span>
+        </div>
+
         <!-- Zero-CLS Skeleton while in flight -->
         <div v-if="isOperating" class="space-y-4">
           <USkeleton class="h-5 w-1/3 rounded" />
