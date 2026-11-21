@@ -11,6 +11,7 @@ import type { SelectedDiffTarget } from '~/composables/useStagingController'
 import ExplorerChangesSection from './ExplorerChangesSection.vue'
 import ExplorerBranchesSection from './ExplorerBranchesSection.vue'
 import ExplorerPullRequestsSection from './ExplorerPullRequestsSection.vue'
+import ExplorerActionsSection from './ExplorerActionsSection.vue'
 import ExplorerStashesSection from './ExplorerStashesSection.vue'
 import ExplorerRemotesSection from './ExplorerRemotesSection.vue'
 import ExplorerTagsSection from './ExplorerTagsSection.vue'
@@ -70,6 +71,7 @@ const { renameBranch } = useWorkspaceManager()
 const isChangesOpen = ref<boolean>(true)
 const isBranchesOpen = ref<boolean>(true)
 const isPullRequestsOpen = ref<boolean>(false)
+const isActionsOpen = ref<boolean>(false)
 const isRemotesOpen = ref<boolean>(false)
 const isStashesOpen = ref<boolean>(false)
 const isTagsOpen = ref<boolean>(false)
@@ -248,6 +250,31 @@ const totalChangesCount = computed(() => {
             :current-repository-path="currentRepository?.path"
             @open-pull-request="(pullRequest, account, repositoryFullName) => emit('openPullRequest', pullRequest, account, repositoryFullName)"
             @checkout-branch="emit('checkout', $event)"
+          />
+        </div>
+      </div>
+
+      <!-- SECTION 3.5: Actions & Pipelines -->
+      <div>
+        <button
+          type="button"
+          class="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold text-highlighted hover:bg-muted/30 transition-colors"
+          @click="isActionsOpen = !isActionsOpen"
+        >
+          <div class="flex items-center gap-2 min-w-0">
+            <UIcon
+              :name="isActionsOpen ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+              class="h-3.5 w-3.5 text-muted transition-transform rtl:rotate-180 shrink-0"
+            />
+            <UIcon name="i-lucide-play-circle" class="h-3.5 w-3.5 text-primary shrink-0" />
+            <span class="uppercase tracking-wider text-[11px]">{{ t('provider.actions.title') }}</span>
+          </div>
+        </button>
+
+        <div v-show="isActionsOpen">
+          <ExplorerActionsSection
+            :remotes="props.references?.remotes"
+            :current-repository-path="currentRepository?.path"
           />
         </div>
       </div>

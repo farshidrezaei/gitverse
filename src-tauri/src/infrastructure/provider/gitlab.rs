@@ -6,6 +6,7 @@ use crate::domain::{
     ApplicationError, CiCheckRun, PipelineState, PipelineSummary,
     ProviderAccount, ProviderKind, PullRequestChangedFile, PullRequestMergeResult,
     PullRequestState, RemoteProjectRepository, RemotePullRequest, RemoteReviewComment,
+    WorkflowJob, WorkflowRun,
 };
 
 const DEFAULT_GITLAB_API_URL: &str = "https://gitlab.com/api/v4";
@@ -746,6 +747,271 @@ impl GitLabClient {
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(ApplicationError::ProviderError(format!("Failed to update MR state: {}", error_text)));
+        }
+
+        Ok(true)
+    }
+
+    pub async fn list_pipelines(
+        &self,
+        token: &str,
+        project_full_name: &str,
+        status_filter: Option<&str>,
+        page: u32,
+        per_page: u32,
+    ) -> Result<Vec<WorkflowRun>, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_full_name);
+        let mut url = format!(
+            "{}/projects/{}/pipelines?page={}&per_page={}",
+            self.api_base_url,
+            encoded_project,
+            page.max(1),
+            per_page.clamp(1, 100)
+        );
+        if let Some(status) = status_filter {
+            if !status.is_empty() && status != "all" {
+                url.push_str(&format!("&status={}", status));
+            }
+        }
+
+        let headers = self.build_headers(token)?;
+        let response = self
+            .client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to list GitLab pipelines: {}",
+                error_text
+            )));
+        }
+
+        #[derive(Deserialize)]
+        struct GitLabPipelineItem {
+            id: u64,
+            iid: Option<u64>,
+            project_id: Option<u64>,
+            sha: String,
+            #[serde(rename = "ref")]
+            ref_name: Option<String>,
+            status: String,
+            source: Option<String>,
+            created_at: Option<String>,
+            updated_at: Option<String>,
+            web_url: String,
+            name: Option<String>,
+        }
+
+        let pipelines: Vec<GitLabPipelineItem> = response
+            .json()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("Failed to parse GitLab pipelines: {}", error)))?;
+
+        let runs = pipelines
+            .into_iter()
+            .map(|pipeline| {
+                let (status, conclusion) = match pipeline.status.as_str() {
+                    "success" => ("completed".to_string(), Some("success".to_string())),
+                    "failed" => ("completed".to_string(), Some("failure".to_string())),
+                    "running" => ("in_progress".to_string(), None),
+                    "pending" | "waiting_for_resource" | "preparing" => ("queued".to_string(), None),
+                    "canceled" => ("completed".to_string(), Some("cancelled".to_string())),
+                    "skipped" => ("completed".to_string(), Some("skipped".to_string())),
+                    other => (other.to_string(), None),
+                };
+
+                let name = pipeline.name.unwrap_or_else(|| {
+                    format!("Pipeline #{}", pipeline.id)
+                });
+
+                let created_timestamp = pipeline.created_at
+                    .as_deref()
+                    .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                    .map(|datetime| datetime.timestamp())
+                    .unwrap_or(0);
+                let updated_timestamp = pipeline.updated_at
+                    .as_deref()
+                    .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                    .map(|datetime| datetime.timestamp())
+                    .unwrap_or(0);
+
+                WorkflowRun {
+                    id: pipeline.id.to_string(),
+                    workflow_name: name,
+                    display_title: format!("Pipeline #{} on {}", pipeline.id, pipeline.ref_name.as_deref().unwrap_or("unknown")),
+                    head_branch: pipeline.ref_name.unwrap_or_default(),
+                    head_commit_sha: pipeline.sha,
+                    status,
+                    conclusion,
+                    event: pipeline.source.unwrap_or_else(|| "push".to_string()),
+                    run_number: pipeline.iid.unwrap_or(pipeline.id) as u32,
+                    author_username: String::new(),
+                    author_avatar_url: None,
+                    created_at_timestamp: created_timestamp,
+                    updated_at_timestamp: updated_timestamp,
+                    html_url: Some(pipeline.web_url),
+                }
+            })
+            .collect();
+
+        Ok(runs)
+    }
+
+    pub async fn get_pipeline_jobs(
+        &self,
+        token: &str,
+        project_full_name: &str,
+        pipeline_id: u64,
+    ) -> Result<Vec<WorkflowJob>, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_full_name);
+        let url = format!(
+            "{}/projects/{}/pipelines/{}/jobs?per_page=100",
+            self.api_base_url,
+            encoded_project,
+            pipeline_id
+        );
+
+        let headers = self.build_headers(token)?;
+        let response = self
+            .client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to get GitLab pipeline jobs: {}",
+                error_text
+            )));
+        }
+
+        #[derive(Deserialize)]
+        struct GitLabJobItem {
+            id: u64,
+            name: String,
+            stage: Option<String>,
+            status: String,
+            created_at: Option<String>,
+            started_at: Option<String>,
+            finished_at: Option<String>,
+            web_url: String,
+        }
+
+        let jobs: Vec<GitLabJobItem> = response
+            .json()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("Failed to parse GitLab pipeline jobs: {}", error)))?;
+
+        let result_jobs = jobs
+            .into_iter()
+            .map(|job| {
+                let (status, conclusion) = match job.status.as_str() {
+                    "success" => ("completed".to_string(), Some("success".to_string())),
+                    "failed" => ("completed".to_string(), Some("failure".to_string())),
+                    "running" => ("in_progress".to_string(), None),
+                    "pending" | "waiting_for_resource" | "preparing" => ("queued".to_string(), None),
+                    "canceled" => ("completed".to_string(), Some("cancelled".to_string())),
+                    "skipped" => ("completed".to_string(), Some("skipped".to_string())),
+                    other => (other.to_string(), None),
+                };
+
+                let started_timestamp = job.started_at
+                    .as_deref()
+                    .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                    .map(|datetime| datetime.timestamp());
+                let completed_timestamp = job.finished_at
+                    .as_deref()
+                    .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                    .map(|datetime| datetime.timestamp());
+
+                WorkflowJob {
+                    id: job.id.to_string(),
+                    run_id: pipeline_id.to_string(),
+                    name: job.name,
+                    status,
+                    conclusion,
+                    started_at_timestamp: started_timestamp,
+                    completed_at_timestamp: completed_timestamp,
+                    steps: Vec::new(),
+                    html_url: Some(job.web_url),
+                }
+            })
+            .collect();
+
+        Ok(result_jobs)
+    }
+
+    pub async fn retry_pipeline(
+        &self,
+        token: &str,
+        project_full_name: &str,
+        pipeline_id: u64,
+    ) -> Result<bool, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_full_name);
+        let url = format!(
+            "{}/projects/{}/pipelines/{}/retry",
+            self.api_base_url,
+            encoded_project,
+            pipeline_id
+        );
+
+        let headers = self.build_headers(token)?;
+        let response = self
+            .client
+            .post(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to retry pipeline: {}",
+                error_text
+            )));
+        }
+
+        Ok(true)
+    }
+
+    pub async fn cancel_pipeline(
+        &self,
+        token: &str,
+        project_full_name: &str,
+        pipeline_id: u64,
+    ) -> Result<bool, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_full_name);
+        let url = format!(
+            "{}/projects/{}/pipelines/{}/cancel",
+            self.api_base_url,
+            encoded_project,
+            pipeline_id
+        );
+
+        let headers = self.build_headers(token)?;
+        let response = self
+            .client
+            .post(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to cancel pipeline: {}",
+                error_text
+            )));
         }
 
         Ok(true)

@@ -3,6 +3,7 @@ use crate::application::ApplicationState;
 use crate::domain::{
     ApplicationError, ProviderAccount, PullRequestChangedFile, PullRequestMergeResult,
     RemoteProjectRepository, RemotePullRequest, RemoteReviewComment,
+    WorkflowJob, WorkflowRun,
 };
 
 /// Tauri IPC command to connect a GitHub account via personal access token.
@@ -166,4 +167,65 @@ pub async fn update_pull_request_state(
     new_state: String,
 ) -> Result<bool, ApplicationError> {
     state.update_pull_request_state(&account_identifier, &repository_full_name, pull_request_number, &new_state).await
+}
+
+/// Tauri IPC command to list workflow runs / pipelines.
+#[tauri::command]
+pub async fn list_workflow_runs(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    status_filter: Option<String>,
+    page: Option<u32>,
+    per_page: Option<u32>,
+) -> Result<Vec<WorkflowRun>, ApplicationError> {
+    state.list_workflow_runs(
+        &account_identifier,
+        &repository_full_name,
+        status_filter.as_deref(),
+        page.unwrap_or(1),
+        per_page.unwrap_or(30),
+    ).await
+}
+
+/// Tauri IPC command to get jobs in a workflow run.
+#[tauri::command]
+pub async fn get_workflow_run_jobs(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    run_id: u64,
+) -> Result<Vec<WorkflowJob>, ApplicationError> {
+    crate::domain::validation::validate_workflow_run_id(&run_id.to_string())?;
+    state.get_workflow_run_jobs(&account_identifier, &repository_full_name, run_id).await
+}
+
+/// Tauri IPC command to rerun a workflow run or pipeline.
+#[tauri::command]
+pub async fn rerun_workflow_run(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    run_id: u64,
+    failed_jobs_only: Option<bool>,
+) -> Result<bool, ApplicationError> {
+    crate::domain::validation::validate_workflow_run_id(&run_id.to_string())?;
+    state.rerun_workflow_run(
+        &account_identifier,
+        &repository_full_name,
+        run_id,
+        failed_jobs_only.unwrap_or(false),
+    ).await
+}
+
+/// Tauri IPC command to cancel an in-progress workflow run.
+#[tauri::command]
+pub async fn cancel_workflow_run(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    run_id: u64,
+) -> Result<bool, ApplicationError> {
+    crate::domain::validation::validate_workflow_run_id(&run_id.to_string())?;
+    state.cancel_workflow_run(&account_identifier, &repository_full_name, run_id).await
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ContextMenuItem } from '@nuxt/ui'
-import type { WorkspaceDiffTab, WorkspacePullRequestTab } from '~/types/workspaceTab'
+import type { WorkspaceDiffTab, WorkspacePullRequestTab, WorkspaceWorkflowRunTab } from '~/types/workspaceTab'
 import SharedFileStatusBadge from '~/components/shared/FileStatusBadge.vue'
 
 interface WorkspaceDiffTabBarProperties {
@@ -8,11 +8,15 @@ interface WorkspaceDiffTabBarProperties {
   activeTabId: string | null
   pullRequestTabs?: WorkspacePullRequestTab[]
   activePullRequestTabId?: string | null
+  workflowRunTabs?: WorkspaceWorkflowRunTab[]
+  activeWorkflowRunTabId?: string | null
 }
 
 const properties = withDefaults(defineProps<WorkspaceDiffTabBarProperties>(), {
   pullRequestTabs: () => [],
   activePullRequestTabId: null,
+  workflowRunTabs: () => [],
+  activeWorkflowRunTabId: null,
 })
 
 const emit = defineEmits<{
@@ -24,12 +28,18 @@ const emit = defineEmits<{
   pinDiffTab: [tabIdentifier: string]
   selectPullRequestTab: [tabIdentifier: string]
   closePullRequestTab: [tabIdentifier: string]
+  selectWorkflowRunTab: [tabIdentifier: string]
+  closeWorkflowRunTab: [tabIdentifier: string]
 }>()
 
 const { t } = useI18n()
 
 const isOverviewActive = computed<boolean>(() => {
-  return properties.activeTabId === null && properties.activePullRequestTabId === null
+  return (
+    properties.activeTabId === null &&
+    properties.activePullRequestTabId === null &&
+    properties.activeWorkflowRunTabId === null
+  )
 })
 
 function handleMiddleClick(event: MouseEvent, tab: WorkspaceDiffTab): void {
@@ -148,7 +158,50 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
       </div>
 
       <div
-        v-if="properties.pullRequestTabs.length > 0 && properties.tabs.length > 0"
+        v-if="properties.pullRequestTabs.length > 0 && (properties.workflowRunTabs.length > 0 || properties.tabs.length > 0)"
+        class="h-4 w-px bg-default/50 mx-0.5 shrink-0"
+        aria-hidden="true"
+      />
+
+      <!-- Workflow Run / Actions Tabs -->
+      <div
+        v-for="runTab in properties.workflowRunTabs"
+        :key="runTab.id"
+        class="group relative flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
+        :class="[
+          properties.activeWorkflowRunTabId === runTab.id
+            ? 'bg-[var(--gv-surface)] text-highlighted border-primary/50 shadow-2xs'
+            : 'border-transparent text-muted hover:bg-muted/30 hover:text-default',
+        ]"
+        :title="runTab.title"
+        @click="emit('selectWorkflowRunTab', runTab.id)"
+      >
+        <UIcon name="i-lucide-play-circle" class="h-3.5 w-3.5 shrink-0 text-primary" />
+        <span class="truncate max-w-[160px] font-medium">
+          {{ runTab.title }}
+        </span>
+
+        <UBadge
+          size="xs"
+          :color="runTab.workflowRun.conclusion === 'success' ? 'success' : runTab.workflowRun.conclusion === 'failure' ? 'error' : 'neutral'"
+          variant="subtle"
+          class="text-[9px] px-1 py-0 leading-none"
+        >
+          {{ runTab.workflowRun.conclusion || runTab.workflowRun.status }}
+        </UBadge>
+
+        <button
+          type="button"
+          class="ms-0.5 inline-flex h-4 w-4 items-center justify-center rounded-xs text-muted opacity-60 transition-opacity hover:bg-muted/40 hover:text-highlighted hover:opacity-100 focus:outline-none cursor-pointer"
+          :title="t('tabs.close')"
+          @click.stop="emit('closeWorkflowRunTab', runTab.id)"
+        >
+          <UIcon name="i-lucide-x" class="h-3 w-3" />
+        </button>
+      </div>
+
+      <div
+        v-if="properties.workflowRunTabs.length > 0 && properties.tabs.length > 0"
         class="h-4 w-px bg-default/50 mx-0.5 shrink-0"
         aria-hidden="true"
       />

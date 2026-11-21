@@ -114,3 +114,41 @@ export interface RemoteProjectRepository {
   forks_count: number
   updated_at_timestamp: number
 }
+
+export interface WorkflowJobStep {
+  name: string
+  status: string
+  conclusion: string | null
+  number: number
+  started_at_timestamp: number | null
+  completed_at_timestamp: number | null
+}
+
+export interface WorkflowJob {
+  id: string
+  run_id: string
+  name: string
+  status: string
+  conclusion: string | null
+  started_at_timestamp: number | null
+  completed_at_timestamp: number | null
+  steps: WorkflowJobStep[]
+  html_url: string | null
+}
+
+export interface WorkflowRun {
+  id: string
+  workflow_name: string
+  display_title: string
+  head_branch: string
+  head_commit_sha: string
+  status: string
+  conclusion: string | null
+  event: string
+  run_number: number
+  author_username: string
+  author_avatar_url: string | null
+  created_at_timestamp: number
+  updated_at_timestamp: number
+  html_url: string | null
+}

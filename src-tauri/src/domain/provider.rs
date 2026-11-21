@@ -125,6 +125,50 @@ pub struct CiCheckRun {
     pub completed_at_timestamp: Option<i64>,
 }
 
+/// Execution step inside a CI/CD workflow job.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkflowJobStep {
+    pub name: String,
+    pub status: String,
+    pub conclusion: Option<String>,
+    pub number: u32,
+    pub started_at_timestamp: Option<i64>,
+    pub completed_at_timestamp: Option<i64>,
+}
+
+/// Job execution inside a CI/CD workflow run.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkflowJob {
+    pub id: String,
+    pub run_id: String,
+    pub name: String,
+    pub status: String,
+    pub conclusion: Option<String>,
+    pub started_at_timestamp: Option<i64>,
+    pub completed_at_timestamp: Option<i64>,
+    pub steps: Vec<WorkflowJobStep>,
+    pub html_url: Option<String>,
+}
+
+/// High-level CI/CD workflow run (GitHub Actions workflow run or GitLab pipeline).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkflowRun {
+    pub id: String,
+    pub workflow_name: String,
+    pub display_title: String,
+    pub head_branch: String,
+    pub head_commit_sha: String,
+    pub status: String,
+    pub conclusion: Option<String>,
+    pub event: String,
+    pub run_number: u32,
+    pub author_username: String,
+    pub author_avatar_url: Option<String>,
+    pub created_at_timestamp: i64,
+    pub updated_at_timestamp: i64,
+    pub html_url: Option<String>,
+}
+
 /// Remote review comment on a pull request.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RemoteReviewComment {

@@ -94,6 +94,10 @@ const {
   activePullRequestTabId,
   activePullRequestTab,
   currentRepositoryPullRequestTabs,
+  workflowRunTabs,
+  activeWorkflowRunTabId,
+  activeWorkflowRunTab,
+  currentRepositoryWorkflowRunTabs,
   openRepositoryTab,
   closeRepositoryTab,
   closeOtherRepositoryTabs,
@@ -107,6 +111,9 @@ const {
   openPullRequestTab,
   activatePullRequestTab,
   closePullRequestTab,
+  openWorkflowRunTab,
+  activateWorkflowRunTab,
+  closeWorkflowRunTab,
   resetTabs,
 } = useWorkspaceTabController()
 
@@ -530,11 +537,15 @@ async function handlePush(): Promise<void> {
                 :active-tab-id="activeDiffTabId"
                 :pull-request-tabs="currentRepositoryPullRequestTabs"
                 :active-pull-request-tab-id="activePullRequestTabId"
+                :workflow-run-tabs="currentRepositoryWorkflowRunTabs"
+                :active-workflow-run-tab-id="activeWorkflowRunTabId"
                 @select-diff-tab="activateDiffTab"
                 @select-pull-request-tab="activatePullRequestTab"
-                @select-workbench="() => { activateDiffTab(null); activatePullRequestTab(null) }"
+                @select-workflow-run-tab="activateWorkflowRunTab"
+                @select-workbench="() => { activateDiffTab(null); activatePullRequestTab(null); activateWorkflowRunTab(null) }"
                 @close-diff-tab="closeDiffTab"
                 @close-pull-request-tab="closePullRequestTab"
+                @close-workflow-run-tab="closeWorkflowRunTab"
                 @close-other-diff-tabs="closeOtherDiffTabs"
                 @close-all-diff-tabs="closeAllDiffTabs"
                 @pin-diff-tab="pinDiffTab"
@@ -544,7 +555,7 @@ async function handlePush(): Promise<void> {
               <div class="relative flex-1 overflow-hidden">
                 <!-- Tab 1: Workbench Overview (Commit Graph & Diff / Inspector Viewport) -->
                 <div
-                  v-show="!activeDiffTab && !activePullRequestTab"
+                  v-show="!activeDiffTab && !activePullRequestTab && !activeWorkflowRunTab"
                   class="h-full w-full"
                 >
                   <USplitter
@@ -659,6 +670,13 @@ async function handlePush(): Promise<void> {
                   :tab="activePullRequestTab"
                   @close="closePullRequestTab"
                   @checkout-branch="handleCheckout"
+                />
+
+                <!-- Full-Page Dedicated Workflow Run Tab -->
+                <WorkspaceWorkflowRunTabContent
+                  v-if="activeWorkflowRunTab"
+                  :key="activeWorkflowRunTab.id"
+                  :tab="activeWorkflowRunTab"
                 />
               </div>
             </div>

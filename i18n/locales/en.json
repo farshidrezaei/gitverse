@@ -739,7 +739,32 @@
     "noRemotesConfigured": "No remote repository configured",
     "switchRepositoryPrompt": "Switch repository or enter manually",
     "openInBrowser": "Open in Browser",
-    "commentsCount": "{count} comments"
+    "commentsCount": "{count} comments",
+    "actions": {
+      "title": "Actions & Pipelines",
+      "filterAll": "All",
+      "filterCompleted": "Completed",
+      "filterInProgress": "In Progress",
+      "filterQueued": "Queued",
+      "noRunsFound": "No workflow runs found",
+      "noRunsFoundDescription": "Workflow runs and pipelines for this repository will show up here.",
+      "notConfigured": "No provider connected",
+      "notConfiguredDescription": "Connect a GitHub or GitLab account to track workflows.",
+      "stageBuild": "Build",
+      "stageTest": "Test",
+      "stageLint": "Lint & Check",
+      "stageDeploy": "Deploy",
+      "jobSteps": "Steps",
+      "noStepsAvailable": "No detailed step logs available for this job.",
+      "openInBrowser": "Open in Browser",
+      "cancelRun": "Cancel Workflow",
+      "rerunFailedJobs": "Re-run Failed Jobs",
+      "rerunAllJobs": "Re-run All Jobs",
+      "rerunTriggered": "Workflow rerun triggered successfully",
+      "rerunFailed": "Failed to re-run workflow",
+      "cancelSuccess": "Workflow cancelled successfully",
+      "cancelFailed": "Failed to cancel workflow"
+    }
   },
   "externalTools": {
     "openTerminal": "Open in Terminal",

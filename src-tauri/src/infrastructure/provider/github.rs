@@ -6,6 +6,7 @@ use crate::domain::{
     ApplicationError, CiCheckRun, PipelineState, PipelineSummary,
     ProviderAccount, ProviderKind, PullRequestChangedFile, PullRequestMergeResult,
     PullRequestState, RemoteProjectRepository, RemotePullRequest, RemoteReviewComment,
+    WorkflowJob, WorkflowJobStep, WorkflowRun,
 };
 
 const DEFAULT_GITHUB_API_URL: &str = "https://api.github.com";
@@ -766,6 +767,249 @@ impl GitHubClient {
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(ApplicationError::ProviderError(format!("Failed to update PR state: {}", error_text)));
+        }
+
+        Ok(true)
+    }
+
+    /// Fetches workflow runs for a repository.
+    pub async fn list_workflow_runs(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        branch: Option<&str>,
+    ) -> Result<Vec<WorkflowRun>, ApplicationError> {
+        let mut url = format!("{}/repos/{}/{}/actions/runs?per_page=30", self.api_base_url, owner, repository);
+        if let Some(branch_name) = branch {
+            if !branch_name.trim().is_empty() {
+                url.push_str(&format!("&branch={}", branch_name.trim()));
+            }
+        }
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to fetch workflow runs: {}", error_text)));
+        }
+
+        #[derive(Deserialize)]
+        struct WorkflowRunsPayload {
+            workflow_runs: Vec<GitHubWorkflowRunItem>,
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubActor {
+            login: String,
+            avatar_url: Option<String>,
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubWorkflowRunItem {
+            id: u64,
+            name: Option<String>,
+            display_title: Option<String>,
+            head_branch: Option<String>,
+            head_sha: Option<String>,
+            status: Option<String>,
+            conclusion: Option<String>,
+            event: Option<String>,
+            run_number: Option<u32>,
+            actor: Option<GitHubActor>,
+            created_at: Option<String>,
+            updated_at: Option<String>,
+            html_url: Option<String>,
+        }
+
+        let payload: WorkflowRunsPayload = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse workflow runs: {}", error))
+        })?;
+
+        let runs = payload.workflow_runs.into_iter().map(|item| {
+            let created_timestamp = item.created_at
+                .as_deref()
+                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                .map(|datetime| datetime.timestamp())
+                .unwrap_or(0);
+            let updated_timestamp = item.updated_at
+                .as_deref()
+                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                .map(|datetime| datetime.timestamp())
+                .unwrap_or(0);
+
+            WorkflowRun {
+                id: item.id.to_string(),
+                workflow_name: item.name.unwrap_or_else(|| "Workflow".into()),
+                display_title: item.display_title.unwrap_or_else(|| "Workflow Run".into()),
+                head_branch: item.head_branch.unwrap_or_default(),
+                head_commit_sha: item.head_sha.unwrap_or_default(),
+                status: item.status.unwrap_or_else(|| "completed".into()),
+                conclusion: item.conclusion,
+                event: item.event.unwrap_or_else(|| "push".into()),
+                run_number: item.run_number.unwrap_or(1),
+                author_username: item.actor.as_ref().map(|a| a.login.clone()).unwrap_or_default(),
+                author_avatar_url: item.actor.and_then(|a| a.avatar_url),
+                created_at_timestamp: created_timestamp,
+                updated_at_timestamp: updated_timestamp,
+                html_url: item.html_url,
+            }
+        }).collect();
+
+        Ok(runs)
+    }
+
+    /// Fetches all jobs for a specific workflow run.
+    pub async fn get_workflow_run_jobs(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        run_id: u64,
+    ) -> Result<Vec<WorkflowJob>, ApplicationError> {
+        let url = format!("{}/repos/{}/{}/actions/runs/{}/jobs", self.api_base_url, owner, repository, run_id);
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to fetch workflow jobs: {}", error_text)));
+        }
+
+        #[derive(Deserialize)]
+        struct JobsPayload {
+            jobs: Vec<GitHubJobItem>,
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubStepItem {
+            name: String,
+            status: String,
+            conclusion: Option<String>,
+            number: u32,
+            started_at: Option<String>,
+            completed_at: Option<String>,
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubJobItem {
+            id: u64,
+            name: String,
+            status: String,
+            conclusion: Option<String>,
+            started_at: Option<String>,
+            completed_at: Option<String>,
+            steps: Option<Vec<GitHubStepItem>>,
+            html_url: Option<String>,
+        }
+
+        let payload: JobsPayload = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse workflow jobs: {}", error))
+        })?;
+
+        let jobs = payload.jobs.into_iter().map(|item| {
+            let started_timestamp = item.started_at
+                .as_deref()
+                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                .map(|datetime| datetime.timestamp());
+            let completed_timestamp = item.completed_at
+                .as_deref()
+                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                .map(|datetime| datetime.timestamp());
+
+            let steps = item.steps.unwrap_or_default().into_iter().map(|s| {
+                let s_started = s.started_at
+                    .as_deref()
+                    .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                    .map(|dt| dt.timestamp());
+                let s_completed = s.completed_at
+                    .as_deref()
+                    .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                    .map(|dt| dt.timestamp());
+
+                WorkflowJobStep {
+                    name: s.name,
+                    status: s.status,
+                    conclusion: s.conclusion,
+                    number: s.number,
+                    started_at_timestamp: s_started,
+                    completed_at_timestamp: s_completed,
+                }
+            }).collect();
+
+            WorkflowJob {
+                id: item.id.to_string(),
+                run_id: run_id.to_string(),
+                name: item.name,
+                status: item.status,
+                conclusion: item.conclusion,
+                started_at_timestamp: started_timestamp,
+                completed_at_timestamp: completed_timestamp,
+                steps,
+                html_url: item.html_url,
+            }
+        }).collect();
+
+        Ok(jobs)
+    }
+
+    /// Triggers a rerun of a workflow run.
+    pub async fn rerun_workflow_run(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        run_id: u64,
+        failed_only: bool,
+    ) -> Result<bool, ApplicationError> {
+        let endpoint = if failed_only { "rerun-failed-jobs" } else { "rerun" };
+        let url = format!("{}/repos/{}/{}/actions/runs/{}/{}", self.api_base_url, owner, repository, run_id, endpoint);
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.post(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to rerun workflow: {}", error_text)));
+        }
+
+        Ok(true)
+    }
+
+    /// Cancels an in-progress workflow run.
+    pub async fn cancel_workflow_run(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        run_id: u64,
+    ) -> Result<bool, ApplicationError> {
+        let url = format!("{}/repos/{}/{}/actions/runs/{}/cancel", self.api_base_url, owner, repository, run_id);
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.post(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to cancel workflow run: {}", error_text)));
         }
 
         Ok(true)

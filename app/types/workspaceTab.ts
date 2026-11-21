@@ -1,5 +1,5 @@
 import type { FileChangeStatus } from '~/types/repository'
-import type { RemotePullRequest, ProviderAccount } from '~/types/provider'
+import type { RemotePullRequest, ProviderAccount, WorkflowRun } from '~/types/provider'
 
 export interface WorkspaceRepositoryTab {
   id: string
@@ -32,6 +32,17 @@ export interface WorkspacePullRequestTab {
   isClosable: boolean
   isPinned: boolean
   activeSubView?: 'conversation' | 'files' | 'checks'
+}
+
+export interface WorkspaceWorkflowRunTab {
+  id: string
+  title: string
+  workflowRun: WorkflowRun
+  account: ProviderAccount
+  repositoryFullName: string
+  repositoryPath: string
+  isClosable: boolean
+  isPinned: boolean
 }
 
 export interface OpenDiffTabOptions {

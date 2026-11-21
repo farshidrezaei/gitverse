@@ -739,7 +739,32 @@
     "noRemotesConfigured": "هیچ مخزن ریموتی تنظیم نشده است",
     "switchRepositoryPrompt": "تغییر مخزن یا ورود دستی",
     "openInBrowser": "باز کردن در مرورگر",
-    "commentsCount": "{count} دیدگاه"
+    "commentsCount": "{count} دیدگاه",
+    "actions": {
+      "title": "اکشن‌ها و پایپ‌لاین‌ها",
+      "filterAll": "همه",
+      "filterCompleted": "پایان‌یافته",
+      "filterInProgress": "در حال اجرا",
+      "filterQueued": "در صف انتظار",
+      "noRunsFound": "هیچ اجرای ورک‌فلو یافت نشد",
+      "noRunsFoundDescription": "ورک‌فلوها و پایپ‌لاین‌های اجراشده برای این مخزن در اینجا نمایش داده می‌شوند.",
+      "notConfigured": "حساب سرویس متصل نیست",
+      "notConfiguredDescription": "جهت مشاهده ورک‌فلوها، حساب گیت‌هاب یا گیت‌لب خود را متصل کنید.",
+      "stageBuild": "ساخت (Build)",
+      "stageTest": "آزمون (Test)",
+      "stageLint": "بررسی کد (Lint)",
+      "stageDeploy": "انتشار (Deploy)",
+      "jobSteps": "مراحل",
+      "noStepsAvailable": "گزارش جزئیات مراحل برای این جاب در دسترس نیست.",
+      "openInBrowser": "مشاهده در مرورگر",
+      "cancelRun": "لغو اجرای ورک‌فلو",
+      "rerunFailedJobs": "اجرای مجدد جاب‌های ناموفق",
+      "rerunAllJobs": "اجرای مجدد تمام جاب‌ها",
+      "rerunTriggered": "دستور اجرای مجدد ورک‌فلو با موفقیت ارسال شد",
+      "rerunFailed": "خطا در ارسال دستور اجرای مجدد",
+      "cancelSuccess": "ورک‌فلو با موفقیت لغو شد",
+      "cancelFailed": "خطا در لغو ورک‌فلو"
+    }
   },
   "externalTools": {
     "openTerminal": "باز کردن در ترمینال",

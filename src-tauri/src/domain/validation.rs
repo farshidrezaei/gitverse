@@ -403,6 +403,36 @@ pub fn validate_patch_content(patch: &str) -> Result<(), ApplicationError> {
     Ok(())
 }
 
+/// Validates workflow run ID (numeric or alphanumeric, non-empty, safe string).
+pub fn validate_workflow_run_id(run_id: &str) -> Result<(), ApplicationError> {
+    let trimmed = run_id.trim();
+    if trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "Workflow run ID cannot be empty".into(),
+        ));
+    }
+
+    if trimmed.contains('\0') {
+        return Err(ApplicationError::InvalidInput(
+            "Workflow run ID cannot contain null bytes".into(),
+        ));
+    }
+
+    if trimmed.len() > 100 {
+        return Err(ApplicationError::InvalidInput(
+            "Workflow run ID cannot exceed 100 characters".into(),
+        ));
+    }
+
+    if !trimmed.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+        return Err(ApplicationError::InvalidInput(
+            "Workflow run ID contains illegal characters".into(),
+        ));
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -489,5 +519,15 @@ mod tests {
 
         assert!(validate_patch_content("diff --git a/f b/f").is_ok());
         assert!(validate_patch_content("").is_err());
+    }
+
+    #[test]
+    fn test_validate_workflow_run_id() {
+        assert!(validate_workflow_run_id("12345678").is_ok());
+        assert!(validate_workflow_run_id("run-abc-123").is_ok());
+        assert!(validate_workflow_run_id("").is_err());
+        assert!(validate_workflow_run_id("   ").is_err());
+        assert!(validate_workflow_run_id("bad id with spaces").is_err());
+        assert!(validate_workflow_run_id("bad\0null").is_err());
     }
 }

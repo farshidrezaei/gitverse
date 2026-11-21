@@ -2,9 +2,10 @@ import type {
   WorkspaceRepositoryTab,
   WorkspaceDiffTab,
   WorkspacePullRequestTab,
+  WorkspaceWorkflowRunTab,
   OpenDiffTabOptions,
 } from '~/types/workspaceTab'
-import type { RemotePullRequest, ProviderAccount } from '~/types/provider'
+import type { RemotePullRequest, ProviderAccount, WorkflowRun } from '~/types/provider'
 
 export const LAST_OPENED_REPOSITORY_STORAGE_KEY = 'gitverse_last_opened_repository_path'
 export const OPEN_REPOSITORY_TABS_STORAGE_KEY = 'gitverse_open_repository_tabs'
@@ -29,6 +30,10 @@ export function useWorkspaceTabController() {
   const pullRequestTabs = safeState<WorkspacePullRequestTab[]>('workspace-pull-request-tabs-list', () => [])
   const activePullRequestTabId = safeState<string | null>('workspace-active-pr-tab-id', () => null)
 
+  // Dedicated Workflow Run / Actions tabs (Scoped by repository path)
+  const workflowRunTabs = safeState<WorkspaceWorkflowRunTab[]>('workspace-workflow-run-tabs-list', () => [])
+  const activeWorkflowRunTabId = safeState<string | null>('workspace-active-workflow-run-tab-id', () => null)
+
   const activeRepositoryTab = computed<WorkspaceRepositoryTab | undefined>(() => {
     return repositoryTabs.value.find(tab => tab.repositoryPath === activeRepositoryPath.value) || repositoryTabs.value[0]
   })
@@ -43,6 +48,11 @@ export function useWorkspaceTabController() {
     return pullRequestTabs.value.filter(tab => tab.repositoryPath === activeRepositoryPath.value)
   })
 
+  const currentRepositoryWorkflowRunTabs = computed<WorkspaceWorkflowRunTab[]>(() => {
+    if (!activeRepositoryPath.value) return []
+    return workflowRunTabs.value.filter(tab => tab.repositoryPath === activeRepositoryPath.value)
+  })
+
   const activeDiffTab = computed<WorkspaceDiffTab | undefined>(() => {
     if (!activeDiffTabId.value) return undefined
     return currentRepositoryDiffTabs.value.find(tab => tab.id === activeDiffTabId.value)
@@ -51,6 +61,11 @@ export function useWorkspaceTabController() {
   const activePullRequestTab = computed<WorkspacePullRequestTab | undefined>(() => {
     if (!activePullRequestTabId.value) return undefined
     return currentRepositoryPullRequestTabs.value.find(tab => tab.id === activePullRequestTabId.value)
+  })
+
+  const activeWorkflowRunTab = computed<WorkspaceWorkflowRunTab | undefined>(() => {
+    if (!activeWorkflowRunTabId.value) return undefined
+    return currentRepositoryWorkflowRunTabs.value.find(tab => tab.id === activeWorkflowRunTabId.value)
   })
 
 
@@ -308,6 +323,7 @@ export function useWorkspaceTabController() {
     activePullRequestTabId.value = tabIdentifier
     if (tabIdentifier) {
       activeDiffTabId.value = null
+      activeWorkflowRunTabId.value = null
     }
   }
 
@@ -330,10 +346,77 @@ export function useWorkspaceTabController() {
     }
   }
 
+  function openWorkflowRunTab(
+    workflowRun: WorkflowRun,
+    account: ProviderAccount,
+    repositoryFullName: string,
+    targetRepositoryPath?: string,
+  ): WorkspaceWorkflowRunTab {
+    const repositoryPath = targetRepositoryPath || activeRepositoryPath.value
+    const tabIdentifier = `workflow-run-${repositoryPath}-${workflowRun.id}`
+
+    const existingIndex = workflowRunTabs.value.findIndex(tab => tab.id === tabIdentifier)
+    if (existingIndex !== -1) {
+      const existingTab = workflowRunTabs.value[existingIndex] as WorkspaceWorkflowRunTab
+      existingTab.workflowRun = workflowRun
+      existingTab.account = account
+      existingTab.repositoryFullName = repositoryFullName
+      activeWorkflowRunTabId.value = tabIdentifier
+      activeDiffTabId.value = null
+      activePullRequestTabId.value = null
+      return existingTab
+    }
+
+    const newTab: WorkspaceWorkflowRunTab = {
+      id: tabIdentifier,
+      title: `${workflowRun.workflow_name} #${workflowRun.run_number}`,
+      workflowRun,
+      account,
+      repositoryFullName,
+      repositoryPath,
+      isClosable: true,
+      isPinned: false,
+    }
+
+    workflowRunTabs.value.push(newTab)
+    activeWorkflowRunTabId.value = newTab.id
+    activeDiffTabId.value = null
+    activePullRequestTabId.value = null
+    return newTab
+  }
+
+  function activateWorkflowRunTab(tabIdentifier: string | null): void {
+    activeWorkflowRunTabId.value = tabIdentifier
+    if (tabIdentifier) {
+      activeDiffTabId.value = null
+      activePullRequestTabId.value = null
+    }
+  }
+
+  function closeWorkflowRunTab(tabIdentifier: string): void {
+    const runTabs = currentRepositoryWorkflowRunTabs.value
+    const targetIndex = runTabs.findIndex(tab => tab.id === tabIdentifier)
+    if (targetIndex === -1) return
+
+    const isClosingActive = activeWorkflowRunTabId.value === tabIdentifier
+    workflowRunTabs.value = workflowRunTabs.value.filter(tab => tab.id !== tabIdentifier)
+
+    if (isClosingActive) {
+      const remainingTabs = workflowRunTabs.value.filter(tab => tab.repositoryPath === activeRepositoryPath.value)
+      if (remainingTabs.length > 0) {
+        const nextActiveIndex = Math.max(0, targetIndex - 1)
+        activeWorkflowRunTabId.value = remainingTabs[nextActiveIndex]?.id || null
+      } else {
+        activeWorkflowRunTabId.value = null
+      }
+    }
+  }
+
   function activateRepositoryTab(repositoryPath: string): void {
     activeRepositoryPath.value = repositoryPath
     activeDiffTabId.value = null
     activePullRequestTabId.value = null
+    activeWorkflowRunTabId.value = null
     persistTabsToStorage()
   }
 
@@ -341,9 +424,11 @@ export function useWorkspaceTabController() {
     repositoryTabs.value = []
     diffTabs.value = []
     pullRequestTabs.value = []
+    workflowRunTabs.value = []
     activeRepositoryPath.value = ''
     activeDiffTabId.value = null
     activePullRequestTabId.value = null
+    activeWorkflowRunTabId.value = null
     persistTabsToStorage()
   }
 
@@ -359,6 +444,10 @@ export function useWorkspaceTabController() {
     activePullRequestTabId,
     activePullRequestTab,
     currentRepositoryPullRequestTabs,
+    workflowRunTabs,
+    activeWorkflowRunTabId,
+    activeWorkflowRunTab,
+    currentRepositoryWorkflowRunTabs,
     openRepositoryTab,
     closeRepositoryTab,
     closeOtherRepositoryTabs,
@@ -372,6 +461,9 @@ export function useWorkspaceTabController() {
     openPullRequestTab,
     activatePullRequestTab,
     closePullRequestTab,
+    openWorkflowRunTab,
+    activateWorkflowRunTab,
+    closeWorkflowRunTab,
     resetTabs,
   }
 }

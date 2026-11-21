@@ -217,7 +217,8 @@ gitverse/
 │   │       ├── provider/             # Pull request explorer, code review, merge modals
 │   │       ├── remote/               # Remote repository add/edit/manage modals
 │   │       ├── staging/              # Working tree changes, stash preview & diff inspection, conflict resolver
-│   │       └── tabs/                 # Top repository tab strip, scoped diff/PR tabs & external tool launchers
+│   │       ├── workflow/             # CI/CD Actions & Pipeline visual DAG workflow graph and step drawers
+│   │       └── tabs/                 # Top repository tab strip, scoped diff/PR/workflow tabs & external tool launchers
 │   ├── composables/                  # Modular state controllers (30 domain controllers)
 │   ├── pages/                        # Nuxt routes (/ for workbench, /design-system, /settings)
 │   ├── schemas/                      # Zod validation schemas for inputs & forms

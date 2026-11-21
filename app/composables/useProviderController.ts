@@ -11,6 +11,8 @@ import type {
   PullRequestReviewAction,
   PullRequestMergeMethod,
   RemoteReviewComment,
+  WorkflowRun,
+  WorkflowJob,
 } from '~/types/provider'
 import { invokeTauriCommand } from '~/utils/tauriClient'
 
@@ -302,6 +304,82 @@ export function useProviderController() {
     }
   }
 
+  async function fetchWorkflowRuns(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    statusFilter?: string,
+    page: number = 1,
+    perPage: number = 30,
+  ): Promise<WorkflowRun[]> {
+    try {
+      const runs = await invokeTauriCommand<WorkflowRun[]>('list_workflow_runs', {
+        accountIdentifier,
+        repositoryFullName,
+        statusFilter: statusFilter || null,
+        page,
+        perPage,
+      })
+      return runs || []
+    } catch (error) {
+      errorMessage.value = String(error)
+      return []
+    }
+  }
+
+  async function fetchWorkflowRunJobs(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    runId: string | number,
+  ): Promise<WorkflowJob[]> {
+    try {
+      const jobs = await invokeTauriCommand<WorkflowJob[]>('get_workflow_run_jobs', {
+        accountIdentifier,
+        repositoryFullName,
+        runId: Number(runId),
+      })
+      return jobs || []
+    } catch (error) {
+      errorMessage.value = String(error)
+      return []
+    }
+  }
+
+  async function rerunWorkflowRun(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    runId: string | number,
+    failedJobsOnly: boolean = false,
+  ): Promise<boolean> {
+    try {
+      return await invokeTauriCommand<boolean>('rerun_workflow_run', {
+        accountIdentifier,
+        repositoryFullName,
+        runId: Number(runId),
+        failedJobsOnly,
+      })
+    } catch (error) {
+      errorMessage.value = String(error)
+      return false
+    }
+  }
+
+  async function cancelWorkflowRun(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    runId: string | number,
+  ): Promise<boolean> {
+    try {
+      return await invokeTauriCommand<boolean>('cancel_workflow_run', {
+        accountIdentifier,
+        repositoryFullName,
+        runId: Number(runId),
+      })
+    } catch (error) {
+      errorMessage.value = String(error)
+      return false
+    }
+  }
+
   return {
     accounts,
     isLoading,
@@ -323,5 +401,9 @@ export function useProviderController() {
     submitPullRequestReview,
     mergePullRequest,
     updatePullRequestState,
+    fetchWorkflowRuns,
+    fetchWorkflowRunJobs,
+    rerunWorkflowRun,
+    cancelWorkflowRun,
   }
 }

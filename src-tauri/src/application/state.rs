@@ -6,6 +6,7 @@ use tokio::sync::RwLock;
 use crate::domain::{
     ApplicationDiagnostics, ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
     GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome, ProviderAccount, ProviderKind, PullRequestChangedFile, PullRequestMergeResult, RebaseBranchOutcome, RebasePlanItem, RecentRepositoryRecord, RemoteProjectRepository, RemotePullRequest, RemoteReviewComment, RepositoryOverview, StashRecord,
+    WorkflowJob, WorkflowRun,
 };
 use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
 use crate::infrastructure::provider::{GitHubClient, GitLabClient};
@@ -1490,6 +1491,141 @@ impl ApplicationState {
                 standard_output: String::new(),
                 standard_error: format!("Failed to spawn process: {}", error),
             }),
+        }
+    }
+
+    /// Lists workflow runs / pipelines for a provider repository.
+    pub async fn list_workflow_runs(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        status_filter: Option<&str>,
+        page: u32,
+        per_page: u32,
+    ) -> Result<Vec<WorkflowRun>, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.list_workflow_runs(&token, parts[0], parts[1], status_filter).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.list_pipelines(&token, repository_full_name, status_filter, page, per_page).await
+            }
+        }
+    }
+
+    /// Gets jobs in a workflow run / pipeline.
+    pub async fn get_workflow_run_jobs(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        run_id: u64,
+    ) -> Result<Vec<WorkflowJob>, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.get_workflow_run_jobs(&token, parts[0], parts[1], run_id).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.get_pipeline_jobs(&token, repository_full_name, run_id).await
+            }
+        }
+    }
+
+    /// Re-runs a workflow run or pipeline.
+    pub async fn rerun_workflow_run(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        run_id: u64,
+        failed_jobs_only: bool,
+    ) -> Result<bool, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.rerun_workflow_run(&token, parts[0], parts[1], run_id, failed_jobs_only).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.retry_pipeline(&token, repository_full_name, run_id).await
+            }
+        }
+    }
+
+    /// Cancels an in-progress workflow run or pipeline.
+    pub async fn cancel_workflow_run(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        run_id: u64,
+    ) -> Result<bool, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.cancel_workflow_run(&token, parts[0], parts[1], run_id).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.cancel_pipeline(&token, repository_full_name, run_id).await
+            }
         }
     }
 }
