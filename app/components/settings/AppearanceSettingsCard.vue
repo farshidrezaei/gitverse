@@ -149,7 +149,7 @@ const shadowOptions: Array<{ key: ShadowIntensityKey; label: string }> = [
       </div>
     </UCard>
 
-    <!-- 4. Glassmorphism & Backdrop Blur -->
+    <!-- 4. Surface Translucency -->
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
@@ -168,24 +168,8 @@ const shadowOptions: Array<{ key: ShadowIntensityKey; label: string }> = [
         </div>
       </template>
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-1">
-        <div class="flex flex-col gap-1.5">
-          <div class="flex items-center justify-between">
-            <label class="font-medium text-toned">{{ t('settings.appearance.backdropBlurLabel') }}</label>
-            <span class="font-mono text-muted">{{ settings.backdropBlurPx }}px</span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="32"
-            step="4"
-            :value="settings.backdropBlurPx"
-            class="w-full accent-primary cursor-pointer"
-            @input="updateSettings({ backdropBlurPx: Number(($event.target as HTMLInputElement).value) })"
-          >
-        </div>
-
-        <div class="flex flex-col gap-1.5">
+      <div class="pt-1">
+        <div class="flex flex-col gap-1.5 max-w-sm">
           <div class="flex items-center justify-between">
             <label class="font-medium text-toned">{{ t('settings.appearance.surfaceOpacityLabel') }}</label>
             <span class="font-mono text-muted">{{ settings.surfaceOpacityPercent }}%</span>

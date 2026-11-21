@@ -126,7 +126,7 @@ function getJobBadgeVariant(status: string, conclusion: string | null): { color:
         class="flex flex-col items-center gap-5 w-80"
       >
         <!-- Stage Modern Glass Header -->
-        <div class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-[var(--gv-surface)]/90 backdrop-blur-md border border-default/60 shadow-xs text-xs font-medium">
+        <div class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-[var(--gv-surface)] border border-default/60 shadow-xs text-xs font-medium">
           <div class="flex items-center gap-2 truncate">
             <UIcon :name="column.icon" :class="['w-4 h-4 shrink-0', column.color]" />
             <span class="font-semibold text-foreground truncate">{{ column.title }}</span>
@@ -156,12 +156,12 @@ function getJobBadgeVariant(status: string, conclusion: string | null): { color:
             role="button"
             tabindex="0"
             :class="[
-              'group relative flex flex-col p-4 rounded-xl border transition-all duration-200 cursor-pointer text-start backdrop-blur-sm',
+              'group relative flex flex-col p-4 rounded-xl border transition-all duration-200 cursor-pointer text-start',
               'hover:shadow-lg hover:-translate-y-0.5',
               job.conclusion === 'failure' ? 'hover:border-rose-500/60' : 'hover:border-primary/60',
               selectedJobId === job.id
                 ? 'bg-[var(--gv-surface)] border-primary shadow-md ring-2 ring-primary/20'
-                : 'bg-[var(--gv-surface)]/80 border-default/60 shadow-2xs'
+                : 'bg-[var(--gv-surface)] border-default/60 shadow-2xs'
             ]"
             @click="emit('selectJob', job)"
             @keydown.enter="emit('selectJob', job)"

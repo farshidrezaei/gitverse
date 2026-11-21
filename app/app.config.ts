@@ -7,7 +7,7 @@ export default defineAppConfig({
     },
     modal: {
       slots: {
-        overlay: 'fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity',
+        overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity',
         content: 'bg-[var(--gv-surface)] border border-[var(--gv-border)] shadow-2xl rounded-2xl overflow-hidden focus:outline-none',
       },
       variants: {

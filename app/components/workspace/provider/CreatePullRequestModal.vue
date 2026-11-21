@@ -128,7 +128,7 @@ async function handleSubmit(): Promise<void> {
     :open="open"
     :ui="{
       content: 'bg-[var(--gv-surface)] border border-[var(--gv-border)] shadow-2xl rounded-2xl overflow-hidden focus:outline-none max-w-2xl w-full',
-      overlay: 'fixed inset-0 bg-black/60 backdrop-blur-xs'
+      overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity'
     }"
     @update:open="emit('update:open', $event)"
   >

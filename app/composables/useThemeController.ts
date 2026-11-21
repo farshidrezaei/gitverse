@@ -102,10 +102,9 @@ export function useThemeController() {
     // Shadow Depth
     root.setAttribute('data-shadow', state.shadowIntensity)
 
-    // Glassmorphism Blur & Opacity (pure numeric tokens, no static color pollution)
-    const blurPx = state.glassmorphismEnabled ? state.backdropBlurPx : 0
+    // Glassmorphism Opacity (pure numeric tokens, no static color pollution)
     const opacity = (state.surfaceOpacityPercent / 100).toFixed(2)
-    root.style.setProperty('--gv-glass-blur', `${blurPx}px`)
+    root.style.setProperty('--gv-glass-blur', '0px')
     root.style.setProperty('--gv-glass-opacity', opacity)
   }
 
