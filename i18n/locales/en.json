@@ -23,6 +23,17 @@
     "workingTreeDirty": "{count} changes",
     "gitReady": "Git CLI Ready"
   },
+  "bottomPanel": {
+    "title": "Panel",
+    "gitOutput": "Git Log",
+    "terminal": "Terminal",
+    "clearLog": "Clear Log",
+    "noLogs": "No Git operations recorded yet",
+    "openExternalTerminal": "Open in External Terminal",
+    "terminalPlaceholder": "Run git command (e.g. git status, git log --oneline)...",
+    "run": "Run",
+    "toggle": "Toggle Bottom Panel (Ctrl+`)"
+  },
   "common": {
     "open": "Open",
     "close": "Close",

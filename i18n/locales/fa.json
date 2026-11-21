@@ -23,6 +23,17 @@
     "workingTreeDirty": "{count} تغییر",
     "gitReady": "گیت آماده است"
   },
+  "bottomPanel": {
+    "title": "پنل",
+    "gitOutput": "لاگ گیت",
+    "terminal": "ترمینال",
+    "clearLog": "پاک کردن لاگ",
+    "noLogs": "هنوز عملیات گیتی ثبت نشده است",
+    "openExternalTerminal": "باز کردن در ترمینال سیستم",
+    "terminalPlaceholder": "دستور گیت را وارد کنید (مثلاً git status)...",
+    "run": "اجرا",
+    "toggle": "تغییر وضعیت پنل پایین (Ctrl+`)"
+  },
   "common": {
     "open": "باز کردن",
     "close": "بستن",

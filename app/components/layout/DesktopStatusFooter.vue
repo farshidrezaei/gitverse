@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { useGitOutputLog } from '~/composables/useGitOutputLog'
+
 const { t } = useI18n()
 const { locale } = useLocaleController()
 const { currentRepository, gitBinary, discoverGit } = useWorkspaceManager()
+const { isBottomPanelOpen, toggleBottomPanel, logEntries } = useGitOutputLog()
 
 const emit = defineEmits<{
   openSettings: []
@@ -77,6 +80,22 @@ onMounted(async () => {
       <span class="font-mono text-[10px] text-toned uppercase" dir="ltr">
         {{ locale === 'fa' ? 'FA · RTL' : 'EN · LTR' }}
       </span>
+
+      <span class="h-3 w-px bg-default/80" aria-hidden="true" />
+
+      <!-- Toggle Bottom Panel Button -->
+      <UTooltip :text="t('bottomPanel.toggle')">
+        <button
+          type="button"
+          class="flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+          :class="isBottomPanelOpen ? 'bg-primary/20 text-primary font-semibold' : 'hover:bg-muted/30 text-muted hover:text-default'"
+          @click="toggleBottomPanel"
+        >
+          <UIcon name="i-lucide-terminal" class="h-3.5 w-3.5" />
+          <span class="text-[10px] font-mono">{{ t('bottomPanel.title') }}</span>
+          <span v-if="logEntries.length > 0" class="text-[9px] font-mono text-dimmed">({{ logEntries.length }})</span>
+        </button>
+      </UTooltip>
 
       <span class="h-3 w-px bg-default/80" aria-hidden="true" />
 

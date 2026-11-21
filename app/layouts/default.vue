@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import CommandPaletteModal from '~/components/workspace/CommandPaletteModal.vue'
+import WorkspaceBottomPanel from '~/components/workspace/panel/WorkspaceBottomPanel.vue'
+import { useGitOutputLog } from '~/composables/useGitOutputLog'
 
 const isSettingsOpen = ref<boolean>(false)
 const { isCommandPaletteOpen, openCommandPalette, toggleCommandPalette } = useCommandPalette()
+const { toggleBottomPanel } = useGitOutputLog()
 
 onMounted(() => {
   const handleKeyDown = (event: KeyboardEvent) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault()
       toggleCommandPalette()
+    } else if ((event.ctrlKey || event.metaKey) && event.key === '`') {
+      event.preventDefault()
+      toggleBottomPanel()
     }
   }
 
@@ -32,6 +38,9 @@ onMounted(() => {
     <main class="flex min-h-0 flex-1 flex-col overflow-hidden w-full">
       <slot />
     </main>
+
+    <!-- Bottom Drawer Panel (Terminal & Git Logs) -->
+    <WorkspaceBottomPanel />
 
     <!-- Desktop Status Footer -->
     <LayoutDesktopStatusFooter @open-settings="isSettingsOpen = true" />
