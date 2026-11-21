@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ProviderAccount, RemotePullRequest } from '~/types/provider'
 import { createPullRequestInputSchema, type CreatePullRequestInput } from '~/schemas/providerSchema'
+import { renderSafeMarkdown } from '~/utils/markdownRenderer'
 
 interface Props {
   open: boolean
@@ -31,6 +32,32 @@ const form = reactive<CreatePullRequestInput>({
 const isSubmitting = ref<boolean>(false)
 const validationError = ref<string | null>(null)
 const previewMode = ref<'write' | 'preview'>('write')
+const descriptionTextareaReference = ref<HTMLTextAreaElement | null>(null)
+
+const parsedPreviewHtml = computed(() => {
+  return renderSafeMarkdown(form.description || '')
+})
+
+function insertFormatting(prefix: string, suffix: string = ''): void {
+  const textarea = descriptionTextareaReference.value
+  if (!textarea) return
+
+  const startPosition = textarea.selectionStart
+  const endPosition = textarea.selectionEnd
+  const selectedText = (form.description || '').substring(startPosition, endPosition)
+
+  const replacement = `${prefix}${selectedText || 'text'}${suffix}`
+  form.description =
+    (form.description || '').substring(0, startPosition) +
+    replacement +
+    (form.description || '').substring(endPosition)
+
+  nextTick(() => {
+    textarea.focus()
+    const cursorPosition = startPosition + prefix.length + (selectedText.length || 4)
+    textarea.setSelectionRange(cursorPosition, cursorPosition)
+  })
+}
 
 watch(
   () => [props.open, props.currentBranch, props.branches],
@@ -188,50 +215,114 @@ async function handleSubmit(): Promise<void> {
             />
           </div>
 
-          <!-- Description with Markdown tab toggle -->
+          <!-- Description with Professional Markdown Editor Toolbar -->
           <div class="space-y-1.5">
-            <div class="flex items-center justify-between">
-              <label class="font-semibold text-foreground">
-                {{ t('provider.prDescription') }}
-              </label>
-              <div class="flex items-center gap-1 text-[11px]">
-                <button
-                  type="button"
-                  :class="[
-                    'px-2 py-0.5 rounded transition-colors',
-                    previewMode === 'write' ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'
-                  ]"
-                  @click="previewMode = 'write'"
-                >
-                  {{ t('provider.write') }}
-                </button>
-                <button
-                  type="button"
-                  :class="[
-                    'px-2 py-0.5 rounded transition-colors',
-                    previewMode === 'preview' ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'
-                  ]"
-                  @click="previewMode = 'preview'"
-                >
-                  {{ t('provider.preview') }}
-                </button>
+            <label class="font-semibold text-foreground">
+              {{ t('provider.prDescription') }}
+            </label>
+
+            <div class="rounded-xl border border-default/70 bg-surface/40 overflow-hidden transition-all focus-within:border-primary/50">
+              <!-- Toolbar -->
+              <div class="flex items-center justify-between border-b border-default/60 px-3 py-1.5 bg-muted/10 gap-2">
+                <!-- Mode Switcher -->
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer"
+                    :class="previewMode === 'write' ? 'bg-primary/15 text-primary' : 'text-muted hover:text-highlighted'"
+                    @click="previewMode = 'write'"
+                  >
+                    {{ t('provider.write') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer"
+                    :class="previewMode === 'preview' ? 'bg-primary/15 text-primary' : 'text-muted hover:text-highlighted'"
+                    @click="previewMode = 'preview'"
+                  >
+                    {{ t('provider.preview') }}
+                  </button>
+                </div>
+
+                <!-- Quick Formatting Toolbar -->
+                <div v-if="previewMode === 'write'" class="flex items-center gap-0.5 text-muted">
+                  <button
+                    type="button"
+                    class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
+                    title="Bold (**text**)"
+                    @click="insertFormatting('**', '**')"
+                  >
+                    <UIcon name="i-lucide-bold" class="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
+                    title="Italic (*text*)"
+                    @click="insertFormatting('*', '*')"
+                  >
+                    <UIcon name="i-lucide-italic" class="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
+                    title="Inline Code (`code`)"
+                    @click="insertFormatting('`', '`')"
+                  >
+                    <UIcon name="i-lucide-code" class="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
+                    title="Code Block"
+                    @click="insertFormatting('```\n', '\n```')"
+                  >
+                    <UIcon name="i-lucide-file-code" class="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
+                    title="Quote (> quote)"
+                    @click="insertFormatting('> ')"
+                  >
+                    <UIcon name="i-lucide-quote" class="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
+                    title="Task List (- [ ])"
+                    @click="insertFormatting('- [ ] ')"
+                  >
+                    <UIcon name="i-lucide-check-square" class="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <UTextarea
-              v-if="previewMode === 'write'"
-              v-model="form.description"
-              size="sm"
-              :rows="5"
-              :placeholder="t('provider.prDescriptionPlaceholder')"
-              class="w-full font-mono text-xs"
-            />
+              <!-- Input Area / Markdown Preview Area -->
+              <div class="p-2.5">
+                <div v-show="previewMode === 'write'">
+                  <textarea
+                    ref="descriptionTextareaReference"
+                    v-model="form.description"
+                    rows="6"
+                    :placeholder="t('provider.prDescriptionPlaceholder')"
+                    class="w-full bg-transparent border-0 focus:ring-0 focus:outline-hidden text-xs text-highlighted resize-y font-mono leading-relaxed"
+                  />
+                </div>
 
-            <div
-              v-else
-              class="min-h-[120px] p-3 rounded-xl border border-default/40 bg-[var(--gv-surface-subtle)]/30 text-xs text-foreground whitespace-pre-wrap leading-relaxed"
-            >
-              {{ form.description || t('provider.nothingToPreview') }}
+                <div
+                  v-show="previewMode === 'preview'"
+                  class="min-h-[140px] p-2.5 rounded-lg bg-[var(--gv-background)]/60 text-xs overflow-y-auto leading-relaxed"
+                >
+                  <div
+                    v-if="parsedPreviewHtml"
+                    class="gv-markdown-content text-xs leading-relaxed"
+                    v-html="parsedPreviewHtml"
+                  />
+                  <div v-else class="text-muted italic text-[11px] py-6 text-center">
+                    {{ t('provider.nothingToPreview') }}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
