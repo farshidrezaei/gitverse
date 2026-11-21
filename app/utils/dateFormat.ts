@@ -27,3 +27,11 @@ export function formatRelativeTime(timestampSeconds: number): string {
   const years = Math.floor(days / 365)
   return `${years}y ago`
 }
+
+/**
+ * Formats a UNIX timestamp (in milliseconds) into a localized time string (HH:MM:SS).
+ */
+export function formatTime(timestampMilliseconds: number): string {
+  const date = new Date(timestampMilliseconds)
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
