@@ -848,5 +848,24 @@
     "summary": "Found {count} matches across {files} files",
     "matchCopied": "Match line copied to clipboard",
     "keyboardShortcutHint": "Press Enter to run query"
+  },
+  "commitQueue": {
+    "toolbarTitle": "Cherry-Pick & Revert Queue",
+    "cherryPickTitle": "Multi-Commit Cherry-Pick Queue",
+    "cherryPickSubtitle": "Apply a sequence of commits onto the current branch.",
+    "revertTitle": "Multi-Commit Revert Queue",
+    "revertSubtitle": "Create inverse commits to revert a sequence of changes.",
+    "commitsInputLabel": "Commit Hashes or Revisions",
+    "commitCount": "{count} commits in queue",
+    "commitsInputPlaceholder": "Paste commit hashes separated by lines or spaces...",
+    "commitsInputHint": "Commits will be processed sequentially in the order listed.",
+    "autoCommitOption": "Automatically Create Commits",
+    "autoCommitDescription": "When enabled, each commit is committed immediately without manual staging.",
+    "conflictedFilesTitle": "Conflicted Files",
+    "startCherryPick": "Execute Cherry-Pick Queue",
+    "startRevert": "Execute Revert Queue",
+    "cherryPickSuccess": "{count} commits cherry-picked successfully",
+    "revertSuccess": "{count} commits reverted successfully",
+    "conflictDetected": "Conflict encountered while processing {commit}"
   }
 }

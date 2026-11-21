@@ -691,4 +691,60 @@ mod tests {
         assert_eq!(empty_search.total_matches, 0);
         assert!(empty_search.matches.is_empty());
     }
+
+    #[tokio::test]
+    async fn test_commit_queue_operations() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        std::fs::write(repository_path.join("file_a.txt"), "a\n").expect("write a");
+        Command::new("git").args(["add", "."]).current_dir(repository_path).output().expect("add a");
+        Command::new("git").args(["commit", "-m", "commit 1"]).current_dir(repository_path).output().expect("commit 1");
+
+        // Create feature branch with 2 commits
+        Command::new("git").args(["checkout", "-b", "feature"]).current_dir(repository_path).output().expect("checkout feature");
+        
+        std::fs::write(repository_path.join("file_b.txt"), "b\n").expect("write b");
+        Command::new("git").args(["add", "."]).current_dir(repository_path).output().expect("add b");
+        Command::new("git").args(["commit", "-m", "commit 2"]).current_dir(repository_path).output().expect("commit 2");
+        let rev2_output = Command::new("git").args(["rev-parse", "HEAD"]).current_dir(repository_path).output().expect("rev 2");
+        let sha2 = String::from_utf8_lossy(&rev2_output.stdout).trim().to_string();
+
+        std::fs::write(repository_path.join("file_c.txt"), "c\n").expect("write c");
+        Command::new("git").args(["add", "."]).current_dir(repository_path).output().expect("add c");
+        Command::new("git").args(["commit", "-m", "commit 3"]).current_dir(repository_path).output().expect("commit 3");
+        let rev3_output = Command::new("git").args(["rev-parse", "HEAD"]).current_dir(repository_path).output().expect("rev 3");
+        let sha3 = String::from_utf8_lossy(&rev3_output.stdout).trim().to_string();
+
+        // Switch back to main and cherry-pick both commits in queue
+        Command::new("git").args(["checkout", "main"]).current_dir(repository_path).output().expect("checkout main");
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        let queue_hashes = vec![sha2, sha3];
+        let outcome = inspector
+            .execute_cherry_pick_queue(repository_path, &queue_hashes, true)
+            .await
+            .expect("cherry pick queue");
+
+        assert!(outcome.is_successful);
+        assert_eq!(outcome.completed_commits.len(), 2);
+        assert!(repository_path.join("file_b.txt").exists());
+        assert!(repository_path.join("file_c.txt").exists());
+
+        // Now revert one of them in revert queue
+        let revert_outcome = inspector
+            .execute_revert_queue(repository_path, &[queue_hashes[1].clone()], true)
+            .await
+            .expect("revert queue");
+        assert!(revert_outcome.is_successful);
+    }
 }

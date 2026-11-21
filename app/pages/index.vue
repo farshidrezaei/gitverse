@@ -151,6 +151,8 @@ const isSubmoduleModalOpen = ref<boolean>(false)
 const isInsightsModalOpen = ref<boolean>(false)
 const isFileHistoryModalOpen = ref<boolean>(false)
 const isSearchModalOpen = ref<boolean>(false)
+const isCommitQueueModalOpen = ref<boolean>(false)
+const commitQueueMode = ref<'cherryPick' | 'revert'>('cherryPick')
 const selectedFileHistoryPath = ref<string>('')
 const selectedBranchName = ref<string | null>(null)
 const activeGraphReference = ref<string | null>(null)
@@ -490,6 +492,7 @@ async function handlePush(): Promise<void> {
         @open-insights="isInsightsModalOpen = true"
         @open-file-history="isFileHistoryModalOpen = true"
         @open-search="isSearchModalOpen = true"
+        @open-commit-queue="(mode: 'cherryPick' | 'revert') => { commitQueueMode = mode; isCommitQueueModalOpen = true }"
       />
 
       <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip -->
@@ -739,6 +742,13 @@ async function handlePush(): Promise<void> {
     <RepositorySearchModal
       v-model:open="isSearchModalOpen"
       @locate-commit="(sha: string) => { selectCommit(sha) }"
+    />
+
+    <!-- Multi-Commit Cherry-Pick & Revert Queue Modal -->
+    <CommitQueueModal
+      v-model:open="isCommitQueueModalOpen"
+      :mode="commitQueueMode"
+      @complete="() => { fetchCommitGraph(); fetchStatus() }"
     />
   </div>
 </template>

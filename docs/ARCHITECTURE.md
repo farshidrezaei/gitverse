@@ -198,7 +198,7 @@ gitverse/
 │   │   ├── shared/                   # Atomic UI primitives (badges, pills, dialogs, logos)
 │   │   └── workspace/                # Primary Git workbench islands
 │   │       ├── branch/               # Branch tree sidebar & reference managers
-│   │       ├── commit/               # Commit header, inspector, changed file list, conventional builder
+│   │       ├── commit/               # Commit header, inspector, changed file list, conventional builder, multi-commit queue
 │   │       ├── diff/                 # Unified & split diff viewers, media viewers, interactive file blame
 │   │       ├── graph/                # Virtualized SVG canvas & commit rows
 │   │       ├── history/              # Reflog explorer & lost commit recovery
@@ -243,5 +243,5 @@ gitverse/
 │   │   ├── services/                 # Graph DAG computation algorithms & benchmarks
 │   │   ├── lib.rs                    # Plugin registration, invoke handlers, initialization
 │   │   └── main.rs                   # Desktop entrypoint
-│   └── test/                         # Frontend Vitest test suites (135 passing unit & E2E tests; 73 Rust unit/integration tests)
+│   └── test/                         # Frontend Vitest test suites (136 passing unit & E2E tests; 74 Rust unit/integration tests)
 ```

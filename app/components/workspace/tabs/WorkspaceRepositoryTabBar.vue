@@ -25,6 +25,7 @@ const emit = defineEmits<{
   openInsights: []
   openFileHistory: []
   openSearch: []
+  openCommitQueue: [mode: 'cherryPick' | 'revert']
 }>()
 
 const { t } = useI18n()
@@ -41,6 +42,21 @@ const patchMenuItems = computed<DropdownMenuItem[][]>(() => [
       label: t('patch.applyTitle'),
       icon: 'i-lucide-file-input',
       onSelect: () => emit('openApplyPatch'),
+    },
+  ],
+])
+
+const commitQueueMenuItems = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: t('commitQueue.cherryPickTitle'),
+      icon: 'i-lucide-git-cherry-pick',
+      onSelect: () => emit('openCommitQueue', 'cherryPick'),
+    },
+    {
+      label: t('commitQueue.revertTitle'),
+      icon: 'i-lucide-rotate-ccw',
+      onSelect: () => emit('openCommitQueue', 'revert'),
     },
   ],
 ])
@@ -299,6 +315,19 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
           @click="emit('openSearch')"
         />
       </UTooltip>
+
+      <UDropdownMenu :items="commitQueueMenuItems" :content="{ align: 'end' }">
+        <UTooltip :text="t('commitQueue.toolbarTitle')">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-list-ordered"
+            class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+            :aria-label="t('commitQueue.toolbarTitle')"
+          />
+        </UTooltip>
+      </UDropdownMenu>
 
       <UTooltip :text="t('externalTools.openTerminal')">
         <UButton

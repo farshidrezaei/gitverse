@@ -474,10 +474,23 @@ pub struct RepositorySearchResult {
     pub matches: Vec<SearchMatchEntry>,
 }
 
+/// Request payload to execute multi-commit cherry-pick or revert sequence.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CommitQueueOperationRequest {
+    pub commit_hashes: Vec<String>,
+    pub should_commit: bool,
+    pub custom_message: Option<String>,
+}
 
-
-
-
+/// Result status of a multi-commit queue operation.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CommitQueueOperationResult {
+    pub is_successful: bool,
+    pub completed_commits: Vec<String>,
+    pub failed_commit_hash: Option<String>,
+    pub conflict_files: Vec<String>,
+    pub message: String,
+}
 
 
 

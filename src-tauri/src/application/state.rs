@@ -1315,5 +1315,28 @@ impl ApplicationState {
             }
         }
     }
+
+    /// Executes sequential cherry-pick queue across multiple commit hashes.
+    pub async fn execute_cherry_pick_queue(
+        &self,
+        directory_path: Option<&str>,
+        commit_hashes: &[String],
+        should_commit: bool,
+    ) -> Result<crate::domain::CommitQueueOperationResult, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.execute_cherry_pick_queue(&target_path, commit_hashes, should_commit).await
+    }
+
+    /// Executes sequential revert queue across multiple commit hashes.
+    pub async fn execute_revert_queue(
+        &self,
+        directory_path: Option<&str>,
+        commit_hashes: &[String],
+        should_commit: bool,
+    ) -> Result<crate::domain::CommitQueueOperationResult, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.execute_revert_queue(&target_path, commit_hashes, should_commit).await
+    }
 }
+
 

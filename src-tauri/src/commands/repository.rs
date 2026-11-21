@@ -1191,5 +1191,29 @@ pub async fn open_in_file_manager(
     }
 }
 
+/// Tauri IPC command to execute multi-commit cherry-pick queue.
+#[tauri::command]
+pub async fn execute_cherry_pick_queue(
+    state: State<'_, ApplicationState>,
+    commit_hashes: Vec<String>,
+    should_commit: bool,
+    directory_path: Option<String>,
+) -> Result<crate::domain::CommitQueueOperationResult, ApplicationError> {
+    state
+        .execute_cherry_pick_queue(directory_path.as_deref(), &commit_hashes, should_commit)
+        .await
+}
 
+/// Tauri IPC command to execute multi-commit revert queue.
+#[tauri::command]
+pub async fn execute_revert_queue(
+    state: State<'_, ApplicationState>,
+    commit_hashes: Vec<String>,
+    should_commit: bool,
+    directory_path: Option<String>,
+) -> Result<crate::domain::CommitQueueOperationResult, ApplicationError> {
+    state
+        .execute_revert_queue(directory_path.as_deref(), &commit_hashes, should_commit)
+        .await
+}
 

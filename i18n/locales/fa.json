@@ -848,5 +848,24 @@
     "summary": "{count} مورد منطبق در {files} فایل پیدا شد",
     "matchCopied": "خط منطبق در کلیپ‌بورد کپی شد",
     "keyboardShortcutHint": "برای اجرای جستجو Enter را بزنید"
+  },
+  "commitQueue": {
+    "toolbarTitle": "صف چری‌پیک و ریورت کامیت‌ها",
+    "cherryPickTitle": "صف چری‌پیک چندگانه کامیت‌ها",
+    "cherryPickSubtitle": "اعمال ترتیبی مجموعه‌ای از کامیت‌ها بر روی شاخه فعلی.",
+    "revertTitle": "صف ریورت چندگانه کامیت‌ها",
+    "revertSubtitle": "ایجاد کامیت‌های معکوس برای بازگردانی ترتیبی مجموعه‌ای از تغییرات.",
+    "commitsInputLabel": "هش‌ها یا شناسه‌های کامیت",
+    "commitCount": "{count} کامیت در صف",
+    "commitsInputPlaceholder": "هش‌های کامیت را با خط جدید یا فاصله وارد کنید...",
+    "commitsInputHint": "کامیت‌ها دقیقاً به ترتیب وارد شده به صورت متوالی پردازش خواهند شد.",
+    "autoCommitOption": "ایجاد خودکار کامیت",
+    "autoCommitDescription": "در صورت فعال بودن، پس از اعمال هر کامیت بلافاصله بدون نیاز به استیج دستی کامیت می‌شود.",
+    "conflictedFilesTitle": "فایل‌های دچار تداخل",
+    "startCherryPick": "اجرای صف چری‌پیک",
+    "startRevert": "اجرای صف ریورت",
+    "cherryPickSuccess": "{count} کامیت با موفقیت چری‌پیک شد",
+    "revertSuccess": "{count} کامیت با موفقیت ریورت شد",
+    "conflictDetected": "تداخل در هنگام پردازش کامیت {commit} رخ داد"
   }
 }

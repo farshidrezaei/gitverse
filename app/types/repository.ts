@@ -422,3 +422,12 @@ export interface RepositorySearchResult {
   matches: SearchMatchEntry[]
 }
 
+export interface CommitQueueOperationResult {
+  is_successful: boolean
+  completed_commits: string[]
+  failed_commit_hash: string | null
+  conflict_files: string[]
+  message: string
+}
+
+

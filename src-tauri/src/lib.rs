@@ -112,6 +112,8 @@ pub fn run() {
             commands::get_stash_file_diff,
             commands::cherry_pick_commit,
             commands::revert_commit,
+            commands::execute_cherry_pick_queue,
+            commands::execute_revert_queue,
             commands::reset_to_commit,
             commands::get_conflict_file_details,
             commands::resolve_conflict_file,

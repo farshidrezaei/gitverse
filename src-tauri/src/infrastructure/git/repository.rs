@@ -2303,4 +2303,104 @@ impl GitRepositoryInspector {
             Err(error) => Err(error),
         }
     }
+
+    /// Executes sequential cherry-pick queue across multiple commit hashes.
+    pub async fn execute_cherry_pick_queue(
+        &self,
+        directory_path: &Path,
+        commit_hashes: &[String],
+        should_commit: bool,
+    ) -> Result<crate::domain::CommitQueueOperationResult, ApplicationError> {
+        let mut completed_commits = Vec::new();
+
+        for hash in commit_hashes {
+            let mut arguments = vec!["cherry-pick"];
+            if !should_commit {
+                arguments.push("--no-commit");
+            }
+            arguments.push(hash.as_str());
+
+            match self.executor.execute_git_command(Some(directory_path), &arguments).await {
+                Ok(_) => {
+                    completed_commits.push(hash.clone());
+                }
+                Err(ApplicationError::GitExecutionFailed { exit_code: _, message }) => {
+                    let conflict_files = self.detect_conflicted_files(directory_path).await.unwrap_or_default();
+                    return Ok(crate::domain::CommitQueueOperationResult {
+                        is_successful: false,
+                        completed_commits,
+                        failed_commit_hash: Some(hash.clone()),
+                        conflict_files,
+                        message,
+                    });
+                }
+                Err(error) => return Err(error),
+            }
+        }
+
+        Ok(crate::domain::CommitQueueOperationResult {
+            is_successful: true,
+            completed_commits,
+            failed_commit_hash: None,
+            conflict_files: Vec::new(),
+            message: "All cherry-picked commits applied successfully".to_string(),
+        })
+    }
+
+    /// Executes sequential revert queue across multiple commit hashes.
+    pub async fn execute_revert_queue(
+        &self,
+        directory_path: &Path,
+        commit_hashes: &[String],
+        should_commit: bool,
+    ) -> Result<crate::domain::CommitQueueOperationResult, ApplicationError> {
+        let mut completed_commits = Vec::new();
+
+        for hash in commit_hashes {
+            let mut arguments = vec!["revert"];
+            if !should_commit {
+                arguments.push("--no-commit");
+            } else {
+                arguments.push("--no-edit");
+            }
+            arguments.push(hash.as_str());
+
+            match self.executor.execute_git_command(Some(directory_path), &arguments).await {
+                Ok(_) => {
+                    completed_commits.push(hash.clone());
+                }
+                Err(ApplicationError::GitExecutionFailed { exit_code: _, message }) => {
+                    let conflict_files = self.detect_conflicted_files(directory_path).await.unwrap_or_default();
+                    return Ok(crate::domain::CommitQueueOperationResult {
+                        is_successful: false,
+                        completed_commits,
+                        failed_commit_hash: Some(hash.clone()),
+                        conflict_files,
+                        message,
+                    });
+                }
+                Err(error) => return Err(error),
+            }
+        }
+
+        Ok(crate::domain::CommitQueueOperationResult {
+            is_successful: true,
+            completed_commits,
+            failed_commit_hash: None,
+            conflict_files: Vec::new(),
+            message: "All reverted commits applied successfully".to_string(),
+        })
+    }
+
+    /// Helper to detect conflicted files during interrupted queue operations.
+    async fn detect_conflicted_files(&self, directory_path: &Path) -> Result<Vec<String>, ApplicationError> {
+        let status_output = self.executor.execute_git_command(Some(directory_path), &["status", "--porcelain=v2"]).await?;
+        let parsed_status = super::status::parse_porcelain_v2_status(&status_output);
+        let conflicted = parsed_status
+            .conflicted_files
+            .into_iter()
+            .map(|f| f.path)
+            .collect();
+        Ok(conflicted)
+    }
 }
