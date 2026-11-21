@@ -760,7 +760,7 @@
     "downloadFile": "Save .patch File",
     "pasteOrUploadLabel": "Patch Content or File",
     "chooseFile": "Upload .patch",
-    "inputPlaceholder": "Paste diff / patch content starting with 'diff --git...' or 'From <commit>...'",
+    "inputPlaceholder": "Paste diff / patch content starting with 'diff --git...' or 'From commit...'",
     "checkSuccess": "Patch applies cleanly without conflicts",
     "checkFailed": "Patch cannot be applied cleanly",
     "affectedFiles": "Affected Files",
