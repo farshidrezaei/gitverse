@@ -192,8 +192,9 @@ const gitToolsDropdownItems = computed<DropdownMenuItem[][]>(() => [
           size="xs"
           color="neutral"
           variant="ghost"
+          square
           icon="i-lucide-plus"
-          class="h-6 w-6 p-0 text-muted hover:text-highlighted shrink-0"
+          class="h-6 w-6 p-0 flex items-center justify-center text-muted hover:text-highlighted shrink-0"
           :title="t('tabs.openNewWorkspaceTab')"
         />
       </UDropdownMenu>
@@ -206,8 +207,9 @@ const gitToolsDropdownItems = computed<DropdownMenuItem[][]>(() => [
           size="xs"
           color="neutral"
           variant="ghost"
+          square
           icon="i-lucide-wrench"
-          class="h-6 w-6 p-0 text-muted hover:text-highlighted"
+          class="h-6 w-6 p-0 flex items-center justify-center text-muted hover:text-highlighted"
           :title="t('git.tools')"
         />
       </UDropdownMenu>
