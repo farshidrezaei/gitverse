@@ -28,15 +28,12 @@ describe('Zero-CLS Skeleton Loading Standard', () => {
     expect(violations).toEqual([])
   })
 
-  it('enforces USkeleton in WorkspacePullRequestsModal for list and details', () => {
+  it('enforces USkeleton in ExplorerPullRequestsSection for loading state', () => {
     const fileContent = fs.readFileSync(
-      path.join(componentsDirectory, 'workspace/provider/WorkspacePullRequestsModal.vue'),
+      path.join(componentsDirectory, 'workspace/explorer/ExplorerPullRequestsSection.vue'),
       'utf8',
     )
     expect(fileContent).toContain('USkeleton')
-    expect(fileContent).toContain('pr-item-skeleton')
-    expect(fileContent).toContain('ci-check-skeleton')
-    expect(fileContent).toContain('<template v-else>')
     expect(fileContent).not.toContain("t('common.loading')")
   })
 

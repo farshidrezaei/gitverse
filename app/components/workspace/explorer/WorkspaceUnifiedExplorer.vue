@@ -115,18 +115,6 @@ const totalChangesCount = computed(() => {
       </div>
 
       <div class="flex items-center gap-1">
-        <UTooltip v-if="hasRemotes" :text="t('provider.pullRequests')">
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            square
-            icon="i-lucide-git-pull-request"
-            class="h-6 w-6 text-primary flex items-center justify-center shrink-0 cursor-pointer"
-            :aria-label="t('provider.pullRequests')"
-            @click="isPullRequestsOpen = !isPullRequestsOpen"
-          />
-        </UTooltip>
         <UTooltip :text="t('common.refresh')">
           <UButton
             size="xs"
