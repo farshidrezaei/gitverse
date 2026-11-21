@@ -1217,3 +1217,46 @@ pub async fn execute_revert_queue(
         .await
 }
 
+/// Tauri IPC command to create an offline Git bundle file.
+#[tauri::command]
+pub async fn create_git_bundle(
+    state: State<'_, ApplicationState>,
+    output_bundle_path: String,
+    revision_range: Option<String>,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state
+        .create_git_bundle(
+            directory_path.as_deref(),
+            &output_bundle_path,
+            revision_range.as_deref(),
+        )
+        .await
+}
+
+/// Tauri IPC command to verify an offline Git bundle file.
+#[tauri::command]
+pub async fn verify_git_bundle(
+    state: State<'_, ApplicationState>,
+    bundle_path: String,
+    directory_path: Option<String>,
+) -> Result<crate::domain::GitBundleVerificationResult, ApplicationError> {
+    state
+        .verify_git_bundle(directory_path.as_deref(), &bundle_path)
+        .await
+}
+
+/// Tauri IPC command to export a source code archive (.zip or .tar.gz).
+#[tauri::command]
+pub async fn export_source_archive(
+    state: State<'_, ApplicationState>,
+    output_archive_path: String,
+    reference: String,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state
+        .export_source_archive(directory_path.as_deref(), &output_archive_path, &reference)
+        .await
+}
+
+

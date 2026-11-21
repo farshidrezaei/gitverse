@@ -747,4 +747,48 @@ mod tests {
             .expect("revert queue");
         assert!(revert_outcome.is_successful);
     }
+
+    #[tokio::test]
+    async fn test_git_bundle_and_archive_operations() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        std::fs::write(repository_path.join("readme.md"), "# Hello Bundle\n").expect("write readme");
+        Command::new("git").args(["add", "."]).current_dir(repository_path).output().expect("git add");
+        Command::new("git").args(["commit", "-m", "initial release"]).current_dir(repository_path).output().expect("git commit");
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        // 1. Create Git bundle
+        let bundle_file = temporary_dir.path().join("repo.bundle");
+        let bundle_result = inspector
+            .create_git_bundle(repository_path, &bundle_file, Some("HEAD"))
+            .await;
+        assert!(bundle_result.is_ok());
+        assert!(bundle_file.exists());
+
+        // 2. Verify Git bundle
+        let verification = inspector
+            .verify_git_bundle(repository_path, &bundle_file)
+            .await
+            .expect("verify bundle");
+        assert!(verification.is_valid);
+        assert!(!verification.bundle_file_path.is_empty());
+
+        // 3. Export source archive (.tar)
+        let archive_file = temporary_dir.path().join("source.tar");
+        let archive_result = inspector
+            .export_source_archive(repository_path, &archive_file, "HEAD")
+            .await;
+        assert!(archive_result.is_ok());
+        assert!(archive_file.exists());
+    }
 }

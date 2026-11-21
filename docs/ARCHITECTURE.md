@@ -205,6 +205,7 @@ gitverse/
 │   │       ├── history/              # Reflog explorer, lost commit recovery, single-file timeline scrubber
 │   │       ├── bisect/               # Interactive Git bisect assistant & regression debugger
 │   │       ├── patch/                # Export & apply unified diff and format-patch files
+│   │       ├── archive/              # Offline Git bundles & clean source archive (.zip/.tar) exporter
 │   │       ├── submodule/            # Nested Git submodules status, sync, and recursive updates
 │   │       ├── insights/             # Repository analytics, code churn, and contributor velocity
 │   │       ├── search/               # Global repository code & regex search (git grep)
@@ -239,9 +240,9 @@ gitverse/
 │   │   ├── application/              # Application lifecycle, state containers
 │   │   ├── commands/                 # Tauri IPC command dispatchers
 │   │   ├── domain/                   # Pure business entities, enums, and validators
-│   │   ├── infrastructure/           # Process runner, SQLite, Keyring, Git adapters, diagnostics logger, bisect, patch, submodule, insights, file history, code search
+│   │   ├── infrastructure/           # Process runner, SQLite, Keyring, Git adapters, diagnostics logger, bisect, patch, submodule, insights, file history, code search, git bundle & archive
 │   │   ├── services/                 # Graph DAG computation algorithms & benchmarks
 │   │   ├── lib.rs                    # Plugin registration, invoke handlers, initialization
 │   │   └── main.rs                   # Desktop entrypoint
-│   └── test/                         # Frontend Vitest test suites (136 passing unit & E2E tests; 74 Rust unit/integration tests)
+│   └── test/                         # Frontend Vitest test suites (137 passing unit & E2E tests; 75 Rust unit/integration tests)
 ```

@@ -867,5 +867,32 @@
     "cherryPickSuccess": "{count} commits cherry-picked successfully",
     "revertSuccess": "{count} commits reverted successfully",
     "conflictDetected": "Conflict encountered while processing {commit}"
+  },
+  "archive": {
+    "toolbarTitle": "Bundles & Source Archives",
+    "bundleModalTitle": "Git Bundles",
+    "bundleModalSubtitle": "Package repository branches into portable offline bundle files.",
+    "exportArchiveModalTitle": "Export Source Archive",
+    "exportArchiveModalSubtitle": "Export clean repository snapshot into zip or tar archive without .git metadata.",
+    "tabCreateBundle": "Create Bundle",
+    "tabVerifyBundle": "Verify Bundle",
+    "outputPathLabel": "Output Bundle File Path",
+    "outputPathPlaceholder": "/path/to/backup.bundle",
+    "outputPathHint": "Git will store packaged revisions into this bundle container.",
+    "revisionRangeLabel": "Revision Range or Branches",
+    "revisionRangeHint": "Defaults to --all for complete repository packaging.",
+    "verifyBundleLabel": "Bundle File to Verify",
+    "verifyBundlePlaceholder": "/path/to/bundle-to-check.bundle",
+    "verifyAction": "Verify Integrity",
+    "bundleReferences": "Contained References",
+    "createBundleAction": "Create Bundle",
+    "archiveOutputPathLabel": "Archive File Destination",
+    "archiveOutputPathPlaceholder": "/path/to/release.zip or archive.tar.gz",
+    "archiveOutputPathHint": "Git archive will compress repository files according to file extension.",
+    "archiveReferenceLabel": "Reference or Tag to Export",
+    "archiveReferenceHint": "Specify branch name, commit hash, or tag.",
+    "exportArchive": "Export Archive",
+    "bundleCreatedSuccess": "Git bundle created successfully",
+    "archiveExportedSuccess": "Source archive exported successfully"
   }
 }

@@ -430,4 +430,12 @@ export interface CommitQueueOperationResult {
   message: string
 }
 
+export interface GitBundleVerificationResult {
+  is_valid: boolean
+  bundle_file_path: string
+  references: string[]
+  message: string
+}
+
+
 

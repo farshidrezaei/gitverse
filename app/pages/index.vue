@@ -153,6 +153,8 @@ const isFileHistoryModalOpen = ref<boolean>(false)
 const isSearchModalOpen = ref<boolean>(false)
 const isCommitQueueModalOpen = ref<boolean>(false)
 const commitQueueMode = ref<'cherryPick' | 'revert'>('cherryPick')
+const isGitBundleModalOpen = ref<boolean>(false)
+const isExportArchiveModalOpen = ref<boolean>(false)
 const selectedFileHistoryPath = ref<string>('')
 const selectedBranchName = ref<string | null>(null)
 const activeGraphReference = ref<string | null>(null)
@@ -493,6 +495,8 @@ async function handlePush(): Promise<void> {
         @open-file-history="isFileHistoryModalOpen = true"
         @open-search="isSearchModalOpen = true"
         @open-commit-queue="(mode: 'cherryPick' | 'revert') => { commitQueueMode = mode; isCommitQueueModalOpen = true }"
+        @open-git-bundle="isGitBundleModalOpen = true"
+        @open-export-archive="isExportArchiveModalOpen = true"
       />
 
       <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip -->
@@ -749,6 +753,16 @@ async function handlePush(): Promise<void> {
       v-model:open="isCommitQueueModalOpen"
       :mode="commitQueueMode"
       @complete="() => { fetchCommitGraph(); fetchStatus() }"
+    />
+
+    <!-- Git Bundle Modal -->
+    <GitBundleModal
+      v-model:open="isGitBundleModalOpen"
+    />
+
+    <!-- Export Source Archive Modal -->
+    <ExportArchiveModal
+      v-model:open="isExportArchiveModalOpen"
     />
   </div>
 </template>

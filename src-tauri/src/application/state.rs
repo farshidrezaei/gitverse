@@ -1337,6 +1337,45 @@ impl ApplicationState {
         let target_path = self.resolve_path(directory_path).await?;
         self.git_inspector.execute_revert_queue(&target_path, commit_hashes, should_commit).await
     }
+
+    /// Creates an offline Git bundle file packaging branches or revisions.
+    pub async fn create_git_bundle(
+        &self,
+        directory_path: Option<&str>,
+        output_bundle_path: &str,
+        revision_range: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .create_git_bundle(&target_path, std::path::Path::new(output_bundle_path), revision_range)
+            .await
+    }
+
+    /// Verifies integrity and references contained within an offline Git bundle file.
+    pub async fn verify_git_bundle(
+        &self,
+        directory_path: Option<&str>,
+        bundle_path: &str,
+    ) -> Result<crate::domain::GitBundleVerificationResult, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .verify_git_bundle(&target_path, std::path::Path::new(bundle_path))
+            .await
+    }
+
+    /// Exports repository snapshot at a reference into a compressed archive (.zip or .tar.gz).
+    pub async fn export_source_archive(
+        &self,
+        directory_path: Option<&str>,
+        output_archive_path: &str,
+        reference: &str,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .export_source_archive(&target_path, std::path::Path::new(output_archive_path), reference)
+            .await
+    }
 }
+
 
 

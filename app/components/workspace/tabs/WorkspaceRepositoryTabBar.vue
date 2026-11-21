@@ -26,6 +26,8 @@ const emit = defineEmits<{
   openFileHistory: []
   openSearch: []
   openCommitQueue: [mode: 'cherryPick' | 'revert']
+  openGitBundle: []
+  openExportArchive: []
 }>()
 
 const { t } = useI18n()
@@ -57,6 +59,21 @@ const commitQueueMenuItems = computed<DropdownMenuItem[][]>(() => [
       label: t('commitQueue.revertTitle'),
       icon: 'i-lucide-rotate-ccw',
       onSelect: () => emit('openCommitQueue', 'revert'),
+    },
+  ],
+])
+
+const archiveMenuItems = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: t('archive.bundleModalTitle'),
+      icon: 'i-lucide-package',
+      onSelect: () => emit('openGitBundle'),
+    },
+    {
+      label: t('archive.exportArchiveModalTitle'),
+      icon: 'i-lucide-file-archive',
+      onSelect: () => emit('openExportArchive'),
     },
   ],
 ])
@@ -325,6 +342,19 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
             icon="i-lucide-list-ordered"
             class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
             :aria-label="t('commitQueue.toolbarTitle')"
+          />
+        </UTooltip>
+      </UDropdownMenu>
+
+      <UDropdownMenu :items="archiveMenuItems" :content="{ align: 'end' }">
+        <UTooltip :text="t('archive.toolbarTitle')">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-package"
+            class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+            :aria-label="t('archive.toolbarTitle')"
           />
         </UTooltip>
       </UDropdownMenu>

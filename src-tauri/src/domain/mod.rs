@@ -492,8 +492,12 @@ pub struct CommitQueueOperationResult {
     pub message: String,
 }
 
-
-
-
-
+/// Verification result of an offline Git bundle file.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GitBundleVerificationResult {
+    pub is_valid: bool,
+    pub bundle_file_path: String,
+    pub references: Vec<String>,
+    pub message: String,
+}
 

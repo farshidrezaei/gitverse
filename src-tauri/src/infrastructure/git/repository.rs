@@ -2403,4 +2403,68 @@ impl GitRepositoryInspector {
             .collect();
         Ok(conflicted)
     }
+
+    /// Creates an offline Git bundle file packaging branches or revisions.
+    pub async fn create_git_bundle(
+        &self,
+        directory_path: &Path,
+        output_bundle_path: &Path,
+        revision_range: Option<&str>,
+    ) -> Result<String, ApplicationError> {
+        let mut arguments = vec!["bundle", "create", output_bundle_path.to_str().unwrap_or_default()];
+        let range = revision_range.unwrap_or("--all");
+        arguments.push(range);
+
+        self.executor.execute_git_command(Some(directory_path), &arguments).await
+    }
+
+    /// Verifies integrity and references contained within an offline Git bundle file.
+    pub async fn verify_git_bundle(
+        &self,
+        directory_path: &Path,
+        bundle_path: &Path,
+    ) -> Result<crate::domain::GitBundleVerificationResult, ApplicationError> {
+        let bundle_str = bundle_path.to_str().unwrap_or_default();
+        let outcome = self
+            .executor
+            .execute_git_command(Some(directory_path), &["bundle", "verify", bundle_str])
+            .await;
+
+        match outcome {
+            Ok(output) => {
+                let references = output
+                    .lines()
+                    .filter(|line| line.contains("refs/heads/") || line.contains("refs/tags/"))
+                    .map(|line| line.trim().to_string())
+                    .collect();
+                Ok(crate::domain::GitBundleVerificationResult {
+                    is_valid: true,
+                    bundle_file_path: bundle_str.to_string(),
+                    references,
+                    message: "Bundle is valid and compatible".to_string(),
+                })
+            }
+            Err(ApplicationError::GitExecutionFailed { exit_code: _, message }) => {
+                Ok(crate::domain::GitBundleVerificationResult {
+                    is_valid: false,
+                    bundle_file_path: bundle_str.to_string(),
+                    references: Vec::new(),
+                    message,
+                })
+            }
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Exports repository snapshot at a reference into a compressed archive (.zip or .tar.gz).
+    pub async fn export_source_archive(
+        &self,
+        directory_path: &Path,
+        output_archive_path: &Path,
+        reference: &str,
+    ) -> Result<String, ApplicationError> {
+        let archive_str = output_archive_path.to_str().unwrap_or_default();
+        let arguments = ["archive", "--output", archive_str, reference];
+        self.executor.execute_git_command(Some(directory_path), &arguments).await
+    }
 }
