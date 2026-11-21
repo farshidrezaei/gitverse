@@ -4,6 +4,7 @@ pub mod diff;
 pub mod file_history;
 pub mod history;
 pub mod insights;
+pub mod lfs;
 pub mod process;
 pub mod repository;
 pub mod search;
@@ -25,6 +26,8 @@ mod file_history_test;
 mod history_test;
 #[cfg(test)]
 mod insights_test;
+#[cfg(test)]
+mod lfs_test;
 #[cfg(test)]
 mod search_test;
 #[cfg(test)]

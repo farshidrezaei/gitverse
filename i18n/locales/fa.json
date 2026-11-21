@@ -894,5 +894,21 @@
     "exportArchive": "ایجاد آرشیو",
     "bundleCreatedSuccess": "بسته آفلاین گیت با موفقیت ساخته شد",
     "archiveExportedSuccess": "آرشیو سورس‌کد با موفقیت صادر شد"
+  },
+  "lfs": {
+    "toolbarTitle": "مدیریت فایل‌های حجیم Git LFS",
+    "modalTitle": "ذخیره‌سازی فایل‌های حجیم (Git LFS)",
+    "modalSubtitle": "مشاهده فایل‌های حجیم تحت نظر، الگوهای ردیابی و مدیریت قفل‌های فایل.",
+    "installedTitle": "Git LFS نصب و فعال است",
+    "installedSubtitle": "ابزار فایل‌های حجیم و فیلترهای گیت در این مخزن آماده به کار هستند.",
+    "notInstalledTitle": "دستور Git LFS یافت نشد",
+    "notInstalledSubtitle": "باینری git-lfs در مسیرهای اجرایی سیستم پیدا نشد. برای ارسال و دریافت پوینترها git-lfs را نصب کنید.",
+    "trackedPatternsTitle": "الگوهای تحت نظر (.gitattributes)",
+    "patternInputPlaceholder": "الگو برای ردیابی (مثال: *.psd, *.mp4, assets/*.bin)...",
+    "addPatternAction": "افزودن الگو",
+    "untrackPatternAction": "حذف الگو",
+    "noTrackedPatterns": "هیچ الگوی ردیابی فایل حجیم پیکربندی نشده است.",
+    "activeLocksTitle": "قفل‌های فایل",
+    "noLocksFound": "هیچ فایل قفل‌شده‌ای یافت نشد."
   }
 }

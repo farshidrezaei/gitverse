@@ -2467,4 +2467,90 @@ impl GitRepositoryInspector {
         let arguments = ["archive", "--output", archive_str, reference];
         self.executor.execute_git_command(Some(directory_path), &arguments).await
     }
+
+    /// Retrieves Git LFS overview, tracked patterns, tracked files, and locks.
+    pub async fn get_lfs_overview(
+        &self,
+        directory_path: &Path,
+    ) -> Result<crate::domain::GitLfsOverview, ApplicationError> {
+        // 1. Check if git-lfs is available on system
+        let version_check = self.executor.execute_git_command(Some(directory_path), &["lfs", "version"]).await;
+        let is_lfs_installed = version_check.is_ok();
+
+        // 2. Read .gitattributes for tracked patterns
+        let attributes_path = directory_path.join(".gitattributes");
+        let tracked_patterns = if let Ok(content) = tokio::fs::read_to_string(&attributes_path).await {
+            super::lfs::parse_lfs_attributes(&content)
+        } else {
+            Vec::new()
+        };
+
+        if !is_lfs_installed {
+            let mut overview = super::lfs::build_empty_lfs_overview(false);
+            overview.tracked_patterns = tracked_patterns;
+            return Ok(overview);
+        }
+
+        // 3. Query tracked files via git lfs ls-files
+        let tracked_files = match self.executor.execute_git_command(Some(directory_path), &["lfs", "ls-files"]).await {
+            Ok(output) => super::lfs::parse_lfs_ls_files(&output),
+            Err(_) => Vec::new(),
+        };
+
+        // 4. Query locks via git lfs locks
+        let locks = match self.executor.execute_git_command(Some(directory_path), &["lfs", "locks"]).await {
+            Ok(output) => super::lfs::parse_lfs_locks(&output),
+            Err(_) => Vec::new(),
+        };
+
+        Ok(crate::domain::GitLfsOverview {
+            is_lfs_installed: true,
+            tracked_patterns,
+            tracked_files,
+            locks,
+            total_lfs_size_in_bytes: 0,
+        })
+    }
+
+    /// Tracks a file pattern in Git LFS.
+    pub async fn lfs_track_pattern(
+        &self,
+        directory_path: &Path,
+        pattern: &str,
+    ) -> Result<String, ApplicationError> {
+        self.executor.execute_git_command(Some(directory_path), &["lfs", "track", pattern]).await
+    }
+
+    /// Untracks a file pattern from Git LFS.
+    pub async fn lfs_untrack_pattern(
+        &self,
+        directory_path: &Path,
+        pattern: &str,
+    ) -> Result<String, ApplicationError> {
+        self.executor.execute_git_command(Some(directory_path), &["lfs", "untrack", pattern]).await
+    }
+
+    /// Locks an LFS file to prevent concurrent remote edits.
+    pub async fn lfs_lock_file(
+        &self,
+        directory_path: &Path,
+        file_path: &str,
+    ) -> Result<String, ApplicationError> {
+        self.executor.execute_git_command(Some(directory_path), &["lfs", "lock", file_path]).await
+    }
+
+    /// Unlocks an LFS file.
+    pub async fn lfs_unlock_file(
+        &self,
+        directory_path: &Path,
+        file_path: &str,
+        force: bool,
+    ) -> Result<String, ApplicationError> {
+        let mut arguments = vec!["lfs", "unlock"];
+        if force {
+            arguments.push("--force");
+        }
+        arguments.push(file_path);
+        self.executor.execute_git_command(Some(directory_path), &arguments).await
+    }
 }

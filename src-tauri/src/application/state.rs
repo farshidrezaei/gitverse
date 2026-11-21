@@ -1375,7 +1375,58 @@ impl ApplicationState {
             .export_source_archive(&target_path, std::path::Path::new(output_archive_path), reference)
             .await
     }
+
+    /// Retrieves Git LFS overview, tracked patterns, tracked files, and locks.
+    pub async fn get_lfs_overview(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<crate::domain::GitLfsOverview, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.get_lfs_overview(&target_path).await
+    }
+
+    /// Tracks a file pattern in Git LFS.
+    pub async fn lfs_track_pattern(
+        &self,
+        directory_path: Option<&str>,
+        pattern: &str,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.lfs_track_pattern(&target_path, pattern).await
+    }
+
+    /// Untracks a file pattern from Git LFS.
+    pub async fn lfs_untrack_pattern(
+        &self,
+        directory_path: Option<&str>,
+        pattern: &str,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.lfs_untrack_pattern(&target_path, pattern).await
+    }
+
+    /// Locks an LFS file to prevent concurrent remote edits.
+    pub async fn lfs_lock_file(
+        &self,
+        directory_path: Option<&str>,
+        file_path: &str,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.lfs_lock_file(&target_path, file_path).await
+    }
+
+    /// Unlocks an LFS file.
+    pub async fn lfs_unlock_file(
+        &self,
+        directory_path: Option<&str>,
+        file_path: &str,
+        force: bool,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector.lfs_unlock_file(&target_path, file_path, force).await
+    }
 }
+
 
 
 

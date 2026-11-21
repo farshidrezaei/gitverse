@@ -791,4 +791,27 @@ mod tests {
         assert!(archive_result.is_ok());
         assert!(archive_file.exists());
     }
+
+    #[tokio::test]
+    async fn test_git_lfs_inspection_fallback() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        // Write .gitattributes manually
+        std::fs::write(repository_path.join(".gitattributes"), "*.psd filter=lfs diff=lfs merge=lfs -text\n").expect("write attributes");
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        let overview = inspector.get_lfs_overview(repository_path).await.expect("get lfs overview");
+        assert_eq!(overview.tracked_patterns.len(), 1);
+        assert_eq!(overview.tracked_patterns[0], "*.psd");
+    }
 }

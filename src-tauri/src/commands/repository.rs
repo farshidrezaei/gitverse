@@ -1259,4 +1259,55 @@ pub async fn export_source_archive(
         .await
 }
 
+/// Tauri IPC command to retrieve Git LFS overview and tracked files/patterns.
+#[tauri::command]
+pub async fn get_lfs_overview(
+    state: State<'_, ApplicationState>,
+    directory_path: Option<String>,
+) -> Result<crate::domain::GitLfsOverview, ApplicationError> {
+    state.get_lfs_overview(directory_path.as_deref()).await
+}
+
+/// Tauri IPC command to track a file pattern in Git LFS.
+#[tauri::command]
+pub async fn lfs_track_pattern(
+    state: State<'_, ApplicationState>,
+    pattern: String,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.lfs_track_pattern(directory_path.as_deref(), &pattern).await
+}
+
+/// Tauri IPC command to untrack a file pattern from Git LFS.
+#[tauri::command]
+pub async fn lfs_untrack_pattern(
+    state: State<'_, ApplicationState>,
+    pattern: String,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.lfs_untrack_pattern(directory_path.as_deref(), &pattern).await
+}
+
+/// Tauri IPC command to lock a file in Git LFS.
+#[tauri::command]
+pub async fn lfs_lock_file(
+    state: State<'_, ApplicationState>,
+    file_path: String,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.lfs_lock_file(directory_path.as_deref(), &file_path).await
+}
+
+/// Tauri IPC command to unlock a file in Git LFS.
+#[tauri::command]
+pub async fn lfs_unlock_file(
+    state: State<'_, ApplicationState>,
+    file_path: String,
+    force: bool,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state.lfs_unlock_file(directory_path.as_deref(), &file_path, force).await
+}
+
+
 

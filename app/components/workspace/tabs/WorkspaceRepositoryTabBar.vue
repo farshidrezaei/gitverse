@@ -28,6 +28,7 @@ const emit = defineEmits<{
   openCommitQueue: [mode: 'cherryPick' | 'revert']
   openGitBundle: []
   openExportArchive: []
+  openLfsManager: []
 }>()
 
 const { t } = useI18n()
@@ -358,6 +359,18 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
           />
         </UTooltip>
       </UDropdownMenu>
+
+      <UTooltip :text="t('lfs.toolbarTitle')">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-hard-drive-download"
+          class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+          :aria-label="t('lfs.toolbarTitle')"
+          @click="emit('openLfsManager')"
+        />
+      </UTooltip>
 
       <UTooltip :text="t('externalTools.openTerminal')">
         <UButton

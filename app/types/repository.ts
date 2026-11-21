@@ -437,5 +437,26 @@ export interface GitBundleVerificationResult {
   message: string
 }
 
+export interface GitLfsTrackedFile {
+  file_path: string
+  object_identifier: string
+  size_in_bytes: number
+}
+
+export interface GitLfsLockEntry {
+  lock_identifier: string
+  file_path: string
+  owner_name: string
+}
+
+export interface GitLfsOverview {
+  is_lfs_installed: boolean
+  tracked_patterns: string[]
+  tracked_files: GitLfsTrackedFile[]
+  locks: GitLfsLockEntry[]
+  total_lfs_size_in_bytes: number
+}
+
+
 
 

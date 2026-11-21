@@ -894,5 +894,21 @@
     "exportArchive": "Export Archive",
     "bundleCreatedSuccess": "Git bundle created successfully",
     "archiveExportedSuccess": "Source archive exported successfully"
+  },
+  "lfs": {
+    "toolbarTitle": "Git LFS Large File Storage",
+    "modalTitle": "Git LFS & Object Storage",
+    "modalSubtitle": "Inspect tracked large media files, track patterns, and manage remote locks.",
+    "installedTitle": "Git LFS is installed and active",
+    "installedSubtitle": "Large file storage hooks and filters are enabled for this repository.",
+    "notInstalledTitle": "Git LFS CLI not detected",
+    "notInstalledSubtitle": "Git LFS binary was not found in system PATH. Install git-lfs to push/pull pointers.",
+    "trackedPatternsTitle": "Tracked Patterns (.gitattributes)",
+    "patternInputPlaceholder": "Pattern to track (e.g. *.psd, *.mp4, assets/*.bin)...",
+    "addPatternAction": "Track Pattern",
+    "untrackPatternAction": "Untrack pattern",
+    "noTrackedPatterns": "No LFS tracked patterns configured.",
+    "activeLocksTitle": "File Locks",
+    "noLocksFound": "No active file locks recorded."
   }
 }

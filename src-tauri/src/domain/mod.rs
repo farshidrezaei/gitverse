@@ -501,3 +501,30 @@ pub struct GitBundleVerificationResult {
     pub message: String,
 }
 
+/// A tracked Git LFS file entry in the repository.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GitLfsTrackedFile {
+    pub file_path: String,
+    pub object_identifier: String,
+    pub size_in_bytes: u64,
+}
+
+/// A Git LFS file lock record.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GitLfsLockEntry {
+    pub lock_identifier: String,
+    pub file_path: String,
+    pub owner_name: String,
+}
+
+/// Complete Git LFS repository status and environment overview.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GitLfsOverview {
+    pub is_lfs_installed: bool,
+    pub tracked_patterns: Vec<String>,
+    pub tracked_files: Vec<GitLfsTrackedFile>,
+    pub locks: Vec<GitLfsLockEntry>,
+    pub total_lfs_size_in_bytes: u64,
+}
+
+
