@@ -194,14 +194,16 @@ function handleFileUpload(event: Event) {
 
         <!-- Options checkboxes -->
         <div class="pt-2 border-t border-default/50 flex flex-wrap gap-4 text-xs">
-          <label class="flex items-center gap-2 cursor-pointer text-muted hover:text-highlighted">
-            <UCheckbox v-model="isApplyToStaged" />
-            <span>{{ t('patch.applyToStaged') }}</span>
-          </label>
-          <label class="flex items-center gap-2 cursor-pointer text-muted hover:text-highlighted">
-            <UCheckbox v-model="isReverse" />
-            <span>{{ t('patch.reversePatch') }}</span>
-          </label>
+          <UCheckbox
+            v-model="isApplyToStaged"
+            :label="t('patch.applyToStaged')"
+            size="xs"
+          />
+          <UCheckbox
+            v-model="isReverse"
+            :label="t('patch.reversePatch')"
+            size="xs"
+          />
         </div>
       </div>
 

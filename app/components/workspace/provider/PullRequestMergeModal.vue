@@ -190,14 +190,16 @@ async function handleConfirmMerge(): Promise<void> {
           </div>
 
           <!-- Delete source branch checkbox -->
-          <label class="flex items-center gap-2 text-xs text-muted cursor-pointer pt-1">
-            <input
+          <div class="pt-1">
+            <UCheckbox
               v-model="shouldDeleteSourceBranch"
-              type="checkbox"
-              class="rounded border-default text-primary focus:ring-primary"
+              size="xs"
             >
-            <span>{{ t('provider.deleteSourceBranch') }} (<code class="text-[11px] text-primary">{{ props.pullRequest.source_branch }}</code>)</span>
-          </label>
+              <template #label>
+                <span class="text-xs text-muted">{{ t('provider.deleteSourceBranch') }} (<code class="text-[11px] text-primary">{{ props.pullRequest.source_branch }}</code>)</span>
+              </template>
+            </UCheckbox>
+          </div>
         </div>
       </div>
 

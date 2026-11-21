@@ -353,9 +353,10 @@ const totalChangesCount = computed(() => {
                 size="xs"
                 color="neutral"
                 variant="ghost"
+                square
                 icon="i-lucide-minus"
-                class="h-4 w-4 p-0 shrink-0 opacity-70 group-hover:opacity-100"
-                title="Unstage"
+                class="h-4 w-4 p-0 flex items-center justify-center shrink-0 opacity-70 group-hover:opacity-100"
+                :title="t('git.unstage')"
                 @click.stop="emit('unstageFile', file.path)"
               />
             </div>
@@ -450,9 +451,10 @@ const totalChangesCount = computed(() => {
                   size="xs"
                   color="neutral"
                   variant="ghost"
+                  square
                   icon="i-lucide-plus"
-                  class="h-4 w-4 p-0"
-                  title="Stage"
+                  class="h-4 w-4 p-0 flex items-center justify-center shrink-0"
+                  :title="t('git.stage')"
                   @click.stop="emit('stageFile', file.path)"
                 />
               </div>
@@ -523,9 +525,10 @@ const totalChangesCount = computed(() => {
                   size="xs"
                   color="neutral"
                   variant="ghost"
+                  square
                   icon="i-lucide-plus"
-                  class="h-4 w-4 p-0"
-                  title="Stage"
+                  class="h-4 w-4 p-0 flex items-center justify-center shrink-0"
+                  :title="t('git.stage')"
                   @click.stop="emit('stageFile', file.path)"
                 />
               </div>
@@ -563,25 +566,19 @@ const totalChangesCount = computed(() => {
 
         <div class="flex items-center justify-between gap-1 text-[11px]">
           <div class="flex items-center gap-3">
-            <label class="flex items-center gap-1 cursor-pointer select-none text-muted hover:text-highlighted">
-              <input
-                type="checkbox"
-                :checked="props.isAmend"
-                class="rounded border-default text-primary focus:ring-primary h-3 w-3"
-                @change="emit('update:isAmend', ($event.target as HTMLInputElement).checked)"
-              >
-              <span>{{ t('git.amend') }}</span>
-            </label>
+            <UCheckbox
+              :model-value="props.isAmend"
+              :label="t('git.amend')"
+              size="xs"
+              @update:model-value="emit('update:isAmend', Boolean($event))"
+            />
 
-            <label class="flex items-center gap-1 cursor-pointer select-none text-muted hover:text-highlighted">
-              <input
-                type="checkbox"
-                :checked="props.isBypassHooks"
-                class="rounded border-default text-primary focus:ring-primary h-3 w-3"
-                @change="emit('update:isBypassHooks', ($event.target as HTMLInputElement).checked)"
-              >
-              <span>{{ t('git.bypassHooks') }}</span>
-            </label>
+            <UCheckbox
+              :model-value="props.isBypassHooks"
+              :label="t('git.bypassHooks')"
+              size="xs"
+              @update:model-value="emit('update:isBypassHooks', Boolean($event))"
+            />
           </div>
 
           <UButton
