@@ -567,15 +567,12 @@ div[data-state][class*="overlay"],
 /* Force crisp pixel alignment and anti-aliasing for all modal dialog containers */
 [data-slot="content"],
 div[role="dialog"] {
-  -webkit-font-smoothing: subpixel-antialiased;
-  -moz-osx-font-smoothing: auto;
-  text-rendering: geometricPrecision;
-  image-rendering: -webkit-optimize-contrast;
-  /* Cancel subpixel fractional blur from GPU transform */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* Cancel subpixel blur and jitter from scale animations */
   animation: none !important;
   transition: opacity 150ms ease-out !important;
-  /* Round coordinates to physical pixels */
-  transform: translate(-50%, -50%) translateZ(0);
   will-change: opacity;
 }
 
