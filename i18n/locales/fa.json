@@ -29,6 +29,7 @@
     "cancel": "انصراف",
     "confirm": "تأیید",
     "save": "ذخیره",
+    "edit": "ویرایش",
     "delete": "حذف",
     "refresh": "بازنشانی",
     "search": "جستجو",
@@ -331,7 +332,15 @@
     "discardHunk": "دور انداختن تکه‌کد",
     "stageLine": "استیج خط",
     "unstageLine": "حذف خط از استیج",
-    "discardLine": "دور انداختن خط"
+    "discardLine": "دور انداختن خط",
+    "filesChanged": "فایل‌های تغییر یافته",
+    "filterFiles": "فیلتر فایل‌ها...",
+    "flatList": "فهرست مسطح",
+    "treeView": "نمای درختی",
+    "noFilesFound": "فایلی یافت نشد",
+    "unified": "یکپارچه",
+    "split": "دوستونی",
+    "binaryOrLargeFileDiff": "محتوای دیف فایل باینری یا حجیم قابل نمایش نیست"
   },
   "commit": {
     "details": "جزئیات کامیت",
@@ -671,6 +680,7 @@
     "reviewSummaryOptional": "خلاصه بازبینی (اختیاری)",
     "reviewSummaryPlaceholder": "توضیحات خلاصه بازبینی خود را بنویسید...",
     "merge": "ادغام (Merge)",
+    "merged": "ادغام‌شده",
     "mergePullRequest": "ادغام پول ریکوئست",
     "mergeCommit": "ایجاد کامیت مرج",
     "mergeCommitDescription": "تمام کامیت‌ها از طریق یک کامیت مرج به شاخه مقصد اضافه می‌شوند.",
@@ -916,6 +926,8 @@
     "patternInputPlaceholder": "الگو برای ردیابی (مثال: *.psd, *.mp4, assets/*.bin)...",
     "addPatternAction": "افزودن الگو",
     "untrackPatternAction": "حذف الگو",
+    "patternTrackedSuccess": "الگو با موفقیت در Git LFS ثبت شد",
+    "patternUntrackedSuccess": "الگو با موفقیت از Git LFS حذف شد",
     "noTrackedPatterns": "هیچ الگوی ردیابی فایل حجیم پیکربندی نشده است.",
     "activeLocksTitle": "قفل‌های فایل",
     "noLocksFound": "هیچ فایل قفل‌شده‌ای یافت نشد."

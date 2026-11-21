@@ -29,6 +29,7 @@
     "cancel": "Cancel",
     "confirm": "Confirm",
     "save": "Save",
+    "edit": "Edit",
     "delete": "Delete",
     "refresh": "Refresh",
     "search": "Search",
@@ -331,7 +332,15 @@
     "discardHunk": "Discard Hunk",
     "stageLine": "Stage line",
     "unstageLine": "Unstage line",
-    "discardLine": "Discard line"
+    "discardLine": "Discard line",
+    "filesChanged": "Files Changed",
+    "filterFiles": "Filter files...",
+    "flatList": "Flat List",
+    "treeView": "Tree View",
+    "noFilesFound": "No files found",
+    "unified": "Unified",
+    "split": "Split",
+    "binaryOrLargeFileDiff": "Binary or large diff content not previewed"
   },
   "commit": {
     "details": "Commit Details",
@@ -671,6 +680,7 @@
     "reviewSummaryOptional": "Review Summary (Optional)",
     "reviewSummaryPlaceholder": "Leave a comment summarizing your review...",
     "merge": "Merge",
+    "merged": "Merged",
     "mergePullRequest": "Merge Pull Request",
     "mergeCommit": "Create a merge commit",
     "mergeCommitDescription": "All commits will be added to the base branch via a merge commit.",
@@ -916,6 +926,8 @@
     "patternInputPlaceholder": "Pattern to track (e.g. *.psd, *.mp4, assets/*.bin)...",
     "addPatternAction": "Track Pattern",
     "untrackPatternAction": "Untrack pattern",
+    "patternTrackedSuccess": "Pattern tracked successfully in Git LFS",
+    "patternUntrackedSuccess": "Pattern untracked from Git LFS",
     "noTrackedPatterns": "No LFS tracked patterns configured.",
     "activeLocksTitle": "File Locks",
     "noLocksFound": "No active file locks recorded."
