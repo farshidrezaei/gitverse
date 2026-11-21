@@ -40,6 +40,11 @@ export function useWorkspaceManager() {
   )
 
   async function openRepository(directoryPath: string): Promise<RepositoryOverview | null> {
+    // Clear any active commit inspection or diff state from previously viewed repository
+    diffViewerController.clearDiff()
+    stagingController.clearDiffSelection()
+    commitInspectorController.clearCommitSelection()
+
     const overview = await repositoryWorkspace.openRepository(directoryPath)
     if (overview) {
       branchController.loadFavoriteBranches()

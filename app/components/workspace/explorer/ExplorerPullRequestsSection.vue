@@ -26,9 +26,9 @@ const {
   loadAccounts,
   fetchPullRequests,
   pullRequests,
-  isLoading,
 } = useProviderController()
 
+const isLoadingPullRequests = ref(false)
 const activeStateFilter = ref<PullRequestState | 'all'>('open')
 const searchQuery = ref('')
 const matchedAccount = ref<ProviderAccount | null>(null)
@@ -40,17 +40,32 @@ const isManualSelectorVisible = ref(false)
 const manualRepositoryInput = ref('')
 
 async function loadPullRequestsForCurrentRepository(): Promise<void> {
-  if (!matchedAccount.value || !matchedRepositoryFullName.value) return
-  await fetchPullRequests(
-    matchedAccount.value.id,
-    matchedRepositoryFullName.value,
-    activeStateFilter.value === 'all' ? undefined : activeStateFilter.value,
-  )
+  if (!matchedAccount.value || !matchedRepositoryFullName.value) {
+    isLoadingPullRequests.value = false
+    return
+  }
+  isLoadingPullRequests.value = true
+  try {
+    await fetchPullRequests(
+      matchedAccount.value.id,
+      matchedRepositoryFullName.value,
+      activeStateFilter.value === 'all' ? undefined : activeStateFilter.value,
+    )
+  } finally {
+    isLoadingPullRequests.value = false
+  }
 }
 
 async function detectRepositoryAndLoad(): Promise<void> {
+  // Clear previous repository data immediately and enter loading state so skeleton appears
+  pullRequests.value = []
+  isLoadingPullRequests.value = true
+
   await loadAccounts()
-  if (accounts.value.length === 0) return
+  if (accounts.value.length === 0) {
+    isLoadingPullRequests.value = false
+    return
+  }
 
   let targetLocation: { host: string; fullName: string } | null = null
 
@@ -72,6 +87,7 @@ async function detectRepositoryAndLoad(): Promise<void> {
     if (!matchedRepositoryFullName.value) {
       isManualSelectorVisible.value = true
     }
+    isLoadingPullRequests.value = false
     return
   }
 
@@ -88,6 +104,8 @@ async function detectRepositoryAndLoad(): Promise<void> {
   matchedAccount.value = account || accounts.value[0] || null
   if (matchedAccount.value) {
     await loadPullRequestsForCurrentRepository()
+  } else {
+    isLoadingPullRequests.value = false
   }
 }
 
@@ -129,7 +147,7 @@ watch(
 )
 
 watch(
-  () => props.remotes,
+  () => [props.remotes, props.currentRepositoryPath],
   () => {
     void detectRepositoryAndLoad()
   },
@@ -206,9 +224,42 @@ watch(
       />
     </div>
 
+    <!-- High-Fidelity Zero-CLS Skeleton Loading (Shown whenever loading or during repository switch) -->
+    <div v-if="isLoadingPullRequests" class="flex flex-col gap-1.5">
+      <!-- Search Input Skeleton -->
+      <USkeleton class="h-6 w-full rounded-md" />
+      <!-- Segmented Filter Skeleton -->
+      <USkeleton class="h-6 w-full rounded-lg" />
+      <!-- List Items Skeletons -->
+      <div class="space-y-1 pt-0.5" role="status" aria-busy="true">
+        <div
+          v-for="skeletonIndex in 4"
+          :key="skeletonIndex"
+          class="flex flex-col gap-1 p-2 rounded-lg border border-default/50 bg-[var(--gv-surface)]/70 shadow-2xs"
+        >
+          <!-- Top Row: Icon, Number, Title Skeleton -->
+          <div class="flex items-center gap-1.5 min-w-0">
+            <USkeleton class="h-3.5 w-3.5 rounded-full shrink-0" />
+            <USkeleton class="h-3 w-7 rounded shrink-0" />
+            <USkeleton class="h-3 flex-1 rounded" />
+          </div>
+          <!-- Bottom Row: Author Avatar, Source Branch, Updated Time Skeleton -->
+          <div class="flex items-center justify-between text-[10px] ps-5">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <USkeleton class="h-3.5 w-3.5 rounded-full shrink-0" />
+              <USkeleton class="h-2.5 w-14 rounded" />
+              <span class="font-mono text-muted/40">→</span>
+              <USkeleton class="h-2.5 w-16 rounded" />
+            </div>
+            <USkeleton class="h-2.5 w-10 rounded shrink-0" />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- No Remotes Configured Warning Banner -->
     <div
-      v-if="!isLoading && (!props.remotes || props.remotes.length === 0)"
+      v-else-if="!props.remotes || props.remotes.length === 0"
       class="flex flex-col items-center justify-center p-3 text-center rounded-xl bg-muted/10 border border-default/50 gap-2"
     >
       <UIcon name="i-lucide-globe" class="h-6 w-6 text-muted" />
@@ -228,7 +279,7 @@ watch(
 
     <!-- No Accounts Connected Warning Banner -->
     <div
-      v-else-if="!isLoading && accounts.length === 0"
+      v-else-if="accounts.length === 0"
       class="flex flex-col items-center justify-center p-3 text-center rounded-xl bg-muted/10 border border-default/50 gap-2"
     >
       <UIcon name="i-lucide-link-2-off" class="h-6 w-6 text-muted" />
@@ -293,24 +344,9 @@ watch(
         </button>
       </div>
 
-      <!-- High-Fidelity Zero-CLS Skeleton Loading -->
-      <div v-if="isLoading && pullRequests.length === 0" class="space-y-1.5 pt-1">
-        <div
-          v-for="skeletonIndex in 4"
-          :key="skeletonIndex"
-          class="flex items-center gap-2 p-2 rounded-lg border border-default/30 bg-muted/10"
-        >
-          <USkeleton class="h-4 w-4 rounded-full shrink-0" />
-          <div class="flex-1 space-y-1 min-w-0">
-            <USkeleton class="h-3 w-3/4 rounded" />
-            <USkeleton class="h-2.5 w-1/2 rounded" />
-          </div>
-        </div>
-      </div>
-
       <!-- Empty State -->
       <div
-        v-else-if="filteredPullRequests.length === 0"
+        v-if="filteredPullRequests.length === 0"
         class="flex flex-col items-center justify-center p-4 text-center rounded-xl bg-muted/5 border border-dashed border-default/50 gap-1.5 my-1"
       >
         <UIcon name="i-lucide-git-pull-request" class="h-5 w-5 text-muted opacity-60" />

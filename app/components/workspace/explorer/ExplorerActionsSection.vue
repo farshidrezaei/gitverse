@@ -34,8 +34,15 @@ const statusFilterOptions = computed(() => [
 ])
 
 async function detectRepositoryAndLoad(): Promise<void> {
+  // Clear previous runs and activate skeleton immediately on repository switch
+  runs.value = []
+  isLoading.value = true
+
   await providerController.loadAccounts()
-  if (providerController.accounts.value.length === 0) return
+  if (providerController.accounts.value.length === 0) {
+    isLoading.value = false
+    return
+  }
 
   let targetLocation: { host: string; fullName: string } | null = null
 
@@ -63,6 +70,8 @@ async function detectRepositoryAndLoad(): Promise<void> {
 
   if (matchedAccount.value && matchedRepositoryFullName.value) {
     await loadRuns()
+  } else {
+    isLoading.value = false
   }
 }
 
@@ -155,13 +164,22 @@ watch(statusFilter, () => {
     </div>
 
     <!-- Loading Skeleton (Zero CLS Standard) -->
-    <div v-if="isLoading && runs.length === 0" class="p-2 space-y-2">
-      <div v-for="i in 4" :key="i" class="p-2.5 rounded-lg border border-default/30 space-y-2">
-        <div class="flex items-center justify-between">
-          <USkeleton class="h-3.5 w-32 rounded" />
-          <USkeleton class="h-3 w-12 rounded" />
+    <div v-if="isLoading && runs.length === 0" class="divide-y divide-default/30" role="status" aria-busy="true">
+      <div v-for="skeletonIndex in 4" :key="skeletonIndex" class="p-2.5 flex flex-col gap-1 text-start">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5 min-w-0 flex-1">
+            <USkeleton class="w-3.5 h-3.5 rounded-full shrink-0" />
+            <USkeleton class="h-3 w-3/4 rounded" />
+          </div>
+          <USkeleton class="h-2.5 w-8 rounded shrink-0 font-mono" />
         </div>
-        <USkeleton class="h-3 w-48 rounded" />
+        <div class="flex items-center justify-between text-[11px] ps-5">
+          <div class="flex items-center gap-1.5 min-w-0 flex-1">
+            <USkeleton class="w-3 h-3 rounded shrink-0" />
+            <USkeleton class="h-2.5 w-20 rounded" />
+          </div>
+          <USkeleton class="h-2 w-12 rounded shrink-0" />
+        </div>
       </div>
     </div>
 
