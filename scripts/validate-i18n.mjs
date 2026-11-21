@@ -102,6 +102,45 @@ export function validateLocaleDirectory(directory = LOCALES_DIRECTORY) {
     }
   }
 
+  // Scan codebase templates in app/ to verify every t('...') key exists in base dictionary
+  const appDirectory = path.resolve(process.cwd(), 'app')
+  if (fs.existsSync(appDirectory)) {
+    const templateErrors = validateTemplateKeyUsage(appDirectory, baseEntries)
+    errors.push(...templateErrors)
+  }
+
+  return errors
+}
+
+/**
+ * Scans Vue and TypeScript files to ensure every referenced translation key exists in the base locale.
+ */
+export function validateTemplateKeyUsage(directory, baseEntries) {
+  const errors = []
+  const keyPattern = /\b(?:t|\$t)\(\s*['"]([^'"]+)['"]/g
+
+  function scanDirectory(currentDirectory) {
+    const entries = fs.readdirSync(currentDirectory, { withFileTypes: true })
+    for (const entry of entries) {
+      const fullPath = path.join(currentDirectory, entry.name)
+      if (entry.isDirectory()) {
+        scanDirectory(fullPath)
+      } else if (entry.isFile() && (entry.name.endsWith('.vue') || (entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')))) {
+        const fileContent = fs.readFileSync(fullPath, 'utf8')
+        let match
+        while ((match = keyPattern.exec(fileContent)) !== null) {
+          const key = match[1]
+          if (key.includes('${')) continue
+          if (!(key in baseEntries)) {
+            const relativePath = path.relative(process.cwd(), fullPath)
+            errors.push(`[Codebase] Missing translation key "${key}" used in "${relativePath}".`)
+          }
+        }
+      }
+    }
+  }
+
+  scanDirectory(directory)
   return errors
 }
 

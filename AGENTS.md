@@ -26,7 +26,7 @@ Source specification: `implement.md`.
   - TypeScript: `is`, `has`, `can`, `should`
 - Functions and methods must state intent through their names without cryptic identifiers.
 
-### 2.2. No Hardcoded Values
+### 2.2. No Hardcoded Values & Zero Hardcoded Strings Contract
 Every non-structural value must belong to one of six categories:
 1. **Enum** — finite, explicitly defined set of states or variants (`ChangeStatus`, `ReferenceType`, `CommitGraphLane`, `ProviderKind`).
 2. **Configuration value** — user- or application-configurable setting (`WorkspaceConfiguration`, `ThemeSettings`).
@@ -35,7 +35,7 @@ Every non-structural value must belong to one of six categories:
 5. **Translation key** — any user-facing text (`$t('repository.empty.title')`).
 6. **Domain value** — value belonging to a persisted business entity.
 
-Never scatter magic numbers, literal UI colors/hex values, or hardcoded user-facing strings inside components or handlers.
+**Zero Hardcoded Strings Contract**: Never scatter magic numbers, literal UI colors/hex values, or hardcoded user-facing strings (e.g. titles, labels, placeholders, button texts, empty states, tooltips, hints, error banners) inside components, pages, layouts, or handlers. Every string intended for humans **MUST** be localized through `$t('...')` / `t('...')` with keys defined in both `en.json` and `fa.json`. Hardcoded strings fail the Definition of Done.
 
 ### 2.3. Theme Customization & Token System
 - GitVerse must support full user customization of theme colors (primary, accent, background surfaces, diff colors, graph lane colors) alongside built-in default themes (`GitVerse Dark` and `GitVerse Light`).
@@ -100,12 +100,12 @@ Split modules by domain responsibility:
 
 ---
 
-## 3. Internationalization (i18n) & Theme Matrix
+## 3. Internationalization (i18n) & Zero-Missing-Key Contract
 
 - Mandatory initial locales: **English (`en`, `dir: 'ltr'`)** and **Persian (`fa`, `dir: 'rtl'`)**.
 - Mandatory default themes: **Dark (`GitVerse Dark`)** and **Light (`GitVerse Light`)**, plus **User Custom Theme** support.
-- Every feature requires both `en` and `fa` translations and verification in both themes and both directions.
-- Automated i18n validation script (`scripts/validate-i18n.mjs`) must verify key parity, non-empty values, and placeholder matching.
+- **Zero Missing Keys Law**: Every user-facing UI text, label, placeholder, tooltip, badge, status message, modal header, empty state, and action title must have a translation key defined simultaneously in **both** `en.json` and `fa.json`. Leaving untranslated fallback keys or missing dictionary entries is strictly prohibited.
+- **Automated Verification Contract**: The automated verification script (`scripts/validate-i18n.mjs` and `test/unit/i18nEnforcement.test.ts`) runs on every CI check and test run. It enforces 100% dictionary key parity, non-empty translations, identical interpolation placeholders, and verifies that every `t('...')` / `$t('...')` call across all `.vue` and `.ts` codebase files exists in the base dictionary. Code changes with missing translation keys fail CI immediately.
 
 ---
 
@@ -150,7 +150,7 @@ Before marking any task complete, verify all applicable items:
 3. Zero unexplained hardcoded values or literal user-facing strings.
 4. No God files or oversized components.
 5. Nuxt UI used first; custom CSS justified if present.
-6. Complete `en` and `fa` translations passing validation script.
+6. Complete `en` and `fa` translations with zero missing keys, zero untranslated fallbacks, and zero hardcoded user-facing strings, passing `scripts/validate-i18n.mjs` and `test/unit/i18nEnforcement.test.ts`.
 7. Verified in RTL (`fa`) and LTR (`en`).
 8. Verified in Light, Dark, and Custom themes.
 9. High-fidelity zero-CLS skeletons (`USkeleton`) implemented for all loading states (strictly no generic content spinners or "Loading..." text), plus complete empty and error states.
