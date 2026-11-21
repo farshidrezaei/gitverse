@@ -180,6 +180,9 @@ sequenceDiagram
    - All HTML is processed through `sanitizeHtmlSimple` to neutralize script tags, iframe embeds, object tags, and javascript URI schemes before injection.
 4. **Modal Architecture Guarantee**:
    - Every modal enforces an opaque background (`bg-[var(--gv-surface)]`), standard backdrop blur overlay, and elevation borders. Modal transparency is strictly banned.
+5. **Dual-Layer Input Validation Guarantee**:
+   - Every user input, modal form, and action parameter is validated on the frontend with **Zod** (`app/schemas/`) and on the backend with **Rust domain validators** (`src-tauri/src/domain/validation.rs`).
+   - Null bytes (`\0`), newlines in single-line arguments, path traversal anomalies, out-of-bounds lengths, and prohibited Git reference characters are blocked before any Git process or SQLite write executes.
 
 ---
 

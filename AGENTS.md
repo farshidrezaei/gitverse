@@ -86,6 +86,17 @@ Split modules by domain responsibility:
 - **Actionable Undo**: Whenever a mutating operation is reversible (e.g. Revert commit, Delete local branch, Discard file changes), the success notification toast must invoke `notifyUndoable` with an immediate, one-click `Undo` button.
 - **Detailed Error Reporting**: All failure notifications must pass `formatApplicationError(error)` to `notifyError` to prevent generic or unhandled error messages from being displayed to users.
 
+### 2.10. Dual-Layer Input Validation Contract (Zod & Rust Domain)
+- **Mandatory Dual-Layer Validation**: Every user-configurable input, form field, action argument, or external payload that requires validation **MUST** be validated on **both** the frontend (using strict **Zod** schemas) and the backend (using **Rust domain validators** in `src-tauri/src/domain/validation.rs`).
+- **Frontend Zod Standard (`app/schemas/`)**:
+  - All form modals, inputs, and command invocations must define or import their schema from `app/schemas/`.
+  - Every schema issue must map directly to an internationalized error key (`errorKey: '...'`), never hardcoded strings.
+  - UI inputs must perform pre-flight `safeParse()` checks before invoking Tauri IPC commands, showing immediate feedback banners without firing unnecessary IPC calls.
+- **Backend Rust Standard (`src-tauri/src/domain/validation.rs`)**:
+  - The Rust backend must never trust input from the frontend.
+  - All command handlers and domain service methods must invoke the corresponding `validate_*` function before executing Git processes or writing to SQLite/disk.
+  - Rust validators must reject null bytes (`\0`), control characters, unescaped path traversals, out-of-range lengths, or illegal Git characters with typed `ApplicationError::InvalidInput(...)`.
+
 
 ---
 
@@ -145,4 +156,5 @@ Before marking any task complete, verify all applicable items:
 9. High-fidelity zero-CLS skeletons (`USkeleton`) implemented for all loading states (strictly no generic content spinners or "Loading..." text), plus complete empty and error states.
 10. Table-driven, matrix, property, or integration tests written and passing.
 11. Formatting, linting, type checking, and test suites executed after final edits.
-12. **Documentation synchronously updated across all relevant docs files for any added, modified, or removed code/features (mandatory contract).**
+12. Strict dual-layer input validation implemented (Zod in frontend `app/schemas/` and Rust domain validators in `domain/validation.rs`) for any new or modified input paths.
+13. **Documentation synchronously updated across all relevant docs files for any added, modified, or removed code/features (mandatory contract).**
