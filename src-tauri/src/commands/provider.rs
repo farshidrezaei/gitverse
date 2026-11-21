@@ -241,3 +241,27 @@ pub async fn get_workflow_job_logs(
     crate::domain::validation::validate_workflow_run_id(&job_id.to_string())?;
     state.get_job_logs(&account_identifier, &repository_full_name, job_id).await
 }
+
+/// Tauri IPC command to create a new pull request or merge request.
+#[tauri::command]
+pub async fn create_provider_pull_request(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    title: String,
+    description: Option<String>,
+    source_branch: String,
+    target_branch: String,
+    is_draft: Option<bool>,
+) -> Result<RemotePullRequest, ApplicationError> {
+    crate::domain::validation::validate_create_pull_request(&title, &source_branch, &target_branch)?;
+    state.create_pull_request(
+        &account_identifier,
+        &repository_full_name,
+        &title,
+        description.as_deref(),
+        &source_branch,
+        &target_branch,
+        is_draft.unwrap_or(false),
+    ).await
+}

@@ -1661,6 +1661,60 @@ impl ApplicationState {
             }
         }
     }
+
+    /// Creates a new pull request or merge request on the remote provider.
+    pub async fn create_pull_request(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        title: &str,
+        description: Option<&str>,
+        source_branch: &str,
+        target_branch: &str,
+        is_draft: bool,
+    ) -> Result<RemotePullRequest, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.create_pull_request(
+                    &token,
+                    parts[0],
+                    parts[1],
+                    title,
+                    description,
+                    source_branch,
+                    target_branch,
+                    is_draft,
+                ).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.create_merge_request(
+                    &token,
+                    repository_full_name,
+                    title,
+                    description,
+                    source_branch,
+                    target_branch,
+                    is_draft,
+                ).await
+            }
+        }
+    }
 }
 
 

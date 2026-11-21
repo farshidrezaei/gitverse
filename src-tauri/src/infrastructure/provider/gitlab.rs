@@ -1051,6 +1051,111 @@ impl GitLabClient {
         let trace = response.text().await.unwrap_or_default();
         Ok(trace)
     }
+
+    /// Creates a new merge request on GitLab.
+    pub async fn create_merge_request(
+        &self,
+        token: &str,
+        project_full_name: &str,
+        title: &str,
+        description: Option<&str>,
+        source_branch: &str,
+        target_branch: &str,
+        is_draft: bool,
+    ) -> Result<RemotePullRequest, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_full_name);
+        let url = format!("{}/projects/{}/merge_requests", self.api_base_url, encoded_project);
+        let headers = self.build_headers(token)?;
+
+        let formatted_title = if is_draft && !title.starts_with("Draft:") && !title.starts_with("WIP:") {
+            format!("Draft: {}", title)
+        } else {
+            title.to_string()
+        };
+
+        #[derive(Serialize)]
+        struct CreateMrPayload<'a> {
+            title: &'a str,
+            source_branch: &'a str,
+            target_branch: &'a str,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            description: Option<&'a str>,
+        }
+
+        let response = self
+            .client
+            .post(&url)
+            .headers(headers)
+            .json(&CreateMrPayload {
+                title: &formatted_title,
+                source_branch,
+                target_branch,
+                description,
+            })
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to create GitLab merge request: {}",
+                error_text
+            )));
+        }
+
+        #[derive(Deserialize)]
+        struct GitLabCreateMrResponse {
+            id: u64,
+            iid: u64,
+            title: String,
+            description: Option<String>,
+            state: String,
+            web_url: String,
+            author: GitLabUserResponse,
+            source_branch: String,
+            target_branch: String,
+            work_in_progress: Option<bool>,
+            draft: Option<bool>,
+            user_notes_count: Option<u32>,
+            created_at: String,
+            updated_at: String,
+        }
+
+        let raw: GitLabCreateMrResponse = response
+            .json()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("Failed to parse created MR: {}", error)))?;
+
+        let created_timestamp = chrono::DateTime::parse_from_rfc3339(&raw.created_at)
+            .map(|dt| dt.timestamp())
+            .unwrap_or_else(|_| Utc::now().timestamp());
+
+        let updated_timestamp = chrono::DateTime::parse_from_rfc3339(&raw.updated_at)
+            .map(|dt| dt.timestamp())
+            .unwrap_or_else(|_| Utc::now().timestamp());
+
+        let is_mr_draft = raw.draft.unwrap_or(false) || raw.work_in_progress.unwrap_or(false) || raw.title.starts_with("Draft:") || raw.title.starts_with("WIP:");
+
+        Ok(RemotePullRequest {
+            id: format!("gitlab:{}", raw.id),
+            number: raw.iid,
+            title: raw.title,
+            description: raw.description,
+            state: PullRequestState::Open,
+            author_username: raw.author.username,
+            author_avatar_url: raw.author.avatar_url,
+            source_branch: raw.source_branch,
+            target_branch: raw.target_branch,
+            is_draft: is_mr_draft,
+            comments_count: raw.user_notes_count.unwrap_or(0),
+            html_url: raw.web_url,
+            created_at_timestamp: created_timestamp,
+            updated_at_timestamp: updated_timestamp,
+            merged_at_timestamp: None,
+            pipeline_status: None,
+        })
+    }
 }
 
 fn urlencoding_simple(raw: &str) -> String {

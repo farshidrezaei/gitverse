@@ -433,6 +433,33 @@ pub fn validate_workflow_run_id(run_id: &str) -> Result<(), ApplicationError> {
     Ok(())
 }
 
+/// Validates pull request creation arguments.
+pub fn validate_create_pull_request(
+    title: &str,
+    source_branch: &str,
+    target_branch: &str,
+) -> Result<(), ApplicationError> {
+    let trimmed_title = title.trim();
+    if trimmed_title.is_empty() {
+        return Err(ApplicationError::InvalidInput("Pull request title cannot be empty".into()));
+    }
+    if trimmed_title.contains('\0') {
+        return Err(ApplicationError::InvalidInput("Pull request title cannot contain null bytes".into()));
+    }
+    if trimmed_title.len() > 300 {
+        return Err(ApplicationError::InvalidInput("Pull request title cannot exceed 300 characters".into()));
+    }
+
+    validate_branch_name(source_branch)?;
+    validate_branch_name(target_branch)?;
+
+    if source_branch.trim() == target_branch.trim() {
+        return Err(ApplicationError::InvalidInput("Source and target branches cannot be identical".into()));
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -529,5 +556,13 @@ mod tests {
         assert!(validate_workflow_run_id("   ").is_err());
         assert!(validate_workflow_run_id("bad id with spaces").is_err());
         assert!(validate_workflow_run_id("bad\0null").is_err());
+    }
+
+    #[test]
+    fn test_validate_create_pull_request() {
+        assert!(validate_create_pull_request("feat: add cool feature", "feature-x", "main").is_ok());
+        assert!(validate_create_pull_request("", "feature-x", "main").is_err());
+        assert!(validate_create_pull_request("title", "same-branch", "same-branch").is_err());
+        assert!(validate_create_pull_request("title", "invalid branch name", "main").is_err());
     }
 }

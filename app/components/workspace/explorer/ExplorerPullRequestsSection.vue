@@ -4,6 +4,7 @@ import type { RemoteSummary } from '~/types/repository'
 import { parseRepositoryFromUrl } from '~/utils/providerUrl'
 import { formatRelativeTime } from '~/utils/dateFormat'
 import ConnectProviderAccountModal from '../provider/ConnectProviderAccountModal.vue'
+import CreatePullRequestModal from '../provider/CreatePullRequestModal.vue'
 
 interface ExplorerPullRequestsSectionProps {
   remotes?: RemoteSummary[]
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const { repositoryReferences } = useRepositoryWorkspace()
 const {
   accounts,
   loadAccounts,
@@ -32,6 +34,7 @@ const matchedAccount = ref<ProviderAccount | null>(null)
 const matchedRepositoryFullName = ref<string | null>(null)
 const detectedProviderKind = ref<'github' | 'gitlab'>('github')
 const isConnectAccountModalOpen = ref(false)
+const isCreatePullRequestModalOpen = ref(false)
 const isManualSelectorVisible = ref(false)
 const manualRepositoryInput = ref('')
 
@@ -156,6 +159,17 @@ watch(
       </div>
 
       <div class="flex items-center gap-1 shrink-0">
+        <UButton
+          size="xs"
+          color="primary"
+          variant="ghost"
+          square
+          icon="i-lucide-plus"
+          class="h-5 w-5 p-0 flex items-center justify-center text-primary hover:bg-primary/10"
+          :title="t('provider.createPullRequestTitle')"
+          @click="isCreatePullRequestModalOpen = true"
+        />
+
         <UButton
           size="xs"
           color="neutral"
@@ -366,6 +380,16 @@ watch(
       v-model:open="isConnectAccountModalOpen"
       :default-provider="detectedProviderKind"
       @connected="detectRepositoryAndLoad"
+    />
+
+    <!-- Create Pull Request Modal -->
+    <CreatePullRequestModal
+      v-model:open="isCreatePullRequestModalOpen"
+      :account="matchedAccount"
+      :repository-full-name="matchedRepositoryFullName"
+      :branches="repositoryReferences?.branches.map(b => b.name) || []"
+      :current-branch="repositoryReferences?.head_branch"
+      @created="loadPullRequestsForCurrentRepository"
     />
   </div>
 </template>

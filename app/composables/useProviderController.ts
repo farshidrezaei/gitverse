@@ -398,6 +398,35 @@ export function useProviderController() {
     }
   }
 
+  async function createPullRequest(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    title: string,
+    description?: string,
+    sourceBranch: string = '',
+    targetBranch: string = '',
+    isDraft: boolean = false,
+  ): Promise<RemotePullRequest | null> {
+    try {
+      const newPr = await invokeTauriCommand<RemotePullRequest>('create_provider_pull_request', {
+        accountIdentifier,
+        repositoryFullName,
+        title,
+        description: description?.trim() || null,
+        sourceBranch,
+        targetBranch,
+        isDraft,
+      })
+      if (newPr) {
+        pullRequests.value.unshift(newPr)
+      }
+      return newPr
+    } catch (error) {
+      errorMessage.value = String(error)
+      return null
+    }
+  }
+
   return {
     accounts,
     isLoading,
@@ -424,5 +453,6 @@ export function useProviderController() {
     fetchWorkflowJobLogs,
     rerunWorkflowRun,
     cancelWorkflowRun,
+    createPullRequest,
   }
 }

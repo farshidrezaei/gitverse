@@ -157,6 +157,7 @@ pub fn run() {
             commands::submit_pull_request_review,
             commands::merge_provider_pull_request,
             commands::update_pull_request_state,
+            commands::create_provider_pull_request,
             commands::list_workflow_runs,
             commands::get_workflow_run_jobs,
             commands::get_workflow_job_logs,

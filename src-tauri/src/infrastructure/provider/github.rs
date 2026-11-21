@@ -1040,4 +1040,79 @@ impl GitHubClient {
         let logs = response.text().await.unwrap_or_default();
         Ok(logs)
     }
+
+    /// Creates a new pull request on GitHub.
+    pub async fn create_pull_request(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        title: &str,
+        description: Option<&str>,
+        source_branch: &str,
+        target_branch: &str,
+        is_draft: bool,
+    ) -> Result<RemotePullRequest, ApplicationError> {
+        let url = format!("{}/repos/{}/{}/pulls", self.api_base_url, owner, repository);
+        let headers = self.build_headers(token)?;
+
+        #[derive(Serialize)]
+        struct CreatePullPayload<'a> {
+            title: &'a str,
+            head: &'a str,
+            base: &'a str,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            body: Option<&'a str>,
+            draft: bool,
+        }
+
+        let response = self.client.post(&url)
+            .headers(headers)
+            .json(&CreatePullPayload {
+                title,
+                head: source_branch,
+                base: target_branch,
+                body: description,
+                draft: is_draft,
+            })
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to create pull request: {}", error_text)));
+        }
+
+        let raw: GitHubPullRequestResponse = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse created pull request: {}", error))
+        })?;
+
+        let created_timestamp = chrono::DateTime::parse_from_rfc3339(&raw.created_at)
+            .map(|datetime| datetime.timestamp())
+            .unwrap_or_else(|_| Utc::now().timestamp());
+
+        let updated_timestamp = chrono::DateTime::parse_from_rfc3339(&raw.updated_at)
+            .map(|datetime| datetime.timestamp())
+            .unwrap_or_else(|_| Utc::now().timestamp());
+
+        Ok(RemotePullRequest {
+            id: format!("github:{}", raw.id),
+            number: raw.number,
+            title: raw.title,
+            description: raw.body,
+            state: PullRequestState::Open,
+            author_username: raw.user.login,
+            author_avatar_url: raw.user.avatar_url,
+            source_branch: raw.head.ref_name,
+            target_branch: raw.base.ref_name,
+            is_draft: raw.draft.unwrap_or(false),
+            comments_count: 0,
+            html_url: raw.html_url,
+            created_at_timestamp: created_timestamp,
+            updated_at_timestamp: updated_timestamp,
+            merged_at_timestamp: None,
+            pipeline_status: None,
+        })
+    }
 }
