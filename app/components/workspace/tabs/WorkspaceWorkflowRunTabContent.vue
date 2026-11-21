@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { WorkspaceWorkflowRunTab } from '~/types/workspaceTab'
 import type { WorkflowJob } from '~/types/provider'
+import WorkflowRunGraph from '../workflow/WorkflowRunGraph.vue'
+import WorkflowJobStepsDrawer from '../workflow/WorkflowJobStepsDrawer.vue'
 
 interface Props {
   tab: WorkspaceWorkflowRunTab
@@ -218,7 +220,7 @@ const isRunning = computed(() => {
 
       <!-- Graph View -->
       <div v-else class="flex-1 h-full p-4 overflow-hidden">
-        <WorkspaceWorkflowWorkflowRunGraph
+        <WorkflowRunGraph
           :jobs="jobs"
           :selected-job-id="selectedJob?.id"
           @select-job="handleSelectJob"
@@ -226,7 +228,7 @@ const isRunning = computed(() => {
       </div>
 
       <!-- Drawer for Job Steps -->
-      <WorkspaceWorkflowWorkflowJobStepsDrawer
+      <WorkflowJobStepsDrawer
         :job="selectedJob"
         :is-open="isJobDrawerOpen"
         @close="isJobDrawerOpen = false"
