@@ -253,7 +253,7 @@ const mainSplitterItems = ref<SplitterItem[]>([
     slot: 'center',
     minSize: 50,
     defaultSize: 76,
-    class: 'p-1.5 overflow-hidden flex flex-col',
+    class: 'overflow-hidden flex flex-col',
   },
 ])
 
@@ -264,14 +264,14 @@ const centerSplitterItems = ref<SplitterItem[]>([
     slot: 'graph',
     minSize: 30,
     defaultSize: 55,
-    class: 'pb-1 overflow-hidden flex flex-col',
+    class: 'p-1.5 pb-1 overflow-hidden flex flex-col',
   },
   {
     id: 'diff-bottom-panel',
     slot: 'diff',
     minSize: 20,
     defaultSize: 45,
-    class: 'pt-1 overflow-hidden flex flex-col',
+    class: 'p-1.5 pt-1 overflow-hidden flex flex-col',
   },
 ])
 
