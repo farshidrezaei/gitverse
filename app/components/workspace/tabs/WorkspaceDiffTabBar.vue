@@ -100,7 +100,7 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
       <!-- Tab 1: Pinned Permanent Root Tab (Overview / Graph Dashboard - NEVER CLOSEABLE) -->
       <button
         type="button"
-        class="group relative flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs transition-all shrink-0 border cursor-pointer"
+        class="group relative flex h-7 items-center gap-1.5 rounded-[var(--gv-radius-md)] px-2.5 text-xs transition-all shrink-0 border cursor-pointer"
         :class="[
           isOverviewActive
             ? 'bg-[var(--gv-surface)] text-highlighted border-default shadow-2xs font-semibold'
@@ -124,7 +124,7 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
       <div
         v-for="prTab in properties.pullRequestTabs"
         :key="prTab.id"
-        class="group relative flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
+        class="group relative flex h-7 items-center gap-1.5 rounded-[var(--gv-radius-md)] px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
         :class="[
           properties.activePullRequestTabId === prTab.id
             ? 'bg-[var(--gv-surface)] text-highlighted border-primary/50 shadow-2xs'
@@ -167,7 +167,7 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
       <div
         v-for="runTab in properties.workflowRunTabs"
         :key="runTab.id"
-        class="group relative flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
+        class="group relative flex h-7 items-center gap-1.5 rounded-[var(--gv-radius-md)] px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
         :class="[
           properties.activeWorkflowRunTabId === runTab.id
             ? 'bg-[var(--gv-surface)] text-highlighted border-primary/50 shadow-2xs'
@@ -214,7 +214,7 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
         class="shrink-0"
       >
         <div
-          class="group relative flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
+          class="group relative flex h-7 items-center gap-1.5 rounded-[var(--gv-radius-md)] px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
           :class="[
             properties.activeTabId === tab.id
               ? 'bg-[var(--gv-surface)] text-highlighted border-default shadow-2xs font-semibold'
