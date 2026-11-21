@@ -23,6 +23,7 @@ const emit = defineEmits<{
   openApplyPatch: []
   openSubmodules: []
   openInsights: []
+  openFileHistory: []
 }>()
 
 const { t } = useI18n()
@@ -271,6 +272,18 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
           class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
           :aria-label="t('insights.modalTitle')"
           @click="emit('openInsights')"
+        />
+      </UTooltip>
+
+      <UTooltip :text="t('fileHistory.modalTitle')">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-file-clock"
+          class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+          :aria-label="t('fileHistory.modalTitle')"
+          @click="emit('openFileHistory')"
         />
       </UTooltip>
 

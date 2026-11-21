@@ -815,5 +815,20 @@
       "friday": "Fri",
       "saturday": "Sat"
     }
+  },
+  "fileHistory": {
+    "modalTitle": "File History & Revision Scrubber",
+    "modalSubtitle": "Scrub through chronological file evolution across repository commits.",
+    "filePathPlaceholder": "Enter relative file path (e.g. src/main.rs)...",
+    "scrubberTitle": "Revision Timeline",
+    "locate": "Locate",
+    "contentAtRevision": "File Snapshot at Selected Revision",
+    "copyContent": "Copy File Content",
+    "emptyContent": "No file content recorded for this revision.",
+    "noHistoryTitle": "No History Loaded",
+    "noHistorySubtitle": "Enter a valid relative file path and click Search to trace its evolution.",
+    "notifications": {
+      "copiedContent": "Historical file snapshot copied to clipboard"
+    }
   }
 }

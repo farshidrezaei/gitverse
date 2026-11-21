@@ -22,6 +22,7 @@ import ExportPatchModal from '~/components/workspace/patch/ExportPatchModal.vue'
 import ApplyPatchModal from '~/components/workspace/patch/ApplyPatchModal.vue'
 import SubmoduleManagerModal from '~/components/workspace/submodule/SubmoduleManagerModal.vue'
 import RepositoryInsightsModal from '~/components/workspace/insights/RepositoryInsightsModal.vue'
+import FileHistoryModal from '~/components/workspace/history/FileHistoryModal.vue'
 import { useWorkspaceTabController } from '~/composables/useWorkspaceTabController'
 
 const { t } = useI18n()
@@ -148,6 +149,8 @@ const isExportPatchModalOpen = ref<boolean>(false)
 const isApplyPatchModalOpen = ref<boolean>(false)
 const isSubmoduleModalOpen = ref<boolean>(false)
 const isInsightsModalOpen = ref<boolean>(false)
+const isFileHistoryModalOpen = ref<boolean>(false)
+const selectedFileHistoryPath = ref<string>('')
 const selectedBranchName = ref<string | null>(null)
 const activeGraphReference = ref<string | null>(null)
 
@@ -484,6 +487,7 @@ async function handlePush(): Promise<void> {
         @open-apply-patch="isApplyPatchModalOpen = true"
         @open-submodules="isSubmoduleModalOpen = true"
         @open-insights="isInsightsModalOpen = true"
+        @open-file-history="isFileHistoryModalOpen = true"
       />
 
       <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip -->
@@ -720,6 +724,13 @@ async function handlePush(): Promise<void> {
     <!-- Repository Insights & Velocity Dashboard Modal -->
     <RepositoryInsightsModal
       v-model:open="isInsightsModalOpen"
+    />
+
+    <!-- File History & Revision Scrubber Modal -->
+    <FileHistoryModal
+      v-model:open="isFileHistoryModalOpen"
+      :initial-file-path="selectedFileHistoryPath"
+      @locate-commit="(sha) => { selectCommit(sha) }"
     />
   </div>
 </template>

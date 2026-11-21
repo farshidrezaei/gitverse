@@ -827,6 +827,32 @@ impl ApplicationState {
         self.git_inspector.get_repository_insights(&target_path).await
     }
 
+    /// Fetches historical commit revisions affecting a specific file.
+    pub async fn get_file_history(
+        &self,
+        directory_path: Option<&str>,
+        file_path: &str,
+        limit: Option<usize>,
+    ) -> Result<crate::domain::FileHistoryTimeline, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .get_file_history(&target_path, file_path, limit)
+            .await
+    }
+
+    /// Fetches file content at a specific historical commit revision.
+    pub async fn get_file_content_at_commit(
+        &self,
+        directory_path: Option<&str>,
+        commit_hash: &str,
+        file_path: &str,
+    ) -> Result<String, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .get_file_content_at_commit(&target_path, commit_hash, file_path)
+            .await
+    }
+
     /// Collects system diagnostics and environment details for voluntary bug reporting.
     pub async fn get_application_diagnostics(&self) -> Result<ApplicationDiagnostics, ApplicationError> {
         let git_info = self.discover_git(None).await?;

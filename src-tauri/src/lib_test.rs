@@ -608,4 +608,39 @@ mod tests {
         let total_activity: u32 = insights.activity_by_weekday.iter().map(|day| day.count).sum();
         assert_eq!(total_activity, 3);
     }
+
+    #[tokio::test]
+    async fn test_file_history_and_content_at_commit() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        std::fs::write(repository_path.join("doc.txt"), "version 1\n").expect("write doc.txt");
+        Command::new("git").args(["add", "doc.txt"]).current_dir(repository_path).output().expect("git add");
+        Command::new("git").args(["commit", "-m", "first revision"]).current_dir(repository_path).output().expect("commit 1");
+
+        std::fs::write(repository_path.join("doc.txt"), "version 2\n").expect("write doc.txt v2");
+        Command::new("git").args(["add", "doc.txt"]).current_dir(repository_path).output().expect("git add");
+        Command::new("git").args(["commit", "-m", "second revision"]).current_dir(repository_path).output().expect("commit 2");
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        let timeline = inspector.get_file_history(repository_path, "doc.txt", None).await.expect("file history");
+        assert_eq!(timeline.total_revisions, 2);
+        assert_eq!(timeline.revisions[0].commit_summary, "second revision");
+        assert_eq!(timeline.revisions[1].commit_summary, "first revision");
+
+        let v2_content = inspector.get_file_content_at_commit(repository_path, &timeline.revisions[0].commit_hash, "doc.txt").await.expect("v2 content");
+        assert_eq!(v2_content, "version 2\n");
+
+        let v1_content = inspector.get_file_content_at_commit(repository_path, &timeline.revisions[1].commit_hash, "doc.txt").await.expect("v1 content");
+        assert_eq!(v1_content, "version 1\n");
+    }
 }

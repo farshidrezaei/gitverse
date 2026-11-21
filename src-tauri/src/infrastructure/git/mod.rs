@@ -1,6 +1,7 @@
 pub mod bisect;
 pub mod branch;
 pub mod diff;
+pub mod file_history;
 pub mod history;
 pub mod insights;
 pub mod process;
@@ -17,6 +18,8 @@ mod bisect_test;
 mod branch_test;
 #[cfg(test)]
 mod diff_test;
+#[cfg(test)]
+mod file_history_test;
 #[cfg(test)]
 mod history_test;
 #[cfg(test)]

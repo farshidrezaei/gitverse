@@ -80,6 +80,8 @@ pub fn run() {
             commands::bisect_step,
             commands::bisect_reset,
             commands::get_repository_insights,
+            commands::get_file_history,
+            commands::get_file_content_at_commit,
             commands::get_commit_graph,
             commands::get_repository_references,
             commands::checkout_branch,

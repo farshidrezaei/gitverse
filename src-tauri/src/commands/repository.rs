@@ -229,6 +229,36 @@ pub async fn get_repository_insights(
     state.get_repository_insights(directory_path.as_deref()).await
 }
 
+/// Tauri IPC command to fetch the chronological commit history of a file.
+#[tauri::command]
+pub async fn get_file_history(
+    state: State<'_, ApplicationState>,
+    file_path: String,
+    limit: Option<usize>,
+    directory_path: Option<String>,
+) -> Result<crate::domain::FileHistoryTimeline, ApplicationError> {
+    state
+        .get_file_history(directory_path.as_deref(), &file_path, limit)
+        .await
+}
+
+/// Tauri IPC command to fetch file content at a historical commit revision.
+#[tauri::command]
+pub async fn get_file_content_at_commit(
+    state: State<'_, ApplicationState>,
+    commit_hash: String,
+    file_path: String,
+    directory_path: Option<String>,
+) -> Result<String, ApplicationError> {
+    state
+        .get_file_content_at_commit(
+            directory_path.as_deref(),
+            &commit_hash,
+            &file_path,
+        )
+        .await
+}
+
 /// Tauri IPC command to commit staged changes.
 #[tauri::command]
 pub async fn commit(

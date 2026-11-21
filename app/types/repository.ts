@@ -292,6 +292,21 @@ export interface RepositoryInsights {
   lines_deleted: number
 }
 
+export interface FileRevisionEntry {
+  commit_hash: string
+  author_name: string
+  author_email: string
+  author_timestamp: number
+  commit_summary: string
+  change_status: string
+}
+
+export interface FileHistoryTimeline {
+  file_path: string
+  revisions: FileRevisionEntry[]
+  total_revisions: number
+}
+
 export interface MergeBranchOutcome {
   is_successful: boolean
   has_conflicts: boolean

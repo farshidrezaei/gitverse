@@ -815,5 +815,20 @@
       "friday": "جمعه",
       "saturday": "شنبه"
     }
+  },
+  "fileHistory": {
+    "modalTitle": "تاریخچه تغییرات و اسکرابر فایل",
+    "modalSubtitle": "بررسی سیر تکامل فایل در طول تاریخچه کامیت‌های مخزن.",
+    "filePathPlaceholder": "مسیر نسبی فایل را وارد کنید (مثال: src/main.rs)...",
+    "scrubberTitle": "نوار زمانی نسخه‌های فایل",
+    "locate": "یافتن کامیت",
+    "contentAtRevision": "تصویر فایل در نسخه انتخابی",
+    "copyContent": "کپی محتوای فایل",
+    "emptyContent": "محتوایی برای این نسخه ثبت نشده است.",
+    "noHistoryTitle": "تاریخچه‌ای یافت نشد",
+    "noHistorySubtitle": "مسیر نسبی فایل را وارد کرده و جستجو را بزنید تا تاریخچه آن بررسی شود.",
+    "notifications": {
+      "copiedContent": "محتوای نسخه فایل در کلیپ‌بورد کپی شد"
+    }
   }
 }

@@ -438,6 +438,26 @@ pub struct RepositoryInsights {
     pub lines_deleted: u64,
 }
 
+/// A single historical commit revision entry touching a specific file.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FileRevisionEntry {
+    pub commit_hash: String,
+    pub author_name: String,
+    pub author_email: String,
+    pub author_timestamp: i64,
+    pub commit_summary: String,
+    pub change_status: String,
+}
+
+/// Chronological history timeline of a file across commits.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FileHistoryTimeline {
+    pub file_path: String,
+    pub revisions: Vec<FileRevisionEntry>,
+    pub total_revisions: u32,
+}
+
+
 
 
 

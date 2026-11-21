@@ -2153,4 +2153,70 @@ impl GitRepositoryInspector {
             total_commits,
         ))
     }
+
+    /// Fetches chronological commit history touching a specific file path.
+    pub async fn get_file_history(
+        &self,
+        directory_path: &Path,
+        file_path: &str,
+        limit: Option<usize>,
+    ) -> Result<crate::domain::FileHistoryTimeline, ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        let limit_count = limit.unwrap_or(100).to_string();
+        let format_argument = format!(
+            "--format=%H{}%an{}%ae{}%ct{}%s",
+            super::file_history::DELIMITER,
+            super::file_history::DELIMITER,
+            super::file_history::DELIMITER,
+            super::file_history::DELIMITER
+        );
+
+        let output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &[
+                    "log",
+                    "--follow",
+                    &format_argument,
+                    "--name-status",
+                    "-n",
+                    &limit_count,
+                    "--",
+                    file_path.trim(),
+                ],
+            )
+            .await?;
+
+        Ok(super::file_history::parse_file_history_output(&output, file_path))
+    }
+
+    /// Retrieves file content at a specific historical commit revision.
+    pub async fn get_file_content_at_commit(
+        &self,
+        directory_path: &Path,
+        commit_hash: &str,
+        file_path: &str,
+    ) -> Result<String, ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        let target_specifier = format!("{}:{}", commit_hash.trim(), file_path.trim());
+        let content = self
+            .executor
+            .execute_git_command(Some(directory_path), &["show", &target_specifier])
+            .await?;
+
+        Ok(content)
+    }
 }
