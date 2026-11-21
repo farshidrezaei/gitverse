@@ -295,6 +295,7 @@ export function useWorkspaceTabController() {
       repositoryPath,
       isClosable: true,
       isPinned: false,
+      activeSubView: 'conversation',
     }
 
     pullRequestTabs.value.push(newTab)

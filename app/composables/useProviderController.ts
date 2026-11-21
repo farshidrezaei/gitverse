@@ -21,6 +21,8 @@ export function useProviderController() {
   const errorMessage = useState<string | null>('provider-error', () => null)
   const remoteRepositories = useState<RemoteProjectRepository[]>('provider-repositories', () => [])
   const pullRequests = useState<RemotePullRequest[]>('provider-pull-requests', () => [])
+  const cachedPullRequestFiles = useState<Record<string, PullRequestChangedFile[]>>('provider-cached-pr-files', () => ({}))
+  const cachedCheckRuns = useState<Record<string, CiCheckRun[]>>('provider-cached-check-runs', () => ({}))
 
   async function loadAccounts(): Promise<ProviderAccount[]> {
     isLoading.value = true
@@ -156,13 +158,19 @@ export function useProviderController() {
     repositoryFullName: string,
     referenceOrPipelineId: string,
   ): Promise<CiCheckRun[]> {
+    const cacheKey = `${accountIdentifier}:${repositoryFullName}:${referenceOrPipelineId}`
+    if (cachedCheckRuns.value[cacheKey]) {
+      return cachedCheckRuns.value[cacheKey]
+    }
     try {
       const result = await invokeTauriCommand<CiCheckRun[]>('list_check_runs', {
         accountIdentifier,
         repositoryFullName,
         referenceOrPipelineId,
       })
-      return result || []
+      const runs = result || []
+      cachedCheckRuns.value[cacheKey] = runs
+      return runs
     } catch (error) {
       return []
     }
@@ -210,13 +218,19 @@ export function useProviderController() {
     repositoryFullName: string,
     pullRequestNumber: number,
   ): Promise<PullRequestChangedFile[]> {
+    const cacheKey = `${accountIdentifier}:${repositoryFullName}:${pullRequestNumber}`
+    if (cachedPullRequestFiles.value[cacheKey]) {
+      return cachedPullRequestFiles.value[cacheKey]
+    }
     try {
       const result = await invokeTauriCommand<PullRequestChangedFile[]>('get_pull_request_files', {
         accountIdentifier,
         repositoryFullName,
         pullRequestNumber,
       })
-      return result || []
+      const files = result || []
+      cachedPullRequestFiles.value[cacheKey] = files
+      return files
     } catch (error) {
       errorMessage.value = String(error)
       return []

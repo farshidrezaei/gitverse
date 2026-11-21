@@ -31,6 +31,7 @@ export interface WorkspacePullRequestTab {
   repositoryPath: string
   isClosable: boolean
   isPinned: boolean
+  activeSubView?: 'conversation' | 'files' | 'checks'
 }
 
 export interface OpenDiffTabOptions {

@@ -655,6 +655,7 @@ async function handlePush(): Promise<void> {
                 <!-- Full-Page Dedicated Pull Request Tab -->
                 <WorkspacePullRequestTabContent
                   v-if="activePullRequestTab"
+                  :key="activePullRequestTab.id"
                   :tab="activePullRequestTab"
                   @close="closePullRequestTab"
                   @checkout-branch="handleCheckout"

@@ -20,7 +20,13 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const { updatePullRequestState, fetchCheckRuns } = useProviderController()
 
-const activeDetailTab = ref<'conversation' | 'files' | 'checks'>('conversation')
+const activeDetailTab = computed<'conversation' | 'files' | 'checks'>({
+  get: () => properties.tab.activeSubView || 'conversation',
+  set: (view) => {
+    properties.tab.activeSubView = view
+  },
+})
+
 const isReviewModalOpen = ref(false)
 const isMergeModalOpen = ref(false)
 const isUpdatingState = ref(false)
@@ -28,6 +34,33 @@ const checkRuns = ref<CiCheckRun[]>([])
 const isLoadingChecks = ref(false)
 
 const pullRequest = computed<RemotePullRequest>(() => properties.tab.pullRequest)
+
+function getCheckRunIcon(conclusion: string | null, status: string): string {
+  if (conclusion === 'success') return 'i-lucide-check-circle-2'
+  if (conclusion === 'failure' || conclusion === 'timed_out' || conclusion === 'action_required') return 'i-lucide-x-circle'
+  if (conclusion === 'cancelled') return 'i-lucide-circle-slash'
+  if (conclusion === 'skipped' || conclusion === 'neutral') return 'i-lucide-minus-circle'
+  if (status === 'in_progress') return 'i-lucide-loader'
+  if (status === 'queued' || status === 'waiting' || status === 'pending') return 'i-lucide-clock'
+  return 'i-lucide-help-circle'
+}
+
+function getCheckRunIconClass(conclusion: string | null, status: string): string {
+  if (conclusion === 'success') return 'text-success'
+  if (conclusion === 'failure' || conclusion === 'timed_out' || conclusion === 'action_required') return 'text-error'
+  if (conclusion === 'cancelled' || conclusion === 'skipped' || conclusion === 'neutral') return 'text-muted'
+  if (status === 'in_progress') return 'text-warning animate-spin'
+  if (status === 'queued' || status === 'waiting' || status === 'pending') return 'text-muted'
+  return 'text-muted'
+}
+
+function getCheckRunBadgeColor(conclusion: string | null, status: string): 'success' | 'error' | 'warning' | 'neutral' {
+  if (conclusion === 'success') return 'success'
+  if (conclusion === 'failure' || conclusion === 'timed_out' || conclusion === 'action_required') return 'error'
+  if (conclusion === 'cancelled' || conclusion === 'skipped' || conclusion === 'neutral') return 'neutral'
+  if (status === 'in_progress') return 'warning'
+  return 'neutral'
+}
 
 async function loadChecks(): Promise<void> {
   isLoadingChecks.value = true
@@ -49,6 +82,7 @@ watch(
       void loadChecks()
     }
   },
+  { immediate: true },
 )
 
 async function handleToggleState(action: 'close' | 'reopen'): Promise<void> {
@@ -278,11 +312,9 @@ function handleMerged(): void {
           >
             <div class="flex items-center gap-3">
               <UIcon
-                :name="run.conclusion === 'success' ? 'i-lucide-check-circle-2' :
-                       run.conclusion === 'failure' ? 'i-lucide-x-circle' : 'i-lucide-loader'"
+                :name="getCheckRunIcon(run.conclusion, run.status)"
                 class="h-5 w-5 shrink-0"
-                :class="run.conclusion === 'success' ? 'text-success' :
-                        run.conclusion === 'failure' ? 'text-error' : 'text-warning animate-spin'"
+                :class="getCheckRunIconClass(run.conclusion, run.status)"
               />
               <div>
                 <h4 class="text-sm font-semibold text-highlighted">{{ run.name }}</h4>
@@ -292,7 +324,7 @@ function handleMerged(): void {
             <div class="flex items-center gap-3">
               <UBadge
                 size="xs"
-                :color="run.conclusion === 'success' ? 'success' : run.conclusion === 'failure' ? 'error' : 'warning'"
+                :color="getCheckRunBadgeColor(run.conclusion, run.status)"
                 variant="subtle"
                 class="capitalize text-[11px]"
               >
