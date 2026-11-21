@@ -19,6 +19,7 @@ const isLoadingFiles = ref<boolean>(false)
 const searchQuery = ref<string>('')
 const fileViewLayout = ref<'flat' | 'tree'>('flat')
 const diffViewMode = ref<'unified' | 'split'>('unified')
+const isWordWrap = ref<boolean>(false)
 
 // Inline comment & line selection state
 const isSelectingRange = ref<boolean>(false)
@@ -58,6 +59,25 @@ const fileTreeNodes = computed<FileTreeNode<{ path: string; file: PullRequestCha
 const selectedFile = computed(() => {
   if (!selectedFilePath.value) return changedFiles.value[0] || null
   return changedFiles.value.find((file) => file.file_path === selectedFilePath.value) || changedFiles.value[0] || null
+})
+
+const fileExtension = computed<string>(() => {
+  const path = selectedFile.value?.file_path || ''
+  const parts = path.split('.')
+  return parts.length > 1 ? (parts.pop() || '').toLowerCase() : ''
+})
+
+const fileIconName = computed<string>(() => {
+  if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico'].includes(fileExtension.value)) {
+    return 'i-lucide-image'
+  }
+  if (['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a'].includes(fileExtension.value)) {
+    return 'i-lucide-music'
+  }
+  if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(fileExtension.value)) {
+    return 'i-lucide-video'
+  }
+  return 'i-lucide-file-diff'
 })
 
 const totalAdditions = computed(() => {
@@ -191,6 +211,27 @@ function isLineInSelection(line: ParsedDiffLine): boolean {
   const min = Math.min(selectionStartLine.value, selectionEndLine.value)
   const max = Math.max(selectionStartLine.value, selectionEndLine.value)
   return lineNum >= min && lineNum <= max
+}
+
+function handleRowHover(row: SplitDiffRow): void {
+  if (!isSelectingRange.value) return
+  const target = row.right || row.left
+  if (target) {
+    handleLineHover(target)
+  }
+}
+
+function isRowInSelection(row: SplitDiffRow): boolean {
+  if (row.right && isLineInSelection(row.right)) return true
+  if (row.left && isLineInSelection(row.left)) return true
+  return false
+}
+
+function isCommentActiveOnRow(row: SplitDiffRow): boolean {
+  if (activeCommentLine.value === null) return false
+  if (row.right?.newLineNumber === activeCommentLine.value) return true
+  if (row.left?.oldLineNumber === activeCommentLine.value) return true
+  return false
 }
 
 function cancelComment(): void {
@@ -374,45 +415,75 @@ watch(
       class="flex-1 flex flex-col min-w-0 bg-[var(--gv-background)] select-text"
       @mouseup="endLineSelection"
     >
-      <!-- File Header Bar & Mode Controls -->
-      <div v-if="selectedFile" class="flex items-center justify-between border-b border-default/60 px-4 py-2 bg-muted/10 shrink-0">
-        <div class="flex items-center gap-2 min-w-0">
-          <span class="font-mono text-xs font-bold text-highlighted truncate">{{ selectedFile.file_path }}</span>
+      <!-- File Header Bar & Mode Controls (Matches DiffHeaderToolbar standard) -->
+      <div v-if="selectedFile" class="flex h-9 shrink-0 items-center justify-between border-b border-default/70 bg-muted/20 px-3 gap-2">
+        <div class="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+          <UIcon :name="fileIconName" class="h-4 w-4 shrink-0 text-primary" />
+          <span
+            class="font-mono font-semibold text-highlighted text-[11px] truncate shrink min-w-0"
+            :title="selectedFile.file_path"
+          >
+            {{ selectedFile.file_path }}
+          </span>
+
           <UBadge
             size="xs"
             :color="selectedFile.status === 'added' ? 'success' : selectedFile.status === 'deleted' ? 'error' : 'warning'"
             variant="subtle"
-            class="capitalize text-[10px] py-0"
+            class="capitalize text-[10px] py-0 shrink-0"
           >
             {{ selectedFile.status }}
           </UBadge>
-        </div>
 
-        <div class="flex items-center gap-3">
-          <!-- Split / Unified Toggle -->
-          <div class="flex items-center border border-default/60 rounded-md p-0.5 bg-[var(--gv-surface)]">
-            <button
-              type="button"
-              class="px-2 py-0.5 rounded text-xs font-medium transition-colors"
-              :class="diffViewMode === 'unified' ? 'bg-primary/20 text-primary font-bold' : 'text-muted hover:text-default'"
-              @click="diffViewMode = 'unified'"
-            >
-              {{ t('diff.unified') }}
-            </button>
-            <button
-              type="button"
-              class="px-2 py-0.5 rounded text-xs font-medium transition-colors"
-              :class="diffViewMode === 'split' ? 'bg-primary/20 text-primary font-bold' : 'text-muted hover:text-default'"
-              @click="diffViewMode = 'split'"
-            >
-              {{ t('diff.split') }}
-            </button>
-          </div>
-
-          <div class="flex items-center gap-2 font-mono text-xs shrink-0">
+          <div class="flex items-center gap-1.5 font-mono text-xs shrink-0 ms-2">
             <span class="text-success font-semibold">+{{ selectedFile.additions_count }}</span>
             <span class="text-error font-semibold">-{{ selectedFile.deletions_count }}</span>
           </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0">
+          <!-- Text Diff Controls (Inline vs Side-by-Side & Word Wrap) -->
+          <div class="flex items-center rounded-lg border border-default/70 bg-surface/80 p-0.5 shadow-2xs shrink-0">
+            <button
+              type="button"
+              class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all whitespace-nowrap shrink-0 cursor-pointer"
+              :class="diffViewMode === 'unified'
+                ? 'bg-primary text-inverted shadow-xs'
+                : 'text-muted hover:text-highlighted'"
+              :title="t('diff.viewInline')"
+              @click="diffViewMode = 'unified'"
+            >
+              <UIcon name="i-lucide-rows-2" class="h-3 w-3 shrink-0" />
+              <span class="hidden md:inline">{{ t('diff.viewInline') }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all whitespace-nowrap shrink-0 cursor-pointer"
+              :class="diffViewMode === 'split'
+                ? 'bg-primary text-inverted shadow-xs'
+                : 'text-muted hover:text-highlighted'"
+              :title="t('diff.viewSideBySide')"
+              @click="diffViewMode = 'split'"
+            >
+              <UIcon name="i-lucide-columns-2" class="h-3 w-3 shrink-0" />
+              <span class="hidden md:inline">{{ t('diff.viewSideBySide') }}</span>
+            </button>
+          </div>
+
+          <!-- Word Wrap Toggle Button -->
+          <UTooltip :text="t('diff.wordWrap')">
+            <UButton
+              size="xs"
+              :color="isWordWrap ? 'primary' : 'neutral'"
+              :variant="isWordWrap ? 'subtle' : 'ghost'"
+              square
+              icon="i-lucide-wrap-text"
+              class="h-6 w-6 flex items-center justify-center p-0"
+              :aria-label="t('diff.wordWrap')"
+              @click="isWordWrap = !isWordWrap"
+            />
+          </UTooltip>
         </div>
       </div>
 
@@ -465,7 +536,7 @@ watch(
               >
                 <button
                   type="button"
-                  class="absolute start-0 top-0.5 h-4 w-4 rounded bg-primary text-white flex items-center justify-center opacity-0 group-hover/gutter:opacity-100 transition-opacity shadow-xs"
+                  class="absolute start-0 top-0.5 h-4 w-4 rounded bg-primary text-white flex items-center justify-center opacity-0 group-hover/gutter:opacity-100 transition-opacity shadow-xs cursor-pointer z-10"
                   :title="t('provider.commentOnLine')"
                   @mousedown.stop="startLineSelection(line)"
                 >
@@ -484,7 +555,10 @@ watch(
               </div>
 
               <!-- Line Content -->
-              <div class="flex-1 whitespace-pre-wrap break-all px-1 font-mono">
+              <div
+                class="flex-1 px-1 font-mono"
+                :class="isWordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre overflow-x-visible'"
+              >
                 {{ line.content }}
               </div>
             </div>
@@ -509,6 +583,7 @@ watch(
                   size="xs"
                   color="neutral"
                   variant="ghost"
+                  square
                   icon="i-lucide-x"
                   @click="cancelComment"
                 />
@@ -524,53 +599,122 @@ watch(
 
         <!-- 2. Split (Side-by-Side) Diff View -->
         <div v-else class="divide-y divide-default/15">
-          <div
-            v-for="(row, rowIndex) in splitRows"
-            :key="`split-row-${rowIndex}`"
-            class="flex items-stretch min-w-full"
-          >
-            <!-- Left Side (Old/Base) -->
+          <template v-for="(row, rowIndex) in splitRows" :key="`split-row-${rowIndex}`">
             <div
-              class="w-1/2 flex items-start border-e border-default/30 px-1 py-0.5 overflow-hidden"
-              :class="[
-                row.left?.type === 'hunk-header' ? 'bg-[var(--gv-diff-hunk-bg)]/40 text-[var(--gv-diff-hunk-text)] font-semibold' :
-                row.left?.type === 'deletion' && row.right?.type === 'addition' ? 'bg-[var(--gv-diff-modify-bg)]/60 text-[var(--gv-diff-modify-text)]' :
-                row.left?.type === 'deletion' ? 'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)]' :
-                row.left ? 'hover:bg-muted/10 text-toned' : 'bg-muted/5'
-              ]"
+              class="flex items-stretch min-w-full transition-colors"
+              :class="isRowInSelection(row) ? 'bg-[var(--gv-diff-modify-bg)]/80 text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]' : ''"
+              @mouseenter="handleRowHover(row)"
             >
-              <span class="w-8 pe-2 text-end text-[10px] text-muted/60 select-none shrink-0">
-                {{ row.left?.oldLineNumber || '' }}
-              </span>
-              <span class="w-3 text-center font-bold select-none shrink-0" :class="row.left?.type === 'deletion' ? 'text-error' : 'text-muted'">
-                {{ row.left?.type === 'deletion' ? '-' : '' }}
-              </span>
-              <span class="flex-1 whitespace-pre-wrap break-all px-1 font-mono">
-                {{ row.left?.content || '' }}
-              </span>
+              <!-- Left Side (Old/Base) -->
+              <div
+                class="w-1/2 flex items-start border-e border-default/30 px-1 py-0.5 overflow-hidden group/left-gutter relative"
+                :class="[
+                  row.left?.type === 'hunk-header' ? 'bg-[var(--gv-diff-hunk-bg)]/40 text-[var(--gv-diff-hunk-text)] font-semibold' :
+                  row.left?.type === 'deletion' && row.right?.type === 'addition' ? 'bg-[var(--gv-diff-modify-bg)]/60 text-[var(--gv-diff-modify-text)]' :
+                  row.left?.type === 'deletion' ? 'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)]' :
+                  row.left ? 'hover:bg-muted/10 text-toned' : 'bg-muted/5'
+                ]"
+              >
+                <!-- Old Line Number with Gutter button if deletion-only line -->
+                <div
+                  v-if="row.left && row.left.type !== 'hunk-header'"
+                  class="w-10 pe-2 text-end text-[10px] text-muted/60 select-none shrink-0 relative group/gutter"
+                >
+                  <button
+                    v-if="!row.right"
+                    type="button"
+                    class="absolute start-0 top-0.5 h-4 w-4 rounded bg-primary text-white flex items-center justify-center opacity-0 group-hover/gutter:opacity-100 transition-opacity shadow-xs cursor-pointer z-10"
+                    :title="t('provider.commentOnLine')"
+                    @mousedown.stop="startLineSelection(row.left)"
+                  >
+                    <UIcon name="i-lucide-plus" class="h-3 w-3" />
+                  </button>
+                  <span>{{ row.left.oldLineNumber || '' }}</span>
+                </div>
+                <div v-else-if="!row.left" class="w-10 shrink-0" />
+
+                <span class="w-3 text-center font-bold select-none shrink-0" :class="row.left?.type === 'deletion' ? 'text-error' : 'text-muted'">
+                  {{ row.left?.type === 'deletion' ? '-' : '' }}
+                </span>
+                <span
+                  class="flex-1 px-1 font-mono"
+                  :class="isWordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre overflow-x-visible'"
+                >
+                  {{ row.left?.content || '' }}
+                </span>
+              </div>
+
+              <!-- Right Side (New/Head) -->
+              <div
+                class="w-1/2 flex items-start px-1 py-0.5 overflow-hidden group/right-gutter relative"
+                :class="[
+                  row.right?.type === 'hunk-header' ? 'bg-[var(--gv-diff-hunk-bg)]/40 text-[var(--gv-diff-hunk-text)] font-semibold' :
+                  row.left?.type === 'deletion' && row.right?.type === 'addition' ? 'bg-[var(--gv-diff-modify-bg)]/60 text-[var(--gv-diff-modify-text)]' :
+                  row.right?.type === 'addition' ? 'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)]' :
+                  row.right ? 'hover:bg-muted/10 text-toned' : 'bg-muted/5'
+                ]"
+              >
+                <!-- New Line Number with Gutter button -->
+                <div
+                  v-if="row.right && row.right.type !== 'hunk-header'"
+                  class="w-10 pe-2 text-end text-[10px] text-muted/60 select-none shrink-0 relative group/gutter"
+                >
+                  <button
+                    type="button"
+                    class="absolute start-0 top-0.5 h-4 w-4 rounded bg-primary text-white flex items-center justify-center opacity-0 group-hover/gutter:opacity-100 transition-opacity shadow-xs cursor-pointer z-10"
+                    :title="t('provider.commentOnLine')"
+                    @mousedown.stop="startLineSelection(row.right)"
+                  >
+                    <UIcon name="i-lucide-plus" class="h-3 w-3" />
+                  </button>
+                  <span>{{ row.right.newLineNumber || '' }}</span>
+                </div>
+                <div v-else-if="!row.right" class="w-10 shrink-0" />
+
+                <span class="w-3 text-center font-bold select-none shrink-0" :class="row.right?.type === 'addition' ? 'text-success' : 'text-muted'">
+                  {{ row.right?.type === 'addition' ? '+' : '' }}
+                </span>
+                <span
+                  class="flex-1 px-1 font-mono"
+                  :class="isWordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre overflow-x-visible'"
+                >
+                  {{ row.right?.content || '' }}
+                </span>
+              </div>
             </div>
 
-            <!-- Right Side (New/Head) -->
+            <!-- Inline Review Comment Form for Split View -->
             <div
-              class="w-1/2 flex items-start px-1 py-0.5 overflow-hidden group/split"
-              :class="[
-                row.right?.type === 'hunk-header' ? 'bg-[var(--gv-diff-hunk-bg)]/40 text-[var(--gv-diff-hunk-text)] font-semibold' :
-                row.left?.type === 'deletion' && row.right?.type === 'addition' ? 'bg-[var(--gv-diff-modify-bg)]/60 text-[var(--gv-diff-modify-text)]' :
-                row.right?.type === 'addition' ? 'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)]' :
-                row.right ? 'hover:bg-muted/10 text-toned' : 'bg-muted/5'
-              ]"
+              v-if="isCommentActiveOnRow(row)"
+              class="w-full p-3 bg-[var(--gv-surface)] border-y border-[var(--gv-diff-modify-border)] shadow-inner space-y-2"
             >
-              <span class="w-8 pe-2 text-end text-[10px] text-muted/60 select-none shrink-0">
-                {{ row.right?.newLineNumber || '' }}
-              </span>
-              <span class="w-3 text-center font-bold select-none shrink-0" :class="row.right?.type === 'addition' ? 'text-success' : 'text-muted'">
-                {{ row.right?.type === 'addition' ? '+' : '' }}
-              </span>
-              <span class="flex-1 whitespace-pre-wrap break-all px-1 font-mono">
-                {{ row.right?.content || '' }}
-              </span>
+              <div class="flex items-center justify-between text-xs font-semibold text-highlighted">
+                <span class="flex items-center gap-1.5 text-primary">
+                  <UIcon name="i-lucide-message-square" class="h-3.5 w-3.5" />
+                  <span v-if="selectionStartLine && selectionEndLine && selectionStartLine !== selectionEndLine">
+                    {{ t('provider.commentOnLines', { start: Math.min(selectionStartLine, selectionEndLine), end: Math.max(selectionStartLine, selectionEndLine) }) }}
+                  </span>
+                  <span v-else>
+                    {{ t('provider.commentOnLineNumber', { line: activeCommentLine }) }}
+                  </span>
+                </span>
+
+                <UButton
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  square
+                  icon="i-lucide-x"
+                  @click="cancelComment"
+                />
+              </div>
+
+              <MarkdownCommentEditor
+                :is-submitting="isSubmittingInlineComment"
+                @submit="submitInlineComment"
+              />
             </div>
-          </div>
+          </template>
         </div>
       </div>
     </div>
