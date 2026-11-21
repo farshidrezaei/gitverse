@@ -1425,7 +1425,74 @@ impl ApplicationState {
         let target_path = self.resolve_path(directory_path).await?;
         self.git_inspector.lfs_unlock_file(&target_path, file_path, force).await
     }
+
+    /// Lists configured custom actions.
+    pub fn list_custom_actions(&self) -> Result<Vec<crate::domain::CustomActionDefinition>, ApplicationError> {
+        self.store.list_custom_actions()
+    }
+
+    /// Saves or updates a custom action.
+    pub fn save_custom_action(&self, action: crate::domain::CustomActionDefinition) -> Result<(), ApplicationError> {
+        self.store.save_custom_action(&action)
+    }
+
+    /// Deletes a custom action.
+    pub fn delete_custom_action(&self, action_identifier: &str) -> Result<bool, ApplicationError> {
+        self.store.delete_custom_action(action_identifier)
+    }
+
+    /// Executes a custom action command in the repository workspace.
+    pub async fn execute_custom_action(
+        &self,
+        directory_path: Option<&str>,
+        action_identifier: &str,
+    ) -> Result<crate::domain::CustomActionExecutionResult, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        let actions = self.store.list_custom_actions()?;
+        let action = actions
+            .into_iter()
+            .find(|item| item.action_identifier == action_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Custom action not found".into()))?;
+
+        // Parse command line into executable and arguments
+        let parts: Vec<&str> = action.command_string.split_whitespace().collect();
+        if parts.is_empty() {
+            return Err(ApplicationError::InvalidInput("Command string is empty".into()));
+        }
+
+        let executable = parts[0];
+        let arguments = &parts[1..];
+
+        let execution_outcome = tokio::process::Command::new(executable)
+            .args(arguments)
+            .current_dir(&target_path)
+            .output()
+            .await;
+
+        match execution_outcome {
+            Ok(output) => {
+                let standard_output = String::from_utf8_lossy(&output.stdout).to_string();
+                let standard_error = String::from_utf8_lossy(&output.stderr).to_string();
+                let exit_code = output.status.code().unwrap_or(-1);
+                Ok(crate::domain::CustomActionExecutionResult {
+                    action_identifier: action.action_identifier,
+                    is_successful: output.status.success(),
+                    exit_code,
+                    standard_output,
+                    standard_error,
+                })
+            }
+            Err(error) => Ok(crate::domain::CustomActionExecutionResult {
+                action_identifier: action.action_identifier,
+                is_successful: false,
+                exit_code: -1,
+                standard_output: String::new(),
+                standard_error: format!("Failed to spawn process: {}", error),
+            }),
+        }
+    }
 }
+
 
 
 

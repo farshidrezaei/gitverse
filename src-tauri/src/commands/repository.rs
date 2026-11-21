@@ -1309,5 +1309,44 @@ pub async fn lfs_unlock_file(
     state.lfs_unlock_file(directory_path.as_deref(), &file_path, force).await
 }
 
+/// Tauri IPC command to list all custom actions.
+#[tauri::command]
+pub async fn list_custom_actions(
+    state: State<'_, ApplicationState>,
+) -> Result<Vec<crate::domain::CustomActionDefinition>, ApplicationError> {
+    state.list_custom_actions()
+}
+
+/// Tauri IPC command to save or update a custom action.
+#[tauri::command]
+pub async fn save_custom_action(
+    state: State<'_, ApplicationState>,
+    action: crate::domain::CustomActionDefinition,
+) -> Result<(), ApplicationError> {
+    state.save_custom_action(action)
+}
+
+/// Tauri IPC command to delete a custom action.
+#[tauri::command]
+pub async fn delete_custom_action(
+    state: State<'_, ApplicationState>,
+    action_identifier: String,
+) -> Result<bool, ApplicationError> {
+    state.delete_custom_action(&action_identifier)
+}
+
+/// Tauri IPC command to execute a custom action script.
+#[tauri::command]
+pub async fn execute_custom_action(
+    state: State<'_, ApplicationState>,
+    action_identifier: String,
+    directory_path: Option<String>,
+) -> Result<crate::domain::CustomActionExecutionResult, ApplicationError> {
+    state
+        .execute_custom_action(directory_path.as_deref(), &action_identifier)
+        .await
+}
+
+
 
 

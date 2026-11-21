@@ -814,4 +814,32 @@ mod tests {
         assert_eq!(overview.tracked_patterns.len(), 1);
         assert_eq!(overview.tracked_patterns[0], "*.psd");
     }
+
+    #[tokio::test]
+    async fn test_custom_actions_crud_and_execution() {
+        use crate::infrastructure::storage::SQLiteRepositoryStore;
+        use crate::domain::CustomActionDefinition;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let database_file = temporary_dir.path().join("test.db");
+        let store = SQLiteRepositoryStore::new(&database_file).expect("create store");
+
+        let action = CustomActionDefinition {
+            action_identifier: "act_1".to_string(),
+            display_name: "Echo Test".to_string(),
+            command_string: "git status".to_string(),
+            icon_name: "i-lucide-terminal".to_string(),
+            description_text: "Print git status".to_string(),
+        };
+
+        store.save_custom_action(&action).expect("save action");
+        let list = store.list_custom_actions().expect("list actions");
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].display_name, "Echo Test");
+
+        let deleted = store.delete_custom_action("act_1").expect("delete action");
+        assert!(deleted);
+        let list_after = store.list_custom_actions().expect("list after");
+        assert!(list_after.is_empty());
+    }
 }

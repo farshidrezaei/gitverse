@@ -527,4 +527,25 @@ pub struct GitLfsOverview {
     pub total_lfs_size_in_bytes: u64,
 }
 
+/// A user-defined custom Git script action or automation command.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CustomActionDefinition {
+    pub action_identifier: String,
+    pub display_name: String,
+    pub command_string: String,
+    pub icon_name: String,
+    pub description_text: String,
+}
+
+/// Execution outcome of a custom Git script action.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CustomActionExecutionResult {
+    pub action_identifier: String,
+    pub is_successful: bool,
+    pub exit_code: i32,
+    pub standard_output: String,
+    pub standard_error: String,
+}
+
+
 

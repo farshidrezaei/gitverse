@@ -156,6 +156,7 @@ const commitQueueMode = ref<'cherryPick' | 'revert'>('cherryPick')
 const isGitBundleModalOpen = ref<boolean>(false)
 const isExportArchiveModalOpen = ref<boolean>(false)
 const isLfsManagerModalOpen = ref<boolean>(false)
+const isCustomActionsModalOpen = ref<boolean>(false)
 const selectedFileHistoryPath = ref<string>('')
 const selectedBranchName = ref<string | null>(null)
 const activeGraphReference = ref<string | null>(null)
@@ -499,6 +500,7 @@ async function handlePush(): Promise<void> {
         @open-git-bundle="isGitBundleModalOpen = true"
         @open-export-archive="isExportArchiveModalOpen = true"
         @open-lfs-manager="isLfsManagerModalOpen = true"
+        @open-custom-actions="isCustomActionsModalOpen = true"
       />
 
       <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip -->
@@ -770,6 +772,11 @@ async function handlePush(): Promise<void> {
     <!-- Git LFS Manager Modal -->
     <LfsManagerModal
       v-model:open="isLfsManagerModalOpen"
+    />
+
+    <!-- Custom Action Runners & Script Automation Modal -->
+    <CustomActionsModal
+      v-model:open="isCustomActionsModalOpen"
     />
   </div>
 </template>

@@ -910,5 +910,21 @@
     "noTrackedPatterns": "هیچ الگوی ردیابی فایل حجیم پیکربندی نشده است.",
     "activeLocksTitle": "قفل‌های فایل",
     "noLocksFound": "هیچ فایل قفل‌شده‌ای یافت نشد."
+  },
+  "actions": {
+    "toolbarTitle": "اجراکننده‌های اکشن‌های سفارشی",
+    "modalTitle": "اکشن‌ها و اسکریپت‌های سفارشی",
+    "modalSubtitle": "تعریف اسکریپت‌ها و دستورات شل دلخواه برای اجرا با یک کلیک در مخزن.",
+    "newAction": "اکشن جدید",
+    "displayNameLabel": "نام اکشن",
+    "commandStringLabel": "دستور شل / ترمینال",
+    "descriptionLabel": "توضیحات",
+    "noActionsConfigured": "هیچ اکشن سفارشی تعریف نشده است",
+    "noActionsDescription": "دستورات لینتر، بیلد یا اسکریپت‌های اختصاصی خود را تعریف کنید تا به سادگی اجرا شوند.",
+    "runAction": "اجرا",
+    "actionSavedSuccess": "اکشن سفارشی ذخیره شد",
+    "actionDeletedSuccess": "اکشن سفارشی حذف شد",
+    "actionExecutedSuccess": "اکشن با موفقیت اجرا شد",
+    "actionFailed": "خطا در اجرای اکشن"
   }
 }

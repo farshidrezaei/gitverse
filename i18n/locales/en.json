@@ -910,5 +910,21 @@
     "noTrackedPatterns": "No LFS tracked patterns configured.",
     "activeLocksTitle": "File Locks",
     "noLocksFound": "No active file locks recorded."
+  },
+  "actions": {
+    "toolbarTitle": "Custom Action Runners",
+    "modalTitle": "Custom Actions & Automations",
+    "modalSubtitle": "Configure custom shell and Git workflow scripts accessible via quick trigger.",
+    "newAction": "New Action",
+    "displayNameLabel": "Action Name",
+    "commandStringLabel": "Shell Command",
+    "descriptionLabel": "Description",
+    "noActionsConfigured": "No custom actions configured",
+    "noActionsDescription": "Define custom shell scripts, linters, or deployment triggers to run with one click.",
+    "runAction": "Run",
+    "actionSavedSuccess": "Custom action saved",
+    "actionDeletedSuccess": "Custom action deleted",
+    "actionExecutedSuccess": "Action executed successfully",
+    "actionFailed": "Action execution failed"
   }
 }

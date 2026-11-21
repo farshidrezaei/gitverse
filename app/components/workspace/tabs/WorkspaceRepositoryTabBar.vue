@@ -29,6 +29,7 @@ const emit = defineEmits<{
   openGitBundle: []
   openExportArchive: []
   openLfsManager: []
+  openCustomActions: []
 }>()
 
 const { t } = useI18n()
@@ -369,6 +370,18 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
           class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
           :aria-label="t('lfs.toolbarTitle')"
           @click="emit('openLfsManager')"
+        />
+      </UTooltip>
+
+      <UTooltip :text="t('actions.toolbarTitle')">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-terminal-square"
+          class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+          :aria-label="t('actions.toolbarTitle')"
+          @click="emit('openCustomActions')"
         />
       </UTooltip>
 

@@ -55,6 +55,14 @@ impl SQLiteRepositoryStore {
 
             CREATE INDEX IF NOT EXISTS idx_provider_accounts_lookup
             ON provider_accounts(provider, username);
+
+            CREATE TABLE IF NOT EXISTS custom_actions (
+                action_identifier TEXT PRIMARY KEY,
+                display_name TEXT NOT NULL,
+                command_string TEXT NOT NULL,
+                icon_name TEXT NOT NULL,
+                description_text TEXT NOT NULL
+            );
             "#
         ).map_err(|error| ApplicationError::PersistenceError(format!("Migration failed: {}", error)))?;
 
@@ -257,6 +265,79 @@ impl SQLiteRepositoryStore {
             "DELETE FROM provider_accounts WHERE id = ?1",
             params![account_identifier],
         ).map_err(|error| ApplicationError::PersistenceError(format!("Failed to delete provider account: {}", error)))?;
+
+        Ok(rows_affected > 0)
+    }
+
+    /// Lists all persisted custom actions.
+    pub fn list_custom_actions(&self) -> Result<Vec<crate::domain::CustomActionDefinition>, ApplicationError> {
+        let connection = self.connection.lock().map_err(|_| {
+            ApplicationError::PersistenceError("Failed to acquire database lock".into())
+        })?;
+
+        let mut statement = connection
+            .prepare("SELECT action_identifier, display_name, command_string, icon_name, description_text FROM custom_actions ORDER BY display_name ASC")
+            .map_err(|error| ApplicationError::PersistenceError(format!("Failed to prepare query: {}", error)))?;
+
+        let rows = statement
+            .query_map([], |row| {
+                Ok(crate::domain::CustomActionDefinition {
+                    action_identifier: row.get(0)?,
+                    display_name: row.get(1)?,
+                    command_string: row.get(2)?,
+                    icon_name: row.get(3)?,
+                    description_text: row.get(4)?,
+                })
+            })
+            .map_err(|error| ApplicationError::PersistenceError(format!("Query failed: {}", error)))?;
+
+        let mut actions = Vec::new();
+        for row in rows {
+            if let Ok(action) = row {
+                actions.push(action);
+            }
+        }
+
+        Ok(actions)
+    }
+
+    /// Saves or updates a custom action.
+    pub fn save_custom_action(&self, action: &crate::domain::CustomActionDefinition) -> Result<(), ApplicationError> {
+        let connection = self.connection.lock().map_err(|_| {
+            ApplicationError::PersistenceError("Failed to acquire database lock".into())
+        })?;
+
+        connection.execute(
+            r#"
+            INSERT INTO custom_actions (action_identifier, display_name, command_string, icon_name, description_text)
+            VALUES (?1, ?2, ?3, ?4, ?5)
+            ON CONFLICT(action_identifier) DO UPDATE SET
+                display_name = excluded.display_name,
+                command_string = excluded.command_string,
+                icon_name = excluded.icon_name,
+                description_text = excluded.description_text
+            "#,
+            params![
+                action.action_identifier,
+                action.display_name,
+                action.command_string,
+                action.icon_name,
+                action.description_text
+            ],
+        ).map_err(|error| ApplicationError::PersistenceError(format!("Failed to save custom action: {}", error)))?;
+
+        Ok(())
+    }
+
+    /// Deletes a custom action by identifier.
+    pub fn delete_custom_action(&self, action_identifier: &str) -> Result<bool, ApplicationError> {
+        let connection = self.connection.lock().map_err(|_| {
+            ApplicationError::PersistenceError("Failed to acquire database lock".into())
+        })?;
+
+        let rows_affected = connection
+            .execute("DELETE FROM custom_actions WHERE action_identifier = ?1", params![action_identifier])
+            .map_err(|error| ApplicationError::PersistenceError(format!("Failed to delete action: {}", error)))?;
 
         Ok(rows_affected > 0)
     }

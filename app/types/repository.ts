@@ -457,6 +457,23 @@ export interface GitLfsOverview {
   total_lfs_size_in_bytes: number
 }
 
+export interface CustomActionDefinition {
+  action_identifier: string
+  display_name: string
+  command_string: string
+  icon_name: string
+  description_text: string
+}
+
+export interface CustomActionExecutionResult {
+  action_identifier: string
+  is_successful: boolean
+  exit_code: number
+  standard_output: string
+  standard_error: string
+}
+
+
 
 
 
