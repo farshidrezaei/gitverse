@@ -28,6 +28,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
+const isOverviewActive = computed<boolean>(() => {
+  return properties.activeTabId === null && properties.activePullRequestTabId === null
+})
+
 function handleMiddleClick(event: MouseEvent, tab: WorkspaceDiffTab): void {
   if (event.button === 1 && tab.isClosable) {
     event.preventDefault()
@@ -78,42 +82,48 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
 
 <template>
   <nav
-    class="flex h-8 w-full shrink-0 items-center justify-between border-b border-default/70 bg-[var(--gv-surface)]/40 px-2 select-none text-xs"
-    aria-label="Diff and Pull Request Tabs"
+    class="flex h-9 w-full shrink-0 items-center justify-between border-b border-default/70 bg-[var(--gv-surface)]/50 px-2 select-none text-xs"
+    aria-label="Workspace Content Tabs"
   >
-    <!-- Left: Workbench Return Button + Diff Tabs + Pull Request Tabs -->
+    <!-- Left: Pinned Permanent Overview Tab + Dynamic Diff & PR Tabs -->
     <div class="flex items-center gap-1 overflow-x-auto no-scrollbar min-w-0 flex-1 h-full py-0.5">
-      <!-- Workbench Root Tab (Workspace overview) -->
+      <!-- Tab 1: Pinned Permanent Root Tab (Overview / Graph Dashboard - NEVER CLOSEABLE) -->
       <button
         type="button"
-        class="flex h-6 items-center gap-1.5 rounded px-2 text-xs font-medium transition-all shrink-0 border"
+        class="group relative flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs transition-all shrink-0 border cursor-pointer"
         :class="[
-          properties.activeTabId === null && properties.activePullRequestTabId === null
-            ? 'bg-[var(--gv-surface)] text-highlighted border-default shadow-xs font-semibold'
-            : 'border-transparent text-muted hover:bg-muted/30 hover:text-default',
+          isOverviewActive
+            ? 'bg-[var(--gv-surface)] text-highlighted border-default shadow-2xs font-semibold'
+            : 'border-transparent text-muted hover:bg-muted/30 hover:text-default font-medium',
         ]"
+        :title="t('tabs.workspace')"
         @click="emit('selectWorkbench')"
       >
-        <UIcon name="i-lucide-layout-dashboard" class="h-3 w-3 text-primary" />
+        <UIcon name="i-lucide-git-graph" class="h-3.5 w-3.5 text-primary shrink-0" />
         <span>{{ t('tabs.workspace') }}</span>
+        <UIcon
+          name="i-lucide-pin"
+          class="h-2.5 w-2.5 text-muted/60 ms-0.5 shrink-0"
+          :title="t('tabs.pin')"
+        />
       </button>
 
-      <div class="h-3 w-px bg-default/40 mx-0.5 shrink-0" aria-hidden="true" />
+      <div class="h-4 w-px bg-default/50 mx-0.5 shrink-0" aria-hidden="true" />
 
       <!-- Pull Request Tabs -->
       <div
         v-for="prTab in properties.pullRequestTabs"
         :key="prTab.id"
-        class="group relative flex h-6 items-center gap-1.5 rounded px-2 text-xs font-medium transition-all cursor-pointer border shrink-0"
+        class="group relative flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
         :class="[
           properties.activePullRequestTabId === prTab.id
-            ? 'bg-[var(--gv-surface)] text-highlighted border-primary/50 shadow-xs'
+            ? 'bg-[var(--gv-surface)] text-highlighted border-primary/50 shadow-2xs'
             : 'border-transparent text-muted hover:bg-muted/30 hover:text-default',
         ]"
         :title="prTab.title"
         @click="emit('selectPullRequestTab', prTab.id)"
       >
-        <UIcon name="i-lucide-git-pull-request" class="h-3 w-3 shrink-0 text-primary" />
+        <UIcon name="i-lucide-git-pull-request" class="h-3.5 w-3.5 shrink-0 text-primary" />
         <span class="truncate max-w-[160px] font-medium">
           #{{ prTab.pullRequest.number }} {{ prTab.pullRequest.title }}
         </span>
@@ -129,21 +139,21 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
 
         <button
           type="button"
-          class="ms-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-xs text-muted opacity-60 transition-opacity hover:bg-muted/40 hover:text-highlighted hover:opacity-100 focus:outline-none"
+          class="ms-0.5 inline-flex h-4 w-4 items-center justify-center rounded-xs text-muted opacity-60 transition-opacity hover:bg-muted/40 hover:text-highlighted hover:opacity-100 focus:outline-none cursor-pointer"
           :title="t('tabs.close')"
           @click.stop="emit('closePullRequestTab', prTab.id)"
         >
-          <UIcon name="i-lucide-x" class="h-2.5 w-2.5" />
+          <UIcon name="i-lucide-x" class="h-3 w-3" />
         </button>
       </div>
 
       <div
         v-if="properties.pullRequestTabs.length > 0 && properties.tabs.length > 0"
-        class="h-3 w-px bg-default/40 mx-0.5 shrink-0"
+        class="h-4 w-px bg-default/50 mx-0.5 shrink-0"
         aria-hidden="true"
       />
 
-      <!-- Active Diff Tabs -->
+      <!-- Dynamic Diff Tabs (Single-click = Preview italic, Double-click/Pin = Pinned) -->
       <UContextMenu
         v-for="tab in properties.tabs"
         :key="tab.id"
@@ -151,10 +161,10 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
         class="shrink-0"
       >
         <div
-          class="group relative flex h-6 items-center gap-1.5 rounded px-2 text-xs font-medium transition-all cursor-pointer border shrink-0"
+          class="group relative flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
           :class="[
             properties.activeTabId === tab.id
-              ? 'bg-[var(--gv-surface)] text-highlighted border-default shadow-xs'
+              ? 'bg-[var(--gv-surface)] text-highlighted border-default shadow-2xs font-semibold'
               : 'border-transparent text-muted hover:bg-muted/30 hover:text-default',
             !tab.isPinned ? 'italic opacity-90' : '',
           ]"
@@ -171,10 +181,10 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
           <UIcon
             v-else
             name="i-lucide-file-code"
-            class="h-3 w-3 shrink-0 text-muted group-hover:text-default"
+            class="h-3.5 w-3.5 shrink-0 text-muted group-hover:text-default"
           />
 
-          <span class="truncate max-w-[140px]">
+          <span class="truncate max-w-[150px]">
             {{ tab.title }}
           </span>
 
@@ -192,14 +202,25 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
             {{ tab.commitHash.substring(0, 6) }}
           </span>
 
+          <!-- Pin indicator for pinned tabs / Pin button for preview tabs -->
+          <button
+            v-if="!tab.isPinned"
+            type="button"
+            class="ms-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-xs text-muted opacity-0 group-hover:opacity-70 hover:opacity-100 hover:text-primary transition-all cursor-pointer"
+            :title="t('tabs.pin')"
+            @click.stop="emit('pinDiffTab', tab.id)"
+          >
+            <UIcon name="i-lucide-pin" class="h-2.5 w-2.5" />
+          </button>
+
           <!-- Close Diff Tab Button -->
           <button
             type="button"
-            class="ms-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-xs text-muted opacity-60 transition-opacity hover:bg-muted/40 hover:text-highlighted hover:opacity-100 focus:outline-none"
+            class="ms-0.5 inline-flex h-4 w-4 items-center justify-center rounded-xs text-muted opacity-60 transition-opacity hover:bg-muted/40 hover:text-highlighted hover:opacity-100 focus:outline-none cursor-pointer"
             :title="t('tabs.close')"
             @click.stop="emit('closeDiffTab', tab.id)"
           >
-            <UIcon name="i-lucide-x" class="h-2.5 w-2.5" />
+            <UIcon name="i-lucide-x" class="h-3 w-3" />
           </button>
         </div>
       </UContextMenu>
@@ -216,7 +237,7 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
           color="neutral"
           variant="ghost"
           icon="i-lucide-x-circle"
-          class="opacity-70 hover:opacity-100"
+          class="h-6 w-6 opacity-70 hover:opacity-100"
           :aria-label="t('tabs.closeAllDiffs')"
           @click="emit('closeAllDiffTabs')"
         />
@@ -224,4 +245,3 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
     </div>
   </nav>
 </template>
-

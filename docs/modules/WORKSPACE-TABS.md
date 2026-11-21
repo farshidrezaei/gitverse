@@ -11,9 +11,10 @@ GitVerse uses a hierarchical, two-level tab model designed to maximize screen re
 1. **Level 1: Repository Tab Strip (`WorkspaceRepositoryTabBar.vue`)**:
    - Represents open local repositories or independent worktree directories.
    - Persisted across application restarts via local storage.
-2. **Level 2: Scoped Sub-Tabs (`WorkspaceDiffTabBar.vue`)**:
-   - Scoped strictly to the currently active repository.
-   - Includes the primary **Workbench Dashboard** (`/`), pinned or unpinned **File Diff Tabs**, and **Full-Screen Pull Request Tabs**.
+2. **Level 2: Scoped Content Sub-Tabs (`WorkspaceDiffTabBar.vue`)**:
+   - Scoped strictly to the currently active repository, docked directly above the center workspace viewport.
+   - Pinned Permanent Root Tab: The first tab is always the **Overview / Commit Graph Dashboard** (`/`), permanently pinned and non-closable.
+   - Dynamic Sub-Tabs: Unpinned preview tabs (italic text, replaced on single-click) and pinned persistent tabs (double-click to pin), alongside **Full-Screen Pull Request Tabs**.
 
 ```mermaid
 graph TD

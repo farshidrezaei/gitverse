@@ -492,151 +492,165 @@ async function handlePush(): Promise<void> {
         @open-custom-actions="isCustomActionsModalOpen = true"
       />
 
-      <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip -->
-      <WorkspaceDiffTabBar
-        v-if="currentRepositoryDiffTabs.length > 0 || currentRepositoryPullRequestTabs.length > 0"
-        :tabs="currentRepositoryDiffTabs"
-        :active-tab-id="activeDiffTabId"
-        :pull-request-tabs="currentRepositoryPullRequestTabs"
-        :active-pull-request-tab-id="activePullRequestTabId"
-        @select-diff-tab="activateDiffTab"
-        @select-pull-request-tab="activatePullRequestTab"
-        @select-workbench="() => { activateDiffTab(null); activatePullRequestTab(null) }"
-        @close-diff-tab="closeDiffTab"
-        @close-pull-request-tab="closePullRequestTab"
-        @close-other-diff-tabs="closeOtherDiffTabs"
-        @close-all-diff-tabs="closeAllDiffTabs"
-        @pin-diff-tab="pinDiffTab"
-      />
-
-      <!-- Content Area -->
+      <!-- Content Area with Left Sidebar & Right Tabbed Workbench -->
       <div class="relative flex-1 overflow-hidden">
-        <!-- Main Workspace Workbench Island (Preserved with v-show for instantaneous tab switching) -->
-        <div
-          v-show="!activeDiffTab && !activePullRequestTab"
+        <USplitter
+          id="gitverse-workbench-splitter"
+          auto-save-id="gitverse-workbench-layout"
+          :items="mainSplitterItems"
           class="h-full w-full"
+          :ui="{
+            handle: 'w-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-col-resize',
+          }"
         >
-          <USplitter
-            id="gitverse-workbench-splitter"
-            auto-save-id="gitverse-workbench-layout"
-            :items="mainSplitterItems"
-            class="h-full w-full"
-            :ui="{
-              handle: 'w-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-col-resize',
-            }"
-          >
-            <!-- PANEL 1: UNIFIED EXPLORER (Changes, Branches, Stashes, Remotes, Tags, Worktrees) -->
-            <template #sidebar>
-              <WorkspaceUnifiedExplorer
-                :repository-status="repositoryStatus"
-                :references="repositoryReferences"
-                :favorite-branches="favoriteBranches"
-                :selected-branch-name="selectedBranchName"
-                :selected-diff-target="selectedDiffTarget"
-                :staging-view-mode="stagingViewMode"
-                :commit-message="commitMessage"
-                :is-amend="isAmend"
-                :is-bypass-hooks="isBypassHooks"
-                :is-loading="isLoading"
-                :is-operating="isOperating"
-                @update:staging-view-mode="stagingViewMode = $event"
-                @update:commit-message="commitMessage = $event"
-                @update:is-amend="isAmend = $event"
-                @update:is-bypass-hooks="isBypassHooks = $event"
-                @stage-file="stageFile"
-                @unstage-file="unstageFile"
-                @stage-all="stageAll"
-                @unstage-all="unstageAll"
-                @discard-file="handleDiscard"
-                @discard-all-unstaged="handleDiscardAllUnstaged"
-                @select-file="handleSelectFile"
-                @open-diff-tab="handleOpenStagingDiffTab"
-                @commit="handleCommit"
-                @refresh="fetchStatus"
-                @select-branch="handleSelectBranch"
-                @checkout="handleCheckout"
-                @create-branch-from-branch="handleCreateBranchFromBranch"
-                @delete-branch="handleDeleteBranch"
-                @open-create-branch-modal="isCreateBranchModalOpen = true"
-                @open-create-worktree-modal="isCreateWorktreeModalOpen = true"
-                @open-worktree-in-tab="openRepository($event)"
-                @toggle-favorite-branch="toggleFavoriteBranch"
+          <!-- PANEL 1: UNIFIED EXPLORER (Changes, Branches, Stashes, Remotes, Tags, Worktrees) -->
+          <template #sidebar>
+            <WorkspaceUnifiedExplorer
+              :repository-status="repositoryStatus"
+              :references="repositoryReferences"
+              :favorite-branches="favoriteBranches"
+              :selected-branch-name="selectedBranchName"
+              :selected-diff-target="selectedDiffTarget"
+              :staging-view-mode="stagingViewMode"
+              :commit-message="commitMessage"
+              :is-amend="isAmend"
+              :is-bypass-hooks="isBypassHooks"
+              :is-loading="isLoading"
+              :is-operating="isOperating"
+              @update:staging-view-mode="stagingViewMode = $event"
+              @update:commit-message="commitMessage = $event"
+              @update:is-amend="isAmend = $event"
+              @update:is-bypass-hooks="isBypassHooks = $event"
+              @stage-file="stageFile"
+              @unstage-file="unstageFile"
+              @stage-all="stageAll"
+              @unstage-all="unstageAll"
+              @discard-file="handleDiscard"
+              @discard-all-unstaged="handleDiscardAllUnstaged"
+              @select-file="handleSelectFile"
+              @open-diff-tab="handleOpenStagingDiffTab"
+              @commit="handleCommit"
+              @refresh="fetchStatus"
+              @select-branch="handleSelectBranch"
+              @checkout="handleCheckout"
+              @create-branch-from-branch="handleCreateBranchFromBranch"
+              @delete-branch="handleDeleteBranch"
+              @open-create-branch-modal="isCreateBranchModalOpen = true"
+              @open-create-worktree-modal="isCreateWorktreeModalOpen = true"
+              @open-worktree-in-tab="openRepository($event)"
+              @toggle-favorite-branch="toggleFavoriteBranch"
+            />
+          </template>
+
+          <!-- PANEL 2: CENTER TABBED WORKBENCH -->
+          <template #center>
+            <div class="flex h-full w-full flex-col overflow-hidden">
+              <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip (Pinned Overview + Dynamic Tabs) -->
+              <WorkspaceDiffTabBar
+                :tabs="currentRepositoryDiffTabs"
+                :active-tab-id="activeDiffTabId"
+                :pull-request-tabs="currentRepositoryPullRequestTabs"
+                :active-pull-request-tab-id="activePullRequestTabId"
+                @select-diff-tab="activateDiffTab"
+                @select-pull-request-tab="activatePullRequestTab"
+                @select-workbench="() => { activateDiffTab(null); activatePullRequestTab(null) }"
+                @close-diff-tab="closeDiffTab"
+                @close-pull-request-tab="closePullRequestTab"
+                @close-other-diff-tabs="closeOtherDiffTabs"
+                @close-all-diff-tabs="closeAllDiffTabs"
+                @pin-diff-tab="pinDiffTab"
               />
-            </template>
 
-            <!-- PANEL 2: CENTER WORKBENCH (Commit Graph & Diff / Inspector Viewport) -->
-            <template #center>
-              <USplitter
-                id="center-vertical-splitter"
-                orientation="vertical"
-                auto-save-id="gitverse-center-vertical-layout"
-                :items="centerSplitterItems"
-                class="h-full w-full"
-                :ui="{
-                  handle: 'h-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-row-resize',
-                }"
-              >
-                <!-- Top Island: Commit Graph & History -->
-                <template #graph>
-                  <WorkspaceCommitGraphViewport
-                    :graph="commitGraph"
-                    :selected-commit-hash="selectedCommitHash"
-                    :comparison-base-hash="activeComparison?.base_hash"
-                    :is-loading="isLoadingGraph"
-                    :is-operating="isOperating"
-                    :active-reference="activeGraphReference"
-                    @select-commit="selectCommit"
-                    @compare-commits="(base, target) => compareCommits(base, target)"
-                    @refresh="handleRefreshGraph"
-                    @reset-graph-filter="handleResetGraphFilter"
-                    @push="handlePush"
-                    @pull="handlePull"
-                    @fetch="handleFetch"
-                    @create-branch="isCreateBranchModalOpen = true"
-                    @create-branch-at-commit="handleCreateBranchFromCommit"
-                    @checkout-commit="handleCheckoutCommit"
-                    @cherry-pick-commit="cherryPickCommit"
-                    @revert-commit="revertCommit"
-                    @reset-to-commit="resetToCommit"
-                    @rebase-interactive="handleOpenInteractiveRebase"
-                  />
-                </template>
+              <!-- Tab Viewport Area -->
+              <div class="relative flex-1 overflow-hidden">
+                <!-- Tab 1: Workbench Overview (Commit Graph & Diff / Inspector Viewport) -->
+                <div
+                  v-show="!activeDiffTab && !activePullRequestTab"
+                  class="h-full w-full"
+                >
+                  <USplitter
+                    id="center-vertical-splitter"
+                    orientation="vertical"
+                    auto-save-id="gitverse-center-vertical-layout"
+                    :items="centerSplitterItems"
+                    class="h-full w-full"
+                    :ui="{
+                      handle: 'h-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-row-resize',
+                    }"
+                  >
+                    <!-- Top Island: Commit Graph & History -->
+                    <template #graph>
+                      <WorkspaceCommitGraphViewport
+                        :graph="commitGraph"
+                        :selected-commit-hash="selectedCommitHash"
+                        :comparison-base-hash="activeComparison?.base_hash"
+                        :is-loading="isLoadingGraph"
+                        :is-operating="isOperating"
+                        :active-reference="activeGraphReference"
+                        @select-commit="selectCommit"
+                        @compare-commits="(base, target) => compareCommits(base, target)"
+                        @refresh="handleRefreshGraph"
+                        @reset-graph-filter="handleResetGraphFilter"
+                        @push="handlePush"
+                        @pull="handlePull"
+                        @fetch="handleFetch"
+                        @create-branch="isCreateBranchModalOpen = true"
+                        @create-branch-at-commit="handleCreateBranchFromCommit"
+                        @checkout-commit="handleCheckoutCommit"
+                        @cherry-pick-commit="cherryPickCommit"
+                        @revert-commit="revertCommit"
+                        @reset-to-commit="resetToCommit"
+                        @rebase-interactive="handleOpenInteractiveRebase"
+                      />
+                    </template>
 
-                <!-- Bottom Island: Diff & Patch Viewer / Commit Inspector -->
-                <template #diff>
-                  <div class="h-full w-full overflow-hidden">
-                    <USplitter
-                      v-if="selectedCommitDetails || activeComparison || isLoadingCommitDetails"
-                      id="commit-inspect-splitter"
-                      :items="[
-                        { id: 'inspector-subpanel', slot: 'inspector', minSize: 25, defaultSize: 35, maxSize: 50, class: 'p-1 overflow-hidden flex flex-col' },
-                        { id: 'diff-subpanel', slot: 'diff', minSize: 40, defaultSize: 65, class: 'p-1 overflow-hidden flex flex-col' },
-                      ]"
-                      class="h-full w-full"
-                      :ui="{
-                        handle: 'w-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-col-resize',
-                      }"
-                    >
-                      <template #inspector>
-                        <WorkspaceCommitInspectorPanel
-                          :commit-details="selectedCommitDetails"
-                          :active-comparison="activeComparison"
-                          :selected-file-path="selectedCommitFilePath"
-                          :is-loading="isLoadingCommitDetails"
-                          @select-file="handleSelectCommitFile"
-                          @open-diff-tab="handleOpenCommitDiffTab"
-                          @create-branch="handleCreateBranchFromCommit"
-                          @checkout-commit="handleCheckoutCommit"
-                          @cherry-pick="cherryPickCommit"
-                          @revert="revertCommit"
-                          @reset="resetToCommit"
-                          @close="clearCommitSelection"
-                          @swap-comparison="swapComparison"
-                          @close-comparison="clearComparison"
-                        />
-                      </template>
-                      <template #diff>
+                    <!-- Bottom Island: Diff & Patch Viewer / Commit Inspector -->
+                    <template #diff>
+                      <div class="h-full w-full overflow-hidden">
+                        <USplitter
+                          v-if="selectedCommitDetails || activeComparison || isLoadingCommitDetails"
+                          id="commit-inspect-splitter"
+                          :items="[
+                            { id: 'inspector-subpanel', slot: 'inspector', minSize: 25, defaultSize: 35, maxSize: 50, class: 'p-1 overflow-hidden flex flex-col' },
+                            { id: 'diff-subpanel', slot: 'diff', minSize: 40, defaultSize: 65, class: 'p-1 overflow-hidden flex flex-col' },
+                          ]"
+                          class="h-full w-full"
+                          :ui="{
+                            handle: 'w-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-col-resize',
+                          }"
+                        >
+                          <template #inspector>
+                            <WorkspaceCommitInspectorPanel
+                              :commit-details="selectedCommitDetails"
+                              :active-comparison="activeComparison"
+                              :selected-file-path="selectedCommitFilePath"
+                              :is-loading="isLoadingCommitDetails"
+                              @select-file="handleSelectCommitFile"
+                              @open-diff-tab="handleOpenCommitDiffTab"
+                              @create-branch="handleCreateBranchFromCommit"
+                              @checkout-commit="handleCheckoutCommit"
+                              @cherry-pick="cherryPickCommit"
+                              @revert="revertCommit"
+                              @reset="resetToCommit"
+                              @close="clearCommitSelection"
+                              @swap-comparison="swapComparison"
+                              @close-comparison="clearComparison"
+                            />
+                          </template>
+                          <template #diff>
+                            <WorkspaceDiffViewerPanel
+                              :diff="currentDiff"
+                              :selected-target="selectedDiffTarget"
+                              :is-loading="isLoadingDiff"
+                              @stage="stageFile"
+                              @unstage="unstageFile"
+                              @discard="handleDiscard"
+                            />
+                          </template>
+                        </USplitter>
+
                         <WorkspaceDiffViewerPanel
+                          v-else
                           :diff="currentDiff"
                           :selected-target="selectedDiffTarget"
                           :is-loading="isLoadingDiff"
@@ -644,41 +658,31 @@ async function handlePush(): Promise<void> {
                           @unstage="unstageFile"
                           @discard="handleDiscard"
                         />
-                      </template>
-                    </USplitter>
+                      </div>
+                    </template>
+                  </USplitter>
+                </div>
 
-                    <WorkspaceDiffViewerPanel
-                      v-else
-                      :diff="currentDiff"
-                      :selected-target="selectedDiffTarget"
-                      :is-loading="isLoadingDiff"
-                      @stage="stageFile"
-                      @unstage="unstageFile"
-                      @discard="handleDiscard"
-                    />
-                  </div>
-                </template>
-              </USplitter>
-            </template>
-          </USplitter>
-        </div>
+                <!-- Full-Page Dedicated Diff Tab -->
+                <WorkspaceDiffTabContent
+                  v-if="activeDiffTab"
+                  :tab="activeDiffTab"
+                  @stage="stageFile"
+                  @unstage="unstageFile"
+                  @discard="handleDiscard"
+                  @close="closeDiffTab"
+                />
 
-        <!-- Full-Page Dedicated Diff Tab -->
-        <WorkspaceDiffTabContent
-          v-if="activeDiffTab"
-          :tab="activeDiffTab"
-          @stage="stageFile"
-          @unstage="unstageFile"
-          @discard="handleDiscard"
-          @close="closeDiffTab"
-        />
-
-        <!-- Full-Page Dedicated Pull Request Tab -->
-        <WorkspacePullRequestTabContent
-          v-if="activePullRequestTab"
-          :tab="activePullRequestTab"
-          @close="closePullRequestTab"
-        />
+                <!-- Full-Page Dedicated Pull Request Tab -->
+                <WorkspacePullRequestTabContent
+                  v-if="activePullRequestTab"
+                  :tab="activePullRequestTab"
+                  @close="closePullRequestTab"
+                />
+              </div>
+            </div>
+          </template>
+        </USplitter>
       </div>
     </div>
 
