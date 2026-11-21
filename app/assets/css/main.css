@@ -551,13 +551,39 @@ html[data-primary="indigo"] {
   box-shadow: var(--gv-shadow-md);
 }
 
-/* Modal overlay: solid darkening without eye-straining blur filters */
+/* =========================================================================
+   MODAL CRISP RENDERING & PIXEL-PERFECT LAYOUT
+   Eliminates blurry fonts caused by GPU fractional pixel translation and scale
+   ========================================================================= */
 [data-slot="overlay"],
 div[data-state][class*="backdrop-blur"],
 div[data-state][class*="overlay"],
 .fixed.inset-0 {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  background-color: rgba(0, 0, 0, 0.75) !important;
+}
+
+/* Force crisp pixel alignment and anti-aliasing for all modal dialog containers */
+[data-slot="content"],
+div[role="dialog"] {
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: geometricPrecision;
+  image-rendering: -webkit-optimize-contrast;
+  /* Cancel subpixel fractional blur from GPU transform */
+  animation: none !important;
+  transition: opacity 150ms ease-out !important;
+  /* Round coordinates to physical pixels */
+  transform: translate(-50%, -50%) translateZ(0);
+  will-change: opacity;
+}
+
+/* Ensure body and underlying workspace preserve crisp font antialiasing when modal is open */
+body:has([role="dialog"]),
+body:has([data-slot="overlay"]) {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Markdown rendered content in PRs and release notes */

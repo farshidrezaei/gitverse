@@ -7,10 +7,16 @@ export default defineAppConfig({
     },
     modal: {
       slots: {
-        overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity',
+        overlay: 'fixed inset-0 bg-black/75 backdrop-blur-none transition-opacity',
         content: 'bg-[var(--gv-surface)] border border-[var(--gv-border)] shadow-2xl rounded-2xl overflow-hidden focus:outline-none',
       },
       variants: {
+        transition: {
+          true: {
+            overlay: 'data-[state=open]:opacity-100 data-[state=closed]:opacity-0 transition-opacity duration-150',
+            content: 'data-[state=open]:opacity-100 data-[state=closed]:opacity-0 transition-opacity duration-150',
+          },
+        },
         fullscreen: {
           false: {
             content: 'w-[calc(100vw-2rem)]',
