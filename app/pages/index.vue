@@ -2,7 +2,6 @@
 import type { SplitterItem } from '@nuxt/ui'
 import type { BranchSummary, RemoteBranchSummary, FileChangeStatus } from '~/types/repository'
 import type { WorkspaceDiffTab } from '~/types/workspaceTab'
-import WorkspaceRepositoryTabBar from '~/components/workspace/tabs/WorkspaceRepositoryTabBar.vue'
 import WorkspaceDiffTabBar from '~/components/workspace/tabs/WorkspaceDiffTabBar.vue'
 import WorkspaceDiffTabContent from '~/components/workspace/tabs/WorkspaceDiffTabContent.vue'
 import WorkspacePullRequestTabContent from '~/components/workspace/tabs/WorkspacePullRequestTabContent.vue'
@@ -465,33 +464,8 @@ async function handlePush(): Promise<void> {
       @open-folder-picker="isFolderPickerModalOpen = true"
     />
 
-    <!-- Active Repository: Tab Bars + Content Area -->
+    <!-- Active Repository: Full Edge-to-Edge Workspace -->
     <div v-else class="flex h-full w-full flex-col overflow-hidden">
-      <!-- LEVEL 1: Repository Tab Strip -->
-      <WorkspaceRepositoryTabBar
-        :tabs="repositoryTabs"
-        :active-repository-path="currentRepository?.path || ''"
-        :recent-repositories="recentRepositories"
-        @select-repository="handleSelectRepository"
-        @close-repository="handleCloseRepository"
-        @close-other-repositories="handleCloseOtherRepositories"
-        @open-repository-prompt="isFolderPickerModalOpen = true"
-        @open-recent-repository="openRepository"
-        @open-reflog="isReflogModalOpen = true"
-        @open-bisect="isBisectModalOpen = true"
-        @open-export-patch="isExportPatchModalOpen = true"
-        @open-apply-patch="isApplyPatchModalOpen = true"
-        @open-submodules="isSubmoduleModalOpen = true"
-        @open-insights="isInsightsModalOpen = true"
-        @open-file-history="isFileHistoryModalOpen = true"
-        @open-search="isSearchModalOpen = true"
-        @open-commit-queue="(mode: 'cherryPick' | 'revert') => { commitQueueMode = mode; isCommitQueueModalOpen = true }"
-        @open-git-bundle="isGitBundleModalOpen = true"
-        @open-export-archive="isExportArchiveModalOpen = true"
-        @open-lfs-manager="isLfsManagerModalOpen = true"
-        @open-custom-actions="isCustomActionsModalOpen = true"
-      />
-
       <!-- Content Area with Left Sidebar & Right Tabbed Workbench -->
       <div class="relative flex-1 overflow-hidden">
         <USplitter

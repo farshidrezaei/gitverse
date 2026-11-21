@@ -8,7 +8,8 @@
 
 GitVerse uses a hierarchical, two-level tab model designed to maximize screen real estate and prevent context switching:
 
-1. **Level 1: Repository Tab Strip (`WorkspaceRepositoryTabBar.vue`)**:
+1. **Level 1: Titlebar Repository Tab Strip (`DesktopAppBarRepositoryTabs.vue`)**:
+   - Integrated directly into the window frame / custom titlebar to maximize vertical real estate.
    - Represents open local repositories or independent worktree directories.
    - Persisted across application restarts via local storage.
 2. **Level 2: Scoped Content Sub-Tabs (`WorkspaceDiffTabBar.vue`)**:

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import DesktopAppBarRepositoryTabs from './DesktopAppBarRepositoryTabs.vue'
+
 const { t } = useI18n()
 const {
   isMaximized,
@@ -11,6 +13,14 @@ const {
 const emit = defineEmits<{
   openSettings: []
   openCommandPalette: []
+  openFolderPicker: []
+  openReflog: []
+  openBisect: []
+  openExportPatch: []
+  openApplyPatch: []
+  openSubmodules: []
+  openInsights: []
+  openGitBundle: []
 }>()
 
 function handleBarDoubleClick(event: MouseEvent): void {
@@ -31,12 +41,24 @@ function handleBarDoubleClick(event: MouseEvent): void {
     @dblclick="handleBarDoubleClick"
   >
     <!-- Leading: Brand Logo & Title -->
-    <div data-tauri-drag-region class="flex items-center gap-2 min-w-0">
+    <div data-tauri-drag-region class="flex items-center gap-2 min-w-0 shrink-0">
       <SharedBrandLogo size="sm" is-decorative />
-      <span data-tauri-drag-region class="font-bold text-highlighted tracking-tight">
+      <span data-tauri-drag-region class="font-bold text-highlighted tracking-tight hidden sm:inline">
         {{ t('app.name') }}
       </span>
     </div>
+
+    <!-- Repository Tabs Strip directly in Titlebar -->
+    <DesktopAppBarRepositoryTabs
+      @open-folder-picker="emit('openFolderPicker')"
+      @open-reflog="emit('openReflog')"
+      @open-bisect="emit('openBisect')"
+      @open-export-patch="emit('openExportPatch')"
+      @open-apply-patch="emit('openApplyPatch')"
+      @open-submodules="emit('openSubmodules')"
+      @open-insights="emit('openInsights')"
+      @open-git-bundle="emit('openGitBundle')"
+    />
 
     <!-- Center: Quick Command Palette Trigger -->
     <div data-tauri-drag-region class="flex-1 h-full flex items-center justify-center px-4 max-w-sm mx-auto">
