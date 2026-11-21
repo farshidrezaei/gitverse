@@ -13,27 +13,28 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-// Organize jobs into sequential columns/stages
 interface JobColumn {
   id: string
   title: string
+  icon: string
+  color: string
   jobs: WorkflowJob[]
 }
 
 const columns = computed<JobColumn[]>(() => {
   if (!props.jobs || props.jobs.length === 0) return []
 
-  // Check if jobs have explicit stages (GitLab or workflow names)
   const stageMap = new Map<string, WorkflowJob[]>()
   
   for (const job of props.jobs) {
-    // Derive stage from job name (e.g., "build / lint" or stage property or matrix)
+    const lowerName = job.name.toLowerCase()
     let stageName = t('provider.actions.stageBuild')
-    if (job.name.toLowerCase().includes('test') || job.name.toLowerCase().includes('e2e') || job.name.toLowerCase().includes('unit')) {
-      stageName = t('provider.actions.stageTest')
-    } else if (job.name.toLowerCase().includes('lint') || job.name.toLowerCase().includes('check') || job.name.toLowerCase().includes('analyze')) {
+
+    if (lowerName.includes('lint') || lowerName.includes('check') || lowerName.includes('analyze') || lowerName.includes('style')) {
       stageName = t('provider.actions.stageLint')
-    } else if (job.name.toLowerCase().includes('deploy') || job.name.toLowerCase().includes('release') || job.name.toLowerCase().includes('publish')) {
+    } else if (lowerName.includes('test') || lowerName.includes('unit') || lowerName.includes('e2e') || lowerName.includes('integration')) {
+      stageName = t('provider.actions.stageTest')
+    } else if (lowerName.includes('deploy') || lowerName.includes('release') || lowerName.includes('publish') || lowerName.includes('docker') || lowerName.includes('push')) {
       stageName = t('provider.actions.stageDeploy')
     } else {
       stageName = t('provider.actions.stageBuild')
@@ -45,42 +46,35 @@ const columns = computed<JobColumn[]>(() => {
     stageMap.get(stageName)!.push(job)
   }
 
-  // Predefined column ordering
-  const standardOrder = [
-    t('provider.actions.stageLint'),
-    t('provider.actions.stageBuild'),
-    t('provider.actions.stageTest'),
-    t('provider.actions.stageDeploy'),
+  const standardStages: { name: string; icon: string; color: string }[] = [
+    { name: t('provider.actions.stageLint'), icon: 'i-lucide-shield-check', color: 'text-sky-500' },
+    { name: t('provider.actions.stageBuild'), icon: 'i-lucide-box', color: 'text-amber-500' },
+    { name: t('provider.actions.stageTest'), icon: 'i-lucide-flask-conical', color: 'text-violet-500' },
+    { name: t('provider.actions.stageDeploy'), icon: 'i-lucide-rocket', color: 'text-emerald-500' },
   ]
 
   const result: JobColumn[] = []
-  for (const orderKey of standardOrder) {
-    if (stageMap.has(orderKey)) {
+  for (const stage of standardStages) {
+    if (stageMap.has(stage.name)) {
       result.push({
-        id: orderKey,
-        title: orderKey,
-        jobs: stageMap.get(orderKey)!,
+        id: stage.name,
+        title: stage.name,
+        icon: stage.icon,
+        color: stage.color,
+        jobs: stageMap.get(stage.name)!,
       })
-      stageMap.delete(orderKey)
+      stageMap.delete(stage.name)
     }
   }
 
-  // Any remaining custom stages
   for (const [key, jobsList] of stageMap.entries()) {
     result.push({
       id: key,
       title: key,
+      icon: 'i-lucide-layers',
+      color: 'text-primary',
       jobs: jobsList,
     })
-  }
-
-  // Fallback if empty or only 1 single column with many jobs: chunk into pairs
-  if (result.length === 1 && result[0] && result[0].jobs.length > 3) {
-    const all = result[0].jobs
-    return [
-      { id: 'col-1', title: t('provider.actions.stageLint'), jobs: all.slice(0, Math.ceil(all.length / 2)) },
-      { id: 'col-2', title: t('provider.actions.stageTest'), jobs: all.slice(Math.ceil(all.length / 2)) },
-    ]
   }
 
   return result
@@ -98,31 +92,30 @@ function formatDuration(startedAtTimestamp: number | null, completedAtTimestamp:
 
 function getJobStatusIcon(status: string, conclusion: string | null): string {
   if (status === 'in_progress') return 'i-lucide-loader-2 animate-spin text-amber-500'
-  if (status === 'queued') return 'i-lucide-clock text-muted-foreground'
-  if (conclusion === 'success') return 'i-lucide-check-circle-2 text-emerald-500'
+  if (status === 'queued') return 'i-lucide-clock text-neutral-400'
+  if (conclusion === 'success') return 'i-lucide-check-circle text-emerald-500'
   if (conclusion === 'failure') return 'i-lucide-x-circle text-rose-500'
   if (conclusion === 'cancelled' || conclusion === 'skipped') return 'i-lucide-circle-slash text-neutral-400'
   return 'i-lucide-help-circle text-muted-foreground'
 }
 
-function getJobStatusBadgeColor(status: string, conclusion: string | null): 'neutral' | 'success' | 'error' | 'warning' {
-  if (status === 'in_progress') return 'warning'
-  if (conclusion === 'success') return 'success'
-  if (conclusion === 'failure') return 'error'
-  return 'neutral'
-}
-
-function handleJobClick(job: WorkflowJob): void {
-  emit('selectJob', job)
+function getJobBadgeVariant(status: string, conclusion: string | null): { color: 'success' | 'error' | 'warning' | 'neutral'; label: string } {
+  if (status === 'in_progress') return { color: 'warning', label: t('provider.actions.statusRunning') }
+  if (status === 'queued') return { color: 'neutral', label: t('provider.actions.statusQueued') }
+  if (conclusion === 'success') return { color: 'success', label: t('provider.actions.statusSuccess') }
+  if (conclusion === 'failure') return { color: 'error', label: t('provider.actions.statusFailed') }
+  if (conclusion === 'cancelled') return { color: 'neutral', label: t('provider.actions.statusCancelled') }
+  if (conclusion === 'skipped') return { color: 'neutral', label: t('provider.actions.statusSkipped') }
+  return { color: 'neutral', label: status }
 }
 </script>
 
 <template>
-  <div class="relative w-full h-full min-h-[320px] p-6 overflow-x-auto overflow-y-auto select-none bg-[var(--gv-surface-subtle)]/40 rounded-xl border border-default/40">
+  <div class="relative w-full h-full min-h-[380px] p-8 overflow-auto select-none bg-[var(--gv-surface-subtle)]/30 rounded-2xl border border-default/40">
     <!-- Graph Background Grid dots -->
     <div
-      class="absolute inset-0 pointer-events-none opacity-20"
-      style="background-image: radial-gradient(var(--gv-border) 1px, transparent 1px); background-size: 20px 20px;"
+      class="absolute inset-0 pointer-events-none opacity-25"
+      style="background-image: radial-gradient(var(--gv-border) 1px, transparent 1px); background-size: 24px 24px;"
     />
 
     <!-- Workflow Columns Layout -->
@@ -130,76 +123,89 @@ function handleJobClick(job: WorkflowJob): void {
       <div
         v-for="(column, colIndex) in columns"
         :key="column.id"
-        class="flex flex-col items-center gap-4 w-72"
+        class="flex flex-col items-center gap-5 w-80"
       >
-        <!-- Stage Header -->
-        <div class="w-full flex items-center justify-between px-3 py-1.5 rounded-lg bg-[var(--gv-surface)]/80 border border-default/50 text-xs font-semibold text-muted-foreground">
-          <div class="flex items-center gap-1.5 truncate">
-            <span class="w-2 h-2 rounded-full bg-primary/70" />
-            <span class="truncate">{{ column.title }}</span>
+        <!-- Stage Modern Glass Header -->
+        <div class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-[var(--gv-surface)]/90 backdrop-blur-md border border-default/60 shadow-xs text-xs font-medium">
+          <div class="flex items-center gap-2 truncate">
+            <UIcon :name="column.icon" :class="['w-4 h-4 shrink-0', column.color]" />
+            <span class="font-semibold text-foreground truncate">{{ column.title }}</span>
           </div>
-          <UBadge size="xs" variant="subtle" color="neutral">
-            {{ column.jobs.length }}
-          </UBadge>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] text-muted-foreground font-mono">
+              {{ column.jobs.filter(j => j.conclusion === 'success').length }}/{{ column.jobs.length }}
+            </span>
+            <span
+              :class="[
+                'w-2 h-2 rounded-full',
+                column.jobs.some(j => j.conclusion === 'failure')
+                  ? 'bg-rose-500'
+                  : column.jobs.some(j => j.status === 'in_progress')
+                    ? 'bg-amber-500 animate-pulse'
+                    : 'bg-emerald-500'
+              ]"
+            />
+          </div>
         </div>
 
         <!-- Stage Job Nodes -->
-        <div class="w-full flex flex-col gap-3">
+        <div class="w-full flex flex-col gap-3.5">
           <div
             v-for="job in column.jobs"
             :key="job.id"
             role="button"
             tabindex="0"
             :class="[
-              'group relative flex flex-col p-3 rounded-xl border transition-all duration-200 cursor-pointer text-start',
-              'hover:shadow-md hover:border-primary/50',
+              'group relative flex flex-col p-4 rounded-xl border transition-all duration-200 cursor-pointer text-start backdrop-blur-sm',
+              'hover:shadow-lg hover:-translate-y-0.5',
+              job.conclusion === 'failure' ? 'hover:border-rose-500/60' : 'hover:border-primary/60',
               selectedJobId === job.id
-                ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/40'
-                : 'bg-[var(--gv-surface)] border-default/70'
+                ? 'bg-[var(--gv-surface)] border-primary shadow-md ring-2 ring-primary/20'
+                : 'bg-[var(--gv-surface)]/80 border-default/60 shadow-2xs'
             ]"
-            @click="handleJobClick(job)"
-            @keydown.enter="handleJobClick(job)"
+            @click="emit('selectJob', job)"
+            @keydown.enter="emit('selectJob', job)"
           >
             <!-- Header Row -->
-            <div class="flex items-center justify-between gap-2 mb-2">
-              <div class="flex items-center gap-2 min-w-0">
+            <div class="flex items-center justify-between gap-3 mb-2.5">
+              <div class="flex items-center gap-2.5 min-w-0">
                 <UIcon :name="getJobStatusIcon(job.status, job.conclusion)" class="w-4 h-4 shrink-0" />
-                <span class="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                <span class="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                   {{ job.name }}
                 </span>
               </div>
               <UBadge
                 size="xs"
                 variant="subtle"
-                :color="getJobStatusBadgeColor(job.status, job.conclusion)"
+                :color="getJobBadgeVariant(job.status, job.conclusion).color"
               >
-                {{ job.conclusion || job.status }}
+                {{ getJobBadgeVariant(job.status, job.conclusion).label }}
               </UBadge>
             </div>
 
             <!-- Steps Progress / Duration Row -->
-            <div class="flex items-center justify-between text-[11px] text-muted-foreground pt-1.5 border-t border-default/30">
-              <div class="flex items-center gap-1">
-                <UIcon name="i-lucide-list-checks" class="w-3.5 h-3.5" />
+            <div class="flex items-center justify-between text-[11px] text-muted-foreground pt-2.5 border-t border-default/30">
+              <div class="flex items-center gap-1.5">
+                <UIcon name="i-lucide-list-checks" class="w-3.5 h-3.5 text-muted-foreground/80" />
                 <span>
-                  {{ job.steps.length > 0 ? `${job.steps.filter(s => s.conclusion === 'success').length}/${job.steps.length}` : t('provider.actions.jobSteps') }}
+                  {{ job.steps.length > 0 ? `${job.steps.filter(s => s.conclusion === 'success').length}/${job.steps.length} ${t('provider.actions.jobSteps')}` : t('provider.actions.jobSteps') }}
                 </span>
               </div>
               <div v-if="job.started_at_timestamp" class="flex items-center gap-1">
-                <UIcon name="i-lucide-clock" class="w-3.5 h-3.5" />
-                <span>{{ formatDuration(job.started_at_timestamp, job.completed_at_timestamp) }}</span>
+                <UIcon name="i-lucide-clock" class="w-3.5 h-3.5 text-muted-foreground/80" />
+                <span class="font-mono text-[10px]">{{ formatDuration(job.started_at_timestamp, job.completed_at_timestamp) }}</span>
               </div>
             </div>
 
             <!-- Connector dot on right if not last column -->
             <div
               v-if="colIndex < columns.length - 1"
-              class="absolute -end-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[var(--gv-surface)] border-2 border-primary/50"
+              class="absolute -end-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[var(--gv-surface)] border-2 border-primary/60 shadow-xs"
             />
             <!-- Connector dot on left if not first column -->
             <div
               v-if="colIndex > 0"
-              class="absolute -start-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[var(--gv-surface)] border-2 border-default/80"
+              class="absolute -start-1.5 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[var(--gv-surface)] border-2 border-default/80 shadow-xs"
             />
           </div>
         </div>

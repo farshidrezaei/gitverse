@@ -229,3 +229,15 @@ pub async fn cancel_workflow_run(
     crate::domain::validation::validate_workflow_run_id(&run_id.to_string())?;
     state.cancel_workflow_run(&account_identifier, &repository_full_name, run_id).await
 }
+
+/// Tauri IPC command to fetch logs for a specific workflow job.
+#[tauri::command]
+pub async fn get_workflow_job_logs(
+    state: State<'_, ApplicationState>,
+    account_identifier: String,
+    repository_full_name: String,
+    job_id: u64,
+) -> Result<String, ApplicationError> {
+    crate::domain::validation::validate_workflow_run_id(&job_id.to_string())?;
+    state.get_job_logs(&account_identifier, &repository_full_name, job_id).await
+}

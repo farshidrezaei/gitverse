@@ -1016,6 +1016,41 @@ impl GitLabClient {
 
         Ok(true)
     }
+
+    pub async fn get_job_trace(
+        &self,
+        token: &str,
+        project_full_name: &str,
+        job_id: u64,
+    ) -> Result<String, ApplicationError> {
+        let encoded_project = urlencoding_simple(project_full_name);
+        let url = format!(
+            "{}/projects/{}/jobs/{}/trace",
+            self.api_base_url,
+            encoded_project,
+            job_id
+        );
+
+        let headers = self.build_headers(token)?;
+        let response = self
+            .client
+            .get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to get GitLab job trace: {}",
+                error_text
+            )));
+        }
+
+        let trace = response.text().await.unwrap_or_default();
+        Ok(trace)
+    }
 }
 
 fn urlencoding_simple(raw: &str) -> String {

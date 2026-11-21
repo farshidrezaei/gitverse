@@ -1014,4 +1014,30 @@ impl GitHubClient {
 
         Ok(true)
     }
+
+    /// Fetches execution logs for a workflow job.
+    pub async fn get_job_logs(
+        &self,
+        token: &str,
+        owner: &str,
+        repository: &str,
+        job_id: u64,
+    ) -> Result<String, ApplicationError> {
+        let url = format!("{}/repos/{}/{}/actions/jobs/{}/logs", self.api_base_url, owner, repository, job_id);
+        let headers = self.build_headers(token)?;
+
+        let response = self.client.get(&url)
+            .headers(headers)
+            .send()
+            .await
+            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(ApplicationError::ProviderError(format!("Failed to fetch job logs: {}", error_text)));
+        }
+
+        let logs = response.text().await.unwrap_or_default();
+        Ok(logs)
+    }
 }

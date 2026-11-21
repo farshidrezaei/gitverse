@@ -159,6 +159,7 @@ pub fn run() {
             commands::update_pull_request_state,
             commands::list_workflow_runs,
             commands::get_workflow_run_jobs,
+            commands::get_workflow_job_logs,
             commands::rerun_workflow_run,
             commands::cancel_workflow_run,
             commands::open_external_url,

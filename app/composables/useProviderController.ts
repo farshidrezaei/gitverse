@@ -380,6 +380,24 @@ export function useProviderController() {
     }
   }
 
+  async function fetchWorkflowJobLogs(
+    accountIdentifier: string,
+    repositoryFullName: string,
+    jobId: string | number,
+  ): Promise<string> {
+    try {
+      const logs = await invokeTauriCommand<string>('get_workflow_job_logs', {
+        accountIdentifier,
+        repositoryFullName,
+        jobId: Number(jobId),
+      })
+      return logs || ''
+    } catch (error) {
+      errorMessage.value = String(error)
+      return ''
+    }
+  }
+
   return {
     accounts,
     isLoading,
@@ -403,6 +421,7 @@ export function useProviderController() {
     updatePullRequestState,
     fetchWorkflowRuns,
     fetchWorkflowRunJobs,
+    fetchWorkflowJobLogs,
     rerunWorkflowRun,
     cancelWorkflowRun,
   }

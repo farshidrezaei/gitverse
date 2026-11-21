@@ -231,6 +231,8 @@ const isRunning = computed(() => {
       <WorkflowJobStepsDrawer
         :job="selectedJob"
         :is-open="isJobDrawerOpen"
+        :account-id="tab.account.id"
+        :repository-full-name="tab.repositoryFullName"
         @close="isJobDrawerOpen = false"
       />
     </div>

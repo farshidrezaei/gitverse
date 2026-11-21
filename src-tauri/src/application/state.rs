@@ -1628,6 +1628,39 @@ impl ApplicationState {
             }
         }
     }
+
+    /// Fetches execution logs for a workflow job.
+    pub async fn get_job_logs(
+        &self,
+        account_identifier: &str,
+        repository_full_name: &str,
+        job_id: u64,
+    ) -> Result<String, ApplicationError> {
+        let accounts = self.store.list_provider_accounts()?;
+        let account = accounts
+            .into_iter()
+            .find(|item| item.id == account_identifier)
+            .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
+
+        let token = self.credential_store
+            .get_token(account_identifier)?
+            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+
+        match account.provider {
+            ProviderKind::GitHub => {
+                let parts: Vec<&str> = repository_full_name.split('/').collect();
+                if parts.len() != 2 {
+                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                }
+                let client = GitHubClient::new(Some(&account.instance_url))?;
+                client.get_job_logs(&token, parts[0], parts[1], job_id).await
+            }
+            ProviderKind::GitLab => {
+                let client = GitLabClient::new(Some(&account.instance_url))?;
+                client.get_job_trace(&token, repository_full_name, job_id).await
+            }
+        }
+    }
 }
 
 
