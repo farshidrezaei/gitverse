@@ -78,6 +78,14 @@ Split modules by domain responsibility:
   - Proper padding, header with title and close button, body, and action footer.
 - The default `app.config.ts` modal slot defines `content: 'bg-[var(--gv-surface)] border border-[var(--gv-border)] shadow-2xl rounded-2xl overflow-hidden focus:outline-none'`. Never override it with `bg-transparent` or strip its background surface.
 
+### 2.9. Critical Action Confirmations & Actionable Undo Contract
+- **Never trigger a destructive, mutating, or history-altering operation without appropriate tiered confirmation**:
+  - **Tier 1 (Standard Dialog)**: Reversible mutating operations (Revert Commit, Cherry-Pick, Detached Checkout, Abort Merge/Rebase, Delete Staged Changes).
+  - **Tier 2 (Hold-to-Confirm)**: Irreversible lossy local operations (Hard Reset, Discard All Unstaged Changes).
+  - **Tier 3 (Type-to-Confirm Keyword)**: Catastrophic or remote destructive operations (Delete Branch, Force Push).
+- **Actionable Undo**: Whenever a mutating operation is reversible (e.g. Revert commit, Delete local branch, Discard file changes), the success notification toast must invoke `notifyUndoable` with an immediate, one-click `Undo` button.
+- **Detailed Error Reporting**: All failure notifications must pass `formatApplicationError(error)` to `notifyError` to prevent generic or unhandled error messages from being displayed to users.
+
 
 ---
 
