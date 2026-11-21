@@ -730,7 +730,16 @@
     "author": "نویسنده",
     "commentOnLine": "ثبت نظر روی این سطر",
     "commentOnLineNumber": "ثبت نظر روی سطر {line}",
-    "commentOnLines": "ثبت نظر روی سطرهای {start} تا {end}"
+    "commentOnLines": "ثبت نظر روی سطرهای {start} تا {end}",
+    "stateOpen": "باز",
+    "stateClosed": "بسته",
+    "stateMerged": "ادغام‌شده",
+    "stateAll": "همه",
+    "checkoutBranch": "دریافت و سوئیچ به شاخه",
+    "noRemotesConfigured": "هیچ مخزن ریموتی تنظیم نشده است",
+    "switchRepositoryPrompt": "تغییر مخزن یا ورود دستی",
+    "openInBrowser": "باز کردن در مرورگر",
+    "commentsCount": "{count} دیدگاه"
   },
   "externalTools": {
     "openTerminal": "باز کردن در ترمینال",

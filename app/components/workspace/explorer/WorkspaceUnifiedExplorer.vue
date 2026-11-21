@@ -6,15 +6,16 @@ import type {
   DetailedRepositoryStatus,
   FileChangeStatus,
 } from '~/types/repository'
+import type { RemotePullRequest, ProviderAccount } from '~/types/provider'
 import type { SelectedDiffTarget } from '~/composables/useStagingController'
 import ExplorerChangesSection from './ExplorerChangesSection.vue'
 import ExplorerBranchesSection from './ExplorerBranchesSection.vue'
+import ExplorerPullRequestsSection from './ExplorerPullRequestsSection.vue'
 import ExplorerStashesSection from './ExplorerStashesSection.vue'
 import ExplorerRemotesSection from './ExplorerRemotesSection.vue'
 import ExplorerTagsSection from './ExplorerTagsSection.vue'
 import ExplorerWorktreesSection from './ExplorerWorktreesSection.vue'
 import RenameBranchModal from '../RenameBranchModal.vue'
-import WorkspacePullRequestsModal from '../provider/WorkspacePullRequestsModal.vue'
 
 interface WorkspaceUnifiedExplorerProps {
   repositoryStatus: DetailedRepositoryStatus | null
@@ -58,6 +59,7 @@ const emit = defineEmits<{
   openCreateWorktreeModal: []
   openWorktreeInTab: [directoryPath: string]
   toggleFavoriteBranch: [branchName: string]
+  openPullRequest: [pullRequest: RemotePullRequest, account: ProviderAccount, repositoryFullName: string]
 }>()
 
 const { t } = useI18n()
@@ -67,6 +69,7 @@ const { renameBranch } = useWorkspaceManager()
 // Accordion toggle states
 const isChangesOpen = ref<boolean>(true)
 const isBranchesOpen = ref<boolean>(true)
+const isPullRequestsOpen = ref<boolean>(false)
 const isRemotesOpen = ref<boolean>(false)
 const isStashesOpen = ref<boolean>(false)
 const isTagsOpen = ref<boolean>(false)
@@ -75,7 +78,6 @@ const isWorktreesOpen = ref<boolean>(false)
 // Modals
 const isRenameModalOpen = ref<boolean>(false)
 const branchToRename = ref<string>('')
-const isPullRequestsModalOpen = ref<boolean>(false)
 
 const existingBranchNames = computed(() => {
   return props.references?.branches.map((branch) => branch.name) || []
@@ -118,10 +120,11 @@ const totalChangesCount = computed(() => {
             size="xs"
             color="neutral"
             variant="ghost"
+            square
             icon="i-lucide-git-pull-request"
-            class="h-6 w-6 text-primary"
+            class="h-6 w-6 text-primary flex items-center justify-center shrink-0 cursor-pointer"
             :aria-label="t('provider.pullRequests')"
-            @click="isPullRequestsModalOpen = true"
+            @click="isPullRequestsOpen = !isPullRequestsOpen"
           />
         </UTooltip>
         <UTooltip :text="t('common.refresh')">
@@ -234,7 +237,34 @@ const totalChangesCount = computed(() => {
         </div>
       </div>
 
-      <!-- SECTION 3: Stashes -->
+      <!-- SECTION 3: Pull Requests -->
+      <div v-if="hasRemotes">
+        <button
+          type="button"
+          class="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold text-highlighted hover:bg-muted/30 transition-colors cursor-pointer"
+          @click="isPullRequestsOpen = !isPullRequestsOpen"
+        >
+          <div class="flex items-center gap-2 min-w-0">
+            <UIcon
+              :name="isPullRequestsOpen ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+              class="h-3.5 w-3.5 text-muted transition-transform rtl:rotate-180 shrink-0"
+            />
+            <UIcon name="i-lucide-git-pull-request" class="h-3.5 w-3.5 text-primary shrink-0" />
+            <span class="uppercase tracking-wider text-[11px]">{{ t('provider.pullRequests') }}</span>
+          </div>
+        </button>
+
+        <div v-show="isPullRequestsOpen">
+          <ExplorerPullRequestsSection
+            :remotes="props.references?.remotes"
+            :current-repository-path="currentRepository?.path"
+            @open-pull-request="(pullRequest, account, repositoryFullName) => emit('openPullRequest', pullRequest, account, repositoryFullName)"
+            @checkout-branch="emit('checkout', $event)"
+          />
+        </div>
+      </div>
+
+      <!-- SECTION 4: Stashes -->
       <div>
         <button
           type="button"
@@ -340,12 +370,6 @@ const totalChangesCount = computed(() => {
       :current-branch-name="branchToRename"
       :existing-branch-names="existingBranchNames"
       @rename="handleRenameBranch"
-    />
-
-    <WorkspacePullRequestsModal
-      v-model:open="isPullRequestsModalOpen"
-      :remotes="props.references?.remotes"
-      @checkout-branch="emit('checkout', $event)"
     />
   </div>
 </template>

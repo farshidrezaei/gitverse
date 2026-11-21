@@ -730,7 +730,16 @@
     "author": "Author",
     "commentOnLine": "Comment on this line",
     "commentOnLineNumber": "Comment on line {line}",
-    "commentOnLines": "Comment on lines {start}-{end}"
+    "commentOnLines": "Comment on lines {start}-{end}",
+    "stateOpen": "Open",
+    "stateClosed": "Closed",
+    "stateMerged": "Merged",
+    "stateAll": "All",
+    "checkoutBranch": "Checkout Branch",
+    "noRemotesConfigured": "No remote repository configured",
+    "switchRepositoryPrompt": "Switch repository or enter manually",
+    "openInBrowser": "Open in Browser",
+    "commentsCount": "{count} comments"
   },
   "externalTools": {
     "openTerminal": "Open in Terminal",

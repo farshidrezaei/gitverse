@@ -517,6 +517,7 @@ async function handlePush(): Promise<void> {
               @open-create-worktree-modal="isCreateWorktreeModalOpen = true"
               @open-worktree-in-tab="openRepository($event)"
               @toggle-favorite-branch="toggleFavoriteBranch"
+              @open-pull-request="(pullRequest, account, repositoryFullName) => openPullRequestTab(pullRequest, account, repositoryFullName, currentRepository?.path || '')"
             />
           </template>
 
@@ -656,6 +657,7 @@ async function handlePush(): Promise<void> {
                   v-if="activePullRequestTab"
                   :tab="activePullRequestTab"
                   @close="closePullRequestTab"
+                  @checkout-branch="handleCheckout"
                 />
               </div>
             </div>

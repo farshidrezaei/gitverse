@@ -179,6 +179,16 @@ function handleMerged(): void {
         <span class="font-mono text-[11px] bg-muted/20 px-1.5 py-0.5 rounded text-highlighted">
           {{ pullRequest.target_branch }}
         </span>
+
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-git-branch"
+          class="ms-2 text-xs"
+          :label="t('provider.checkoutBranch')"
+          @click="emit('checkoutBranch', pullRequest.source_branch)"
+        />
       </div>
 
       <!-- Segmented Navigation for PR views -->

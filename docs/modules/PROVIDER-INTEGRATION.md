@@ -11,7 +11,7 @@ Operating under **ADR-004: Provider Abstraction Over Artificial Normalization**,
 ```mermaid
 flowchart LR
     subgraph Frontend["Vue Components"]
-        PRModal["WorkspacePullRequestsModal.vue"]
+        PRExplorer["ExplorerPullRequestsSection.vue"]
         PRTab["WorkspacePullRequestTabContent.vue"]
         DiffView["PullRequestFilesChangedView.vue"]
         ReviewModal["PullRequestReviewModal.vue"]
@@ -25,7 +25,7 @@ flowchart LR
         Keyring["OS Keyring (keyring-rs)"]
     end
 
-    PRModal --> ClientRouter
+    PRExplorer --> ClientRouter
     PRTab --> ClientRouter
     ReviewModal --> ClientRouter
     MergeModal --> ClientRouter
