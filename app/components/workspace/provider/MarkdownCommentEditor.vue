@@ -91,7 +91,32 @@ function handleKeyDown(event: KeyboardEvent): void {
       <div v-if="activeTab === 'write'" class="flex items-center gap-0.5 text-muted">
         <button
           type="button"
-          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors"
+          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
+          title="Heading 1 (# title)"
+          @click="insertFormatting('# ', '')"
+        >
+          <UIcon name="i-lucide-heading-1" class="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
+          title="Heading 2 (## title)"
+          @click="insertFormatting('## ', '')"
+        >
+          <UIcon name="i-lucide-heading-2" class="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
+          title="Heading 3 (### title)"
+          @click="insertFormatting('### ', '')"
+        >
+          <UIcon name="i-lucide-heading-3" class="h-3.5 w-3.5" />
+        </button>
+        <div class="h-3.5 w-px bg-default/50 mx-0.5" />
+        <button
+          type="button"
+          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
           title="Bold (**text**)"
           @click="insertFormatting('**', '**')"
         >
@@ -99,7 +124,7 @@ function handleKeyDown(event: KeyboardEvent): void {
         </button>
         <button
           type="button"
-          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors"
+          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
           title="Italic (*text*)"
           @click="insertFormatting('*', '*')"
         >
@@ -107,7 +132,7 @@ function handleKeyDown(event: KeyboardEvent): void {
         </button>
         <button
           type="button"
-          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors"
+          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
           title="Inline Code (`code`)"
           @click="insertFormatting('`', '`')"
         >
@@ -115,15 +140,17 @@ function handleKeyDown(event: KeyboardEvent): void {
         </button>
         <button
           type="button"
-          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors"
-          title="Code Block"
+          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer flex items-center gap-0.5 text-[11px] font-mono px-1.5"
+          title="Code Block (```lang)"
           @click="insertFormatting('```\n', '\n```')"
         >
-          <UIcon name="i-lucide-file-code" class="h-3.5 w-3.5" />
+          <UIcon name="i-lucide-code-xml" class="h-3.5 w-3.5" />
+          <span class="text-[10px]">```</span>
         </button>
+        <div class="h-3.5 w-px bg-default/50 mx-0.5" />
         <button
           type="button"
-          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors"
+          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
           title="Quote (> quote)"
           @click="insertFormatting('> ')"
         >
@@ -131,7 +158,7 @@ function handleKeyDown(event: KeyboardEvent): void {
         </button>
         <button
           type="button"
-          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors"
+          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
           title="Task List (- [ ])"
           @click="insertFormatting('- [ ] ')"
         >
