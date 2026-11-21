@@ -140,12 +140,11 @@ function handleKeyDown(event: KeyboardEvent): void {
         </button>
         <button
           type="button"
-          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer flex items-center gap-0.5 text-[11px] font-mono px-1.5"
-          title="Code Block (```lang)"
+          class="p-1 rounded hover:bg-muted/30 hover:text-highlighted transition-colors cursor-pointer"
+          title="Code Block"
           @click="insertFormatting('```\n', '\n```')"
         >
-          <UIcon name="i-lucide-code-xml" class="h-3.5 w-3.5" />
-          <span class="text-[10px]">```</span>
+          <UIcon name="i-lucide-square-code" class="h-3.5 w-3.5" />
         </button>
         <div class="h-3.5 w-px bg-default/50 mx-0.5" />
         <button
