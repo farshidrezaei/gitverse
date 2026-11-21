@@ -92,7 +92,7 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
 
 <template>
   <nav
-    class="flex h-9 w-full shrink-0 items-center justify-between border-b border-default/70 bg-[var(--gv-surface)]/50 px-2 select-none text-xs"
+    class="gv-island-panel flex h-9 w-full shrink-0 items-center justify-between border-b border-default/70 bg-(--gv-surface)/50 px-1 select-none text-xs "
     aria-label="Workspace Content Tabs"
   >
     <!-- Left: Pinned Permanent Overview Tab + Dynamic Diff & PR Tabs -->
@@ -100,10 +100,10 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
       <!-- Tab 1: Pinned Permanent Root Tab (Overview / Graph Dashboard - NEVER CLOSEABLE) -->
       <button
         type="button"
-        class="group relative flex h-7 items-center gap-1.5 rounded-[var(--gv-radius-md)] px-2.5 text-xs transition-all shrink-0 border cursor-pointer"
+        class="group relative flex h-7 items-center gap-1.5 rounded-(--gv-radius-lg) px-2.5 text-xs transition-all shrink-0 border cursor-pointer"
         :class="[
           isOverviewActive
-            ? 'bg-[var(--gv-surface)] text-highlighted border-default shadow-2xs font-semibold'
+            ? 'bg-(--gv-surface) text-highlighted border-default shadow-2xs font-semibold'
             : 'border-transparent text-muted hover:bg-muted/30 hover:text-default font-medium',
         ]"
         :title="t('tabs.workspace')"
@@ -124,17 +124,17 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
       <div
         v-for="prTab in properties.pullRequestTabs"
         :key="prTab.id"
-        class="group relative flex h-7 items-center gap-1.5 rounded-[var(--gv-radius-md)] px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
+        class="group relative flex h-7 items-center gap-1.5 rounded-(--gv-radius-lg) px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
         :class="[
           properties.activePullRequestTabId === prTab.id
-            ? 'bg-[var(--gv-surface)] text-highlighted border-primary/50 shadow-2xs'
+            ? 'bg-(--gv-surface) text-highlighted border-primary/50 shadow-2xs'
             : 'border-transparent text-muted hover:bg-muted/30 hover:text-default',
         ]"
         :title="prTab.title"
         @click="emit('selectPullRequestTab', prTab.id)"
       >
         <UIcon name="i-lucide-git-pull-request" class="h-3.5 w-3.5 shrink-0 text-primary" />
-        <span class="truncate max-w-[160px] font-medium">
+        <span class="truncate max-w-40 font-medium">
           #{{ prTab.pullRequest.number }} {{ prTab.pullRequest.title }}
         </span>
 
@@ -167,17 +167,17 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
       <div
         v-for="runTab in properties.workflowRunTabs"
         :key="runTab.id"
-        class="group relative flex h-7 items-center gap-1.5 rounded-[var(--gv-radius-md)] px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
+        class="group relative flex h-7 items-center gap-1.5 rounded-(--gv-radius-lg) px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
         :class="[
           properties.activeWorkflowRunTabId === runTab.id
-            ? 'bg-[var(--gv-surface)] text-highlighted border-primary/50 shadow-2xs'
+            ? 'bg-(--gv-surface) text-highlighted border-primary/50 shadow-2xs'
             : 'border-transparent text-muted hover:bg-muted/30 hover:text-default',
         ]"
         :title="runTab.title"
         @click="emit('selectWorkflowRunTab', runTab.id)"
       >
         <UIcon name="i-lucide-play-circle" class="h-3.5 w-3.5 shrink-0 text-primary" />
-        <span class="truncate max-w-[160px] font-medium">
+        <span class="truncate max-w-40 font-medium">
           {{ runTab.title }}
         </span>
 
@@ -214,10 +214,10 @@ function getDiffContextMenu(tab: WorkspaceDiffTab): ContextMenuItem[][] {
         class="shrink-0"
       >
         <div
-          class="group relative flex h-7 items-center gap-1.5 rounded-[var(--gv-radius-md)] px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
+          class="group relative flex h-7 items-center gap-1.5 rounded-(--gv-radius-lg) px-2.5 text-xs font-medium transition-all cursor-pointer border shrink-0"
           :class="[
             properties.activeTabId === tab.id
-              ? 'bg-[var(--gv-surface)] text-highlighted border-default shadow-2xs font-semibold'
+              ? 'bg-(--gv-surface) text-highlighted border-default shadow-2xs font-semibold'
               : 'border-transparent text-muted hover:bg-muted/30 hover:text-default',
             !tab.isPinned ? 'italic opacity-90' : '',
           ]"

@@ -737,6 +737,7 @@
     "stateAll": "همه",
     "checkoutBranch": "دریافت و سوئیچ به شاخه",
     "noRemotesConfigured": "هیچ مخزن ریموتی تنظیم نشده است",
+    "noRemotesDescription": "جهت مشاهده پول ریکوئست‌ها، بررسی کد و ورک‌فلوها، یک مخزن ریموت متصل کنید.",
     "switchRepositoryPrompt": "تغییر مخزن یا ورود دستی",
     "openInBrowser": "باز کردن در مرورگر",
     "commentsCount": "{count} دیدگاه",

@@ -469,7 +469,7 @@ async function handlePush(): Promise<void> {
 </script>
 
 <template>
-  <div class="h-full w-full flex-1 overflow-hidden select-none bg-[var(--gv-background)]">
+  <div class="h-full w-full flex-1 overflow-hidden select-none bg-(--gv-background)">
     <!-- Zero Repository Open State: Show Welcome screen with recent repos -->
     <WelcomeWorkspaceState
       v-if="!currentRepository"
@@ -477,7 +477,7 @@ async function handlePush(): Promise<void> {
     />
 
     <!-- Active Repository: Full Edge-to-Edge Workspace -->
-    <div v-else class="flex h-full w-full flex-col overflow-hidden">
+    <div v-else class="flex h-full w-full flex-col ">
       <!-- Content Area with Left Sidebar & Right Tabbed Workbench -->
       <div class="relative flex-1 overflow-hidden">
         <USplitter
@@ -486,7 +486,7 @@ async function handlePush(): Promise<void> {
           :items="mainSplitterItems"
           class="h-full w-full"
           :ui="{
-            handle: 'w-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-col-resize',
+            handle: 'w-1 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-col-resize',
           }"
         >
           <!-- PANEL 1: UNIFIED EXPLORER (Changes, Branches, Stashes, Remotes, Tags, Worktrees) -->
@@ -531,7 +531,7 @@ async function handlePush(): Promise<void> {
 
           <!-- PANEL 2: CENTER TABBED WORKBENCH -->
           <template #center>
-            <div class="flex h-full w-full flex-col overflow-hidden">
+            <div class="flex h-full w-full flex-col pt-1.5 pe-1.5">
               <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip (Pinned Overview + Dynamic Tabs) -->
               <WorkspaceDiffTabBar
                 :tabs="currentRepositoryDiffTabs"
@@ -550,10 +550,11 @@ async function handlePush(): Promise<void> {
                 @close-other-diff-tabs="closeOtherDiffTabs"
                 @close-all-diff-tabs="closeAllDiffTabs"
                 @pin-diff-tab="pinDiffTab"
+                class="mb-1"
               />
 
               <!-- Tab Viewport Area -->
-              <div class="relative flex-1 overflow-hidden">
+              <div class="relative flex-1">
                 <!-- Tab 1: Workbench Overview (Commit Graph & Diff / Inspector Viewport) -->
                 <div
                   v-show="!activeDiffTab && !activePullRequestTab && !activeWorkflowRunTab"
@@ -566,7 +567,7 @@ async function handlePush(): Promise<void> {
                     :items="centerSplitterItems"
                     class="h-full w-full"
                     :ui="{
-                      handle: 'h-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-row-resize',
+                      handle: 'h-1 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-row-resize',
                     }"
                   >
                     <!-- Top Island: Commit Graph & History -->
@@ -597,7 +598,7 @@ async function handlePush(): Promise<void> {
 
                     <!-- Bottom Island: Diff & Patch Viewer / Commit Inspector -->
                     <template #diff>
-                      <div class="h-full w-full overflow-hidden">
+                      <div class="h-full w-full">
                         <USplitter
                           v-if="selectedCommitDetails || activeComparison || isLoadingCommitDetails"
                           id="commit-inspect-splitter"

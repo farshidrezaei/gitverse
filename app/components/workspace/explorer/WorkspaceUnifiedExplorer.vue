@@ -17,6 +17,7 @@ import ExplorerRemotesSection from './ExplorerRemotesSection.vue'
 import ExplorerTagsSection from './ExplorerTagsSection.vue'
 import ExplorerWorktreesSection from './ExplorerWorktreesSection.vue'
 import RenameBranchModal from '../RenameBranchModal.vue'
+import AddRemoteModal from '../remote/AddRemoteModal.vue'
 
 interface WorkspaceUnifiedExplorerProps {
   repositoryStatus: DetailedRepositoryStatus | null
@@ -80,6 +81,20 @@ const isWorktreesOpen = ref<boolean>(false)
 // Modals
 const isRenameModalOpen = ref<boolean>(false)
 const branchToRename = ref<string>('')
+const isAddRemoteModalOpen = ref<boolean>(false)
+
+const { addRemote } = useRemoteController()
+
+const existingRemoteNames = computed(() => {
+  return props.references?.remotes?.map(remote => remote.name) || []
+})
+
+async function handleAddRemote(name: string, url: string, shouldFetchImmediately: boolean): Promise<void> {
+  const isSuccess = await addRemote(name, url, shouldFetchImmediately)
+  if (isSuccess) {
+    isAddRemoteModalOpen.value = false
+  }
+}
 
 const existingBranchNames = computed(() => {
   return props.references?.branches.map((branch) => branch.name) || []
@@ -106,7 +121,7 @@ const totalChangesCount = computed(() => {
 </script>
 
 <template>
-  <div class="gv-island-panel flex h-full flex-col overflow-hidden bg-[var(--gv-sidebar)] border-e border-default/70 select-none">
+  <div class="gv-island-panel flex h-full flex-col  bg-(--gv-sidebar) border-e border-default/70 select-none">
     <!-- Top Explorer Title Bar -->
     <div class="flex h-9 shrink-0 items-center justify-between border-b border-default/70 px-3 bg-muted/20">
       <div class="flex items-center gap-2 min-w-0">
@@ -228,7 +243,7 @@ const totalChangesCount = computed(() => {
       </div>
 
       <!-- SECTION 3: Pull Requests -->
-      <div v-if="hasRemotes">
+      <div>
         <button
           type="button"
           class="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold text-highlighted hover:bg-muted/30 transition-colors cursor-pointer"
@@ -250,6 +265,7 @@ const totalChangesCount = computed(() => {
             :current-repository-path="currentRepository?.path"
             @open-pull-request="(pullRequest, account, repositoryFullName) => emit('openPullRequest', pullRequest, account, repositoryFullName)"
             @checkout-branch="emit('checkout', $event)"
+            @open-add-remote-modal="isAddRemoteModalOpen = true"
           />
         </div>
       </div>
@@ -275,6 +291,7 @@ const totalChangesCount = computed(() => {
           <ExplorerActionsSection
             :remotes="props.references?.remotes"
             :current-repository-path="currentRepository?.path"
+            @open-add-remote-modal="isAddRemoteModalOpen = true"
           />
         </div>
       </div>
@@ -385,6 +402,12 @@ const totalChangesCount = computed(() => {
       :current-branch-name="branchToRename"
       :existing-branch-names="existingBranchNames"
       @rename="handleRenameBranch"
+    />
+
+    <AddRemoteModal
+      v-model:open="isAddRemoteModalOpen"
+      :existing-remote-names="existingRemoteNames"
+      @add="handleAddRemote"
     />
   </div>
 </template>

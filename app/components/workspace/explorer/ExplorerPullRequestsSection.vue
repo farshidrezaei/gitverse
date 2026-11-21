@@ -16,6 +16,7 @@ const props = defineProps<ExplorerPullRequestsSectionProps>()
 const emit = defineEmits<{
   openPullRequest: [pullRequest: RemotePullRequest, account: ProviderAccount, repositoryFullName: string]
   checkoutBranch: [branchName: string]
+  openAddRemoteModal: []
 }>()
 
 const { t } = useI18n()
@@ -205,9 +206,29 @@ watch(
       />
     </div>
 
+    <!-- No Remotes Configured Warning Banner -->
+    <div
+      v-if="!isLoading && (!props.remotes || props.remotes.length === 0)"
+      class="flex flex-col items-center justify-center p-3 text-center rounded-xl bg-muted/10 border border-default/50 gap-2"
+    >
+      <UIcon name="i-lucide-globe" class="h-6 w-6 text-muted" />
+      <div class="space-y-0.5">
+        <p class="font-semibold text-highlighted text-xs">{{ t('provider.noRemotesConfigured') }}</p>
+        <p class="text-[11px] text-muted">{{ t('provider.noRemotesDescription') }}</p>
+      </div>
+      <UButton
+        size="xs"
+        color="primary"
+        variant="subtle"
+        icon="i-lucide-plus"
+        :label="t('remote.addRemote')"
+        @click="emit('openAddRemoteModal')"
+      />
+    </div>
+
     <!-- No Accounts Connected Warning Banner -->
     <div
-      v-if="!isLoading && accounts.length === 0"
+      v-else-if="!isLoading && accounts.length === 0"
       class="flex flex-col items-center justify-center p-3 text-center rounded-xl bg-muted/10 border border-default/50 gap-2"
     >
       <UIcon name="i-lucide-link-2-off" class="h-6 w-6 text-muted" />

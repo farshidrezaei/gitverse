@@ -13,6 +13,7 @@ const props = defineProps<ExplorerActionsSectionProps>()
 
 const emit = defineEmits<{
   (e: 'openWorkflowRun', run: WorkflowRun, account: ProviderAccount, repositoryFullName: string): void
+  (e: 'openAddRemoteModal'): void
 }>()
 
 const { t } = useI18n()
@@ -162,6 +163,23 @@ watch(statusFilter, () => {
         </div>
         <USkeleton class="h-3 w-48 rounded" />
       </div>
+    </div>
+
+    <!-- Empty State: No Remotes Configured -->
+    <div v-else-if="!isLoading && (!props.remotes || props.remotes.length === 0)" class="p-6 text-center text-muted-foreground space-y-2">
+      <UIcon name="i-lucide-globe" class="w-8 h-8 mx-auto opacity-30 mb-2" />
+      <div class="space-y-0.5">
+        <p class="font-medium text-xs text-highlighted">{{ t('provider.noRemotesConfigured') }}</p>
+        <p class="text-[11px] text-muted">{{ t('provider.noRemotesDescription') }}</p>
+      </div>
+      <UButton
+        size="xs"
+        color="primary"
+        variant="subtle"
+        icon="i-lucide-plus"
+        :label="t('remote.addRemote')"
+        @click="emit('openAddRemoteModal')"
+      />
     </div>
 
     <!-- Empty State / No Runs -->

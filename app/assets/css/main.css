@@ -56,10 +56,10 @@ html[data-font-size="large"] {
    ========================================================================= */
 :root {
   --ui-radius: 10px;
-  --gv-radius-sm: 6px;
-  --gv-radius-md: 10px;
-  --gv-radius-lg: 14px;
-  --gv-radius-xl: 18px;
+  --gv-radius-sm: 5px;
+  --gv-radius-md: 7px;
+  --gv-radius-lg: 10px;
+  --gv-radius-xl: 12px;
 }
 
 html[data-radius="sharp"] {

@@ -737,6 +737,7 @@
     "stateAll": "All",
     "checkoutBranch": "Checkout Branch",
     "noRemotesConfigured": "No remote repository configured",
+    "noRemotesDescription": "Configure a remote repository to track pull requests, reviews, and cloud workflows.",
     "switchRepositoryPrompt": "Switch repository or enter manually",
     "openInBrowser": "Open in Browser",
     "commentsCount": "{count} comments",
