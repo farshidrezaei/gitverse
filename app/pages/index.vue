@@ -6,8 +6,7 @@ import WorkspaceRepositoryTabBar from '~/components/workspace/tabs/WorkspaceRepo
 import WorkspaceDiffTabBar from '~/components/workspace/tabs/WorkspaceDiffTabBar.vue'
 import WorkspaceDiffTabContent from '~/components/workspace/tabs/WorkspaceDiffTabContent.vue'
 import WorkspacePullRequestTabContent from '~/components/workspace/tabs/WorkspacePullRequestTabContent.vue'
-import WorkspaceBranchSidebar from '~/components/workspace/branch/WorkspaceBranchSidebar.vue'
-import WorkspaceStagingSidebar from '~/components/workspace/staging/WorkspaceStagingSidebar.vue'
+import WorkspaceUnifiedExplorer from '~/components/workspace/explorer/WorkspaceUnifiedExplorer.vue'
 import WorkspaceCommitGraphViewport from '~/components/workspace/CommitGraphViewport.vue'
 import WorkspaceDiffViewerPanel from '~/components/workspace/DiffViewerPanel.vue'
 import WorkspaceCommitInspectorPanel from '~/components/workspace/CommitInspectorPanel.vue'
@@ -231,9 +230,9 @@ const mainSplitterItems = ref<SplitterItem[]>([
   {
     id: 'sidebar-island',
     slot: 'sidebar',
-    minSize: 14,
-    defaultSize: 19,
-    maxSize: 32,
+    minSize: 16,
+    defaultSize: 24,
+    maxSize: 38,
     collapsible: true,
     collapsedSize: 0,
     class: 'p-1.5 overflow-hidden flex flex-col',
@@ -241,18 +240,8 @@ const mainSplitterItems = ref<SplitterItem[]>([
   {
     id: 'center-island',
     slot: 'center',
-    minSize: 35,
-    defaultSize: 53,
-    class: 'p-1.5 overflow-hidden flex flex-col',
-  },
-  {
-    id: 'staging-island',
-    slot: 'staging',
-    minSize: 18,
-    defaultSize: 28,
-    maxSize: 45,
-    collapsible: true,
-    collapsedSize: 0,
+    minSize: 50,
+    defaultSize: 76,
     class: 'p-1.5 overflow-hidden flex flex-col',
   },
 ])
@@ -536,13 +525,34 @@ async function handlePush(): Promise<void> {
               handle: 'w-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-col-resize',
             }"
           >
-            <!-- PANEL 1: INSET SIDEBAR ISLAND (Branches, Tags, Remotes) -->
+            <!-- PANEL 1: UNIFIED EXPLORER (Changes, Branches, Stashes, Remotes, Tags, Worktrees) -->
             <template #sidebar>
-              <WorkspaceBranchSidebar
+              <WorkspaceUnifiedExplorer
+                :repository-status="repositoryStatus"
                 :references="repositoryReferences"
                 :favorite-branches="favoriteBranches"
                 :selected-branch-name="selectedBranchName"
+                :selected-diff-target="selectedDiffTarget"
+                :staging-view-mode="stagingViewMode"
+                :commit-message="commitMessage"
+                :is-amend="isAmend"
+                :is-bypass-hooks="isBypassHooks"
                 :is-loading="isLoading"
+                :is-operating="isOperating"
+                @update:staging-view-mode="stagingViewMode = $event"
+                @update:commit-message="commitMessage = $event"
+                @update:is-amend="isAmend = $event"
+                @update:is-bypass-hooks="isBypassHooks = $event"
+                @stage-file="stageFile"
+                @unstage-file="unstageFile"
+                @stage-all="stageAll"
+                @unstage-all="unstageAll"
+                @discard-file="handleDiscard"
+                @discard-all-unstaged="handleDiscardAllUnstaged"
+                @select-file="handleSelectFile"
+                @open-diff-tab="handleOpenStagingDiffTab"
+                @commit="handleCommit"
+                @refresh="fetchStatus"
                 @select-branch="handleSelectBranch"
                 @checkout="handleCheckout"
                 @create-branch-from-branch="handleCreateBranchFromBranch"
@@ -554,7 +564,7 @@ async function handlePush(): Promise<void> {
               />
             </template>
 
-            <!-- PANEL 2: INSET CENTER ISLANDS (Commit Graph + Diff Viewer) -->
+            <!-- PANEL 2: CENTER WORKBENCH (Commit Graph & Diff / Inspector Viewport) -->
             <template #center>
               <USplitter
                 id="center-vertical-splitter"
@@ -592,66 +602,63 @@ async function handlePush(): Promise<void> {
                   />
                 </template>
 
-                <!-- Bottom Island: Diff & Patch Viewer -->
+                <!-- Bottom Island: Diff & Patch Viewer / Commit Inspector -->
                 <template #diff>
-                  <WorkspaceDiffViewerPanel
-                    :diff="currentDiff"
-                    :selected-target="selectedDiffTarget"
-                    :is-loading="isLoadingDiff"
-                    @stage="stageFile"
-                    @unstage="unstageFile"
-                    @discard="handleDiscard"
-                  />
+                  <div class="h-full w-full overflow-hidden">
+                    <USplitter
+                      v-if="selectedCommitDetails || activeComparison || isLoadingCommitDetails"
+                      id="commit-inspect-splitter"
+                      :items="[
+                        { id: 'inspector-subpanel', slot: 'inspector', minSize: 25, defaultSize: 35, maxSize: 50, class: 'p-1 overflow-hidden flex flex-col' },
+                        { id: 'diff-subpanel', slot: 'diff', minSize: 40, defaultSize: 65, class: 'p-1 overflow-hidden flex flex-col' },
+                      ]"
+                      class="h-full w-full"
+                      :ui="{
+                        handle: 'w-1.5 bg-transparent hover:bg-primary/50 transition-colors data-[state=drag]:bg-primary cursor-col-resize',
+                      }"
+                    >
+                      <template #inspector>
+                        <WorkspaceCommitInspectorPanel
+                          :commit-details="selectedCommitDetails"
+                          :active-comparison="activeComparison"
+                          :selected-file-path="selectedCommitFilePath"
+                          :is-loading="isLoadingCommitDetails"
+                          @select-file="handleSelectCommitFile"
+                          @open-diff-tab="handleOpenCommitDiffTab"
+                          @create-branch="handleCreateBranchFromCommit"
+                          @checkout-commit="handleCheckoutCommit"
+                          @cherry-pick="cherryPickCommit"
+                          @revert="revertCommit"
+                          @reset="resetToCommit"
+                          @close="clearCommitSelection"
+                          @swap-comparison="swapComparison"
+                          @close-comparison="clearComparison"
+                        />
+                      </template>
+                      <template #diff>
+                        <WorkspaceDiffViewerPanel
+                          :diff="currentDiff"
+                          :selected-target="selectedDiffTarget"
+                          :is-loading="isLoadingDiff"
+                          @stage="stageFile"
+                          @unstage="unstageFile"
+                          @discard="handleDiscard"
+                        />
+                      </template>
+                    </USplitter>
+
+                    <WorkspaceDiffViewerPanel
+                      v-else
+                      :diff="currentDiff"
+                      :selected-target="selectedDiffTarget"
+                      :is-loading="isLoadingDiff"
+                      @stage="stageFile"
+                      @unstage="unstageFile"
+                      @discard="handleDiscard"
+                    />
+                  </div>
                 </template>
               </USplitter>
-            </template>
-
-            <!-- PANEL 3: INSET STAGING ISLAND & COMMIT INSPECTOR -->
-            <template #staging>
-              <!-- Commit Inspector Island -->
-              <WorkspaceCommitInspectorPanel
-                v-if="selectedCommitDetails || activeComparison || isLoadingCommitDetails"
-                :commit-details="selectedCommitDetails"
-                :active-comparison="activeComparison"
-                :selected-file-path="selectedCommitFilePath"
-                :is-loading="isLoadingCommitDetails"
-                @select-file="handleSelectCommitFile"
-                @open-diff-tab="handleOpenCommitDiffTab"
-                @create-branch="handleCreateBranchFromCommit"
-                @checkout-commit="handleCheckoutCommit"
-                @cherry-pick="cherryPickCommit"
-                @revert="revertCommit"
-                @reset="resetToCommit"
-                @close="clearCommitSelection"
-                @swap-comparison="swapComparison"
-                @close-comparison="clearComparison"
-              />
-
-              <!-- Working Tree Changes Island -->
-              <WorkspaceStagingSidebar
-                v-else
-                :repository-status="repositoryStatus"
-                :selected-diff-target="selectedDiffTarget"
-                :staging-view-mode="stagingViewMode"
-                :is-loading="isLoading"
-                :commit-message="commitMessage"
-                :is-amend="isAmend"
-                :is-bypass-hooks="isBypassHooks"
-                @update:staging-view-mode="stagingViewMode = $event"
-                @update:commit-message="commitMessage = $event"
-                @update:is-amend="isAmend = $event"
-                @update:is-bypass-hooks="isBypassHooks = $event"
-                @stage-file="stageFile"
-                @unstage-file="unstageFile"
-                @stage-all="stageAll"
-                @unstage-all="unstageAll"
-                @discard-file="handleDiscard"
-                @discard-all-unstaged="handleDiscardAllUnstaged"
-                @select-file="handleSelectFile"
-                @open-diff-tab="handleOpenStagingDiffTab"
-                @commit="handleCommit"
-                @refresh="fetchStatus"
-              />
             </template>
           </USplitter>
         </div>

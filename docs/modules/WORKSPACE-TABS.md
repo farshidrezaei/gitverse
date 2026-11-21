@@ -21,7 +21,7 @@ graph TD
     L1Bar["Level 1: Repository Tab Strip (Repo A | Repo B | Repo C)"]
     L2Bar["Level 2: Scoped Sub-Tab Strip (Workbench | PR #42 | Diff: auth.ts)"]
     
-    WorkbenchIsland["Main Workspace Workbench Island (3-Panel Splitter)"]
+    WorkbenchIsland["Main Workspace Workbench Island (Unified Explorer + Commit Graph/Inspector Splitter)"]
     DiffTabContent["WorkspaceDiffTabContent.vue (Full-Page Diff)"]
     PRTabContent["WorkspacePullRequestTabContent.vue (Full-Page PR Review)"]
 
