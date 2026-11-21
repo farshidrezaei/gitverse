@@ -6,6 +6,7 @@ pub mod history;
 pub mod insights;
 pub mod process;
 pub mod repository;
+pub mod search;
 pub mod stash;
 pub mod status;
 pub mod submodule;
@@ -24,6 +25,8 @@ mod file_history_test;
 mod history_test;
 #[cfg(test)]
 mod insights_test;
+#[cfg(test)]
+mod search_test;
 #[cfg(test)]
 mod stash_test;
 #[cfg(test)]

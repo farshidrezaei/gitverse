@@ -82,6 +82,7 @@ pub fn run() {
             commands::get_repository_insights,
             commands::get_file_history,
             commands::get_file_content_at_commit,
+            commands::search_repository,
             commands::get_commit_graph,
             commands::get_repository_references,
             commands::checkout_branch,

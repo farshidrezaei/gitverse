@@ -24,6 +24,7 @@ const emit = defineEmits<{
   openSubmodules: []
   openInsights: []
   openFileHistory: []
+  openSearch: []
 }>()
 
 const { t } = useI18n()
@@ -284,6 +285,18 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
           class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
           :aria-label="t('fileHistory.modalTitle')"
           @click="emit('openFileHistory')"
+        />
+      </UTooltip>
+
+      <UTooltip :text="t('search.title')">
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-search-code"
+          class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
+          :aria-label="t('search.title')"
+          @click="emit('openSearch')"
         />
       </UTooltip>
 

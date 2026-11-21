@@ -830,5 +830,23 @@
     "notifications": {
       "copiedContent": "محتوای نسخه فایل در کلیپ‌بورد کپی شد"
     }
+  },
+  "search": {
+    "title": "جستجوی کد و تاریخچه",
+    "subtitle": "جستجوی محتوای مخزن در تمام شاخه‌ها و تاریخچه با استفاده از git grep.",
+    "queryPlaceholder": "متن جستجو یا الگوی رجکس...",
+    "searchAction": "جستجو",
+    "caseSensitive": "حساس به حروف",
+    "wholeWord": "کلمه کامل",
+    "regex": "عبارت منظم (Regex)",
+    "pathPatternPlaceholder": "فیلتر مسیر (مثال: *.ts, src/)",
+    "referencePlaceholder": "نسخه (مثال: HEAD, main)",
+    "readyToSearch": "آماده جستجو در مخزن",
+    "readyToSearchDescription": "کلیدواژه یا الگوی رجکس مورد نظر خود را وارد کنید تا خطوط منطبق در سورس‌کد پیدا شوند.",
+    "noMatchesFound": "هیچ موردی یافت نشد",
+    "noMatchesDescription": "متن جستجو، فیلتر مسیر یا تنظیمات حساسیت به حروف را بررسی کنید.",
+    "summary": "{count} مورد منطبق در {files} فایل پیدا شد",
+    "matchCopied": "خط منطبق در کلیپ‌بورد کپی شد",
+    "keyboardShortcutHint": "برای اجرای جستجو Enter را بزنید"
   }
 }

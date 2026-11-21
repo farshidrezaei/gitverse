@@ -259,6 +259,31 @@ pub async fn get_file_content_at_commit(
         .await
 }
 
+/// Tauri IPC command to search repository files or history using git grep.
+#[tauri::command]
+pub async fn search_repository(
+    state: State<'_, ApplicationState>,
+    query: String,
+    reference: Option<String>,
+    path_pattern: Option<String>,
+    is_case_sensitive: Option<bool>,
+    is_word_match: Option<bool>,
+    is_regex: Option<bool>,
+    directory_path: Option<String>,
+) -> Result<crate::domain::RepositorySearchResult, ApplicationError> {
+    state
+        .search_repository(
+            directory_path.as_deref(),
+            &query,
+            reference.as_deref(),
+            path_pattern.as_deref(),
+            is_case_sensitive.unwrap_or(false),
+            is_word_match.unwrap_or(false),
+            is_regex.unwrap_or(false),
+        )
+        .await
+}
+
 /// Tauri IPC command to commit staged changes.
 #[tauri::command]
 pub async fn commit(

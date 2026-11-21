@@ -2219,4 +2219,88 @@ impl GitRepositoryInspector {
 
         Ok(content)
     }
+
+    /// Executes a code or text search across repository files or revisions using git grep.
+    pub async fn search_repository(
+        &self,
+        directory_path: &Path,
+        query: &str,
+        reference: Option<&str>,
+        path_pattern: Option<&str>,
+        is_case_sensitive: bool,
+        is_word_match: bool,
+        is_regex: bool,
+    ) -> Result<crate::domain::RepositorySearchResult, ApplicationError> {
+        let is_valid = self.verify_repository_path(directory_path).await?;
+        if !is_valid {
+            return Err(ApplicationError::InvalidRepository(
+                directory_path.to_string_lossy().to_string(),
+            ));
+        }
+
+        if query.trim().is_empty() {
+            return Ok(crate::domain::RepositorySearchResult {
+                query: String::new(),
+                total_matches: 0,
+                file_count: 0,
+                matches: Vec::new(),
+            });
+        }
+
+        let mut arguments: Vec<&str> = vec!["grep", "-n", "-I"];
+
+        if !is_case_sensitive {
+            arguments.push("-i");
+        }
+        if is_word_match {
+            arguments.push("-w");
+        }
+        if is_regex {
+            arguments.push("-E");
+        } else {
+            arguments.push("-F");
+        }
+
+        let has_reference = reference.map(|r| !r.trim().is_empty()).unwrap_or(false);
+        if !has_reference {
+            arguments.push("--untracked");
+        }
+
+        arguments.push(query.trim());
+
+        if let Some(target_reference) = reference {
+            if !target_reference.trim().is_empty() {
+                arguments.push(target_reference.trim());
+            }
+        }
+
+        if let Some(pattern) = path_pattern {
+            if !pattern.trim().is_empty() {
+                arguments.push("--");
+                arguments.push(pattern.trim());
+            }
+        }
+
+        let output_result = self
+            .executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await;
+
+        match output_result {
+            Ok(output) => Ok(super::search::parse_git_grep_output(
+                &output,
+                query,
+                reference.filter(|r| !r.trim().is_empty()),
+            )),
+            Err(ApplicationError::GitExecutionFailed { exit_code: 1, .. }) => {
+                Ok(crate::domain::RepositorySearchResult {
+                    query: query.to_string(),
+                    total_matches: 0,
+                    file_count: 0,
+                    matches: Vec::new(),
+                })
+            }
+            Err(error) => Err(error),
+        }
+    }
 }

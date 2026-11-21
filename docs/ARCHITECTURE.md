@@ -207,6 +207,7 @@ gitverse/
 │   │       ├── patch/                # Export & apply unified diff and format-patch files
 │   │       ├── submodule/            # Nested Git submodules status, sync, and recursive updates
 │   │       ├── insights/             # Repository analytics, code churn, and contributor velocity
+│   │       ├── search/               # Global repository code & regex search (git grep)
 │   │       ├── provider/             # Pull request explorer, code review, merge modals
 │   │       ├── remote/               # Remote repository add/edit/manage modals
 │   │       ├── staging/              # Working tree changes, stash preview & diff inspection, conflict resolver
@@ -238,9 +239,9 @@ gitverse/
 │   │   ├── application/              # Application lifecycle, state containers
 │   │   ├── commands/                 # Tauri IPC command dispatchers
 │   │   ├── domain/                   # Pure business entities, enums, and validators
-│   │   ├── infrastructure/           # Process runner, SQLite, Keyring, Git adapters, diagnostics logger, bisect, patch, submodule, insights, file history
+│   │   ├── infrastructure/           # Process runner, SQLite, Keyring, Git adapters, diagnostics logger, bisect, patch, submodule, insights, file history, code search
 │   │   ├── services/                 # Graph DAG computation algorithms & benchmarks
 │   │   ├── lib.rs                    # Plugin registration, invoke handlers, initialization
 │   │   └── main.rs                   # Desktop entrypoint
-└── test/                             # Frontend Vitest test suites (134 passing unit & E2E tests; 69 Rust unit/integration tests)
+│   └── test/                         # Frontend Vitest test suites (135 passing unit & E2E tests; 73 Rust unit/integration tests)
 ```

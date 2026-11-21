@@ -830,5 +830,23 @@
     "notifications": {
       "copiedContent": "Historical file snapshot copied to clipboard"
     }
+  },
+  "search": {
+    "title": "Code & History Search",
+    "subtitle": "Search repository content across branches and revisions with git grep.",
+    "queryPlaceholder": "Search text or regex pattern...",
+    "searchAction": "Search",
+    "caseSensitive": "Match Case",
+    "wholeWord": "Whole Word",
+    "regex": "Regular Expression",
+    "pathPatternPlaceholder": "Path (e.g. *.ts, src/)",
+    "referencePlaceholder": "Ref (e.g. HEAD, main)",
+    "readyToSearch": "Ready to search repository",
+    "readyToSearchDescription": "Enter keywords or regex patterns to locate matching lines across code files.",
+    "noMatchesFound": "No matching code lines found",
+    "noMatchesDescription": "Try adjusting your query, pattern, or case sensitivity options.",
+    "summary": "Found {count} matches across {files} files",
+    "matchCopied": "Match line copied to clipboard",
+    "keyboardShortcutHint": "Press Enter to run query"
   }
 }

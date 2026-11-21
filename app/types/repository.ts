@@ -394,8 +394,31 @@ export interface FileBlame {
   lines: BlameHunk[]
 }
 
+export interface FileRevisionEntry {
+  commit_hash: string
+  author_name: string
+  author_email: string
+  author_timestamp: number
+  commit_summary: string
+  change_status: string
+}
 
+export interface FileHistoryTimeline {
+  file_path: string
+  revisions: FileRevisionEntry[]
+  total_revisions: number
+}
 
+export interface SearchMatchEntry {
+  file_path: string
+  line_number: number
+  line_content: string
+}
 
-
+export interface RepositorySearchResult {
+  query: string
+  total_matches: number
+  file_count: number
+  matches: SearchMatchEntry[]
+}
 

@@ -643,4 +643,52 @@ mod tests {
         let v1_content = inspector.get_file_content_at_commit(repository_path, &timeline.revisions[1].commit_hash, "doc.txt").await.expect("v1 content");
         assert_eq!(v1_content, "version 1\n");
     }
+
+    #[tokio::test]
+    async fn test_search_repository() {
+        use std::process::Command;
+        use crate::infrastructure::git::GitRepositoryInspector;
+
+        let temporary_dir = tempdir().expect("Failed to create temporary directory");
+        let repository_path = temporary_dir.path();
+
+        Command::new("git").args(["init", "-b", "main"]).current_dir(repository_path).output().expect("git init");
+        Command::new("git").args(["config", "user.name", "Tester"]).current_dir(repository_path).output().expect("git config name");
+        Command::new("git").args(["config", "user.email", "test@test.com"]).current_dir(repository_path).output().expect("git config email");
+
+        std::fs::create_dir_all(repository_path.join("src")).expect("create src dir");
+        std::fs::write(repository_path.join("src/main.rs"), "fn main() {\n    let secret_identifier = 42;\n}\n").expect("write main.rs");
+        std::fs::write(repository_path.join("README.md"), "# Hello World\n").expect("write readme");
+
+        Command::new("git").args(["add", "."]).current_dir(repository_path).output().expect("git add");
+        Command::new("git").args(["commit", "-m", "initial commit"]).current_dir(repository_path).output().expect("commit");
+
+        let executor = GitProcessExecutor::new(std::path::PathBuf::from("git"));
+        let inspector = GitRepositoryInspector::new(executor);
+
+        // Case-sensitive exact match
+        let result = inspector
+            .search_repository(repository_path, "secret_identifier", None, None, true, false, false)
+            .await
+            .expect("search repository");
+        assert_eq!(result.total_matches, 1);
+        assert_eq!(result.file_count, 1);
+        assert_eq!(result.matches[0].file_path, "src/main.rs");
+        assert_eq!(result.matches[0].line_number, 2);
+
+        // Case-insensitive match
+        let case_insensitive = inspector
+            .search_repository(repository_path, "SECRET_IDENTIFIER", None, None, false, false, false)
+            .await
+            .expect("case insensitive search");
+        assert_eq!(case_insensitive.total_matches, 1);
+
+        // Nonexistent match returns 0 matches cleanly
+        let empty_search = inspector
+            .search_repository(repository_path, "nonexistent_token_foo", None, None, false, false, false)
+            .await
+            .expect("empty search");
+        assert_eq!(empty_search.total_matches, 0);
+        assert!(empty_search.matches.is_empty());
+    }
 }

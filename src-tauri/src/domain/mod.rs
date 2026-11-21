@@ -457,6 +457,24 @@ pub struct FileHistoryTimeline {
     pub total_revisions: u32,
 }
 
+/// A single matching line from repository code search.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SearchMatchEntry {
+    pub file_path: String,
+    pub line_number: u32,
+    pub line_content: String,
+}
+
+/// Aggregated results from a code or history search.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RepositorySearchResult {
+    pub query: String,
+    pub total_matches: u32,
+    pub file_count: u32,
+    pub matches: Vec<SearchMatchEntry>,
+}
+
+
 
 
 

@@ -853,6 +853,31 @@ impl ApplicationState {
             .await
     }
 
+    /// Searches repository files or historical revisions using git grep.
+    pub async fn search_repository(
+        &self,
+        directory_path: Option<&str>,
+        query: &str,
+        reference: Option<&str>,
+        path_pattern: Option<&str>,
+        is_case_sensitive: bool,
+        is_word_match: bool,
+        is_regex: bool,
+    ) -> Result<crate::domain::RepositorySearchResult, ApplicationError> {
+        let target_path = self.resolve_path(directory_path).await?;
+        self.git_inspector
+            .search_repository(
+                &target_path,
+                query,
+                reference,
+                path_pattern,
+                is_case_sensitive,
+                is_word_match,
+                is_regex,
+            )
+            .await
+    }
+
     /// Collects system diagnostics and environment details for voluntary bug reporting.
     pub async fn get_application_diagnostics(&self) -> Result<ApplicationDiagnostics, ApplicationError> {
         let git_info = self.discover_git(None).await?;

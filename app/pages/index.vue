@@ -150,6 +150,7 @@ const isApplyPatchModalOpen = ref<boolean>(false)
 const isSubmoduleModalOpen = ref<boolean>(false)
 const isInsightsModalOpen = ref<boolean>(false)
 const isFileHistoryModalOpen = ref<boolean>(false)
+const isSearchModalOpen = ref<boolean>(false)
 const selectedFileHistoryPath = ref<string>('')
 const selectedBranchName = ref<string | null>(null)
 const activeGraphReference = ref<string | null>(null)
@@ -488,6 +489,7 @@ async function handlePush(): Promise<void> {
         @open-submodules="isSubmoduleModalOpen = true"
         @open-insights="isInsightsModalOpen = true"
         @open-file-history="isFileHistoryModalOpen = true"
+        @open-search="isSearchModalOpen = true"
       />
 
       <!-- LEVEL 2: Scoped Diff & Pull Request Tab Strip -->
@@ -731,6 +733,12 @@ async function handlePush(): Promise<void> {
       v-model:open="isFileHistoryModalOpen"
       :initial-file-path="selectedFileHistoryPath"
       @locate-commit="(sha) => { selectCommit(sha) }"
+    />
+
+    <!-- Global Code & History Search Modal -->
+    <RepositorySearchModal
+      v-model:open="isSearchModalOpen"
+      @locate-commit="(sha: string) => { selectCommit(sha) }"
     />
   </div>
 </template>
