@@ -114,7 +114,6 @@ const isCreateBranchModalOpen = ref<boolean>(false)
 const isCreateWorktreeModalOpen = ref<boolean>(false)
 const isInteractiveRebaseModalOpen = ref<boolean>(false)
 const interactiveRebaseBaseHash = ref<string>('')
-const isFolderPickerModalOpen = ref<boolean>(false)
 const { addWorktree } = useWorktreeController()
 
 function handleOpenInteractiveRebase(commitHash: string): void {
@@ -141,20 +140,25 @@ async function handleCreateWorktree(
 const commitMessage = ref<string>('')
 const isAmend = ref<boolean>(false)
 const isBypassHooks = ref<boolean>(false)
-const isReflogModalOpen = ref<boolean>(false)
-const isBisectModalOpen = ref<boolean>(false)
-const isExportPatchModalOpen = ref<boolean>(false)
-const isApplyPatchModalOpen = ref<boolean>(false)
-const isSubmoduleModalOpen = ref<boolean>(false)
-const isInsightsModalOpen = ref<boolean>(false)
-const isFileHistoryModalOpen = ref<boolean>(false)
-const isSearchModalOpen = ref<boolean>(false)
-const isCommitQueueModalOpen = ref<boolean>(false)
-const commitQueueMode = ref<'cherryPick' | 'revert'>('cherryPick')
-const isGitBundleModalOpen = ref<boolean>(false)
-const isExportArchiveModalOpen = ref<boolean>(false)
-const isLfsManagerModalOpen = ref<boolean>(false)
-const isCustomActionsModalOpen = ref<boolean>(false)
+
+const {
+  isFolderPickerModalOpen,
+  isReflogModalOpen,
+  isBisectModalOpen,
+  isExportPatchModalOpen,
+  isApplyPatchModalOpen,
+  isSubmoduleModalOpen,
+  isInsightsModalOpen,
+  isFileHistoryModalOpen,
+  isSearchModalOpen,
+  isCommitQueueModalOpen,
+  commitQueueMode,
+  isGitBundleModalOpen,
+  isExportArchiveModalOpen,
+  isLfsManagerModalOpen,
+  isCustomActionsModalOpen,
+} = useWorkspaceModals()
+
 const selectedFileHistoryPath = ref<string>('')
 const selectedBranchName = ref<string | null>(null)
 const activeGraphReference = ref<string | null>(null)

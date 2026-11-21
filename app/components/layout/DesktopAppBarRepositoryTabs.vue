@@ -3,20 +3,7 @@ import type { DropdownMenuItem, ContextMenuItem } from '@nuxt/ui'
 import type { WorkspaceRepositoryTab } from '~/types/workspaceTab'
 import { useWorkspaceTabController } from '~/composables/useWorkspaceTabController'
 import { useWorkspaceManager } from '~/composables/useWorkspaceManager'
-
-const emit = defineEmits<{
-  openFolderPicker: []
-  openReflog: []
-  openBisect: []
-  openExportPatch: []
-  openApplyPatch: []
-  openSubmodules: []
-  openInsights: []
-  openGitBundle: []
-  openExportArchive: []
-  openLfsManager: []
-  openCustomActions: []
-}>()
+import { useWorkspaceModals } from '~/composables/useWorkspaceModals'
 
 const { t } = useI18n()
 const {
@@ -34,6 +21,17 @@ const {
   closeRepository,
   promptAndOpenRepository,
 } = useWorkspaceManager()
+
+const {
+  openFolderPicker,
+  openReflog,
+  openBisect,
+  openExportPatch,
+  openApplyPatch,
+  openSubmodules,
+  openInsights,
+  openGitBundle,
+} = useWorkspaceModals()
 
 async function handleSelectRepository(repositoryPath: string): Promise<void> {
   activateRepositoryTab(repositoryPath)
@@ -107,39 +105,39 @@ const gitToolsDropdownItems = computed<DropdownMenuItem[][]>(() => [
     {
       label: t('reflog.title'),
       icon: 'i-lucide-history',
-      onSelect: () => emit('openReflog'),
+      onSelect: () => openReflog(),
     },
     {
       label: t('bisect.title'),
       icon: 'i-lucide-git-commit',
-      onSelect: () => emit('openBisect'),
+      onSelect: () => openBisect(),
     },
     {
       label: t('insights.title'),
       icon: 'i-lucide-bar-chart-2',
-      onSelect: () => emit('openInsights'),
+      onSelect: () => openInsights(),
     },
     {
       label: t('submodule.title'),
       icon: 'i-lucide-folder-git',
-      onSelect: () => emit('openSubmodules'),
+      onSelect: () => openSubmodules(),
     },
   ],
   [
     {
       label: t('patch.exportTitle'),
       icon: 'i-lucide-file-diff',
-      onSelect: () => emit('openExportPatch'),
+      onSelect: () => openExportPatch(),
     },
     {
       label: t('patch.applyTitle'),
       icon: 'i-lucide-file-input',
-      onSelect: () => emit('openApplyPatch'),
+      onSelect: () => openApplyPatch(),
     },
     {
       label: t('archive.bundleModalTitle'),
       icon: 'i-lucide-package',
-      onSelect: () => emit('openGitBundle'),
+      onSelect: () => openGitBundle(),
     },
   ],
 ])

@@ -13,14 +13,6 @@ const {
 const emit = defineEmits<{
   openSettings: []
   openCommandPalette: []
-  openFolderPicker: []
-  openReflog: []
-  openBisect: []
-  openExportPatch: []
-  openApplyPatch: []
-  openSubmodules: []
-  openInsights: []
-  openGitBundle: []
 }>()
 
 function handleBarDoubleClick(event: MouseEvent): void {
@@ -49,16 +41,7 @@ function handleBarDoubleClick(event: MouseEvent): void {
     </div>
 
     <!-- Repository Tabs Strip directly in Titlebar -->
-    <DesktopAppBarRepositoryTabs
-      @open-folder-picker="emit('openFolderPicker')"
-      @open-reflog="emit('openReflog')"
-      @open-bisect="emit('openBisect')"
-      @open-export-patch="emit('openExportPatch')"
-      @open-apply-patch="emit('openApplyPatch')"
-      @open-submodules="emit('openSubmodules')"
-      @open-insights="emit('openInsights')"
-      @open-git-bundle="emit('openGitBundle')"
-    />
+    <DesktopAppBarRepositoryTabs />
 
     <!-- Center: Quick Command Palette Trigger -->
     <div data-tauri-drag-region class="flex-1 h-full flex items-center justify-center px-4 max-w-sm mx-auto">

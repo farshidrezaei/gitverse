@@ -92,7 +92,7 @@ flowchart LR
 | Layer | Responsibility | Key Modules |
 |---|---|---|
 | **Presentation (Frontend)** | User interface, virtualized scrolling, reactive layouts, RTL/LTR layout symmetry, design system token binding. | `app/components/`, `app/pages/`, `app/layouts/` |
-| **State Controllers (Composables)** | Reactive business workflows, caching, modal orchestration, optimistic updates. | `useWorkspaceManager`, `useProviderController`, `useCommitGraph` |
+| **State Controllers (Composables)** | Reactive business workflows, caching, modal orchestration, optimistic updates. | `useWorkspaceManager`, `useWorkspaceModals`, `useProviderController`, `useCommitGraph` |
 | **Type Validation & Schemas** | Runtime parameter validation using Zod for frontend and serde/domain validators for Rust. | `app/schemas/`, `src-tauri/src/domain/validation.rs` |
 | **Rust Tauri Commands** | Structured command dispatch, argument validation, and error propagation via `thiserror`. | `src-tauri/src/commands/repository.rs`, `commands/provider.rs` |
 | **Domain Services** | Computational algorithms (DAG generation, deterministic lane assignment, diff parsing). | `src-tauri/src/services/graph.rs`, `infrastructure/git/diff.rs` |
