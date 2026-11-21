@@ -92,6 +92,7 @@
   "worktree": {
     "title": "درخت‌های کاری (Worktrees)",
     "createTitle": "ایجاد ورک‌تری جدید",
+    "noWorktrees": "هیچ درخت کاری تعریف نشده است",
     "directoryPathLabel": "مسیر دایرکتوری ورک‌تری",
     "directoryPathHelp": "مسیری که فایل‌های کاری شاخه مستقل در آن ذخیره می‌شوند",
     "directoryPathRequired": "مسیر دایرکتوری الزامی است",
@@ -144,6 +145,8 @@
     "designSystem": "سیستم دیزاین"
   },
   "git": {
+    "tools": "ابزارهای گیت",
+    "noTags": "برچسبی وجود ندارد",
     "branch": "شاخه",
     "branches": "شاخه‌ها",
     "allBranches": "همه شاخه‌ها",
@@ -269,6 +272,9 @@
   },
   "repository": {
     "noActiveRepository": "مخزنی باز نیست",
+    "openExisting": "باز کردن مخزن موجود...",
+    "noStagedChanges": "تغییر آماده‌ای وجود ندارد",
+    "noUnstagedChanges": "تغییر ذخیره‌نشده‌ای وجود ندارد",
     "openRepository": "باز کردن مخزن",
     "openFolder": "انتخاب پوشه",
     "cloneRepository": "کلون مخزن",
@@ -425,7 +431,8 @@
     "applyMessage": "اعمال پیام کامیت",
     "loadTemplate": "بارگذاری قالب",
     "templateLoadedSuccess": "قالب کامیت با موفقیت بارگذاری شد",
-    "noTemplateFound": "قالب کامیتی برای این مخزن یافت نشد"
+    "noTemplateFound": "قالب کامیتی برای این مخزن یافت نشد",
+    "messagePlaceholder": "خلاصه پیام کامیت را بنویسید..."
   },
   "stash": {
     "title": "استش‌ها (Stashes)",
@@ -615,6 +622,9 @@
   },
   "remote": {
     "title": "ریموت‌ها",
+    "name": "نام مخزن دوردست",
+    "fetchUrl": "آدرس دریافت (Fetch URL)",
+    "noRemotes": "مخزن دوری تعریف نشده است",
     "addRemote": "افزودن ریموت",
     "addRemoteTitle": "افزودن ریموت جدید",
     "addRemoteDescription": "یک مخزن گیت راه دور برای ارسال و دریافت تغییرات اضافه کنید.",
@@ -743,6 +753,7 @@
     "totalEntries": "{count} سابقه در رف‌لاگ"
   },
   "bisect": {
+    "title": "عیب‌یابی دوگانه (Bisect)",
     "modalTitle": "ردیابی گام‌به‌گام باگ (Git Bisect)",
     "modalSubtitle": "جستجوی دودویی در تاریخچه کامیت‌ها برای شناسایی اولین کامیت معیوب.",
     "culpritFound": "کامیت ایجادکننده باگ شناسایی شد!",
@@ -812,6 +823,7 @@
     "validationPatchTooLarge": "حجم محتوای پچ بیش از حد مجاز است"
   },
   "submodule": {
+    "title": "زیرمخزن‌ها (Submodules)",
     "modalTitle": "زیرمخزن‌ها (Git Submodules)",
     "modalSubtitle": "مدیریت، همگام‌سازی و بروزرسانی بازگشتی مخازن تودرتو.",
     "totalCount": "{count} زیرمخزن ثبت‌شده",
@@ -832,6 +844,7 @@
     }
   },
   "insights": {
+    "title": "آمار و بینش مخزن",
     "modalTitle": "آمار و تحلیل سرعت مخزن (Insights)",
     "modalSubtitle": "تغییرات کد، الگوهای فعالیت هفتگی و رتبه‌بندی مشارکت‌کنندگان.",
     "totalCommits": "مجموع کامیت‌ها",

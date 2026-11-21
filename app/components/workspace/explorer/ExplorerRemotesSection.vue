@@ -174,7 +174,7 @@ function getRemoteContextMenu(remote: RemoteSummary): ContextMenuItem[][] {
     </div>
 
     <div v-else class="text-[11px] text-muted italic px-1 py-1 flex items-center justify-between">
-      <span>No remotes</span>
+      <span>{{ t('remote.noRemotes') }}</span>
       <UButton
         size="xs"
         variant="link"

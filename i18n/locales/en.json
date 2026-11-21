@@ -92,6 +92,7 @@
   "worktree": {
     "title": "Worktrees",
     "createTitle": "Create Git Worktree",
+    "noWorktrees": "No worktrees registered",
     "directoryPathLabel": "Worktree Directory Path",
     "directoryPathHelp": "Path where the linked working tree files will be stored",
     "directoryPathRequired": "Worktree destination path is required",
@@ -144,6 +145,8 @@
     "designSystem": "Design System"
   },
   "git": {
+    "tools": "Git Tools",
+    "noTags": "No tags found",
     "branch": "Branch",
     "branches": "Branches",
     "allBranches": "All Branches",
@@ -269,6 +272,9 @@
   },
   "repository": {
     "noActiveRepository": "No Repository Open",
+    "openExisting": "Open Existing Repository...",
+    "noStagedChanges": "No staged changes",
+    "noUnstagedChanges": "No unstaged changes",
     "openRepository": "Open Repository",
     "openFolder": "Open Folder",
     "cloneRepository": "Clone Repository",
@@ -425,7 +431,8 @@
     "applyMessage": "Use Message",
     "loadTemplate": "Load Template",
     "templateLoadedSuccess": "Commit template loaded into editor",
-    "noTemplateFound": "No commit template found in repository"
+    "noTemplateFound": "No commit template found in repository",
+    "messagePlaceholder": "Write a commit message summary..."
   },
   "stash": {
     "title": "Stashes",
@@ -615,6 +622,9 @@
   },
   "remote": {
     "title": "Remotes",
+    "name": "Remote Name",
+    "fetchUrl": "Fetch URL",
+    "noRemotes": "No remotes configured",
     "addRemote": "Add Remote",
     "addRemoteTitle": "Add New Remote",
     "addRemoteDescription": "Configure a remote Git repository to push and pull changes.",
@@ -743,6 +753,7 @@
     "totalEntries": "{count} reference history records"
   },
   "bisect": {
+    "title": "Git Bisect",
     "modalTitle": "Interactive Git Bisect",
     "modalSubtitle": "Binary search through commit history to identify regressions and bugs.",
     "culpritFound": "Culprit Commit Identified!",
@@ -812,6 +823,7 @@
     "validationPatchTooLarge": "Patch content exceeds maximum allowed size"
   },
   "submodule": {
+    "title": "Git Submodules",
     "modalTitle": "Git Submodules",
     "modalSubtitle": "Inspect, synchronize, and recursively update nested repositories.",
     "totalCount": "{count} submodules registered",
@@ -832,6 +844,7 @@
     }
   },
   "insights": {
+    "title": "Repository Insights",
     "modalTitle": "Repository Insights & Velocity",
     "modalSubtitle": "Code churn, weekly activity patterns, and contributor leaderboard.",
     "totalCommits": "Total Commits",

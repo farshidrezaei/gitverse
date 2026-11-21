@@ -210,7 +210,7 @@ const gitToolsDropdownItems = computed<DropdownMenuItem[][]>(() => [
           variant="ghost"
           icon="i-lucide-wrench"
           class="h-6 w-6 p-0 text-muted hover:text-highlighted"
-          title="Git Tools"
+          :title="t('git.tools')"
         />
       </UDropdownMenu>
     </div>

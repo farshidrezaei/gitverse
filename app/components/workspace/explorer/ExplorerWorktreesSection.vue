@@ -88,7 +88,7 @@ async function handleRemoveWorktree(worktreePath: string): Promise<void> {
     </div>
 
     <div v-else class="text-[11px] text-muted italic px-1 py-1">
-      No worktrees
+      {{ t('worktree.noWorktrees') }}
     </div>
   </div>
 </template>

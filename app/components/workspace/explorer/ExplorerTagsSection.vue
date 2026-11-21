@@ -30,7 +30,7 @@ const { t } = useI18n()
     </div>
 
     <div v-else class="text-[11px] text-muted italic px-1 py-1">
-      No tags
+      {{ t('git.noTags') }}
     </div>
   </div>
 </template>
