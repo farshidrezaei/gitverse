@@ -1,0 +1,78 @@
+name: Bug Report
+description: Report a reproducible issue or unexpected behavior in GitVerse.
+title: "fix(scope): brief description of the issue"
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue in GitVerse. Please ensure you are testing against the latest build.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Bug Description
+      description: Clear and concise description of the bug.
+      placeholder: What went wrong?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: operating_system
+    attributes:
+      label: Operating System
+      description: Select your operating system.
+      options:
+        - Linux (Ubuntu / Debian / AppImage / Flatpak)
+        - Linux (Arch / Fedora / Other)
+        - macOS (Apple Silicon - aarch64)
+        - macOS (Intel - x86_64)
+        - Windows 11 (x64)
+        - Windows 10 (x64)
+    validations:
+      required: true
+
+  - type: input
+    id: git_version
+    attributes:
+      label: Git Version
+      description: Output of `git --version` on your system.
+      placeholder: "e.g., git version 2.44.0"
+    validations:
+      required: true
+
+  - type: input
+    id: app_version
+    attributes:
+      label: GitVerse Version
+      description: Current version or commit hash of GitVerse.
+      placeholder: "e.g., v1.0.0 or commit 50545c2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the issue.
+      placeholder: |
+        1. Open repository '...'
+        2. Click on '...'
+        3. Attempt to '...'
+        4. Observe error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs_or_screenshots
+    attributes:
+      label: Relevant Logs or Screenshots
+      description: Paste any error messages, terminal logs, or drag images here.

@@ -1,0 +1,43 @@
+name: Feature Proposal
+description: Suggest an enhancement or new capability for GitVerse.
+title: "feat(scope): brief summary of feature"
+labels: ["enhancement", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We welcome community proposals! Please review existing issues and `docs/DECISIONS.md` before submitting.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement or Use Case
+      description: Is your feature related to a specific workflow problem or limitation?
+      placeholder: "I am always frustrated when trying to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see implemented.
+      placeholder: "Describe how GitVerse should handle this workflow..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative designs, CLI workarounds, or other tools you have explored.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Attach mockups, references to other Git clients, or technical specifications.
+    validations:
+      required: false
