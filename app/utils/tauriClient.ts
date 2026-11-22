@@ -106,13 +106,17 @@ export function formatApplicationError(error: unknown, fallbackMessage?: string)
     if (typeof record.message === 'string' && record.message.trim().length > 0) {
       return record.message.trim()
     }
+    if (record.message && typeof record.message === 'object') {
+      const nestedMessage = formatApplicationError(record.message, '')
+      if (nestedMessage) return nestedMessage
+    }
     if (typeof record.error === 'string' && record.error.trim().length > 0) {
       return record.error.trim()
     }
     if (typeof record.stderr === 'string' && record.stderr.trim().length > 0) {
       return record.stderr.trim()
     }
-    if (typeof record.type === 'string' && record.type.trim().length > 0) {
+    if (typeof record.type === 'string' && record.type.trim().length > 0 && !('message' in record)) {
       return record.type.trim()
     }
   }

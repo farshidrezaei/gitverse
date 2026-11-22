@@ -90,6 +90,13 @@ export function useStagingController() {
       }
       const unlisten = await listen('repository://status-changed', async () => {
         await fetchStatus()
+        // Automatically refresh commit graph and references on external changes or git operations
+        if (tryUseNuxtApp()) {
+          const commitGraph = useCommitGraph()
+          const branchController = useBranchController()
+          await commitGraph.fetchCommitGraph()
+          await branchController.fetchReferences()
+        }
       })
       unlistenStatusWatcher = unlisten
     }

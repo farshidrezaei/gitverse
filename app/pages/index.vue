@@ -401,6 +401,9 @@ async function handleCommit(): Promise<void> {
     commitMessage.value = ''
     isAmend.value = false
     isBypassHooks.value = false
+    // Refresh commit graph and branch references immediately
+    await fetchCommitGraph(0, 100, activeGraphReference.value || undefined)
+    await fetchReferences()
   }
 }
 
