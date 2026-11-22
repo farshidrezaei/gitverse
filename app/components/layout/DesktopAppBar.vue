@@ -33,7 +33,7 @@ function handleBarDoubleClick(event: MouseEvent): void {
     @dblclick="handleBarDoubleClick"
   >
     <!-- Leading: Brand Logo & Title -->
-    <div data-tauri-drag-region class="flex items-center gap-2 min-w-0 shrink-0 me-4">
+    <div data-tauri-drag-region class="flex items-center gap-2.5 min-w-0 shrink-0 me-6 sm:me-8">
       <SharedBrandLogo size="sm" is-decorative />
       <span data-tauri-drag-region class="font-bold text-highlighted tracking-tight hidden sm:inline">
         {{ t('app.name') }}
