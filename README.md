@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![GitVerse Logo](public/brand-logo.svg)
+<img src="docs/assets/gitverse-logo.png" alt="GitVerse Logo" width="160" />
 
 ### Modern, Cross-Platform, Local-First Git Desktop Client
 
