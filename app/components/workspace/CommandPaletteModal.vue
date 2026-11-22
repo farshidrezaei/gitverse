@@ -412,6 +412,12 @@ function scrollToActiveItem(): void {
   })
 }
 
+function setItemReference(index: number) {
+  return (element: unknown): void => {
+    itemElements.value[index] = (element as HTMLElement | null) ?? null
+  }
+}
+
 async function handleExecuteActiveItem(): Promise<void> {
   const item = filteredItems.value[selectedIndex.value]
   if (!item) return
@@ -482,7 +488,7 @@ watch(isOpen, (newIsOpen) => {
           <div
             v-for="(item, index) in filteredItems"
             :key="item.id"
-            :ref="(element) => { itemElements[index] = element as HTMLElement | null }"
+            :ref="setItemReference(index)"
             class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors"
             :class="selectedIndex === index
               ? 'bg-primary/15 text-primary border border-primary/30'
