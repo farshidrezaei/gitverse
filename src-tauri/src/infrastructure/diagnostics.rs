@@ -53,12 +53,14 @@ pub fn sanitize_sensitive_string(raw_text: &str) -> String {
         let parts: Vec<&str> = sanitized.split_whitespace().collect();
         let mut replaced_parts = Vec::new();
         for part in parts {
-            if part.contains("://") && part.contains('@')
+            if part.contains("://")
+                && part.contains('@')
                 && let Some((proto, rest)) = part.split_once("://")
-                    && let Some((_, host_and_path)) = rest.split_once('@') {
-                        replaced_parts.push(format!("{}://***@{}", proto, host_and_path));
-                        continue;
-                    }
+                && let Some((_, host_and_path)) = rest.split_once('@')
+            {
+                replaced_parts.push(format!("{}://***@{}", proto, host_and_path));
+                continue;
+            }
             replaced_parts.push(part.to_string());
         }
         sanitized = replaced_parts.join(" ");
@@ -135,13 +137,14 @@ pub fn append_diagnostic_log(level: &str, raw_message: &str) {
         state.log_entries.push_back(entry.clone());
 
         if let Some(ref path) = state.log_file_path
-            && let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path) {
-                let _ = writeln!(
-                    file,
-                    "[{}] [{}] {}",
-                    entry.timestamp, entry.level, entry.message
-                );
-            }
+            && let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path)
+        {
+            let _ = writeln!(
+                file,
+                "[{}] [{}] {}",
+                entry.timestamp, entry.level, entry.message
+            );
+        }
     }
 }
 

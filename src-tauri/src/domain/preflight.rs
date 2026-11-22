@@ -20,11 +20,12 @@ pub fn verify_can_rebase(
     }
 
     if let Some(ref current_branch) = status.branch_name
-        && current_branch == target_branch {
-            return Err(ApplicationError::PreflightFailed(
-                "preflight.rebase.cannot_rebase_onto_self".to_string(),
-            ));
-        }
+        && current_branch == target_branch
+    {
+        return Err(ApplicationError::PreflightFailed(
+            "preflight.rebase.cannot_rebase_onto_self".to_string(),
+        ));
+    }
 
     Ok(())
 }
@@ -47,11 +48,12 @@ pub fn verify_can_merge(
     }
 
     if let Some(ref current_branch) = status.branch_name
-        && current_branch == target_branch {
-            return Err(ApplicationError::PreflightFailed(
-                "preflight.merge.cannot_merge_into_self".to_string(),
-            ));
-        }
+        && current_branch == target_branch
+    {
+        return Err(ApplicationError::PreflightFailed(
+            "preflight.merge.cannot_merge_into_self".to_string(),
+        ));
+    }
 
     Ok(())
 }
@@ -63,11 +65,13 @@ pub fn verify_can_checkout(
     worktrees: &[GitWorktreeSummary],
 ) -> Result<(), ApplicationError> {
     if let Some(ref current_branch) = status.branch_name
-        && current_branch == target_branch && !status.is_detached_head {
-            return Err(ApplicationError::PreflightFailed(
-                "preflight.checkout.already_on_target_branch".to_string(),
-            ));
-        }
+        && current_branch == target_branch
+        && !status.is_detached_head
+    {
+        return Err(ApplicationError::PreflightFailed(
+            "preflight.checkout.already_on_target_branch".to_string(),
+        ));
+    }
 
     // Git prevents checking out a branch currently checked out in another linked worktree
     let is_branch_in_another_worktree = worktrees.iter().any(|worktree| {
@@ -121,11 +125,13 @@ pub fn verify_can_delete_branch(
     worktrees: &[GitWorktreeSummary],
 ) -> Result<(), ApplicationError> {
     if let Some(ref current_branch) = status.branch_name
-        && current_branch == branch_name && !status.is_detached_head {
-            return Err(ApplicationError::PreflightFailed(
-                "preflight.branch.cannot_delete_active_branch".to_string(),
-            ));
-        }
+        && current_branch == branch_name
+        && !status.is_detached_head
+    {
+        return Err(ApplicationError::PreflightFailed(
+            "preflight.branch.cannot_delete_active_branch".to_string(),
+        ));
+    }
 
     let is_branch_in_worktree = worktrees.iter().any(|worktree| {
         worktree

@@ -930,9 +930,10 @@ impl GitHubClient {
             self.api_base_url, owner, repository
         );
         if let Some(branch_name) = branch
-            && !branch_name.trim().is_empty() {
-                url.push_str(&format!("&branch={}", branch_name.trim()));
-            }
+            && !branch_name.trim().is_empty()
+        {
+            url.push_str(&format!("&branch={}", branch_name.trim()));
+        }
         let headers = self.build_headers(token)?;
 
         let response = self

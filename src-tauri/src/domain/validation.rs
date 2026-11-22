@@ -105,13 +105,15 @@ pub fn validate_remote_name(candidate_name: &str) -> Result<(), ApplicationError
         ));
     }
 
-    if trimmed.starts_with('/')
-        || trimmed.ends_with('/')
-        || trimmed.starts_with('-')
-        || trimmed.ends_with('-')
-    {
+    if trimmed.contains('/') {
         return Err(ApplicationError::InvalidInput(
-            "Remote name cannot start or end with a slash or hyphen".into(),
+            "Remote name cannot contain a slash".into(),
+        ));
+    }
+
+    if trimmed.starts_with('-') || trimmed.ends_with('-') {
+        return Err(ApplicationError::InvalidInput(
+            "Remote name cannot start or end with a hyphen".into(),
         ));
     }
 
@@ -209,6 +211,12 @@ pub fn validate_commit_message(summary: &str) -> Result<(), ApplicationError> {
     if trimmed.len() > 1000 {
         return Err(ApplicationError::InvalidInput(
             "Commit summary cannot exceed 1000 characters".into(),
+        ));
+    }
+
+    if trimmed.contains('\0') {
+        return Err(ApplicationError::InvalidInput(
+            "Commit summary cannot contain null bytes".into(),
         ));
     }
 
@@ -602,5 +610,114 @@ mod tests {
         assert!(validate_create_pull_request("", "feature-x", "main").is_err());
         assert!(validate_create_pull_request("title", "same-branch", "same-branch").is_err());
         assert!(validate_create_pull_request("title", "invalid branch name", "main").is_err());
+    }
+
+    #[test]
+    fn test_domain_validation_table_driven_matrix() {
+        // Table 1: Branch Name Matrix
+        let branch_cases: Vec<(&str, bool)> = vec![
+            ("main", true),
+            ("feature/my-task_123", true),
+            ("release-2.0.0-rc1", true),
+            ("user/jane.doe/branch", true),
+            ("", false),
+            ("   ", false),
+            ("has space", false),
+            ("/leading-slash", false),
+            ("trailing-slash/", false),
+            ("-leading-dash", false),
+            ("trailing-dash-", false),
+            (".leading-dot", false),
+            ("trailing-dot.", false),
+            ("consecutive//slashes", false),
+            ("consecutive..dots", false),
+            ("branch.lock", false),
+            ("branch@{upstream}", false),
+            ("branch~1", false),
+            ("branch^2", false),
+            ("branch:colon", false),
+            ("branch?mark", false),
+            ("branch*star", false),
+            ("branch[bracket", false),
+            ("branch\\backslash", false),
+            ("branch\0null", false),
+        ];
+
+        for (input, expected_valid) in branch_cases {
+            assert_eq!(
+                validate_branch_name(input).is_ok(),
+                expected_valid,
+                "Branch validation mismatch for input: '{}'",
+                input
+            );
+        }
+
+        // Table 2: Remote Name Matrix
+        let remote_name_cases: Vec<(&str, bool)> = vec![
+            ("origin", true),
+            ("upstream", true),
+            ("fork-2026", true),
+            ("backup_mirror", true),
+            ("", false),
+            ("   ", false),
+            ("origin with space", false),
+            ("origin/slash", false),
+            (".", false),
+            ("..", false),
+            ("remote:bad", false),
+            ("remote\0null", false),
+        ];
+
+        for (input, expected_valid) in remote_name_cases {
+            assert_eq!(
+                validate_remote_name(input).is_ok(),
+                expected_valid,
+                "Remote name validation mismatch for input: '{}'",
+                input
+            );
+        }
+
+        // Table 3: Remote URL Matrix
+        let remote_url_cases: Vec<(&str, bool)> = vec![
+            ("https://github.com/owner/repo.git", true),
+            ("http://gitlab.company.org/team/project.git", true),
+            ("git@github.com:owner/repo.git", true),
+            ("ssh://git@host.com:22/repo.git", true),
+            ("git://kernel.org/pub/scm/git/git.git", true),
+            ("/local/path/to/repo.git", true),
+            ("", false),
+            ("   ", false),
+            ("ftp://unsupported.com/repo.git", false),
+            ("random string without protocol", false),
+            ("https://\0bad", false),
+        ];
+
+        for (input, expected_valid) in remote_url_cases {
+            assert_eq!(
+                validate_remote_url(input).is_ok(),
+                expected_valid,
+                "Remote URL validation mismatch for input: '{}'",
+                input
+            );
+        }
+
+        // Table 4: Commit Message Matrix
+        let commit_message_cases: Vec<(&str, bool)> = vec![
+            ("feat: standard commit message", true),
+            ("fix(core): detailed multi-line\n\nBody of message.", true),
+            ("پیام تغییر به زبان فارسی با فونت استاندارد", true),
+            ("", false),
+            ("   \n\t  ", false),
+            ("message\0with-null", false),
+        ];
+
+        for (input, expected_valid) in commit_message_cases {
+            assert_eq!(
+                validate_commit_message(input).is_ok(),
+                expected_valid,
+                "Commit message validation mismatch for input: '{}'",
+                input
+            );
+        }
     }
 }

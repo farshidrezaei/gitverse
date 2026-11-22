@@ -605,9 +605,10 @@ impl GitRepositoryInspector {
         // 2. Check fallback .gitmessage in repository root
         let default_gitmessage_path = directory_path.join(".gitmessage");
         if default_gitmessage_path.exists()
-            && let Ok(content) = tokio::fs::read_to_string(&default_gitmessage_path).await {
-                return Ok(Some(content));
-            }
+            && let Ok(content) = tokio::fs::read_to_string(&default_gitmessage_path).await
+        {
+            return Ok(Some(content));
+        }
 
         Ok(None)
     }
@@ -665,18 +666,19 @@ impl GitRepositoryInspector {
         let mut parsed_diff = super::diff::parse_unified_diff(&raw_diff, display_path);
 
         if let Some(target_file) = file_path
-            && (parsed_diff.is_binary || is_media_file(target_file)) {
-                let engine = base64::engine::general_purpose::STANDARD;
-                let old_target = format!("{}:{}", commit_hash, target_file);
-                let old_content = self
-                    .executor
-                    .execute_git_command_raw(Some(directory_path), &["show", &old_target])
-                    .await
-                    .ok()
-                    .map(|bytes| engine.encode(&bytes));
-                parsed_diff.new_content_base64 = old_content.clone(); // In a commit diff, new is the commit version
-                parsed_diff.old_content_base64 = old_content;
-            }
+            && (parsed_diff.is_binary || is_media_file(target_file))
+        {
+            let engine = base64::engine::general_purpose::STANDARD;
+            let old_target = format!("{}:{}", commit_hash, target_file);
+            let old_content = self
+                .executor
+                .execute_git_command_raw(Some(directory_path), &["show", &old_target])
+                .await
+                .ok()
+                .map(|bytes| engine.encode(&bytes));
+            parsed_diff.new_content_base64 = old_content.clone(); // In a commit diff, new is the commit version
+            parsed_diff.old_content_base64 = old_content;
+        }
 
         Ok(parsed_diff)
     }
@@ -1712,21 +1714,18 @@ impl GitRepositoryInspector {
         is_new_branch: bool,
     ) -> Result<String, ApplicationError> {
         validate_worktree_path(worktree_path)?;
-        if is_new_branch
-            && let Some(branch) = branch_name {
-                validate_branch_name(branch)?;
-            }
+        if is_new_branch && let Some(branch) = branch_name {
+            validate_branch_name(branch)?;
+        }
         let mut arguments = vec!["worktree", "add"];
-        if is_new_branch
-            && let Some(branch) = branch_name {
-                arguments.push("-b");
-                arguments.push(branch);
-            }
+        if is_new_branch && let Some(branch) = branch_name {
+            arguments.push("-b");
+            arguments.push(branch);
+        }
         arguments.push(worktree_path);
-        if !is_new_branch
-            && let Some(branch) = branch_name {
-                arguments.push(branch);
-            }
+        if !is_new_branch && let Some(branch) = branch_name {
+            arguments.push(branch);
+        }
 
         self.executor
             .execute_git_command(Some(directory_path), &arguments)
@@ -1889,9 +1888,10 @@ impl GitRepositoryInspector {
     ) -> Result<crate::domain::FileBlame, ApplicationError> {
         let mut arguments = vec!["blame", "--porcelain"];
         if let Some(rev) = revision
-            && !rev.trim().is_empty() {
-                arguments.push(rev);
-            }
+            && !rev.trim().is_empty()
+        {
+            arguments.push(rev);
+        }
         arguments.push("--");
         arguments.push(file_path);
 
@@ -2278,12 +2278,13 @@ impl GitRepositoryInspector {
         let mut affected_files = Vec::new();
         for line in patch_content.lines() {
             if let Some(rest) = line.strip_prefix("diff --git a/")
-                && let Some(space_index) = rest.find(" b/") {
-                    let file_path = rest[..space_index].to_string();
-                    if !affected_files.contains(&file_path) {
-                        affected_files.push(file_path);
-                    }
+                && let Some(space_index) = rest.find(" b/")
+            {
+                let file_path = rest[..space_index].to_string();
+                if !affected_files.contains(&file_path) {
+                    affected_files.push(file_path);
                 }
+            }
         }
 
         let check_result = self
@@ -2647,15 +2648,17 @@ impl GitRepositoryInspector {
         arguments.push(query.trim());
 
         if let Some(target_reference) = reference
-            && !target_reference.trim().is_empty() {
-                arguments.push(target_reference.trim());
-            }
+            && !target_reference.trim().is_empty()
+        {
+            arguments.push(target_reference.trim());
+        }
 
         if let Some(pattern) = path_pattern
-            && !pattern.trim().is_empty() {
-                arguments.push("--");
-                arguments.push(pattern.trim());
-            }
+            && !pattern.trim().is_empty()
+        {
+            arguments.push("--");
+            arguments.push(pattern.trim());
+        }
 
         let output_result = self
             .executor

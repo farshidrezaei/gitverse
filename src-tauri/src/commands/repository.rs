@@ -1049,27 +1049,30 @@ pub async fn read_clipboard_text() -> Result<String, ApplicationError> {
     {
         // Try wl-paste (Wayland)
         if let Ok(output) = tokio::process::Command::new("wl-paste").output().await
-            && output.status.success() {
-                return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
-            }
+            && output.status.success()
+        {
+            return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
+        }
 
         // Try xclip (X11)
         if let Ok(output) = tokio::process::Command::new("xclip")
             .args(["-selection", "clipboard", "-o"])
             .output()
             .await
-            && output.status.success() {
-                return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
-            }
+            && output.status.success()
+        {
+            return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
+        }
 
         // Try xsel (X11)
         if let Ok(output) = tokio::process::Command::new("xsel")
             .args(["--clipboard", "--output"])
             .output()
             .await
-            && output.status.success() {
-                return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
-            }
+            && output.status.success()
+        {
+            return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
+        }
 
         Err(ApplicationError::Unexpected(
             "Clipboard command failed on Linux".into(),
@@ -1174,9 +1177,9 @@ pub async fn open_in_terminal(directory_path: String) -> Result<(), ApplicationE
                 .current_dir(target_directory)
                 .spawn()
                 .is_ok()
-            {
-                return Ok(());
-            }
+        {
+            return Ok(());
+        }
 
         let terminal_candidates = [
             "x-terminal-emulator",

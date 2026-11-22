@@ -113,6 +113,10 @@ export function formatApplicationError(error: unknown, fallbackMessage?: string)
     if (typeof record.error === 'string' && record.error.trim().length > 0) {
       return record.error.trim()
     }
+    if (record.error && typeof record.error === 'object') {
+      const nestedError = formatApplicationError(record.error, '')
+      if (nestedError) return nestedError
+    }
     if (typeof record.stderr === 'string' && record.stderr.trim().length > 0) {
       return record.stderr.trim()
     }

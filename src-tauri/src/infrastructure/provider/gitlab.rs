@@ -924,9 +924,11 @@ impl GitLabClient {
             per_page.clamp(1, 100)
         );
         if let Some(status) = status_filter
-            && !status.is_empty() && status != "all" {
-                url.push_str(&format!("&status={}", status));
-            }
+            && !status.is_empty()
+            && status != "all"
+        {
+            url.push_str(&format!("&status={}", status));
+        }
 
         let headers = self.build_headers(token)?;
         let response = self

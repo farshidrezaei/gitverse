@@ -84,9 +84,10 @@ pub fn parse_remote_branches(raw: &str) -> Vec<RemoteBranchSummary> {
         }
 
         if let Some(symref) = fields.get(2)
-            && !symref.trim().is_empty() {
-                continue;
-            }
+            && !symref.trim().is_empty()
+        {
+            continue;
+        }
 
         let remote_name = name.split('/').next().unwrap_or("origin").to_string();
         let head_commit_hash = fields

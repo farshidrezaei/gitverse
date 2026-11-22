@@ -1352,10 +1352,11 @@ impl ApplicationState {
                             reference_or_pipeline_id,
                         )
                         .await
-                        && let Some(ref web_url) = summary.web_url
-                            && let Some(last_segment) = web_url.split('/').next_back() {
-                                pipeline_id = last_segment.parse::<u64>().unwrap_or(0);
-                            }
+                    && let Some(ref web_url) = summary.web_url
+                    && let Some(last_segment) = web_url.split('/').next_back()
+                {
+                    pipeline_id = last_segment.parse::<u64>().unwrap_or(0);
+                }
                 client
                     .list_pipeline_jobs(&token, repository_full_name, pipeline_id)
                     .await

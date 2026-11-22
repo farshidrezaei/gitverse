@@ -57,12 +57,13 @@ pub fn parse_weekday_activity(timestamps_output: &str) -> Vec<ActivityDay> {
     for line in timestamps_output.lines() {
         let trimmed_line = line.trim();
         if let Ok(timestamp) = trimmed_line.parse::<i64>()
-            && timestamp >= 0 {
-                // 1970-01-01 was Thursday = 4. (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-                let days_since_epoch = timestamp / 86400;
-                let weekday_index = ((days_since_epoch + 4) % 7) as usize;
-                weekday_counts[weekday_index] += 1;
-            }
+            && timestamp >= 0
+        {
+            // 1970-01-01 was Thursday = 4. (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+            let days_since_epoch = timestamp / 86400;
+            let weekday_index = ((days_since_epoch + 4) % 7) as usize;
+            weekday_counts[weekday_index] += 1;
+        }
     }
 
     (0..7)
