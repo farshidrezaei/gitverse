@@ -1,5 +1,6 @@
 import type { FileDiff, StashDetails, StashRecord } from '~/types/repository'
 import { formatApplicationError } from '~/utils/tauriClient'
+import { useActionGuard } from '~/composables/useActionGuard'
 
 export function useStashController() {
   const { currentRepository } = useRepositoryWorkspace()
@@ -50,6 +51,13 @@ export function useStashController() {
       return false
     }
 
+    const { evaluateAction } = useActionGuard()
+    const preflight = evaluateAction('stash_save')
+    if (!preflight.canExecute) {
+      notifyError(t(preflight.reasonKey!))
+      return false
+    }
+
     try {
       isLoadingStashes.value = true
       if (await isTauriEnvironment()) {
@@ -66,7 +74,7 @@ export function useStashController() {
       return true
     } catch (error) {
       console.error('Failed to save stash:', error)
-      notifyError(t('stash.saveFailed'))
+      notifyError(formatApplicationError(error, t('stash.saveFailed')))
       return false
     } finally {
       isLoadingStashes.value = false

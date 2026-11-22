@@ -5,6 +5,9 @@ import { useNotificationService } from '~/composables/useNotificationService'
 import { useConfirmationDialog } from '~/composables/useConfirmationDialog'
 import { useStagingController } from '~/composables/useStagingController'
 import { useCommitGraph } from '~/composables/useCommitGraph'
+import { useActionGuard } from '~/composables/useActionGuard'
+import { useWorktreeController } from '~/composables/useWorktreeController'
+import { useStashController } from '~/composables/useStashController'
 
 export function useBranchController() {
   const { currentRepository } = useRepositoryWorkspace()
@@ -20,6 +23,8 @@ export function useBranchController() {
   const { confirmStandard } = useConfirmationDialog()
   const { repositoryStatus, fetchStatus } = useStagingController()
   const { fetchCommitGraph } = useCommitGraph()
+  const { evaluateAction, preflightModal } = useActionGuard()
+  const { worktreeList } = useWorktreeController()
   const { t } = useI18n()
 
   const currentBranchName = computed(() => {
@@ -132,6 +137,18 @@ export function useBranchController() {
     startPoint?: string
   ): Promise<boolean> {
     if (!currentRepository.value) return false
+
+    if (!createIfMissing) {
+      const preflight = evaluateAction('checkout', {
+        targetBranch: branchName,
+        worktrees: worktreeList.value,
+      })
+      if (!preflight.canExecute) {
+        notifyError(t('common.error'), t(preflight.reasonKey!))
+        return false
+      }
+    }
+
     isOperatingBranches.value = true
 
     try {
@@ -181,6 +198,16 @@ export function useBranchController() {
 
   async function deleteBranch(branchName: string, force = false): Promise<boolean> {
     if (!currentRepository.value) return false
+
+    const preflight = evaluateAction('delete_branch', {
+      targetBranch: branchName,
+      worktrees: worktreeList.value,
+    })
+    if (!preflight.canExecute) {
+      notifyError(t('common.error'), t(preflight.reasonKey!))
+      return false
+    }
+
     isOperatingBranches.value = true
 
     // Find previous commit hash of branch before deletion to enable safe Undo
@@ -239,6 +266,30 @@ export function useBranchController() {
       return false
     }
 
+    const preflight = evaluateAction('merge', { targetBranch: branchName })
+    if (!preflight.canExecute) {
+      if (preflight.suggestedResolution === 'stash_and_proceed') {
+        preflightModal.value = {
+          isOpen: true,
+          action: 'merge',
+          titleKey: 'preflight.modal.dirty_working_tree_title',
+          descriptionKey: 'preflight.modal.dirty_working_tree_description',
+          actionButtonKey: 'preflight.modal.stash_and_proceed',
+          isExecutingResolution: false,
+          onProceedWithResolution: async () => {
+            const { saveStash } = useStashController()
+            const isStashed = await saveStash(t('stash.createTitle'), true)
+            if (isStashed) {
+              await mergeBranch(branchName, noFastForward)
+            }
+          },
+        }
+        return false
+      }
+      notifyError(t('common.error'), t(preflight.reasonKey!))
+      return false
+    }
+
     const targetBranch = currentBranchName.value
     const isConfirmed = await confirmStandard({
       title: t('branch.mergeConfirmTitle', { source: branchName, target: targetBranch }),
@@ -283,6 +334,30 @@ export function useBranchController() {
 
   async function rebaseBranch(upstreamBranch: string): Promise<boolean> {
     if (!currentRepository.value) {
+      return false
+    }
+
+    const preflight = evaluateAction('rebase', { targetBranch: upstreamBranch })
+    if (!preflight.canExecute) {
+      if (preflight.suggestedResolution === 'stash_and_proceed') {
+        preflightModal.value = {
+          isOpen: true,
+          action: 'rebase',
+          titleKey: 'preflight.modal.dirty_working_tree_title',
+          descriptionKey: 'preflight.modal.dirty_working_tree_description',
+          actionButtonKey: 'preflight.modal.stash_and_proceed',
+          isExecutingResolution: false,
+          onProceedWithResolution: async () => {
+            const { saveStash } = useStashController()
+            const isStashed = await saveStash(t('stash.createTitle'), true)
+            if (isStashed) {
+              await rebaseBranch(upstreamBranch)
+            }
+          },
+        }
+        return false
+      }
+      notifyError(t('common.error'), t(preflight.reasonKey!))
       return false
     }
 

@@ -5,6 +5,8 @@ import { useCommitGraph } from '~/composables/useCommitGraph'
 import { useBranchController } from '~/composables/useBranchController'
 import { useNotificationService } from '~/composables/useNotificationService'
 import { useConfirmationDialog } from '~/composables/useConfirmationDialog'
+import { useActionGuard } from '~/composables/useActionGuard'
+import { formatApplicationError } from '~/utils/tauriClient'
 
 export type ConflictResolutionStrategy = 'ours' | 'theirs' | 'mark_resolved'
 
@@ -121,6 +123,13 @@ export function useConflictController() {
       return false
     }
 
+    const { evaluateAction } = useActionGuard()
+    const preflight = evaluateAction('abort_operation')
+    if (!preflight.canExecute) {
+      notifyError(t(preflight.reasonKey!))
+      return false
+    }
+
     const isConfirmed = await confirmStandard({
       title: t('conflict.abortConfirmTitle'),
       description: t('conflict.abortConfirmDescription'),
@@ -148,7 +157,7 @@ export function useConflictController() {
       return true
     } catch (error) {
       console.error('Failed to abort operation:', error)
-      notifyError(t('conflict.abortFailed'))
+      notifyError(formatApplicationError(error, t('conflict.abortFailed')))
       return false
     } finally {
       isResolvingConflict.value = false
@@ -157,6 +166,13 @@ export function useConflictController() {
 
   async function continueOperation(): Promise<boolean> {
     if (!currentRepository.value) {
+      return false
+    }
+
+    const { evaluateAction } = useActionGuard()
+    const preflight = evaluateAction('continue_operation')
+    if (!preflight.canExecute) {
+      notifyError(t(preflight.reasonKey!))
       return false
     }
 
@@ -176,7 +192,7 @@ export function useConflictController() {
       return true
     } catch (error) {
       console.error('Failed to continue operation:', error)
-      notifyError(t('conflict.continueFailed'))
+      notifyError(formatApplicationError(error, t('conflict.continueFailed')))
       await fetchStatus()
       return false
     } finally {

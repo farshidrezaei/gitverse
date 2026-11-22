@@ -59,7 +59,8 @@
     "navigate": "Navigate",
     "select": "Select",
     "items": "items",
-    "clearAll": "Clear All"
+    "clearAll": "Clear All",
+    "warning": "Warning"
   },
   "commandPalette": {
     "title": "Command Palette",

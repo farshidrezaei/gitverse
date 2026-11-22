@@ -1,5 +1,6 @@
 import type { DetailedRepositoryStatus } from '~/types/repository'
 import { formatApplicationError } from '~/utils/tauriClient'
+import { useActionGuard } from '~/composables/useActionGuard'
 
 export interface SelectedDiffTarget {
   filePath: string
@@ -344,6 +345,29 @@ export function useStagingController() {
     bypassHooks: boolean = false
   ): Promise<boolean> {
     if (!currentRepository.value || !message.trim()) return false
+
+    const { evaluateAction, preflightModal } = useActionGuard()
+    const preflight = evaluateAction('commit', { commitMessage: message, isAmend })
+    if (!preflight.canExecute) {
+      if (preflight.suggestedResolution === 'stage_all_and_proceed') {
+        preflightModal.value = {
+          isOpen: true,
+          action: 'commit',
+          titleKey: 'preflight.modal.empty_staged_title',
+          descriptionKey: 'preflight.modal.empty_staged_description',
+          actionButtonKey: 'preflight.modal.stage_all_and_commit',
+          isExecutingResolution: false,
+          onProceedWithResolution: async () => {
+            await stageAll()
+            await commitChanges(message, isAmend, bypassHooks)
+          },
+        }
+        return false
+      }
+      notifyError(t(preflight.reasonKey!))
+      return false
+    }
+
     try {
       let commitHash = ''
       if (await isTauriEnvironment()) {

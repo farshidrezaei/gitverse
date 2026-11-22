@@ -5,6 +5,7 @@ import { useBranchController } from '~/composables/useBranchController'
 import { useNotificationService } from '~/composables/useNotificationService'
 import { useConfirmationDialog } from '~/composables/useConfirmationDialog'
 import { formatApplicationError } from '~/utils/tauriClient'
+import { useActionGuard } from '~/composables/useActionGuard'
 
 export type ResetCommitMode = 'soft' | 'mixed' | 'hard'
 
@@ -25,6 +26,13 @@ export function useCommitOperations() {
 
   async function cherryPickCommit(commitHash: string): Promise<boolean> {
     if (!currentRepository.value) {
+      return false
+    }
+
+    const { evaluateAction } = useActionGuard()
+    const preflight = evaluateAction('cherry_pick')
+    if (!preflight.canExecute) {
+      notifyError(t('commit.cherryPickFailed'), t(preflight.reasonKey!))
       return false
     }
 
@@ -69,6 +77,13 @@ export function useCommitOperations() {
 
   async function revertCommit(commitHash: string): Promise<boolean> {
     if (!currentRepository.value) {
+      return false
+    }
+
+    const { evaluateAction } = useActionGuard()
+    const preflight = evaluateAction('revert')
+    if (!preflight.canExecute) {
+      notifyError(t('commit.revertFailed'), t(preflight.reasonKey!))
       return false
     }
 

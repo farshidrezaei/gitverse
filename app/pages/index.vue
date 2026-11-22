@@ -22,6 +22,7 @@ import ApplyPatchModal from '~/components/workspace/patch/ApplyPatchModal.vue'
 import SubmoduleManagerModal from '~/components/workspace/submodule/SubmoduleManagerModal.vue'
 import RepositoryInsightsModal from '~/components/workspace/insights/RepositoryInsightsModal.vue'
 import FileHistoryModal from '~/components/workspace/history/FileHistoryModal.vue'
+import PreflightActionModal from '~/components/workspace/PreflightActionModal.vue'
 import { useWorkspaceTabController } from '~/composables/useWorkspaceTabController'
 
 const { t } = useI18n()
@@ -793,5 +794,8 @@ async function handlePush(): Promise<void> {
     <CustomActionsModal
       v-model:open="isCustomActionsModalOpen"
     />
+
+    <!-- Preflight Action Feasibility Modal -->
+    <PreflightActionModal />
   </div>
 </template>

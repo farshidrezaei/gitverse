@@ -59,7 +59,8 @@
     "navigate": "ناوبری",
     "select": "انتخاب",
     "items": "مورد",
-    "clearAll": "پاک کردن همه"
+    "clearAll": "پاک کردن همه",
+    "warning": "هشدار"
   },
   "commandPalette": {
     "title": "پالت دستورات",
