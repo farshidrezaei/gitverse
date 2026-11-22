@@ -39,6 +39,19 @@ const {
 } = useWorkspaceManager()
 
 const { colorMode } = useThemeController()
+const {
+  openFolderPicker,
+  openReflog,
+  openBisect,
+  openExportPatch,
+  openApplyPatch,
+  openSubmodules,
+  openInsights,
+  openSearch,
+  openGitBundle,
+  openLfsManager,
+  openCustomActions,
+} = useWorkspaceModals()
 
 const searchQuery = ref<string>('')
 const selectedIndex = ref<number>(0)
@@ -130,6 +143,106 @@ const allItems = computed<CommandItem[]>(() => {
         action: async () => {
           await fetchStatus()
           await fetchCommitGraph()
+        },
+      },
+      {
+        id: 'action-open-reflog',
+        title: t('commandPalette.actions.openReflog'),
+        category: 'actions',
+        icon: 'i-lucide-history',
+        keywords: ['reflog', 'history', 'وقایع', 'رفلاگ'],
+        action: () => {
+          openReflog()
+        },
+      },
+      {
+        id: 'action-open-bisect',
+        title: t('commandPalette.actions.openBisect'),
+        category: 'actions',
+        icon: 'i-lucide-git-commit',
+        keywords: ['bisect', 'debug', 'باگ', 'بایسکت'],
+        action: () => {
+          openBisect()
+        },
+      },
+      {
+        id: 'action-open-insights',
+        title: t('commandPalette.actions.openInsights'),
+        category: 'actions',
+        icon: 'i-lucide-bar-chart-2',
+        keywords: ['insights', 'statistics', 'آمار', 'بینش'],
+        action: () => {
+          openInsights()
+        },
+      },
+      {
+        id: 'action-open-search',
+        title: t('commandPalette.actions.openSearch'),
+        category: 'actions',
+        icon: 'i-lucide-search',
+        keywords: ['search', 'find', 'جستجو'],
+        action: () => {
+          openSearch()
+        },
+      },
+      {
+        id: 'action-open-export-patch',
+        title: t('commandPalette.actions.openExportPatch'),
+        category: 'actions',
+        icon: 'i-lucide-file-output',
+        keywords: ['patch', 'export', 'پچ'],
+        action: () => {
+          openExportPatch()
+        },
+      },
+      {
+        id: 'action-open-apply-patch',
+        title: t('commandPalette.actions.openApplyPatch'),
+        category: 'actions',
+        icon: 'i-lucide-file-input',
+        keywords: ['patch', 'apply', 'اعمال پچ'],
+        action: () => {
+          openApplyPatch()
+        },
+      },
+      {
+        id: 'action-open-submodules',
+        title: t('commandPalette.actions.openSubmodules'),
+        category: 'actions',
+        icon: 'i-lucide-folder-archive',
+        keywords: ['submodule', 'زیرماژول'],
+        action: () => {
+          openSubmodules()
+        },
+      },
+      {
+        id: 'action-open-git-bundle',
+        title: t('commandPalette.actions.openGitBundle'),
+        category: 'actions',
+        icon: 'i-lucide-package',
+        keywords: ['bundle', 'باندل'],
+        action: () => {
+          openGitBundle()
+        },
+      },
+      {
+        id: 'action-open-lfs',
+        title: t('commandPalette.actions.openLfs'),
+        category: 'actions',
+        icon: 'i-lucide-hard-drive',
+        keywords: ['lfs', 'large files', 'فایل حجیم'],
+        action: () => {
+          openLfsManager()
+        },
+      },
+      {
+        id: 'action-open-custom-actions',
+        title: t('commandPalette.actions.openCustomActions'),
+        category: 'actions',
+        icon: 'i-lucide-terminal',
+        keywords: ['custom', 'actions', 'دستورات سفارشی'],
+        action: () => {
+          openCustomActions()
         },
       },
     )
