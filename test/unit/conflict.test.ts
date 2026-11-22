@@ -4,6 +4,8 @@ import {
   computeConflictLineComparison,
   countConflictMarkers,
   hasConflictMarkers,
+  parseConflictChunks,
+  resolveConflictChunk,
 } from '~/utils/conflict'
 
 describe('conflict utilities', () => {
@@ -71,5 +73,52 @@ console.log(a + b);
     // Line 4: added line -> Green addition
     expect(comparisons[3]?.status).toBe('addition')
     expect(comparisons[3]?.content).toBe('const d = 4;')
+  })
+
+  it('parses conflict markers into individual structured chunks', () => {
+    const rawContent = `import React from 'react'
+<<<<<<< HEAD
+const theme = 'dark'
+=======
+const theme = 'light'
+>>>>>>> incoming-branch
+console.log(theme)`
+
+    const chunks = parseConflictChunks(rawContent)
+    expect(chunks).toHaveLength(1)
+    expect(chunks[0]?.oursBranchName).toBe('HEAD')
+    expect(chunks[0]?.theirsBranchName).toBe('incoming-branch')
+    expect(chunks[0]?.oursContent).toBe("const theme = 'dark'")
+    expect(chunks[0]?.theirsContent).toBe("const theme = 'light'")
+    expect(chunks[0]?.startLine).toBe(2)
+    expect(chunks[0]?.endLine).toBe(6)
+  })
+
+  it('resolves individual conflict chunks with strategies', () => {
+    const rawContent = `line 1
+<<<<<<< HEAD
+ours line
+=======
+theirs line
+>>>>>>> feature
+line 3`
+
+    const chunks = parseConflictChunks(rawContent)
+    expect(chunks).toHaveLength(1)
+
+    // Accept ours
+    const resolvedOurs = resolveConflictChunk(rawContent, chunks[0]!, 'ours')
+    expect(resolvedOurs).toBe('line 1\nours line\nline 3')
+    expect(hasConflictMarkers(resolvedOurs)).toBe(false)
+
+    // Accept theirs
+    const resolvedTheirs = resolveConflictChunk(rawContent, chunks[0]!, 'theirs')
+    expect(resolvedTheirs).toBe('line 1\ntheirs line\nline 3')
+    expect(hasConflictMarkers(resolvedTheirs)).toBe(false)
+
+    // Accept both (ours then theirs)
+    const resolvedBoth = resolveConflictChunk(rawContent, chunks[0]!, 'both_ours_first')
+    expect(resolvedBoth).toBe('line 1\nours line\ntheirs line\nline 3')
+    expect(hasConflictMarkers(resolvedBoth)).toBe(false)
   })
 })

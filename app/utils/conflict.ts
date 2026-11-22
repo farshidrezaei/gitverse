@@ -7,6 +7,114 @@ export interface ConflictLineComparison {
   spans?: DiffTextSpan[]
 }
 
+export interface ParsedConflictChunk {
+  id: string
+  startIndex: number
+  endIndex: number
+  startLine: number
+  endLine: number
+  oursBranchName: string
+  oursContent: string
+  theirsBranchName: string
+  theirsContent: string
+  rawBlock: string
+}
+
+/**
+ * Parses all conflict marker blocks (<<<<<<<, =======, >>>>>>>) into structured chunks.
+ */
+export function parseConflictChunks(content: string): ParsedConflictChunk[] {
+  if (!content) return []
+
+  const chunks: ParsedConflictChunk[] = []
+  const lines = content.split(/\r?\n/)
+  let inConflict = false
+  let currentStartLine = 0
+  let currentOursBranchName = ''
+  let currentTheirsBranchName = ''
+  let currentOursLines: string[] = []
+  let currentTheirsLines: string[] = []
+  let inTheirs = false
+  let rawBlockLines: string[] = []
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]!
+    const lineNum = index + 1
+
+    if (line.startsWith('<<<<<<<')) {
+      inConflict = true
+      inTheirs = false
+      currentStartLine = lineNum
+      currentOursBranchName = line.slice(7).trim() || 'HEAD'
+      currentOursLines = []
+      currentTheirsLines = []
+      rawBlockLines = [line]
+    } else if (inConflict && line.startsWith('=======')) {
+      inTheirs = true
+      rawBlockLines.push(line)
+    } else if (inConflict && line.startsWith('>>>>>>>')) {
+      currentTheirsBranchName = line.slice(7).trim() || 'Incoming'
+      rawBlockLines.push(line)
+      chunks.push({
+        id: `conflict-chunk-${chunks.length + 1}`,
+        startIndex: currentStartLine - 1,
+        endIndex: lineNum - 1,
+        startLine: currentStartLine,
+        endLine: lineNum,
+        oursBranchName: currentOursBranchName,
+        oursContent: currentOursLines.join('\n'),
+        theirsBranchName: currentTheirsBranchName,
+        theirsContent: currentTheirsLines.join('\n'),
+        rawBlock: rawBlockLines.join('\n'),
+      })
+      inConflict = false
+      inTheirs = false
+      rawBlockLines = []
+    } else if (inConflict) {
+      rawBlockLines.push(line)
+      if (inTheirs) {
+        currentTheirsLines.push(line)
+      } else {
+        currentOursLines.push(line)
+      }
+    }
+  }
+
+  return chunks
+}
+
+/**
+ * Resolves a single conflict chunk within the full document with a chosen resolution strategy.
+ */
+export function resolveConflictChunk(
+  documentContent: string,
+  chunk: ParsedConflictChunk,
+  strategy: 'ours' | 'theirs' | 'both_ours_first' | 'both_theirs_first'
+): string {
+  let resolvedText = ''
+  switch (strategy) {
+    case 'ours':
+      resolvedText = chunk.oursContent
+      break
+    case 'theirs':
+      resolvedText = chunk.theirsContent
+      break
+    case 'both_ours_first':
+      resolvedText = combineOursAndTheirs(chunk.oursContent, chunk.theirsContent)
+      break
+    case 'both_theirs_first':
+      resolvedText = combineOursAndTheirs(chunk.theirsContent, chunk.oursContent)
+      break
+  }
+
+  const lines = documentContent.split(/\r?\n/)
+  const beforeLines = lines.slice(0, chunk.startIndex)
+  const afterLines = lines.slice(chunk.endIndex + 1)
+  const middleLines = resolvedText.length > 0 ? resolvedText.split(/\r?\n/) : []
+
+  return [...beforeLines, ...middleLines, ...afterLines].join('\n')
+}
+
 /**
  * Counts number of unresolved conflict sections within a file.
  */
