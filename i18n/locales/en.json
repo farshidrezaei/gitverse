@@ -577,6 +577,7 @@
     "paneTheirs": "Theirs (Incoming)",
     "paneResult": "Result (Merged Output)",
     "markResolved": "Mark as Resolved",
+    "saveAndContinue": "Resolve & Continue Git Operation",
     "resolveModal": "Resolve Conflict",
     "editorHint": "Edit the resolved file content directly:",
     "markersRemaining": "{count} conflict markers remaining",

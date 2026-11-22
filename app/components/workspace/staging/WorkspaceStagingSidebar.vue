@@ -125,6 +125,21 @@ async function handleModalSaveContent(content: string): Promise<void> {
   }
 }
 
+async function handleModalSaveAndContinue(content: string): Promise<void> {
+  if (!activeConflictFile.value) {
+    return
+  }
+  const isSaved = await writeConflictResolvedContent(activeConflictFile.value.file_path, content)
+  if (isSaved) {
+    emit('refresh')
+    // If this was the last conflicted file, continue operation automatically
+    const remainingCount = (props.repositoryStatus?.conflicted_files?.length || 1) - 1
+    if (remainingCount <= 0) {
+      await continueOperation()
+    }
+  }
+}
+
 function getOperationStateLabel(operationState?: string): string {
   switch (operationState) {
     case 'merging':
@@ -795,8 +810,10 @@ function getFlatFileContextMenuItems(
     <ConflictResolverModal
       v-model:open="isConflictModalOpen"
       :conflict-details="activeConflictFile"
+      :show-continue-action="Boolean(props.repositoryStatus?.operation_state && props.repositoryStatus.operation_state !== 'none')"
       @resolve="handleModalResolve"
       @save-content="handleModalSaveContent"
+      @save-and-continue="handleModalSaveAndContinue"
     />
   </div>
 </template>

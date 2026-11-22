@@ -52,34 +52,43 @@ const isConventionalBuilderModalOpen = ref<boolean>(false)
 const isConflictResolverOpen = ref<boolean>(false)
 const activeConflictFilePath = ref<string>('')
 const {
-  conflictFile,
-  loadConflictFile,
-  resolveOurs,
-  resolveTheirs,
-  saveAndStageResolution,
+  activeConflictFile,
+  loadConflictDetails,
+  resolveConflict: resolveConflictByStrategy,
+  writeConflictResolvedContent,
+  continueOperation,
 } = useConflictController()
 
 async function openConflictResolver(filePath: string): Promise<void> {
   activeConflictFilePath.value = filePath
-  await loadConflictFile(filePath)
+  await loadConflictDetails(filePath)
   isConflictResolverOpen.value = true
 }
 
 async function resolveConflict(filePath: string, strategy: 'ours' | 'theirs'): Promise<void> {
-  if (strategy === 'ours') {
-    await resolveOurs(filePath)
-  } else {
-    await resolveTheirs(filePath)
-  }
+  await resolveConflictByStrategy(filePath, strategy)
   emit('refresh')
 }
 
 async function handleSaveConflictResolution(resolvedContent: string): Promise<void> {
   if (!activeConflictFilePath.value) return
-  const isSaved = await saveAndStageResolution(activeConflictFilePath.value, resolvedContent)
+  const isSaved = await writeConflictResolvedContent(activeConflictFilePath.value, resolvedContent)
   if (isSaved) {
     isConflictResolverOpen.value = false
     emit('refresh')
+  }
+}
+
+async function handleSaveAndContinue(resolvedContent: string): Promise<void> {
+  if (!activeConflictFilePath.value) return
+  const isSaved = await writeConflictResolvedContent(activeConflictFilePath.value, resolvedContent)
+  if (isSaved) {
+    isConflictResolverOpen.value = false
+    emit('refresh')
+    const remainingCount = (props.repositoryStatus?.conflicted_files?.length || 1) - 1
+    if (remainingCount <= 0) {
+      await continueOperation()
+    }
   }
 }
 
@@ -597,8 +606,11 @@ const totalChangesCount = computed(() => {
     <!-- Modals -->
     <ConflictResolverModal
       v-model:open="isConflictResolverOpen"
-      :conflict-file="conflictFile"
-      @save="handleSaveConflictResolution"
+      :conflict-details="activeConflictFile"
+      :show-continue-action="Boolean(props.repositoryStatus?.operation_state && props.repositoryStatus.operation_state !== 'none')"
+      @resolve="resolveConflict(activeConflictFilePath, $event)"
+      @save-content="handleSaveConflictResolution"
+      @save-and-continue="handleSaveAndContinue"
     />
 
     <ConventionalCommitBuilderModal

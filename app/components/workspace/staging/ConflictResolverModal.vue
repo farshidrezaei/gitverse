@@ -13,14 +13,18 @@ import {
 interface ConflictResolverModalProps {
   open: boolean
   conflictDetails: ConflictFileDetails | null
+  showContinueAction?: boolean
 }
 
-const props = defineProps<ConflictResolverModalProps>()
+const props = withDefaults(defineProps<ConflictResolverModalProps>(), {
+  showContinueAction: false,
+})
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
   resolve: [strategy: 'ours' | 'theirs' | 'mark_resolved']
   saveContent: [content: string]
+  saveAndContinue: [content: string]
 }>()
 
 const { t } = useI18n()
@@ -159,6 +163,11 @@ function handleAcceptBoth(): void {
 
 function handleSaveAndMarkResolved(): void {
   emit('saveContent', editableContent.value)
+  emit('update:open', false)
+}
+
+function handleSaveAndContinue(): void {
+  emit('saveAndContinue', editableContent.value)
   emit('update:open', false)
 }
 
@@ -679,11 +688,21 @@ function handleClose(): void {
             <UButton
               size="xs"
               color="success"
-              variant="solid"
-              icon="i-lucide-check-check"
+              variant="outline"
+              icon="i-lucide-check"
               :disabled="stillHasConflictMarkers"
               :label="t('conflict.markResolved')"
               @click="handleSaveAndMarkResolved"
+            />
+            <UButton
+              v-if="props.showContinueAction"
+              size="xs"
+              color="success"
+              variant="solid"
+              icon="i-lucide-play"
+              :disabled="stillHasConflictMarkers"
+              :label="t('conflict.saveAndContinue')"
+              @click="handleSaveAndContinue"
             />
           </div>
         </div>
