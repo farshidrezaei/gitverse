@@ -4,6 +4,7 @@ import type {
   RebasePlanItem,
   RepositoryOverview,
 } from '~/types/repository'
+import { formatApplicationError } from '~/utils/tauriClient'
 
 function safeState<T>(key: string, initialValue: () => T) {
   if (tryUseNuxtApp()) {
@@ -117,7 +118,8 @@ export function useRebaseController() {
       }
     } catch (error) {
       console.error('Failed to execute interactive rebase:', error)
-      notifyError(translate('rebase.rebaseFailed', { error: String(error) }))
+      const formattedMessage = formatApplicationError(error)
+      notifyError(translate('rebase.rebaseFailed', { error: formattedMessage }))
       return null
     } finally {
       isRebasing.value = false
