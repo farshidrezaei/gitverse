@@ -28,10 +28,6 @@ export function useStagingController() {
   const { notifySuccess, notifyError, notifyUndoable } = useNotificationService()
   const { t } = useI18n()
 
-  // Capture controller references at setup time (avoid calling composables inside async callbacks)
-  const commitGraph = tryUseNuxtApp() ? useCommitGraph() : null
-  const branchController = tryUseNuxtApp() ? useBranchController() : null
-
   async function isTauriEnvironment(): Promise<boolean> {
     return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
   }
@@ -94,13 +90,6 @@ export function useStagingController() {
       }
       const unlisten = await listen('repository://status-changed', async () => {
         await fetchStatus()
-        // Automatically refresh commit graph and references on external changes or git operations
-        if (commitGraph) {
-          await commitGraph.fetchCommitGraph()
-        }
-        if (branchController) {
-          await branchController.fetchReferences()
-        }
       })
       unlistenStatusWatcher = unlisten
     }
