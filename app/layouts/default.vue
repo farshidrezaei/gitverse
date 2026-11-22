@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import CommandPaletteModal from '~/components/workspace/CommandPaletteModal.vue'
+import FolderPickerModal from '~/components/workspace/FolderPickerModal.vue'
 import WorkspaceBottomPanel from '~/components/workspace/panel/WorkspaceBottomPanel.vue'
 import { useGitOutputLog } from '~/composables/useGitOutputLog'
 import { useAppUpdater } from '~/composables/useAppUpdater'
+import { usePathPickerModal } from '~/composables/usePathPickerModal'
 
 const isSettingsOpen = ref<boolean>(false)
 const { isCommandPaletteOpen, openCommandPalette, toggleCommandPalette } = useCommandPalette()
 const { toggleBottomPanel } = useGitOutputLog()
 const { runBackgroundUpdateCheck } = useAppUpdater()
+const {
+  isPathPickerModalOpen,
+  pathPickerOptions,
+  handlePathConfirmed,
+  handlePathCancelled,
+} = usePathPickerModal()
 
 onMounted(() => {
   void runBackgroundUpdateCheck()
@@ -56,6 +64,21 @@ onMounted(() => {
     <CommandPaletteModal
       v-model:open="isCommandPaletteOpen"
       @open-settings="isSettingsOpen = true"
+    />
+
+    <!-- Global Dynamic Path Picker Modal -->
+    <FolderPickerModal
+      v-model:open="isPathPickerModalOpen"
+      :mode="pathPickerOptions.mode"
+      :title="pathPickerOptions.title"
+      :subtitle="pathPickerOptions.subtitle"
+      :confirm-label="pathPickerOptions.confirmLabel"
+      :must-be-git-repository="pathPickerOptions.mustBeGitRepository"
+      :file-extensions="pathPickerOptions.fileExtensions"
+      :initial-path="pathPickerOptions.initialPath"
+      :default-file-name="pathPickerOptions.defaultFileName"
+      @select-folder="handlePathConfirmed"
+      @cancel="handlePathCancelled"
     />
   </div>
 </template>

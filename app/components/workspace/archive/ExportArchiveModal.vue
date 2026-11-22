@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PathInputField from '~/components/common/PathInputField.vue'
 import { exportArchiveInputSchema } from '~/schemas/archiveSchema'
 
 interface ExportArchiveModalProps {
@@ -113,10 +114,13 @@ function handleClose(): void {
             <label class="text-xs font-medium text-highlighted">
               {{ t('archive.archiveOutputPathLabel') }}
             </label>
-            <UInput
+            <PathInputField
               v-model="outputArchivePath"
+              mode="save_file"
+              default-file-name="archive.zip"
+              :title="t('archive.selectArchiveSaveTitle')"
               :placeholder="t('archive.archiveOutputPathPlaceholder')"
-              class="font-mono text-xs w-full"
+              size="sm"
             />
             <p class="text-[11px] text-muted">
               {{ t('archive.archiveOutputPathHint') }}

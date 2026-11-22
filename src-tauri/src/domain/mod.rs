@@ -340,12 +340,23 @@ pub struct FolderEntry {
     pub is_git_repository: bool,
 }
 
-/// Result of querying a directory for subfolders.
+/// File entry returned by filesystem directory inspection.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FileEntry {
+    pub name: String,
+    pub path: String,
+    pub extension: Option<String>,
+    pub size_bytes: u64,
+}
+
+/// Result of querying a directory for subfolders and files.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DirectoryListing {
     pub current_path: String,
     pub parent_path: Option<String>,
     pub folders: Vec<FolderEntry>,
+    #[serde(default)]
+    pub files: Vec<FileEntry>,
     pub is_current_git_repository: bool,
 }
 

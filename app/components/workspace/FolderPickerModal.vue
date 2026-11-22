@@ -1,15 +1,34 @@
 <script setup lang="ts">
-import type { DirectoryListing } from '~/types/repository'
+import type { DirectoryListing, FileEntry } from '~/types/repository'
+import type { PathPickerMode } from '~/composables/usePathPickerModal'
 
 interface FolderPickerModalProperties {
   open: boolean
+  mode?: PathPickerMode
+  title?: string
+  subtitle?: string
+  confirmLabel?: string
+  mustBeGitRepository?: boolean
+  fileExtensions?: string[]
+  initialPath?: string
+  defaultFileName?: string
 }
 
-const properties = defineProps<FolderPickerModalProperties>()
+const properties = withDefaults(defineProps<FolderPickerModalProperties>(), {
+  mode: 'folder',
+  mustBeGitRepository: undefined,
+  title: undefined,
+  subtitle: undefined,
+  confirmLabel: undefined,
+  fileExtensions: undefined,
+  initialPath: undefined,
+  defaultFileName: undefined,
+})
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  selectFolder: [folderPath: string]
+  selectFolder: [selectedPath: string]
+  cancel: []
 }>()
 
 const { t } = useI18n()
@@ -19,19 +38,30 @@ const currentListing = ref<DirectoryListing | null>(null)
 const manualPathInput = ref<string>('')
 const folderSearchQuery = ref<string>('')
 const isLoadingFolders = ref<boolean>(false)
+const selectedFilePath = ref<string | null>(null)
+const saveFileNameInput = ref<string>('')
+
+const isGitRepositoryRequired = computed<boolean>(() => {
+  if (properties.mode !== 'folder') return false
+  if (properties.mustBeGitRepository !== undefined) return properties.mustBeGitRepository
+  return true
+})
 
 watch(
   () => properties.open,
   async (isOpen) => {
     if (isOpen) {
       folderSearchQuery.value = ''
-      await navigateToDirectory()
+      selectedFilePath.value = null
+      saveFileNameInput.value = properties.defaultFileName || ''
+      await navigateToDirectory(properties.initialPath)
     }
   },
 )
 
 async function navigateToDirectory(targetPath?: string): Promise<void> {
   isLoadingFolders.value = true
+  selectedFilePath.value = null
   try {
     const listing = await listDirectoryFolders(targetPath)
     if (listing) {
@@ -53,15 +83,67 @@ async function handleFolderDoubleClick(folderPath: string): Promise<void> {
   await navigateToDirectory(folderPath)
 }
 
-function handleConfirmSelection(): void {
-  if (currentListing.value) {
-    emit('selectFolder', currentListing.value.current_path)
-    emit('update:open', false)
+function handleFolderClick(folderPath: string): void {
+  if (properties.mode === 'folder') {
+    manualPathInput.value = folderPath
   }
+}
+
+function handleFileClick(file: FileEntry): void {
+  selectedFilePath.value = file.path
+  if (properties.mode === 'save_file') {
+    saveFileNameInput.value = file.name
+  }
+}
+
+function handleFileDoubleClick(file: FileEntry): void {
+  selectedFilePath.value = file.path
+  handleConfirmSelection()
+}
+
+function handleConfirmSelection(): void {
+  if (properties.mode === 'file') {
+    if (selectedFilePath.value) {
+      emit('selectFolder', selectedFilePath.value)
+      emit('update:open', false)
+    }
+  } else if (properties.mode === 'save_file') {
+    if (currentListing.value && saveFileNameInput.value.trim()) {
+      const fullPath = `${currentListing.value.current_path}/${saveFileNameInput.value.trim()}`
+      emit('selectFolder', fullPath)
+      emit('update:open', false)
+    }
+  } else {
+    if (currentListing.value) {
+      const selectedPath = manualPathInput.value.trim() || currentListing.value.current_path
+      emit('selectFolder', selectedPath)
+      emit('update:open', false)
+    }
+  }
+}
+
+function handleClose(): void {
+  emit('cancel')
+  emit('update:open', false)
 }
 
 function handleQuickPath(path: string): void {
   void navigateToDirectory(path)
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function getFileIcon(extension?: string | null): string {
+  if (!extension) return 'i-lucide-file'
+  const lower = extension.toLowerCase()
+  if (['patch', 'diff'].includes(lower)) return 'i-lucide-file-code'
+  if (['bundle', 'zip', 'tar', 'gz'].includes(lower)) return 'i-lucide-archive'
+  if (['json', 'yml', 'yaml', 'toml', 'xml'].includes(lower)) return 'i-lucide-file-cog'
+  return 'i-lucide-file-text'
 }
 
 const filteredFolders = computed(() => {
@@ -69,6 +151,63 @@ const filteredFolders = computed(() => {
   if (!folderSearchQuery.value.trim()) return currentListing.value.folders
   const query = folderSearchQuery.value.toLowerCase()
   return currentListing.value.folders.filter(folder => folder.name.toLowerCase().includes(query))
+})
+
+const filteredFiles = computed(() => {
+  if (!currentListing.value || properties.mode === 'folder') return []
+  let files = currentListing.value.files || []
+
+  if (properties.fileExtensions && properties.fileExtensions.length > 0) {
+    const allowedExtensions = properties.fileExtensions.map(e => e.toLowerCase().replace(/^\./, ''))
+    files = files.filter(f => f.extension && allowedExtensions.includes(f.extension.toLowerCase()))
+  }
+
+  if (folderSearchQuery.value.trim()) {
+    const query = folderSearchQuery.value.toLowerCase()
+    files = files.filter(f => f.name.toLowerCase().includes(query))
+  }
+
+  return files
+})
+
+const canConfirm = computed<boolean>(() => {
+  if (isLoadingFolders.value) return false
+  if (properties.mode === 'file') {
+    return Boolean(selectedFilePath.value)
+  }
+  if (properties.mode === 'save_file') {
+    return Boolean(currentListing.value && saveFileNameInput.value.trim())
+  }
+  if (isGitRepositoryRequired.value) {
+    return Boolean(currentListing.value?.is_current_git_repository)
+  }
+  return Boolean(currentListing.value)
+})
+
+const headerIcon = computed<string>(() => {
+  if (properties.mode === 'file') return 'i-lucide-file-code'
+  if (properties.mode === 'save_file') return 'i-lucide-file-down'
+  return 'i-lucide-folder-git-2'
+})
+
+const headerTitle = computed<string>(() => {
+  if (properties.title) return properties.title
+  if (properties.mode === 'file') return t('repository.selectFileTitle')
+  if (properties.mode === 'save_file') return t('repository.selectSavePathTitle')
+  return t('repository.selectFolderTitle')
+})
+
+const headerSubtitle = computed<string>(() => {
+  if (properties.subtitle) return properties.subtitle
+  return t('repository.selectFolderSubtitle')
+})
+
+const confirmButtonLabel = computed<string>(() => {
+  if (properties.confirmLabel) return properties.confirmLabel
+  if (properties.mode === 'file') return t('repository.selectThisFile')
+  if (properties.mode === 'save_file') return t('repository.saveToThisLocation')
+  if (isGitRepositoryRequired.value) return t('repository.openThisFolder')
+  return t('repository.selectThisFolder')
 })
 </script>
 
@@ -79,17 +218,17 @@ const filteredFolders = computed(() => {
       overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity',
       content: 'sm:max-w-2xl p-0 border border-default/70 bg-[var(--gv-surface)] shadow-2xl rounded-2xl overflow-hidden',
     }"
-    @update:open="emit('update:open', $event)"
+    @update:open="handleClose"
   >
     <template #content>
       <div class="flex flex-col select-none">
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-default/70 px-5 py-3.5 bg-muted/20">
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-folder-git-2" class="h-5 w-5 text-primary" />
+            <UIcon :name="headerIcon" class="h-5 w-5 text-primary" />
             <div>
-              <h3 class="text-sm font-semibold text-highlighted">{{ t('repository.selectFolderTitle') }}</h3>
-              <p class="text-[11px] text-muted">{{ t('repository.selectFolderSubtitle') }}</p>
+              <h3 class="text-sm font-semibold text-highlighted">{{ headerTitle }}</h3>
+              <p class="text-[11px] text-muted">{{ headerSubtitle }}</p>
             </div>
           </div>
           <UButton
@@ -98,7 +237,7 @@ const filteredFolders = computed(() => {
             variant="ghost"
             icon="i-lucide-x"
             :aria-label="t('common.close')"
-            @click="emit('update:open', false)"
+            @click="handleClose"
           />
         </div>
 
@@ -170,10 +309,10 @@ const filteredFolders = computed(() => {
             class="w-full text-xs"
             size="xs"
             icon="i-lucide-search"
-            :placeholder="t('repository.filterFolders')"
+            :placeholder="properties.mode === 'folder' ? t('repository.filterFolders') : t('repository.filterFilesAndFolders')"
           />
 
-          <!-- Folders Only List -->
+          <!-- Files & Folders List -->
           <div class="h-64 rounded-lg border border-default bg-[var(--gv-surface)]/60 overflow-y-auto p-1 space-y-1">
             <!-- Zero-CLS Skeleton Loading for Folders List -->
             <div
@@ -199,13 +338,15 @@ const filteredFolders = computed(() => {
               </div>
             </div>
 
-            <template v-else-if="filteredFolders.length > 0">
+            <template v-else-if="filteredFolders.length > 0 || filteredFiles.length > 0">
+              <!-- Folders -->
               <div
                 v-for="folder in filteredFolders"
                 :key="folder.path"
                 class="group flex items-center justify-between rounded-md px-2.5 py-1.5 transition-colors cursor-pointer hover:bg-primary/10 hover:text-primary"
+                :class="properties.mode === 'folder' && manualPathInput === folder.path ? 'bg-primary/15 text-primary font-medium' : ''"
                 @dblclick="handleFolderDoubleClick(folder.path)"
-                @click="manualPathInput = folder.path"
+                @click="handleFolderClick(folder.path)"
               >
                 <div class="flex items-center gap-2 min-w-0">
                   <UIcon
@@ -232,6 +373,28 @@ const filteredFolders = computed(() => {
                   />
                 </div>
               </div>
+
+              <!-- Files (in file/save_file mode) -->
+              <div
+                v-for="file in filteredFiles"
+                :key="file.path"
+                class="group flex items-center justify-between rounded-md px-2.5 py-1.5 transition-colors cursor-pointer hover:bg-primary/10 hover:text-primary"
+                :class="selectedFilePath === file.path ? 'bg-primary/20 text-primary font-medium' : ''"
+                @dblclick="handleFileDoubleClick(file)"
+                @click="handleFileClick(file)"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <UIcon
+                    :name="getFileIcon(file.extension)"
+                    class="h-4 w-4 shrink-0 text-muted group-hover:text-primary"
+                  />
+                  <span class="truncate">{{ file.name }}</span>
+                </div>
+
+                <span class="text-[10px] text-muted font-mono shrink-0">
+                  {{ formatFileSize(file.size_bytes) }}
+                </span>
+              </div>
             </template>
 
             <div
@@ -239,13 +402,28 @@ const filteredFolders = computed(() => {
               class="flex h-full flex-col items-center justify-center text-muted gap-1 text-xs"
             >
               <UIcon name="i-lucide-folder-x" class="h-6 w-6 text-muted/60" />
-              <span>{{ t('repository.noSubfolders') }}</span>
+              <span>{{ properties.mode === 'folder' ? t('repository.noSubfolders') : t('repository.noMatchingEntries') }}</span>
             </div>
           </div>
 
-          <!-- Current folder Git status indicator -->
+          <!-- Save File Name Input (in save_file mode) -->
+          <div v-if="properties.mode === 'save_file'" class="space-y-1 pt-1">
+            <label class="text-[11px] font-medium text-highlighted">
+              {{ t('repository.fileNameLabel') }}
+            </label>
+            <UInput
+              v-model="saveFileNameInput"
+              class="w-full font-mono text-xs"
+              size="xs"
+              icon="i-lucide-file-plus"
+              :placeholder="t('repository.fileNamePlaceholder')"
+              @keydown.enter="handleConfirmSelection"
+            />
+          </div>
+
+          <!-- Current folder Git status indicator (in folder mode) -->
           <div
-            v-if="currentListing"
+            v-if="currentListing && properties.mode === 'folder'"
             class="flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs border"
             :class="[
               currentListing.is_current_git_repository
@@ -278,7 +456,7 @@ const filteredFolders = computed(() => {
             size="sm"
             color="neutral"
             variant="outline"
-            @click="emit('update:open', false)"
+            @click="handleClose"
           >
             {{ t('common.cancel') }}
           </UButton>
@@ -286,10 +464,10 @@ const filteredFolders = computed(() => {
             size="sm"
             color="primary"
             icon="i-lucide-check"
-            :disabled="!currentListing?.is_current_git_repository"
+            :disabled="!canConfirm"
             @click="handleConfirmSelection"
           >
-            {{ t('repository.openThisFolder') }}
+            {{ confirmButtonLabel }}
           </UButton>
         </div>
       </div>

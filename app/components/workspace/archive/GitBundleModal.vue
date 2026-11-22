@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PathInputField from '~/components/common/PathInputField.vue'
 import type { GitBundleVerificationResult } from '~/types/repository'
 import { createBundleInputSchema, verifyBundleInputSchema } from '~/schemas/archiveSchema'
 
@@ -157,10 +158,13 @@ function handleClose(): void {
             <label class="text-xs font-medium text-highlighted">
               {{ t('archive.outputPathLabel') }}
             </label>
-            <UInput
+            <PathInputField
               v-model="outputBundlePath"
+              mode="save_file"
+              default-file-name="repository-backup.bundle"
+              :title="t('archive.selectBundleSaveTitle')"
               :placeholder="t('archive.outputPathPlaceholder')"
-              class="font-mono text-xs w-full"
+              size="sm"
             />
             <p class="text-[11px] text-muted">
               {{ t('archive.outputPathHint') }}
@@ -189,10 +193,14 @@ function handleClose(): void {
               {{ t('archive.verifyBundleLabel') }}
             </label>
             <div class="flex items-center gap-2">
-              <UInput
+              <PathInputField
                 v-model="verifyFilePath"
+                mode="file"
+                :file-extensions="['bundle']"
+                :title="t('archive.selectBundleFileTitle')"
                 :placeholder="t('archive.verifyBundlePlaceholder')"
-                class="font-mono text-xs flex-1"
+                size="sm"
+                class="flex-1"
               />
               <UButton
                 color="primary"

@@ -274,12 +274,35 @@ export function useRepositoryWorkspace() {
           { name: 'carasan', path: '/home/farshid/Desktop/self/carasan', is_git_repository: true },
           { name: 'notes', path: '/home/farshid/Desktop/self/notes', is_git_repository: false },
         ]
+        const mockFiles = [
+          { name: 'fix-login.patch', path: '/home/farshid/Desktop/self/fix-login.patch', extension: 'patch', size_bytes: 1420 },
+          { name: 'backup.bundle', path: '/home/farshid/Desktop/self/backup.bundle', extension: 'bundle', size_bytes: 52400 },
+          { name: 'README.md', path: '/home/farshid/Desktop/self/README.md', extension: 'md', size_bytes: 3820 },
+        ]
         return {
           current_path: directoryPath || '/home/farshid/Desktop/self',
           parent_path: '/home/farshid/Desktop',
           folders: mockFolders,
+          files: mockFiles,
           is_current_git_repository: false,
         }
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      notifyError(t('common.error'), errorMessage)
+      return null
+    }
+  }
+
+  async function readFileText(filePath: string): Promise<string | null> {
+    try {
+      if (await isTauriEnvironment()) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        return await invoke<string>('read_file_text', {
+          filePath,
+        })
+      } else {
+        return '// Mock file text content'
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -302,6 +325,7 @@ export function useRepositoryWorkspace() {
     openRepository,
     promptAndOpenRepository,
     listDirectoryFolders,
+    readFileText,
     closeRepository,
     restoreLastOpenedRepository,
     clearError,

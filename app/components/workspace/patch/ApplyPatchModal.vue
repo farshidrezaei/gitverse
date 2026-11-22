@@ -14,12 +14,28 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const { checkPatch, applyPatch, isOperating } = usePatchController()
+const { openPathPicker } = usePathPickerModal()
+const { readFileText } = useWorkspaceManager()
 
 const patchContentInput = ref<string>('')
 const checkResult = ref<PatchCheckResult | null>(null)
 const isApplyToStaged = ref<boolean>(false)
 const isReverse = ref<boolean>(false)
 const errorMessage = ref<string | null>(null)
+
+async function handlePickPatchFile(): Promise<void> {
+  const selectedPath = await openPathPicker({
+    mode: 'file',
+    title: t('patch.selectFileTitle'),
+    fileExtensions: ['patch', 'diff', 'txt'],
+  })
+  if (selectedPath) {
+    const content = await readFileText(selectedPath)
+    if (content) {
+      patchContentInput.value = content
+    }
+  }
+}
 
 watch(
   patchContentInput,
@@ -131,21 +147,30 @@ function handleFileUpload(event: Event) {
           <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" />
           <span>{{ errorMessage }}</span>
         </div>
-        <!-- Input instructions and file upload button -->
+        <!-- Input instructions and file selection button -->
         <div class="flex items-center justify-between">
           <label class="text-xs font-medium text-highlighted">
             {{ t('patch.pasteOrUploadLabel') }}
           </label>
-          <label class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-neutral-500/10 hover:bg-neutral-500/20 text-highlighted cursor-pointer transition-colors">
-            <UIcon name="i-lucide-upload" class="w-3.5 h-3.5" />
-            <span>{{ t('patch.chooseFile') }}</span>
-            <input
-              type="file"
-              accept=".patch,.diff,text/plain"
-              class="hidden"
-              @change="handleFileUpload"
+          <div class="flex items-center gap-1.5">
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="soft"
+              icon="i-lucide-file-code"
+              @click="handlePickPatchFile"
             >
-          </label>
+              {{ t('patch.chooseFile') }}
+            </UButton>
+            <label class="sr-only">
+              <input
+                type="file"
+                accept=".patch,.diff,text/plain"
+                class="hidden"
+                @change="handleFileUpload"
+              >
+            </label>
+          </div>
         </div>
 
         <!-- Patch textarea -->

@@ -260,6 +260,7 @@ export function useWorkspaceManager() {
     openRepository,
     promptAndOpenRepository: repositoryWorkspace.promptAndOpenRepository,
     listDirectoryFolders: repositoryWorkspace.listDirectoryFolders,
+    readFileText: repositoryWorkspace.readFileText,
     closeRepository,
     restoreLastOpenedRepository,
     fetchRecentRepositories: repositoryWorkspace.fetchRecentRepositories,

@@ -1482,3 +1482,17 @@ pub async fn execute_custom_action(
         .execute_custom_action(directory_path.as_deref(), &action_identifier)
         .await
 }
+
+/// Tauri IPC command to read text content from a local file.
+#[tauri::command]
+pub async fn read_file_text(file_path: String) -> Result<String, ApplicationError> {
+    crate::domain::validation::validate_file_path(&file_path)?;
+    tokio::fs::read_to_string(&file_path)
+        .await
+        .map_err(|error| {
+            ApplicationError::FilesystemError(format!(
+                "Failed to read file {}: {}",
+                file_path, error
+            ))
+        })
+}

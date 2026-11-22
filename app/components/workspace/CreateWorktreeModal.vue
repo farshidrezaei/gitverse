@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PathInputField from '~/components/common/PathInputField.vue'
 import { validateGitBranchName } from '~/utils/branchValidation'
 
 interface CreateWorktreeModalProps {
@@ -100,14 +101,14 @@ function handleClose(): void {
             <label class="text-xs font-semibold text-highlighted">
               {{ t('worktree.directoryPathLabel') }}
             </label>
-            <div class="flex items-center gap-2">
-              <UInput
-                v-model="worktreePath"
-                class="w-full font-mono text-xs"
-                placeholder="/path/to/new-worktree"
-                size="sm"
-              />
-            </div>
+            <PathInputField
+              v-model="worktreePath"
+              mode="folder"
+              :must-be-git-repository="false"
+              :title="t('worktree.selectFolderTitle')"
+              placeholder="/path/to/new-worktree"
+              size="sm"
+            />
             <p class="text-[11px] text-muted">{{ t('worktree.directoryPathHelp') }}</p>
           </div>
 

@@ -9,7 +9,7 @@ use crate::domain::validation::{
     validate_remote_url, validate_search_query, validate_stash_message, validate_worktree_path,
 };
 use crate::domain::{
-    ApplicationError, BisectState, ConflictFileDetails, DirectoryListing, FolderEntry,
+    ApplicationError, BisectState, ConflictFileDetails, DirectoryListing, FileEntry, FolderEntry,
     GitSubmoduleSummary, GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome,
     PatchCheckResult, RebaseBranchOutcome, RebasePlanItem, RepositoryOperationState,
     RepositoryOverview, StashRecord,
@@ -1637,6 +1637,7 @@ impl GitRepositoryInspector {
             .unwrap_or(false);
 
         let mut folders = Vec::new();
+        let mut files = Vec::new();
 
         let read_dir_result = std::fs::read_dir(&canonical_path).map_err(|error| {
             ApplicationError::FilesystemError(format!(
@@ -1656,14 +1657,14 @@ impl GitRepositoryInspector {
                 Err(_) => continue,
             };
 
+            let file_name = entry.file_name().to_string_lossy().to_string();
+
+            // Skip hidden entries unless specific
+            if file_name.starts_with('.') {
+                continue;
+            }
+
             if file_type.is_dir() {
-                let folder_name = entry.file_name().to_string_lossy().to_string();
-
-                // Skip hidden folders unless it's a specific visible query
-                if folder_name.starts_with('.') {
-                    continue;
-                }
-
                 let subfolder_path = entry.path();
                 let has_git_folder = subfolder_path.join(".git").exists();
                 let is_git_repo = if has_git_folder {
@@ -1675,20 +1676,35 @@ impl GitRepositoryInspector {
                 };
 
                 folders.push(FolderEntry {
-                    name: folder_name,
+                    name: file_name,
                     path: subfolder_path.to_string_lossy().to_string(),
                     is_git_repository: is_git_repo,
+                });
+            } else if file_type.is_file() {
+                let file_path = entry.path();
+                let extension = file_path
+                    .extension()
+                    .map(|ext| ext.to_string_lossy().to_string());
+                let size_bytes = entry.metadata().map(|m| m.len()).unwrap_or(0);
+
+                files.push(FileEntry {
+                    name: file_name,
+                    path: file_path.to_string_lossy().to_string(),
+                    extension,
+                    size_bytes,
                 });
             }
         }
 
-        // Sort folders alphabetically (case-insensitive)
+        // Sort folders and files alphabetically (case-insensitive)
         folders.sort_by_key(|a| a.name.to_lowercase());
+        files.sort_by_key(|a| a.name.to_lowercase());
 
         Ok(DirectoryListing {
             current_path: current_path_str,
             parent_path,
             folders,
+            files,
             is_current_git_repository,
         })
     }

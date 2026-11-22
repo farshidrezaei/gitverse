@@ -1,11 +1,23 @@
 <script setup lang="ts">
 const { t } = useI18n()
+const { openPathPicker } = usePathPickerModal()
 
 const gitExecutablePath = ref('/usr/bin/git')
 const defaultBranchName = ref('main')
 const autoFetchIntervalMinutes = ref('10')
 const isPruneOnFetch = ref(true)
 const isAutoStashOnRebase = ref(true)
+
+async function handleBrowseGitExecutable(): Promise<void> {
+  const selected = await openPathPicker({
+    mode: 'file',
+    title: t('settings.git.selectExecutableTitle'),
+    initialPath: gitExecutablePath.value,
+  })
+  if (selected) {
+    gitExecutablePath.value = selected
+  }
+}
 </script>
 
 <template>
@@ -28,6 +40,16 @@ const isAutoStashOnRebase = ref(true)
           <label class="font-medium text-toned">{{ t('settings.git.executablePath') }}</label>
           <div class="flex items-center gap-2">
             <UInput v-model="gitExecutablePath" icon="i-lucide-terminal" class="flex-1 font-mono text-xs" dir="ltr" />
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-file-search"
+              :title="t('settings.git.browseExecutable')"
+              @click="handleBrowseGitExecutable"
+            >
+              {{ t('common.browse') }}
+            </UButton>
             <UButton size="xs" color="neutral" variant="outline" label="Detect" />
           </div>
           <p class="text-[10px] text-muted">

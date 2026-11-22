@@ -289,6 +289,31 @@ pub fn validate_archive_path(path_str: &str) -> Result<(), ApplicationError> {
     Ok(())
 }
 
+/// Validates a filesystem file path for reading or selection.
+pub fn validate_file_path(path_str: &str) -> Result<(), ApplicationError> {
+    let trimmed = path_str.trim();
+
+    if trimmed.is_empty() {
+        return Err(ApplicationError::InvalidInput(
+            "File path cannot be empty".into(),
+        ));
+    }
+
+    if trimmed.len() > 1000 {
+        return Err(ApplicationError::InvalidInput(
+            "File path cannot exceed 1000 characters".into(),
+        ));
+    }
+
+    if trimmed.contains('\0') {
+        return Err(ApplicationError::InvalidInput(
+            "File path cannot contain null bytes".into(),
+        ));
+    }
+
+    Ok(())
+}
+
 /// Validates a Git LFS file pattern.
 pub fn validate_lfs_pattern(pattern: &str) -> Result<(), ApplicationError> {
     let trimmed = pattern.trim();
@@ -572,6 +597,10 @@ mod tests {
         assert!(validate_archive_path("/tmp/bundle.bundle").is_ok());
         assert!(validate_archive_path("").is_err());
         assert!(validate_archive_path("/tmp/bad\0path").is_err());
+
+        assert!(validate_file_path("/tmp/patch.diff").is_ok());
+        assert!(validate_file_path("").is_err());
+        assert!(validate_file_path("/tmp/bad\0file").is_err());
 
         assert!(validate_lfs_pattern("*.psd").is_ok());
         assert!(validate_lfs_pattern("assets/*.bin").is_ok());

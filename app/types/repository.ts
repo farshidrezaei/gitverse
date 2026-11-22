@@ -351,10 +351,18 @@ export interface FolderEntry {
   is_git_repository: boolean
 }
 
+export interface FileEntry {
+  name: string
+  path: string
+  extension?: string | null
+  size_bytes: number
+}
+
 export interface DirectoryListing {
   current_path: string
   parent_path: string | null
   folders: FolderEntry[]
+  files?: FileEntry[]
   is_current_git_repository: boolean
 }
 
