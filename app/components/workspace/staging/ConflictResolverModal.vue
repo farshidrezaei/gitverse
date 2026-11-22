@@ -9,6 +9,9 @@ import {
   resolveConflictChunk,
   type ParsedConflictChunk,
 } from '~/utils/conflict'
+import ConflictWorkbenchView from './ConflictWorkbenchView.vue'
+import ConflictSideBySideView from './ConflictSideBySideView.vue'
+import ConflictResultEditorView from './ConflictResultEditorView.vue'
 
 interface ConflictResolverModalProps {
   open: boolean
@@ -104,42 +107,6 @@ const baseLines = computed(() => {
   }
   return props.conflictDetails.base_content.split(/\r?\n/)
 })
-
-const oursPaneReference = ref<HTMLDivElement | null>(null)
-const basePaneReference = ref<HTMLDivElement | null>(null)
-const theirsPaneReference = ref<HTMLDivElement | null>(null)
-
-let isSyncingConflictScroll = false
-
-function handleConflictPaneScroll(sourcePane: 'ours' | 'base' | 'theirs'): void {
-  if (isSyncingConflictScroll) {
-    return
-  }
-  isSyncingConflictScroll = true
-
-  let targetScrollTop = 0
-  if (sourcePane === 'ours' && oursPaneReference.value) {
-    targetScrollTop = oursPaneReference.value.scrollTop
-  } else if (sourcePane === 'base' && basePaneReference.value) {
-    targetScrollTop = basePaneReference.value.scrollTop
-  } else if (sourcePane === 'theirs' && theirsPaneReference.value) {
-    targetScrollTop = theirsPaneReference.value.scrollTop
-  }
-
-  if (oursPaneReference.value && sourcePane !== 'ours') {
-    oursPaneReference.value.scrollTop = targetScrollTop
-  }
-  if (basePaneReference.value && sourcePane !== 'base') {
-    basePaneReference.value.scrollTop = targetScrollTop
-  }
-  if (theirsPaneReference.value && sourcePane !== 'theirs') {
-    theirsPaneReference.value.scrollTop = targetScrollTop
-  }
-
-  requestAnimationFrame(() => {
-    isSyncingConflictScroll = false
-  })
-}
 
 function handleAcceptOurs(): void {
   emit('resolve', 'ours')
@@ -304,351 +271,35 @@ function handleClose(): void {
 
         <!-- Modal Body -->
         <div class="flex-1 overflow-y-auto p-4 min-h-[460px] flex flex-col gap-4">
-          <!-- WORKBENCH MODE (Interactive 3-Way Panes + Chunk Selector + Live Merged Output) -->
-          <div v-if="activeViewMode === 'workbench'" class="flex flex-col gap-4 flex-1">
-            <!-- Chunk Action Bar -->
-            <div v-if="currentChunk" class="flex flex-wrap items-center justify-between p-3 rounded-xl border border-primary/30 bg-primary/5">
-              <div class="flex items-center gap-2">
-                <UIcon name="i-lucide-alert-circle" class="h-4 w-4 text-primary shrink-0" />
-                <span class="text-xs font-semibold text-highlighted">
-                  {{ t('conflict.resolveChunk') }} (L{{ currentChunk.startLine }} - L{{ currentChunk.endLine }}):
-                </span>
-              </div>
-              <div class="flex flex-wrap items-center gap-1.5">
-                <UButton
-                  size="xs"
-                  color="primary"
-                  variant="solid"
-                  icon="i-lucide-arrow-left"
-                  :label="t('conflict.acceptOurs')"
-                  @click="handleResolveCurrentChunk('ours')"
-                />
-                <UButton
-                  size="xs"
-                  color="warning"
-                  variant="solid"
-                  icon="i-lucide-arrow-right"
-                  :label="t('conflict.acceptTheirs')"
-                  @click="handleResolveCurrentChunk('theirs')"
-                />
-                <UButton
-                  size="xs"
-                  color="neutral"
-                  variant="outline"
-                  icon="i-lucide-combine"
-                  :label="t('conflict.acceptBothOursFirst')"
-                  @click="handleResolveCurrentChunk('both_ours_first')"
-                />
-                <UButton
-                  size="xs"
-                  color="neutral"
-                  variant="outline"
-                  icon="i-lucide-combine"
-                  :label="t('conflict.acceptBothTheirsFirst')"
-                  @click="handleResolveCurrentChunk('both_theirs_first')"
-                />
-              </div>
-            </div>
-
-            <!-- 3-Way Top Comparison (Ours | Base | Theirs) -->
-            <div
-              class="grid gap-3 flex-1 min-h-[220px]"
-              :class="isBaseVisible ? 'grid-cols-3' : 'grid-cols-2'"
-            >
-              <!-- Ours Pane -->
-              <div class="flex flex-col border border-default/70 rounded-xl overflow-hidden bg-surface/60">
-                <div class="flex items-center justify-between border-b border-default/70 px-3 py-2 bg-primary/10">
-                  <span class="text-xs font-semibold text-primary flex items-center gap-1.5">
-                    <UIcon name="i-lucide-arrow-left" class="h-3.5 w-3.5 rtl:rotate-180" />
-                    {{ t('conflict.paneOurs') }}
-                  </span>
-                  <span v-if="currentChunk" class="font-mono text-[10px] text-muted">
-                    {{ currentChunk.oursBranchName }}
-                  </span>
-                </div>
-                <div class="flex-1 p-3 font-mono text-xs overflow-auto whitespace-pre bg-surface/30 select-text" dir="ltr">
-                  <template v-if="currentChunk">
-                    {{ currentChunk.oursContent || '(empty)' }}
-                  </template>
-                  <template v-else>
-                    <div class="text-muted text-center pt-8">
-                      {{ t('conflict.noConflictsFound') }}
-                    </div>
-                  </template>
-                </div>
-              </div>
-
-              <!-- Base Pane -->
-              <div v-if="isBaseVisible" class="flex flex-col border border-default/70 rounded-xl overflow-hidden bg-surface/60">
-                <div class="flex items-center justify-between border-b border-default/70 px-3 py-2 bg-muted/20">
-                  <span class="text-xs font-semibold text-muted flex items-center gap-1.5">
-                    <UIcon name="i-lucide-git-commit" class="h-3.5 w-3.5" />
-                    {{ t('conflict.paneBase') }}
-                  </span>
-                </div>
-                <div class="flex-1 p-3 font-mono text-xs overflow-auto whitespace-pre bg-surface/30 text-muted select-text" dir="ltr">
-                  {{ props.conflictDetails?.base_content || '(no base content available)' }}
-                </div>
-              </div>
-
-              <!-- Theirs Pane -->
-              <div class="flex flex-col border border-default/70 rounded-xl overflow-hidden bg-surface/60">
-                <div class="flex items-center justify-between border-b border-default/70 px-3 py-2 bg-warning/10">
-                  <span class="text-xs font-semibold text-warning flex items-center gap-1.5">
-                    <UIcon name="i-lucide-arrow-right" class="h-3.5 w-3.5 rtl:rotate-180" />
-                    {{ t('conflict.paneTheirs') }}
-                  </span>
-                  <span v-if="currentChunk" class="font-mono text-[10px] text-muted">
-                    {{ currentChunk.theirsBranchName }}
-                  </span>
-                </div>
-                <div class="flex-1 p-3 font-mono text-xs overflow-auto whitespace-pre bg-surface/30 select-text" dir="ltr">
-                  <template v-if="currentChunk">
-                    {{ currentChunk.theirsContent || '(empty)' }}
-                  </template>
-                  <template v-else>
-                    <div class="text-muted text-center pt-8">
-                      {{ t('conflict.noConflictsFound') }}
-                    </div>
-                  </template>
-                </div>
-              </div>
-            </div>
-
-            <!-- Merged Output Result Pane -->
-            <div class="flex flex-col border border-default/70 rounded-xl overflow-hidden bg-surface/80 h-52 shrink-0">
-              <div class="flex items-center justify-between border-b border-default/70 px-3 py-2 bg-muted/20">
-                <span class="text-xs font-semibold text-highlighted flex items-center gap-1.5">
-                  <UIcon name="i-lucide-file-code" class="h-3.5 w-3.5 text-primary" />
-                  {{ t('conflict.paneResult') }}
-                </span>
-                <span class="text-[10px] text-muted font-mono">
-                  {{ t('conflict.editorHint') }}
-                </span>
-              </div>
-              <textarea
-                v-model="editableContent"
-                rows="8"
-                wrap="off"
-                class="w-full flex-1 p-3 font-mono text-xs bg-transparent text-highlighted focus:outline-none select-text leading-relaxed resize-none overflow-x-auto whitespace-pre"
-                dir="ltr"
-              />
-            </div>
-          </div>
+          <!-- WORKBENCH MODE -->
+          <ConflictWorkbenchView
+            v-if="activeViewMode === 'workbench'"
+            v-model:editable-content="editableContent"
+            :current-chunk="currentChunk"
+            :conflict-details="props.conflictDetails"
+            :is-base-visible="isBaseVisible"
+            @resolve-chunk="handleResolveCurrentChunk"
+          />
 
           <!-- SIDE-BY-SIDE 3-COLOR VIEW -->
-          <div
+          <ConflictSideBySideView
             v-else-if="activeViewMode === 'sideBySide'"
-            class="grid gap-3 h-full min-h-[400px]"
-            :class="isBaseVisible ? 'grid-cols-3' : 'grid-cols-2'"
-          >
-            <!-- Ours Line By Line with 3-Color -->
-            <div class="flex flex-col border border-default/70 rounded-xl overflow-hidden bg-surface/60">
-              <div class="flex items-center justify-between border-b border-default/70 px-3 py-2 bg-primary/10">
-                <span class="text-xs font-semibold text-primary flex items-center gap-1.5">
-                  <UIcon name="i-lucide-arrow-left" class="h-3.5 w-3.5 rtl:rotate-180" />
-                  {{ t('conflict.oursTitle') }}
-                </span>
-                <UButton
-                  size="xs"
-                  color="primary"
-                  variant="subtle"
-                  :label="t('conflict.acceptOurs')"
-                  @click="handleAcceptOurs"
-                />
-              </div>
-              <div
-                ref="oursPaneReference"
-                class="flex-1 overflow-auto divide-y divide-default/15 font-mono text-xs select-text"
-                dir="ltr"
-                @scroll="handleConflictPaneScroll('ours')"
-              >
-                <div class="min-w-fit w-full divide-y divide-default/15">
-                  <div
-                    v-for="(line, lineIndex) in oursLineComparisons"
-                    :key="`ours-line-${lineIndex}`"
-                    class="flex items-center h-[22px] min-h-[22px] max-h-[22px] leading-[22px]"
-                    :class="{
-                      'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': line.status === 'modification',
-                      'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': line.status === 'addition',
-                      'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': line.status === 'deletion',
-                      'text-highlighted border-s-2 border-transparent': line.status === 'context',
-                    }"
-                  >
-                    <div class="w-10 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/20 text-[10px]">
-                      {{ line.lineNumber || '' }}
-                    </div>
-                    <div class="w-5 shrink-0 text-center select-none font-bold">
-                      <span v-if="line.status === 'modification'">~</span>
-                      <span v-else-if="line.status === 'addition'">+</span>
-                      <span v-else-if="line.status === 'deletion'">-</span>
-                      <span v-else>&nbsp;</span>
-                    </div>
-                    <div class="flex-1 px-1.5 whitespace-pre overflow-x-visible leading-[22px]">
-                      <template v-if="line.spans && line.spans.length">
-                        <span
-                          v-for="(span, spanIndex) in line.spans"
-                          :key="`span-ours-${lineIndex}-${spanIndex}`"
-                          :class="{
-                            'bg-[var(--gv-diff-modify-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'modification',
-                            'bg-[var(--gv-diff-add-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'addition',
-                            'bg-[var(--gv-diff-remove-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'deletion',
-                          }"
-                        >{{ span.text }}</span>
-                      </template>
-                      <template v-else>
-                        {{ line.content }}
-                      </template>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Base Pane -->
-            <div
-              v-if="isBaseVisible"
-              class="flex flex-col border border-default/70 rounded-xl overflow-hidden bg-surface/60"
-            >
-              <div class="flex items-center justify-between border-b border-default/70 px-3 py-2 bg-muted/20">
-                <span class="text-xs font-semibold text-muted flex items-center gap-1.5">
-                  <UIcon name="i-lucide-git-commit" class="h-3.5 w-3.5" />
-                  {{ t('conflict.baseTitle') }}
-                </span>
-              </div>
-              <div
-                ref="basePaneReference"
-                class="flex-1 overflow-auto divide-y divide-default/15 font-mono text-xs select-text"
-                dir="ltr"
-                @scroll="handleConflictPaneScroll('base')"
-              >
-                <div class="min-w-fit w-full divide-y divide-default/15">
-                  <div
-                    v-for="(line, lineIndex) in baseLines"
-                    :key="`base-line-${lineIndex}`"
-                    class="flex items-center h-[22px] min-h-[22px] max-h-[22px] leading-[22px] text-muted border-s-2 border-transparent"
-                  >
-                    <div class="w-10 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/20 text-[10px]">
-                      {{ lineIndex + 1 }}
-                    </div>
-                    <div class="w-5 shrink-0 text-center select-none font-bold text-muted/40">
-                      &nbsp;
-                    </div>
-                    <div class="flex-1 px-1.5 whitespace-pre overflow-x-visible leading-[22px]">
-                      {{ line }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Theirs Line By Line with 3-Color -->
-            <div class="flex flex-col border border-default/70 rounded-xl overflow-hidden bg-surface/60">
-              <div class="flex items-center justify-between border-b border-default/70 px-3 py-2 bg-warning/10">
-                <span class="text-xs font-semibold text-warning flex items-center gap-1.5">
-                  <UIcon name="i-lucide-arrow-right" class="h-3.5 w-3.5 rtl:rotate-180" />
-                  {{ t('conflict.theirsTitle') }}
-                </span>
-                <UButton
-                  size="xs"
-                  color="warning"
-                  variant="subtle"
-                  :label="t('conflict.acceptTheirs')"
-                  @click="handleAcceptTheirs"
-                />
-              </div>
-              <div
-                ref="theirsPaneReference"
-                class="flex-1 overflow-auto divide-y divide-default/15 font-mono text-xs select-text"
-                dir="ltr"
-                @scroll="handleConflictPaneScroll('theirs')"
-              >
-                <div class="min-w-fit w-full divide-y divide-default/15">
-                  <div
-                    v-for="(line, lineIndex) in theirsLineComparisons"
-                    :key="`theirs-line-${lineIndex}`"
-                    class="flex items-center h-[22px] min-h-[22px] max-h-[22px] leading-[22px]"
-                    :class="{
-                      'bg-[var(--gv-diff-modify-bg)] text-[var(--gv-diff-modify-text)] border-s-2 border-[var(--gv-diff-modify-border)]': line.status === 'modification',
-                      'bg-[var(--gv-diff-add-bg)] text-[var(--gv-diff-add-text)] border-s-2 border-[var(--gv-diff-add-border)]': line.status === 'addition',
-                      'bg-[var(--gv-diff-remove-bg)] text-[var(--gv-diff-remove-text)] border-s-2 border-[var(--gv-diff-remove-border)]': line.status === 'deletion',
-                      'text-highlighted border-s-2 border-transparent': line.status === 'context',
-                    }"
-                  >
-                    <div class="w-10 shrink-0 pe-2 text-end select-none text-muted/60 border-e border-default/20 text-[10px]">
-                      {{ line.lineNumber || '' }}
-                    </div>
-                    <div class="w-5 shrink-0 text-center select-none font-bold">
-                      <span v-if="line.status === 'modification'">~</span>
-                      <span v-else-if="line.status === 'addition'">+</span>
-                      <span v-else-if="line.status === 'deletion'">-</span>
-                      <span v-else>&nbsp;</span>
-                    </div>
-                    <div class="flex-1 px-1.5 whitespace-pre overflow-x-visible leading-[22px]">
-                      <template v-if="line.spans && line.spans.length">
-                        <span
-                          v-for="(span, spanIndex) in line.spans"
-                          :key="`span-theirs-${lineIndex}-${spanIndex}`"
-                          :class="{
-                            'bg-[var(--gv-diff-modify-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'modification',
-                            'bg-[var(--gv-diff-add-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'addition',
-                            'bg-[var(--gv-diff-remove-word-bg)] font-semibold rounded-xs px-0.5': span.isChanged && line.status === 'deletion',
-                          }"
-                        >{{ span.text }}</span>
-                      </template>
-                      <template v-else>
-                        {{ line.content }}
-                      </template>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+            :ours-line-comparisons="oursLineComparisons"
+            :theirs-line-comparisons="theirsLineComparisons"
+            :base-lines="baseLines"
+            :is-base-visible="isBaseVisible"
+            @accept-ours="handleAcceptOurs"
+            @accept-theirs="handleAcceptTheirs"
+          />
 
           <!-- FULL RESULT EDITOR VIEW -->
-          <div v-else class="flex flex-col h-full min-h-[400px] space-y-2">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-semibold text-highlighted">
-                  {{ t('conflict.editorHint') }}
-                </span>
-                <UBadge
-                  v-if="stillHasConflictMarkers"
-                  size="xs"
-                  color="error"
-                  variant="soft"
-                >
-                  {{ t('conflict.markersRemaining', { count: remainingConflictCount }) }}
-                </UBadge>
-                <UBadge
-                  v-else
-                  size="xs"
-                  color="success"
-                  variant="soft"
-                >
-                  {{ t('conflict.cleanNoMarkers') }}
-                </UBadge>
-              </div>
-
-              <UButton
-                size="xs"
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-combine"
-                :label="t('conflict.acceptBoth')"
-                @click="handleAcceptBoth"
-              />
-            </div>
-
-            <textarea
-              v-model="editableContent"
-              rows="18"
-              wrap="off"
-              class="w-full flex-1 p-3 font-mono text-xs rounded-xl border border-default/70 bg-surface/90 text-highlighted focus:outline-none focus:ring-1 focus:ring-primary select-text leading-relaxed resize-none overflow-x-auto whitespace-pre"
-              dir="ltr"
-            />
-          </div>
+          <ConflictResultEditorView
+            v-else
+            v-model:editable-content="editableContent"
+            :still-has-conflict-markers="stillHasConflictMarkers"
+            :remaining-conflict-count="remainingConflictCount"
+            @accept-both="handleAcceptBoth"
+          />
         </div>
 
         <!-- Modal Footer -->
