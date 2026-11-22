@@ -159,6 +159,8 @@ impl ApplicationState {
         bypass_hooks: bool,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
+        let status = self.git_inspector.get_detailed_status(&target_path).await?;
+        crate::domain::preflight::verify_can_commit(&status, message, is_amend)?;
         self.git_inspector.commit(&target_path, message, is_amend, bypass_hooks).await
     }
 
@@ -228,6 +230,11 @@ impl ApplicationState {
         start_point: Option<&str>,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
+        if !create_if_missing {
+            let status = self.git_inspector.get_detailed_status(&target_path).await?;
+            let worktrees = self.git_inspector.list_worktrees(&target_path).await.unwrap_or_default();
+            crate::domain::preflight::verify_can_checkout(&status, branch_name, &worktrees)?;
+        }
         self.git_inspector.checkout_branch(&target_path, branch_name, create_if_missing, start_point).await
     }
 
@@ -250,6 +257,9 @@ impl ApplicationState {
         force: bool,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
+        let status = self.git_inspector.get_detailed_status(&target_path).await?;
+        let worktrees = self.git_inspector.list_worktrees(&target_path).await.unwrap_or_default();
+        crate::domain::preflight::verify_can_delete_branch(&status, branch_name, &worktrees)?;
         self.git_inspector.delete_branch(&target_path, branch_name, force).await
     }
 
@@ -442,6 +452,8 @@ impl ApplicationState {
         include_untracked: bool,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
+        let status = self.git_inspector.get_detailed_status(&target_path).await?;
+        crate::domain::preflight::verify_can_stash_save(&status)?;
         self.git_inspector.save_stash(&target_path, message, include_untracked).await
     }
 
@@ -491,6 +503,8 @@ impl ApplicationState {
         commit_hash: &str,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
+        let status = self.git_inspector.get_detailed_status(&target_path).await?;
+        crate::domain::preflight::verify_can_cherry_pick(&status)?;
         self.git_inspector.cherry_pick_commit(&target_path, commit_hash).await
     }
 
@@ -501,6 +515,8 @@ impl ApplicationState {
         commit_hash: &str,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
+        let status = self.git_inspector.get_detailed_status(&target_path).await?;
+        crate::domain::preflight::verify_can_revert(&status)?;
         self.git_inspector.revert_commit(&target_path, commit_hash).await
     }
 
@@ -555,6 +571,8 @@ impl ApplicationState {
         no_fast_forward: bool,
     ) -> Result<MergeBranchOutcome, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
+        let status = self.git_inspector.get_detailed_status(&target_path).await?;
+        crate::domain::preflight::verify_can_merge(&status, branch_name)?;
         self.git_inspector.merge_branch(&target_path, branch_name, no_fast_forward).await
     }
 
@@ -565,6 +583,8 @@ impl ApplicationState {
         upstream_branch: &str,
     ) -> Result<RebaseBranchOutcome, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
+        let status = self.git_inspector.get_detailed_status(&target_path).await?;
+        crate::domain::preflight::verify_can_rebase(&status, upstream_branch)?;
         self.git_inspector.rebase_branch(&target_path, upstream_branch).await
     }
 
@@ -575,6 +595,8 @@ impl ApplicationState {
         create_backup: Option<bool>,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
+        let status = self.git_inspector.get_detailed_status(&target_path).await?;
+        crate::domain::preflight::verify_can_abort_operation(&status)?;
         self.git_inspector.abort_repository_operation(&target_path, create_backup.unwrap_or(false)).await
     }
 
@@ -584,6 +606,8 @@ impl ApplicationState {
         directory_path: Option<&str>,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
+        let status = self.git_inspector.get_detailed_status(&target_path).await?;
+        crate::domain::preflight::verify_can_continue_operation(&status)?;
         self.git_inspector.continue_repository_operation(&target_path).await
     }
 

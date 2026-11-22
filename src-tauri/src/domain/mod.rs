@@ -3,10 +3,12 @@ use thiserror::Error;
 
 pub mod branch;
 pub mod graph;
+pub mod preflight;
 pub mod provider;
 pub mod validation;
 pub use branch::*;
 pub use graph::*;
+pub use preflight::*;
 pub use provider::*;
 pub use validation::*;
 
@@ -34,6 +36,9 @@ pub enum ApplicationError {
 
     #[error("Invalid input: {0}")]
     InvalidInput(String),
+
+    #[error("Preflight check failed: {0}")]
+    PreflightFailed(String),
 
     #[error("Remote provider error: {0}")]
     ProviderError(String),
