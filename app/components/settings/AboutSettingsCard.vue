@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ApplicationDiagnostics } from '~/types/repository'
+import ApplicationUpdatesCard from './ApplicationUpdatesCard.vue'
 
 const { t } = useI18n()
 const { notifySuccess, notifyError } = useNotificationService()
@@ -141,6 +142,9 @@ onMounted(() => {
         </div>
       </div>
     </UCard>
+
+    <!-- In-App Software Updates Card -->
+    <ApplicationUpdatesCard />
 
     <!-- Diagnostics Card -->
     <UCard>

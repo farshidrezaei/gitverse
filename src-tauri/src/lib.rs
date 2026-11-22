@@ -24,6 +24,9 @@ pub fn run() {
 
     let application_result = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|application| {
             tracing::info!("GitVerse desktop application runtime initializing...");
 

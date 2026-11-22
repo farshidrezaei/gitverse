@@ -301,6 +301,32 @@
       "gitVersionLabel": "Git Version",
       "gitPathLabel": "Git Binary Path",
       "diagnosticsPrivacyNote": "Voluntary & Privacy Safe: Sensitive tokens and credentials are automatically redacted before export."
+    },
+    "updates": {
+      "title": "Software Updates",
+      "description": "Desktop client updates and automatic checks.",
+      "checkButton": "Check for Updates",
+      "checking": "Checking for updates...",
+      "autoCheckLabel": "Automatically check for updates",
+      "autoCheckDescription": "Check for new versions when starting the application.",
+      "lastCheckedLabel": "Last Checked",
+      "never": "Never",
+      "upToDateTitle": "GitVerse is Up to Date",
+      "upToDateDescription": "You are currently running the latest version of GitVerse.",
+      "updateAvailableTitle": "GitVerse v{version} is Available",
+      "toastAvailableTitle": "GitVerse v{version} Available",
+      "toastAvailableDescription": "A new version of GitVerse is available for installation.",
+      "downloadAndInstall": "Download & Install",
+      "downloading": "Downloading update...",
+      "installedTitle": "Update Downloaded",
+      "installedDescription": "The update has been downloaded. Restart GitVerse to apply changes.",
+      "restartNow": "Restart GitVerse",
+      "desktopOnlyTitle": "Desktop Feature",
+      "desktopOnlyDescription": "Update checking is only available in the native desktop application.",
+      "errors": {
+        "checkFailed": "Failed to check for software updates.",
+        "installFailed": "Failed to download or install the software update."
+      }
     }
   },
   "repository": {

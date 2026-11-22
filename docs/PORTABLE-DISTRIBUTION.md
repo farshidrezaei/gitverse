@@ -92,3 +92,14 @@ shasum -a 256 -c SHA256SUMS.txt
 # Windows (PowerShell)
 Get-FileHash -Algorithm SHA256 .\GitVerse_1.0.0_x64-portable.exe
 ```
+
+---
+
+## 6. In-App Updates & Release Automation
+
+GitVerse includes a built-in cryptographic in-app updater powered by Tauri 2 and Minisign:
+
+- **Automatic Check**: Runs silently on application startup (configurable in Settings &rarr; About &rarr; Software Updates).
+- **Cryptographic Verification**: Updates are verified against the GitVerse official Minisign public key before execution.
+- **Seamless Application**: Download progress is tracked in real-time; one-click restart applies the new version instantly.
+- **Telegram Release Broadcast**: Every published GitHub release automatically generates formatted changelog notes and broadcasts to the official Telegram channel via `scripts/send-telegram-release.mjs`.

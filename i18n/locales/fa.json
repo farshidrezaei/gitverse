@@ -301,6 +301,32 @@
       "gitVersionLabel": "نسخه گیت",
       "gitPathLabel": "مسیر باینری گیت",
       "diagnosticsPrivacyNote": "کاملاً اختیاری و امن: تمامی اطلاعات حساس و توکن‌ها پیش از کپی به‌صورت خودکار سانسور می‌شوند."
+    },
+    "updates": {
+      "title": "به‌روزرسانی نرم‌افزار",
+      "description": "مدیریت و بررسی خودکار نسخه‌های جدید کلاینت دسکتاپ.",
+      "checkButton": "بررسی به‌روزرسانی",
+      "checking": "در حال بررسی به‌روزرسانی...",
+      "autoCheckLabel": "بررسی خودکار به‌روزرسانی‌ها",
+      "autoCheckDescription": "بررسی نسخه جدید هنگام شروع اجرای برنامه.",
+      "lastCheckedLabel": "آخرین بررسی",
+      "never": "هرگز",
+      "upToDateTitle": "گیت‌ورس به‌روز است",
+      "upToDateDescription": "شما از آخرین نسخه پایدار گیت‌ورس استفاده می‌کنید.",
+      "updateAvailableTitle": "نسخه جدید گیت‌ورس (v{version}) در دسترس است",
+      "toastAvailableTitle": "نسخه جدید v{version} منتشر شد",
+      "toastAvailableDescription": "نسخه جدیدی از گیت‌ورس برای دانلود و نصب آماده است.",
+      "downloadAndInstall": "دانلود و نصب به‌روزرسانی",
+      "downloading": "در حال دانلود به‌روزرسانی...",
+      "installedTitle": "به‌روزرسانی آماده اعمال است",
+      "installedDescription": "نسخه جدید با موفقیت دانلود شد. جهت اعمال تغییرات، برنامه را مجدداً راه‌اندازی کنید.",
+      "restartNow": "راه‌اندازی مجدد برنامه",
+      "desktopOnlyTitle": "ویژگی دسکتاپ",
+      "desktopOnlyDescription": "بررسی به‌روزرسانی تنها در نسخه بومی دسکتاپ فعال است.",
+      "errors": {
+        "checkFailed": "خطا در بررسی به‌روزرسانی‌های نرم‌افزار.",
+        "installFailed": "خطا در دانلود یا نصب به‌روزرسانی جدید."
+      }
     }
   },
   "repository": {

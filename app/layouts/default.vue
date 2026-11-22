@@ -2,12 +2,16 @@
 import CommandPaletteModal from '~/components/workspace/CommandPaletteModal.vue'
 import WorkspaceBottomPanel from '~/components/workspace/panel/WorkspaceBottomPanel.vue'
 import { useGitOutputLog } from '~/composables/useGitOutputLog'
+import { useAppUpdater } from '~/composables/useAppUpdater'
 
 const isSettingsOpen = ref<boolean>(false)
 const { isCommandPaletteOpen, openCommandPalette, toggleCommandPalette } = useCommandPalette()
 const { toggleBottomPanel } = useGitOutputLog()
+const { runBackgroundUpdateCheck } = useAppUpdater()
 
 onMounted(() => {
+  void runBackgroundUpdateCheck()
+
   const handleKeyDown = (event: KeyboardEvent) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault()
