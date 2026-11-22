@@ -298,7 +298,8 @@ mod tests {
         let content_after_discard =
             std::fs::read_to_string(repository_path.join("doc.txt")).expect("read file");
         assert_eq!(
-            content_after_discard, "line1\nline2\nline3\nline4_modified\n",
+            content_after_discard.replace("\r\n", "\n"),
+            "line1\nline2\nline3\nline4_modified\n",
             "line2_modified should be reverted while line4_modified remains"
         );
     }
@@ -893,7 +894,7 @@ mod tests {
             .expect("git checkout");
         let clean_content =
             std::fs::read_to_string(repository_path.join("file.txt")).expect("read file");
-        assert_eq!(clean_content, "line 1\nline 2\n");
+        assert_eq!(clean_content.replace("\r\n", "\n"), "line 1\nline 2\n");
 
         // Pre-check valid patch
         let check_clean = inspector
@@ -910,7 +911,10 @@ mod tests {
             .expect("apply patch");
         let applied_content =
             std::fs::read_to_string(repository_path.join("file.txt")).expect("read file");
-        assert_eq!(applied_content, "line 1\nmodified line 2\nline 3\n");
+        assert_eq!(
+            applied_content.replace("\r\n", "\n"),
+            "line 1\nmodified line 2\nline 3\n"
+        );
 
         // Verify invalid patch check fails gracefully
         let invalid_patch = patch.replace("line 1", "nonexistent line");
