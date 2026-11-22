@@ -42,6 +42,10 @@ const availableActions = computed<Array<{ id: RebaseAction; label: string; icon:
   { id: 'drop', label: t('rebase.actions.drop'), icon: 'i-lucide-trash-2', description: t('rebase.actionsDescription.drop'), color: 'text-error' },
 ])
 
+function getActionInfo(actionId: RebaseAction) {
+  return availableActions.value.find(a => a.id === actionId) || availableActions.value[0]!
+}
+
 function moveItemUp(index: number): void {
   if (index <= 0) return
   const item = planItems.value[index]
@@ -247,15 +251,35 @@ async function handleConfirmRebase(): Promise<void> {
                     </UTooltip>
                   </div>
 
-                  <!-- Action selector with custom style indicators -->
-                  <div class="w-36 shrink-0">
-                    <USelect
-                      v-model="item.action"
-                      :items="availableActions"
-                      value-key="id"
-                      size="xs"
-                      class="w-full font-semibold text-xs"
-                    />
+                  <!-- Action selector with rich full-width popover menu -->
+                  <div class="shrink-0">
+                    <UDropdownMenu
+                      :items="[availableActions.map(action => ({
+                        label: action.label,
+                        icon: action.icon,
+                        description: action.description,
+                        color: action.id === 'drop' ? 'error' as const : undefined,
+                        onSelect: () => { item.action = action.id },
+                      }))]"
+                      :content="{ align: 'start', minWidth: '15rem' }"
+                      :ui="{
+                        content: 'p-1.5 rounded-xl border border-default/70 bg-[var(--gv-surface)] shadow-2xl space-y-1',
+                        item: 'p-2 rounded-lg gap-2.5 cursor-pointer',
+                      }"
+                    >
+                      <UButton
+                        size="xs"
+                        variant="subtle"
+                        color="neutral"
+                        :icon="getActionInfo(item.action).icon"
+                        trailing-icon="i-lucide-chevron-down"
+                        class="min-w-[95px] justify-between font-semibold"
+                      >
+                        <span :class="getActionInfo(item.action).color">
+                          {{ getActionInfo(item.action).label }}
+                        </span>
+                      </UButton>
+                    </UDropdownMenu>
                   </div>
                 </div>
 
