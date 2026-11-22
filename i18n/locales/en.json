@@ -120,7 +120,26 @@
     "fetchCommitsFailed": "Failed to load commits for rebase",
     "rebaseSuccessful": "Interactive rebase completed successfully",
     "rebaseConflicts": "Rebase paused due to merge conflicts. Please resolve conflicts and continue.",
-    "rebaseFailed": "Interactive rebase failed: {error}"
+    "rebaseFailed": "Interactive rebase failed: {error}",
+    "actions": {
+      "pick": "Pick",
+      "reword": "Reword",
+      "edit": "Edit",
+      "squash": "Squash",
+      "fixup": "Fixup",
+      "drop": "Drop"
+    },
+    "actionsDescription": {
+      "pick": "Keep commit as is",
+      "reword": "Keep commit but edit message",
+      "edit": "Pause rebase to edit commit contents",
+      "squash": "Combine with previous commit and keep message",
+      "fixup": "Combine with previous commit and discard message",
+      "drop": "Delete commit from history"
+    },
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "dragToReorder": "Drag to reorder"
   },
   "confirmation": {
     "defaultTitle": "Confirm Action",

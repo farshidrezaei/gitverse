@@ -19,6 +19,8 @@ const { isRebasing, fetchRebaseCommits, executeRebase } = useRebaseController()
 
 const planItems = ref<RebasePlanItem[]>([])
 const isLoadingCommits = ref<boolean>(false)
+const draggedItemIndex = ref<number | null>(null)
+const dragOverItemIndex = ref<number | null>(null)
 
 watch(
   () => props.open,
@@ -31,14 +33,14 @@ watch(
   },
 )
 
-const availableActions: Array<{ id: RebaseAction; label: string; icon: string; color: string }> = [
-  { id: 'pick', label: 'Pick', icon: 'i-lucide-check', color: 'primary' },
-  { id: 'reword', label: 'Reword', icon: 'i-lucide-pencil', color: 'info' },
-  { id: 'edit', label: 'Edit', icon: 'i-lucide-pause', color: 'warning' },
-  { id: 'squash', label: 'Squash', icon: 'i-lucide-fold-vertical', color: 'secondary' },
-  { id: 'fixup', label: 'Fixup', icon: 'i-lucide-combine', color: 'neutral' },
-  { id: 'drop', label: 'Drop', icon: 'i-lucide-trash-2', color: 'error' },
-]
+const availableActions = computed<Array<{ id: RebaseAction; label: string; icon: string; description: string; color: string }>>(() => [
+  { id: 'pick', label: t('rebase.actions.pick'), icon: 'i-lucide-check', description: t('rebase.actionsDescription.pick'), color: 'text-success' },
+  { id: 'reword', label: t('rebase.actions.reword'), icon: 'i-lucide-pencil', description: t('rebase.actionsDescription.reword'), color: 'text-info' },
+  { id: 'edit', label: t('rebase.actions.edit'), icon: 'i-lucide-pause', description: t('rebase.actionsDescription.edit'), color: 'text-warning' },
+  { id: 'squash', label: t('rebase.actions.squash'), icon: 'i-lucide-fold-vertical', description: t('rebase.actionsDescription.squash'), color: 'text-primary' },
+  { id: 'fixup', label: t('rebase.actions.fixup'), icon: 'i-lucide-combine', description: t('rebase.actionsDescription.fixup'), color: 'text-muted' },
+  { id: 'drop', label: t('rebase.actions.drop'), icon: 'i-lucide-trash-2', description: t('rebase.actionsDescription.drop'), color: 'text-error' },
+])
 
 function moveItemUp(index: number): void {
   if (index <= 0) return
@@ -54,6 +56,50 @@ function moveItemDown(index: number): void {
   if (!item) return
   planItems.value.splice(index, 1)
   planItems.value.splice(index + 1, 0, item)
+}
+
+function handleDragStart(index: number, event: DragEvent): void {
+  draggedItemIndex.value = index
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', String(index))
+  }
+}
+
+function handleDragOver(index: number, event: DragEvent): void {
+  event.preventDefault()
+  if (draggedItemIndex.value !== null && draggedItemIndex.value !== index) {
+    dragOverItemIndex.value = index
+  }
+}
+
+function handleDragLeave(index: number): void {
+  if (dragOverItemIndex.value === index) {
+    dragOverItemIndex.value = null
+  }
+}
+
+function handleDrop(targetIndex: number, event: DragEvent): void {
+  event.preventDefault()
+  if (draggedItemIndex.value === null || draggedItemIndex.value === targetIndex) {
+    draggedItemIndex.value = null
+    dragOverItemIndex.value = null
+    return
+  }
+
+  const draggedItem = planItems.value[draggedItemIndex.value]
+  if (draggedItem) {
+    planItems.value.splice(draggedItemIndex.value, 1)
+    planItems.value.splice(targetIndex, 0, draggedItem)
+  }
+
+  draggedItemIndex.value = null
+  dragOverItemIndex.value = null
+}
+
+function handleDragEnd(): void {
+  draggedItemIndex.value = null
+  dragOverItemIndex.value = null
 }
 
 function handleClose(): void {
@@ -80,7 +126,7 @@ async function handleConfirmRebase(): Promise<void> {
     :open="open"
     :ui="{
       overlay: 'fixed inset-0 bg-black/60 backdrop-blur-none transition-opacity',
-      content: 'sm:max-w-2xl p-0 border border-default/70 bg-[var(--gv-surface)] shadow-2xl rounded-2xl overflow-hidden',
+      content: 'sm:max-w-3xl p-0 border border-default/70 bg-[var(--gv-surface)] shadow-2xl rounded-2xl overflow-hidden',
     }"
     @update:open="emit('update:open', $event)"
   >
@@ -111,11 +157,17 @@ async function handleConfirmRebase(): Promise<void> {
         <div class="p-5 flex-1 overflow-y-auto space-y-3">
           <div class="flex items-center justify-between text-muted text-[11px]">
             <span>{{ t('rebase.baseCommitLabel') }}: <span class="font-mono text-highlighted">{{ props.baseCommitHash.slice(0, 7) }}</span></span>
-            <span>{{ planItems.length }} {{ t('rebase.commitsCount') }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-muted-foreground flex items-center gap-1">
+                <UIcon name="i-lucide-grip-vertical" class="h-3 w-3" />
+                {{ t('rebase.dragToReorder') }}
+              </span>
+              <span class="font-semibold text-highlighted">{{ planItems.length }} {{ t('rebase.commitsCount') }}</span>
+            </div>
           </div>
 
           <!-- Zero-CLS Skeleton Loading state -->
-          <div v-if="isLoadingCommits" class="space-y-2 animate-pulse">
+          <div v-if="isLoadingCommits" class="space-y-2 animate-pulse" role="status" aria-busy="true">
             <div
               v-for="index in 4"
               :key="`rebase-skeleton-${index}`"
@@ -142,60 +194,83 @@ async function handleConfirmRebase(): Promise<void> {
             <p>{{ t('rebase.noCommitsToRebase') }}</p>
           </div>
 
-          <!-- Items list -->
+          <!-- Items list with HTML5 Drag & Drop Support -->
           <div v-else class="space-y-2">
             <div
               v-for="(item, index) in planItems"
               :key="item.commit_hash"
-              class="flex flex-col gap-1.5 rounded-xl border border-default/70 bg-surface/50 p-2.5 transition-all"
-              :class="item.action === 'drop' ? 'opacity-50 line-through' : ''"
+              draggable="true"
+              class="group relative flex flex-col gap-2 rounded-xl border transition-all p-2.5 cursor-grab active:cursor-grabbing"
+              :class="[
+                draggedItemIndex === index ? 'opacity-40 border-primary scale-[0.99]' : 'border-default/70 bg-surface/50',
+                dragOverItemIndex === index ? 'border-primary ring-2 ring-primary/30' : '',
+                item.action === 'drop' ? 'opacity-50 line-through bg-error/5' : '',
+              ]"
+              @dragstart="handleDragStart(index, $event)"
+              @dragover="handleDragOver(index, $event)"
+              @dragleave="handleDragLeave(index)"
+              @drop="handleDrop(index, $event)"
+              @dragend="handleDragEnd"
             >
-              <div class="flex items-center justify-between gap-2">
-                <!-- Action Dropdown & Reorder Controls -->
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <div class="flex items-center gap-0.5">
-                    <UButton
-                      size="xs"
-                      color="neutral"
-                      variant="ghost"
-                      icon="i-lucide-arrow-up"
-                      :disabled="index === 0"
-                      class="h-6 w-6 p-0"
-                      @click="moveItemUp(index)"
-                    />
-                    <UButton
-                      size="xs"
-                      color="neutral"
-                      variant="ghost"
-                      icon="i-lucide-arrow-down"
-                      :disabled="index === planItems.length - 1"
-                      class="h-6 w-6 p-0"
-                      @click="moveItemDown(index)"
-                    />
+              <div class="flex items-center justify-between gap-3">
+                <!-- Drag Handle & Reorder Arrow Controls -->
+                <div class="flex items-center gap-1 shrink-0">
+                  <div
+                    class="p-1 text-muted hover:text-highlighted cursor-grab active:cursor-grabbing transition-colors"
+                    :title="t('rebase.dragToReorder')"
+                  >
+                    <UIcon name="i-lucide-grip-vertical" class="h-4 w-4" />
                   </div>
 
-                  <!-- Action selector -->
-                  <USelect
-                    v-model="item.action"
-                    :items="availableActions"
-                    value-key="id"
-                    size="xs"
-                    class="w-28 font-semibold text-xs shrink-0"
-                  />
+                  <div class="flex items-center gap-0.5">
+                    <UTooltip :text="t('rebase.moveUp')">
+                      <UButton
+                        size="xs"
+                        color="neutral"
+                        variant="ghost"
+                        icon="i-lucide-arrow-up"
+                        :disabled="index === 0"
+                        class="h-6 w-6 p-0"
+                        @click="moveItemUp(index)"
+                      />
+                    </UTooltip>
+                    <UTooltip :text="t('rebase.moveDown')">
+                      <UButton
+                        size="xs"
+                        color="neutral"
+                        variant="ghost"
+                        icon="i-lucide-arrow-down"
+                        :disabled="index === planItems.length - 1"
+                        class="h-6 w-6 p-0"
+                        @click="moveItemDown(index)"
+                      />
+                    </UTooltip>
+                  </div>
+
+                  <!-- Action selector with custom style indicators -->
+                  <div class="w-36 shrink-0">
+                    <USelect
+                      v-model="item.action"
+                      :items="availableActions"
+                      value-key="id"
+                      size="xs"
+                      class="w-full font-semibold text-xs"
+                    />
+                  </div>
                 </div>
 
                 <!-- Commit Hash & Subject -->
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-1.5">
-                    <span class="font-mono text-[10px] text-primary font-semibold">{{ item.short_hash }}</span>
-                    <span class="text-highlighted truncate font-medium text-[11px]">{{ item.original_subject }}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="font-mono text-xs text-primary font-bold px-1.5 py-0.5 rounded bg-primary/10">{{ item.short_hash }}</span>
+                    <span class="text-highlighted truncate font-medium text-xs">{{ item.original_subject }}</span>
                   </div>
                   <span class="text-[10px] text-muted">{{ item.author_name }}</span>
                 </div>
               </div>
 
               <!-- Reword Message Input (when action is reword) -->
-              <div v-if="item.action === 'reword'" class="pt-1 ps-12">
+              <div v-if="item.action === 'reword'" class="pt-1 ps-9 pe-2">
                 <UInput
                   :model-value="item.new_message ?? ''"
                   size="xs"
@@ -206,9 +281,9 @@ async function handleConfirmRebase(): Promise<void> {
               </div>
 
               <!-- Squash / Fixup Note -->
-              <div v-if="item.action === 'squash' || item.action === 'fixup'" class="text-[10px] text-muted ps-12 flex items-center gap-1">
-                <UIcon name="i-lucide-corner-down-right" class="h-3 w-3 text-secondary" />
-                <span>{{ t('rebase.meldsIntoPrevious') }}</span>
+              <div v-if="item.action === 'squash' || item.action === 'fixup'" class="text-[10px] text-muted ps-9 flex items-center gap-1.5">
+                <UIcon name="i-lucide-corner-down-right" class="h-3.5 w-3.5 text-secondary" />
+                <span class="font-medium text-toned">{{ t('rebase.meldsIntoPrevious') }}</span>
               </div>
             </div>
           </div>
