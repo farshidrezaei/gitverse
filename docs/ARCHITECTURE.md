@@ -183,6 +183,10 @@ sequenceDiagram
 5. **Dual-Layer Input Validation Guarantee**:
    - Every user input, modal form, and action parameter is validated on the frontend with **Zod** (`app/schemas/`) and on the backend with **Rust domain validators** (`src-tauri/src/domain/validation.rs`).
    - Null bytes (`\0`), newlines in single-line arguments, path traversal anomalies, out-of-bounds lengths, and prohibited Git reference characters are blocked before any Git process or SQLite write executes.
+6. **Dual-Layer Pre-flight Action Feasibility Guarantee**:
+   - Every mutating or history-altering Git operation (rebase, merge, checkout, commit, branch deletion, stash save, operation abort/continue, cherry-pick, revert) is guarded by feasibility checks on both layers:
+     - **Frontend Layer (`app/composables/useActionGuard.ts` & `PreflightActionModal.vue`)**: Evaluates repository status and worktrees reactive state to disable actions or show actionable resolution dialogs (e.g., Stash & Proceed before rebase/merge, Stage All before commit).
+     - **Backend Layer (`src-tauri/src/domain/preflight.rs` & `ApplicationState`)**: Atomic pre-flight verification against the live working tree and operation state before executing Git processes, returning typed `ApplicationError::PreflightFailed` with localized translation keys (`preflight.*`).
 
 ---
 
