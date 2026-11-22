@@ -76,6 +76,22 @@ graph LR
 
 ---
 
+## Installation & Downloads
+
+Pre-built application binaries for all supported platforms are automatically generated on every tagged release:
+
+| Platform | Architecture | Package Format | Direct Download |
+|---|---|---|---|
+| **macOS** | Universal (`Apple Silicon` + `Intel`) | `.dmg` | [Latest macOS DMG](https://github.com/farshid/gitverse/releases/latest) |
+| **Linux** | `x86_64` | `.AppImage` (Standalone portable) | [Latest Linux AppImage](https://github.com/farshid/gitverse/releases/latest) |
+| **Linux** | `x86_64` | `.deb` (Debian / Ubuntu) | [Latest Linux DEB](https://github.com/farshid/gitverse/releases/latest) |
+| **Windows** | `x64` | `.exe` (NSIS Installer) | [Latest Windows Installer](https://github.com/farshid/gitverse/releases/latest) |
+| **Windows** | `x64` | `.msi` (Enterprise MSI Package) | [Latest Windows MSI](https://github.com/farshid/gitverse/releases/latest) |
+
+SHA256 checksums are published in `SHA256SUMS.txt` alongside every release for binary integrity verification.
+
+---
+
 ## Getting Started
 
 ### Prerequisites

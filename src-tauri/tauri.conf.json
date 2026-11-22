@@ -29,6 +29,41 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all"
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/64x64.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "DeveloperTool",
+    "shortDescription": "Modern, Cross-Platform, Local-First Git Desktop Client",
+    "longDescription": "GitVerse combines the raw power of the native Git CLI with an in-house commit graph engine, interactive diff/patch manipulation, zero-layout-shift design, and seamless GitHub/GitLab integration into an ultra-fast desktop experience.",
+    "copyright": "Copyright © 2024-2026 GitVerse Contributors",
+    "linux": {
+      "deb": {
+        "depends": [
+          "libwebkit2gtk-4.1-0",
+          "libayatana-appindicator3-1",
+          "librsvg2-2",
+          "libsecret-1-0"
+        ]
+      },
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    },
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "10.15"
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
   }
 }
