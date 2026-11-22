@@ -1081,5 +1081,53 @@
     "validationCommandTooLong": "Action command exceeds maximum length",
     "validationIconEmpty": "Action icon cannot be empty",
     "validationDescriptionTooLong": "Action description exceeds maximum length"
+  },
+  "preflight": {
+    "rebase": {
+      "active_operation_in_progress": "A repository operation is already in progress. Please complete or abort it first.",
+      "dirty_working_tree": "You have uncommitted local changes. Please commit or stash them before rebasing.",
+      "cannot_rebase_onto_self": "The target branch cannot be the current checked out branch."
+    },
+    "merge": {
+      "active_operation_in_progress": "Another merge or rebase operation is currently in progress. Complete or abort it first.",
+      "dirty_working_tree": "You have uncommitted changes that could conflict with incoming changes. Please stash or commit first.",
+      "cannot_merge_into_self": "The current branch cannot be merged into itself."
+    },
+    "checkout": {
+      "already_on_target_branch": "You are already on the target branch.",
+      "branch_in_another_worktree": "This branch is currently checked out in another linked worktree."
+    },
+    "commit": {
+      "empty_commit_message": "Commit message cannot be empty or contain only whitespace.",
+      "unresolved_conflicts": "Unresolved conflict markers exist. Please resolve and stage all conflicts before committing.",
+      "empty_staged_changes": "No changes have been staged for commit. Please stage files first or choose amend."
+    },
+    "branch": {
+      "cannot_delete_active_branch": "Cannot delete the currently active checked-out branch. Switch to another branch first.",
+      "cannot_delete_worktree_branch": "Cannot delete this branch because it is actively checked out in a linked worktree."
+    },
+    "stash": {
+      "no_local_changes": "No local changes found to stash."
+    },
+    "operation": {
+      "no_active_operation": "No active repository operation found to abort or continue.",
+      "unresolved_conflicts": "Unresolved conflicts remain. Please resolve and stage all conflicting files before continuing."
+    },
+    "cherry_pick": {
+      "active_operation_in_progress": "An operation is currently in progress. Please complete or abort it before cherry-picking.",
+      "dirty_working_tree": "You have uncommitted changes. Please commit or stash them before cherry-picking."
+    },
+    "revert": {
+      "active_operation_in_progress": "An operation is currently in progress. Please complete or abort it before reverting.",
+      "dirty_working_tree": "You have uncommitted changes. Please commit or stash them before reverting."
+    },
+    "modal": {
+      "dirty_working_tree_title": "Uncommitted Changes Detected",
+      "dirty_working_tree_description": "This action requires a clean working directory. Would you like to stash your changes before proceeding?",
+      "stash_and_proceed": "Stash and Proceed",
+      "empty_staged_title": "No Staged Changes",
+      "empty_staged_description": "No modified files are currently staged. Would you like to stage all changes and proceed?",
+      "stage_all_and_commit": "Stage All & Commit"
+    }
   }
 }
