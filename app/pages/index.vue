@@ -11,17 +11,7 @@ import WorkspaceCommitGraphViewport from '~/components/workspace/CommitGraphView
 import WorkspaceDiffViewerPanel from '~/components/workspace/DiffViewerPanel.vue'
 import WorkspaceCommitInspectorPanel from '~/components/workspace/CommitInspectorPanel.vue'
 import WelcomeWorkspaceState from '~/components/workspace/WelcomeWorkspaceState.vue'
-import CreateBranchModal from '~/components/workspace/CreateBranchModal.vue'
-import CreateWorktreeModal from '~/components/workspace/CreateWorktreeModal.vue'
-import InteractiveRebaseModal from '~/components/workspace/commit/InteractiveRebaseModal.vue'
-import FolderPickerModal from '~/components/workspace/FolderPickerModal.vue'
-import ReflogExplorerModal from '~/components/workspace/history/ReflogExplorerModal.vue'
-import BisectModal from '~/components/workspace/bisect/BisectModal.vue'
-import ExportPatchModal from '~/components/workspace/patch/ExportPatchModal.vue'
-import ApplyPatchModal from '~/components/workspace/patch/ApplyPatchModal.vue'
-import SubmoduleManagerModal from '~/components/workspace/submodule/SubmoduleManagerModal.vue'
-import RepositoryInsightsModal from '~/components/workspace/insights/RepositoryInsightsModal.vue'
-import FileHistoryModal from '~/components/workspace/history/FileHistoryModal.vue'
+import WorkspaceModalsContainer from '~/components/workspace/WorkspaceModalsContainer.vue'
 import PreflightActionModal from '~/components/workspace/PreflightActionModal.vue'
 import { useWorkspaceTabController } from '~/composables/useWorkspaceTabController'
 
@@ -149,24 +139,6 @@ async function handleCreateWorktree(
 const commitMessage = ref<string>('')
 const isAmend = ref<boolean>(false)
 const isBypassHooks = ref<boolean>(false)
-
-const {
-  isFolderPickerModalOpen,
-  isReflogModalOpen,
-  isBisectModalOpen,
-  isExportPatchModalOpen,
-  isApplyPatchModalOpen,
-  isSubmoduleModalOpen,
-  isInsightsModalOpen,
-  isFileHistoryModalOpen,
-  isSearchModalOpen,
-  isCommitQueueModalOpen,
-  commitQueueMode,
-  isGitBundleModalOpen,
-  isExportArchiveModalOpen,
-  isLfsManagerModalOpen,
-  isCustomActionsModalOpen,
-} = useWorkspaceModals()
 
 const selectedFileHistoryPath = ref<string>('')
 const selectedBranchName = ref<string | null>(null)
@@ -691,108 +663,24 @@ async function handlePush(): Promise<void> {
       </div>
     </div>
 
-    <!-- Branch creation modal -->
-    <CreateBranchModal
-      v-model:open="isCreateBranchModalOpen"
-      :source-branch="currentRepository?.current_branch_name"
-      :source-commit-sha="selectedCommitHash"
-      :existing-branch-names="repositoryReferences?.branches.map((b) => b.name) || []"
-      @create="handleCreateBranch"
-    />
-
-    <!-- Worktree creation modal -->
-    <CreateWorktreeModal
-      v-model:open="isCreateWorktreeModalOpen"
-      :default-directory-path="currentRepository?.path"
-      :existing-branch-names="repositoryReferences?.branches.map((b) => b.name) || []"
-      @create="handleCreateWorktree"
-    />
-
-    <!-- Interactive Rebase Modal -->
-    <InteractiveRebaseModal
-      v-model:open="isInteractiveRebaseModalOpen"
-      :base-commit-hash="interactiveRebaseBaseHash"
-      @complete="handleInteractiveRebaseComplete"
-    />
-
-    <!-- Custom Folder Picker Modal -->
-    <FolderPickerModal
-      v-model:open="isFolderPickerModalOpen"
-      @select-folder="openRepository"
-    />
-
-    <!-- Git Reflog Explorer Modal -->
-    <ReflogExplorerModal
-      v-model:open="isReflogModalOpen"
-      @checkout-commit="checkoutBranch"
-      @create-branch="(sha) => { selectedCommitHash = sha; isCreateBranchModalOpen = true }"
+    <!-- Workspace Modals Container -->
+    <WorkspaceModalsContainer
+      v-model:is-create-branch-modal-open="isCreateBranchModalOpen"
+      v-model:is-create-worktree-modal-open="isCreateWorktreeModalOpen"
+      v-model:is-interactive-rebase-modal-open="isInteractiveRebaseModalOpen"
+      v-model:selected-commit-hash="selectedCommitHash"
+      :current-repository="currentRepository"
+      :repository-references="repositoryReferences"
+      :selected-file-history-path="selectedFileHistoryPath"
+      :interactive-rebase-base-hash="interactiveRebaseBaseHash"
+      @create-branch="handleCreateBranch"
+      @create-worktree="handleCreateWorktree"
+      @interactive-rebase-complete="handleInteractiveRebaseComplete"
+      @open-repository="openRepository"
+      @checkout-branch="checkoutBranch"
       @reset-to-commit="(sha, mode) => resetToCommit(sha, mode)"
-    />
-
-    <!-- Interactive Git Bisect Assistant Modal -->
-    <BisectModal
-      v-model:open="isBisectModalOpen"
-      @locate-commit="(sha) => { selectCommit(sha) }"
-    />
-
-    <!-- Export Patch Modal -->
-    <ExportPatchModal
-      v-model:open="isExportPatchModalOpen"
-    />
-
-    <!-- Apply Patch Modal -->
-    <ApplyPatchModal
-      v-model:open="isApplyPatchModalOpen"
-    />
-
-    <!-- Git Submodules Manager Modal -->
-    <SubmoduleManagerModal
-      v-model:open="isSubmoduleModalOpen"
-    />
-
-    <!-- Repository Insights & Velocity Dashboard Modal -->
-    <RepositoryInsightsModal
-      v-model:open="isInsightsModalOpen"
-    />
-
-    <!-- File History & Revision Scrubber Modal -->
-    <FileHistoryModal
-      v-model:open="isFileHistoryModalOpen"
-      :initial-file-path="selectedFileHistoryPath"
-      @locate-commit="(sha) => { selectCommit(sha) }"
-    />
-
-    <!-- Global Code & History Search Modal -->
-    <RepositorySearchModal
-      v-model:open="isSearchModalOpen"
-      @locate-commit="(sha: string) => { selectCommit(sha) }"
-    />
-
-    <!-- Multi-Commit Cherry-Pick & Revert Queue Modal -->
-    <CommitQueueModal
-      v-model:open="isCommitQueueModalOpen"
-      :mode="commitQueueMode"
-      @complete="() => { fetchCommitGraph(); fetchStatus() }"
-    />
-
-    <!-- Git Bundle Modal -->
-    <GitBundleModal
-      v-model:open="isGitBundleModalOpen"
-    />
-
-    <!-- Export Source Archive Modal -->
-    <ExportArchiveModal
-      v-model:open="isExportArchiveModalOpen"
-    />
-
-    <!-- Git LFS Manager Modal -->
-    <LfsManagerModal
-      v-model:open="isLfsManagerModalOpen"
-    />
-
-    <!-- Custom Action Runners & Script Automation Modal -->
-    <CustomActionsModal
-      v-model:open="isCustomActionsModalOpen"
+      @select-commit="(sha) => selectCommit(sha)"
+      @refresh-state="() => { fetchCommitGraph(); fetchStatus() }"
     />
 
     <!-- Preflight Action Feasibility Modal -->
