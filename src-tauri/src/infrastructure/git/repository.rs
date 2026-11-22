@@ -1,19 +1,21 @@
-use std::path::{Path, PathBuf};
-use base64::Engine;
-use crate::domain::{
-    ApplicationError, BisectState, ConflictFileDetails, DirectoryListing, FolderEntry, GitSubmoduleSummary, GitWorktreeSummary, InteractiveRebaseRequest,
-    MergeBranchOutcome, PatchCheckResult, RebaseBranchOutcome, RebasePlanItem, RepositoryOperationState, RepositoryOverview, StashRecord,
-};
-use crate::domain::validation::{
-    validate_archive_path, validate_branch_name, validate_commit_message, validate_commit_reference,
-    validate_lfs_pattern, validate_patch_content, validate_remote_name, validate_remote_url,
-    validate_search_query, validate_stash_message, validate_worktree_path,
-};
 use super::bisect::parse_bisect_step_output;
 use super::process::GitProcessExecutor;
 use super::stash::parse_stash_list;
 use super::submodule::parse_submodule_status;
 use super::worktree::parse_worktree_list;
+use crate::domain::validation::{
+    validate_archive_path, validate_branch_name, validate_commit_message,
+    validate_commit_reference, validate_lfs_pattern, validate_patch_content, validate_remote_name,
+    validate_remote_url, validate_search_query, validate_stash_message, validate_worktree_path,
+};
+use crate::domain::{
+    ApplicationError, BisectState, ConflictFileDetails, DirectoryListing, FolderEntry,
+    GitSubmoduleSummary, GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome,
+    PatchCheckResult, RebaseBranchOutcome, RebasePlanItem, RepositoryOperationState,
+    RepositoryOverview, StashRecord,
+};
+use base64::Engine;
+use std::path::{Path, PathBuf};
 
 /// Service responsible for querying Git repository state, references, and working tree status.
 #[derive(Debug, Clone)]
@@ -44,16 +46,22 @@ impl GitRepositoryInspector {
     }
 
     /// Verifies if a given path is a valid Git repository root or worktree.
-    pub async fn verify_repository_path(&self, directory_path: &Path) -> Result<bool, ApplicationError> {
-        let output = self.executor
+    pub async fn verify_repository_path(
+        &self,
+        directory_path: &Path,
+    ) -> Result<bool, ApplicationError> {
+        let output = self
+            .executor
             .execute_git_command(Some(directory_path), &["rev-parse", "--show-toplevel"])
             .await;
 
         match output {
             Ok(result) => {
                 let toplevel_str = result.trim();
-                let canonical_target = std::fs::canonicalize(directory_path).unwrap_or_else(|_| directory_path.to_path_buf());
-                let canonical_toplevel = std::fs::canonicalize(Path::new(toplevel_str)).unwrap_or_else(|_| PathBuf::from(toplevel_str));
+                let canonical_target = std::fs::canonicalize(directory_path)
+                    .unwrap_or_else(|_| directory_path.to_path_buf());
+                let canonical_toplevel = std::fs::canonicalize(Path::new(toplevel_str))
+                    .unwrap_or_else(|_| PathBuf::from(toplevel_str));
                 Ok(canonical_target == canonical_toplevel)
             }
             Err(_) => Ok(false),
@@ -61,7 +69,10 @@ impl GitRepositoryInspector {
     }
 
     /// Reads full overview metadata for a given repository path.
-    pub async fn inspect_repository(&self, directory_path: &Path) -> Result<RepositoryOverview, ApplicationError> {
+    pub async fn inspect_repository(
+        &self,
+        directory_path: &Path,
+    ) -> Result<RepositoryOverview, ApplicationError> {
         let is_valid = self.verify_repository_path(directory_path).await?;
         if !is_valid {
             return Err(ApplicationError::InvalidRepository(
@@ -76,7 +87,8 @@ impl GitRepositoryInspector {
             .to_string();
 
         // Check if repository has any commits
-        let head_commit_result = self.executor
+        let head_commit_result = self
+            .executor
             .execute_git_command(Some(directory_path), &["rev-parse", "HEAD"])
             .await;
 
@@ -86,7 +98,8 @@ impl GitRepositoryInspector {
         };
 
         // Determine current branch name or detached HEAD
-        let branch_result = self.executor
+        let branch_result = self
+            .executor
             .execute_git_command(Some(directory_path), &["branch", "--show-current"])
             .await;
 
@@ -103,8 +116,12 @@ impl GitRepositoryInspector {
         };
 
         // Check working tree status using machine-readable porcelain v2
-        let status_result = self.executor
-            .execute_git_command(Some(directory_path), &["status", "--porcelain=v2", "--branch"])
+        let status_result = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["status", "--porcelain=v2", "--branch"],
+            )
             .await?;
 
         let mut ahead_count: u32 = 0;
@@ -143,7 +160,10 @@ impl GitRepositoryInspector {
     }
 
     /// Fetches detailed status (staged, unstaged, conflicted files) using porcelain v2.
-    pub async fn get_detailed_status(&self, directory_path: &Path) -> Result<crate::domain::DetailedRepositoryStatus, ApplicationError> {
+    pub async fn get_detailed_status(
+        &self,
+        directory_path: &Path,
+    ) -> Result<crate::domain::DetailedRepositoryStatus, ApplicationError> {
         let is_valid = self.verify_repository_path(directory_path).await?;
         if !is_valid {
             return Err(ApplicationError::InvalidRepository(
@@ -151,17 +171,28 @@ impl GitRepositoryInspector {
             ));
         }
 
-        let output = self.executor
-            .execute_git_command(Some(directory_path), &["status", "--porcelain=v2", "--branch", "-z"])
+        let output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["status", "--porcelain=v2", "--branch", "-z"],
+            )
             .await?;
 
         let mut status = super::status::parse_porcelain_v2_status(&output);
-        status.operation_state = self.detect_repository_operation_state(directory_path).await.unwrap_or(RepositoryOperationState::None);
+        status.operation_state = self
+            .detect_repository_operation_state(directory_path)
+            .await
+            .unwrap_or(RepositoryOperationState::None);
         Ok(status)
     }
 
     /// Stages a specific file.
-    pub async fn stage_file(&self, directory_path: &Path, file_path: &str) -> Result<(), ApplicationError> {
+    pub async fn stage_file(
+        &self,
+        directory_path: &Path,
+        file_path: &str,
+    ) -> Result<(), ApplicationError> {
         self.executor
             .execute_git_command(Some(directory_path), &["add", "--", file_path])
             .await?;
@@ -169,9 +200,16 @@ impl GitRepositoryInspector {
     }
 
     /// Unstages a specific file.
-    pub async fn unstage_file(&self, directory_path: &Path, file_path: &str) -> Result<(), ApplicationError> {
+    pub async fn unstage_file(
+        &self,
+        directory_path: &Path,
+        file_path: &str,
+    ) -> Result<(), ApplicationError> {
         self.executor
-            .execute_git_command(Some(directory_path), &["restore", "--staged", "--", file_path])
+            .execute_git_command(
+                Some(directory_path),
+                &["restore", "--staged", "--", file_path],
+            )
             .await?;
         Ok(())
     }
@@ -193,7 +231,12 @@ impl GitRepositoryInspector {
     }
 
     /// Discards working tree changes for a specific file.
-    pub async fn discard_file_changes(&self, directory_path: &Path, file_path: &str, is_untracked: bool) -> Result<(), ApplicationError> {
+    pub async fn discard_file_changes(
+        &self,
+        directory_path: &Path,
+        file_path: &str,
+        is_untracked: bool,
+    ) -> Result<(), ApplicationError> {
         if is_untracked {
             self.executor
                 .execute_git_command(Some(directory_path), &["clean", "-f", "--", file_path])
@@ -207,11 +250,22 @@ impl GitRepositoryInspector {
     }
 
     /// Applies a unified diff patch to the Git staging index (--cached).
-    pub async fn stage_patch(&self, directory_path: &Path, patch_content: &str) -> Result<(), ApplicationError> {
+    pub async fn stage_patch(
+        &self,
+        directory_path: &Path,
+        patch_content: &str,
+    ) -> Result<(), ApplicationError> {
         self.executor
             .execute_git_command_with_stdin(
                 Some(directory_path),
-                &["apply", "--cached", "--unidiff-zero", "--recount", "--whitespace=nowarn", "-"],
+                &[
+                    "apply",
+                    "--cached",
+                    "--unidiff-zero",
+                    "--recount",
+                    "--whitespace=nowarn",
+                    "-",
+                ],
                 patch_content.as_bytes(),
             )
             .await?;
@@ -219,11 +273,23 @@ impl GitRepositoryInspector {
     }
 
     /// Reverses a unified diff patch from the Git staging index (--cached --reverse).
-    pub async fn unstage_patch(&self, directory_path: &Path, patch_content: &str) -> Result<(), ApplicationError> {
+    pub async fn unstage_patch(
+        &self,
+        directory_path: &Path,
+        patch_content: &str,
+    ) -> Result<(), ApplicationError> {
         self.executor
             .execute_git_command_with_stdin(
                 Some(directory_path),
-                &["apply", "--cached", "--reverse", "--unidiff-zero", "--recount", "--whitespace=nowarn", "-"],
+                &[
+                    "apply",
+                    "--cached",
+                    "--reverse",
+                    "--unidiff-zero",
+                    "--recount",
+                    "--whitespace=nowarn",
+                    "-",
+                ],
                 patch_content.as_bytes(),
             )
             .await?;
@@ -231,11 +297,22 @@ impl GitRepositoryInspector {
     }
 
     /// Discards working tree changes represented by a unified diff patch (--reverse).
-    pub async fn discard_patch(&self, directory_path: &Path, patch_content: &str) -> Result<(), ApplicationError> {
+    pub async fn discard_patch(
+        &self,
+        directory_path: &Path,
+        patch_content: &str,
+    ) -> Result<(), ApplicationError> {
         self.executor
             .execute_git_command_with_stdin(
                 Some(directory_path),
-                &["apply", "--reverse", "--unidiff-zero", "--recount", "--whitespace=nowarn", "-"],
+                &[
+                    "apply",
+                    "--reverse",
+                    "--unidiff-zero",
+                    "--recount",
+                    "--whitespace=nowarn",
+                    "-",
+                ],
                 patch_content.as_bytes(),
             )
             .await?;
@@ -265,25 +342,38 @@ impl GitRepositoryInspector {
     }
 
     /// Retrieves structured diff for a specific file (staged or unstaged).
-    pub async fn get_file_diff(&self, directory_path: &Path, file_path: &str, is_staged: bool) -> Result<crate::domain::FileDiff, ApplicationError> {
+    pub async fn get_file_diff(
+        &self,
+        directory_path: &Path,
+        file_path: &str,
+        is_staged: bool,
+    ) -> Result<crate::domain::FileDiff, ApplicationError> {
         let raw_diff = if is_staged {
             self.executor
                 .execute_git_command(Some(directory_path), &["diff", "--cached", "--", file_path])
                 .await?
         } else {
             // Check if file is untracked to generate diff against /dev/null
-            let untracked_diff = self.executor
+            let untracked_diff = self
+                .executor
                 .execute_git_command(Some(directory_path), &["diff", "--", file_path])
                 .await?;
 
             if untracked_diff.trim().is_empty() {
                 // If it's untracked, use git diff --no-index /dev/null <file_path> or read file
-                let no_index_result = self.executor
-                    .execute_git_command(Some(directory_path), &["diff", "--no-index", "--", "/dev/null", file_path])
+                let no_index_result = self
+                    .executor
+                    .execute_git_command(
+                        Some(directory_path),
+                        &["diff", "--no-index", "--", "/dev/null", file_path],
+                    )
                     .await;
                 match no_index_result {
                     Ok(out) => out,
-                    Err(ApplicationError::GitExecutionFailed { exit_code: 1, message }) => {
+                    Err(ApplicationError::GitExecutionFailed {
+                        exit_code: 1,
+                        message,
+                    }) => {
                         // git diff returns 1 when differences exist
                         message
                     }
@@ -298,7 +388,9 @@ impl GitRepositoryInspector {
 
         // If file is binary or media, load base64 content for visual side-by-side comparison
         if parsed_diff.is_binary || is_media_file(file_path) {
-            let (old_b64, new_b64) = self.load_diff_media_contents(directory_path, file_path, is_staged).await;
+            let (old_b64, new_b64) = self
+                .load_diff_media_contents(directory_path, file_path, is_staged)
+                .await;
             parsed_diff.old_content_base64 = old_b64;
             parsed_diff.new_content_base64 = new_b64;
         }
@@ -321,7 +413,8 @@ impl GitRepositoryInspector {
             format!(":{}", file_path)
         };
 
-        let old_content = self.executor
+        let old_content = self
+            .executor
             .execute_git_command_raw(Some(directory_path), &["show", &head_target])
             .await
             .ok()
@@ -367,7 +460,11 @@ impl GitRepositoryInspector {
         let reference_target = branch_or_reference.unwrap_or("--all");
         arguments.push(reference_target);
 
-        let raw_output = match self.executor.execute_git_command(Some(directory_path), &arguments).await {
+        let raw_output = match self
+            .executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
+        {
             Ok(output) => output,
             Err(ApplicationError::GitExecutionFailed { exit_code: 128, .. }) => {
                 // Repository might be empty (zero commits)
@@ -386,7 +483,8 @@ impl GitRepositoryInspector {
         commit_hash: &str,
     ) -> Result<crate::domain::CommitDetails, ApplicationError> {
         let format_argument = format!("--format={}", super::history::COMMIT_LOG_FORMAT);
-        let log_output = self.executor
+        let log_output = self
+            .executor
             .execute_git_command(
                 Some(directory_path),
                 &["log", "-1", &format_argument, commit_hash],
@@ -394,31 +492,54 @@ impl GitRepositoryInspector {
             .await?;
 
         let commits = super::history::parse_delimited_git_log(&log_output);
-        let commit = commits.into_iter().next().ok_or_else(|| {
-            ApplicationError::GitExecutionFailed {
-                exit_code: 1,
-                message: format!("Commit {} not found", commit_hash),
-            }
-        })?;
+        let commit =
+            commits
+                .into_iter()
+                .next()
+                .ok_or_else(|| ApplicationError::GitExecutionFailed {
+                    exit_code: 1,
+                    message: format!("Commit {} not found", commit_hash),
+                })?;
 
         // Extract changed files list
-        let name_status_output = self.executor
+        let name_status_output = self
+            .executor
             .execute_git_command(
                 Some(directory_path),
-                &["diff-tree", "--root", "--no-commit-id", "-r", "-m", "-M", "--name-status", commit_hash],
+                &[
+                    "diff-tree",
+                    "--root",
+                    "--no-commit-id",
+                    "-r",
+                    "-m",
+                    "-M",
+                    "--name-status",
+                    commit_hash,
+                ],
             )
             .await
             .unwrap_or_default();
 
-        let numstat_output = self.executor
+        let numstat_output = self
+            .executor
             .execute_git_command(
                 Some(directory_path),
-                &["diff-tree", "--root", "--no-commit-id", "-r", "-m", "-M", "--numstat", commit_hash],
+                &[
+                    "diff-tree",
+                    "--root",
+                    "--no-commit-id",
+                    "-r",
+                    "-m",
+                    "-M",
+                    "--numstat",
+                    commit_hash,
+                ],
             )
             .await
             .unwrap_or_default();
 
-        let changed_files = super::history::parse_commit_changed_files(&name_status_output, &numstat_output);
+        let changed_files =
+            super::history::parse_commit_changed_files(&name_status_output, &numstat_output);
         let total_additions = changed_files.iter().map(|file| file.additions).sum();
         let total_deletions = changed_files.iter().map(|file| file.deletions).sum();
 
@@ -460,7 +581,10 @@ impl GitRepositoryInspector {
         // 1. Check git config commit.template
         if let Ok(config_path) = self
             .executor
-            .execute_git_command(Some(directory_path), &["config", "--get", "commit.template"])
+            .execute_git_command(
+                Some(directory_path),
+                &["config", "--get", "commit.template"],
+            )
             .await
         {
             let trimmed_path = config_path.trim();
@@ -480,11 +604,10 @@ impl GitRepositoryInspector {
 
         // 2. Check fallback .gitmessage in repository root
         let default_gitmessage_path = directory_path.join(".gitmessage");
-        if default_gitmessage_path.exists() {
-            if let Ok(content) = tokio::fs::read_to_string(&default_gitmessage_path).await {
+        if default_gitmessage_path.exists()
+            && let Ok(content) = tokio::fs::read_to_string(&default_gitmessage_path).await {
                 return Ok(Some(content));
             }
-        }
 
         Ok(None)
     }
@@ -504,7 +627,13 @@ impl GitRepositoryInspector {
             .executor
             .execute_git_command(
                 Some(directory_path),
-                &["reflog", "show", &limit_argument, format_argument, target_reference],
+                &[
+                    "reflog",
+                    "show",
+                    &limit_argument,
+                    format_argument,
+                    target_reference,
+                ],
             )
             .await?;
 
@@ -526,7 +655,8 @@ impl GitRepositoryInspector {
             arguments.push(target_file);
         }
 
-        let raw_diff = self.executor
+        let raw_diff = self
+            .executor
             .execute_git_command(Some(directory_path), &arguments)
             .await
             .unwrap_or_default();
@@ -534,11 +664,12 @@ impl GitRepositoryInspector {
         let display_path = file_path.unwrap_or(commit_hash);
         let mut parsed_diff = super::diff::parse_unified_diff(&raw_diff, display_path);
 
-        if let Some(target_file) = file_path {
-            if parsed_diff.is_binary || is_media_file(target_file) {
+        if let Some(target_file) = file_path
+            && (parsed_diff.is_binary || is_media_file(target_file)) {
                 let engine = base64::engine::general_purpose::STANDARD;
                 let old_target = format!("{}:{}", commit_hash, target_file);
-                let old_content = self.executor
+                let old_content = self
+                    .executor
                     .execute_git_command_raw(Some(directory_path), &["show", &old_target])
                     .await
                     .ok()
@@ -546,7 +677,6 @@ impl GitRepositoryInspector {
                 parsed_diff.new_content_base64 = old_content.clone(); // In a commit diff, new is the commit version
                 parsed_diff.old_content_base64 = old_content;
             }
-        }
 
         Ok(parsed_diff)
     }
@@ -560,14 +690,20 @@ impl GitRepositoryInspector {
     ) -> Result<crate::domain::CommitComparison, ApplicationError> {
         let base_subject = self
             .executor
-            .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", base_hash])
+            .execute_git_command(
+                Some(directory_path),
+                &["log", "-1", "--format=%s", base_hash],
+            )
             .await
             .ok()
             .map(|subject| subject.trim().to_string());
 
         let target_subject = self
             .executor
-            .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", target_hash])
+            .execute_git_command(
+                Some(directory_path),
+                &["log", "-1", "--format=%s", target_hash],
+            )
             .await
             .ok()
             .map(|subject| subject.trim().to_string());
@@ -590,7 +726,8 @@ impl GitRepositoryInspector {
             .await
             .unwrap_or_default();
 
-        let changed_files = super::history::parse_commit_changed_files(&name_status_output, &numstat_output);
+        let changed_files =
+            super::history::parse_commit_changed_files(&name_status_output, &numstat_output);
         let total_additions = changed_files.iter().map(|file| file.additions).sum();
         let total_deletions = changed_files.iter().map(|file| file.deletions).sum();
 
@@ -631,14 +768,25 @@ impl GitRepositoryInspector {
     }
 
     /// Fetches all repository references: local branches, remote branches, tags, and remotes.
-    pub async fn get_repository_references(&self, directory_path: &Path) -> Result<crate::domain::RepositoryReferences, ApplicationError> {
+    pub async fn get_repository_references(
+        &self,
+        directory_path: &Path,
+    ) -> Result<crate::domain::RepositoryReferences, ApplicationError> {
         // 1. Local branches
         let branch_format = format!(
             "%(refname:short){del}%(HEAD){del}%(upstream:short){del}%(upstream:track,nobracket){del}%(objectname)",
             del = super::branch::REF_FIELD_DELIMITER
         );
-        let raw_branches = self.executor
-            .execute_git_command(Some(directory_path), &["for-each-ref", &format!("--format={}", branch_format), "refs/heads/"])
+        let raw_branches = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &[
+                    "for-each-ref",
+                    &format!("--format={}", branch_format),
+                    "refs/heads/",
+                ],
+            )
             .await
             .unwrap_or_default();
         let branches = super::branch::parse_local_branches(&raw_branches);
@@ -648,21 +796,41 @@ impl GitRepositoryInspector {
             "%(refname:short){del}%(objectname){del}%(symref)",
             del = super::branch::REF_FIELD_DELIMITER
         );
-        let raw_remote_branches = self.executor
-            .execute_git_command(Some(directory_path), &["for-each-ref", &format!("--format={}", remote_branch_format), "refs/remotes/"])
+        let raw_remote_branches = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &[
+                    "for-each-ref",
+                    &format!("--format={}", remote_branch_format),
+                    "refs/remotes/",
+                ],
+            )
             .await
             .unwrap_or_default();
         let remote_branches = super::branch::parse_remote_branches(&raw_remote_branches);
 
         // 3. Tags
-        let raw_tags = self.executor
-            .execute_git_command(Some(directory_path), &["tag", "-l", &format!("--format=%(refname:short){}%(objectname)", super::branch::REF_FIELD_DELIMITER)])
+        let raw_tags = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &[
+                    "tag",
+                    "-l",
+                    &format!(
+                        "--format=%(refname:short){}%(objectname)",
+                        super::branch::REF_FIELD_DELIMITER
+                    ),
+                ],
+            )
             .await
             .unwrap_or_default();
         let tags = super::branch::parse_tags(&raw_tags);
 
         // 4. Remotes
-        let raw_remotes = self.executor
+        let raw_remotes = self
+            .executor
             .execute_git_command(Some(directory_path), &["remote", "-v"])
             .await
             .unwrap_or_default();
@@ -693,7 +861,9 @@ impl GitRepositoryInspector {
             arguments.push(sp);
         }
 
-        self.executor.execute_git_command(Some(directory_path), &arguments).await
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
     }
 
     /// Creates a new branch from current HEAD or specified commit.
@@ -710,7 +880,9 @@ impl GitRepositoryInspector {
             arguments.push(sp);
         }
 
-        self.executor.execute_git_command(Some(directory_path), &arguments).await
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
     }
 
     /// Deletes a local branch (safe by default with -d, or forced with -D).
@@ -750,7 +922,9 @@ impl GitRepositoryInspector {
         if let Some(name) = remote_name {
             arguments.push(name);
         }
-        self.executor.execute_git_command(Some(directory_path), &arguments).await
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
     }
 
     /// Executes `git pull`.
@@ -767,7 +941,9 @@ impl GitRepositoryInspector {
                 arguments.push(branch);
             }
         }
-        self.executor.execute_git_command(Some(directory_path), &arguments).await
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
     }
 
     /// Executes `git push`.
@@ -788,7 +964,9 @@ impl GitRepositoryInspector {
                 arguments.push(branch);
             }
         }
-        self.executor.execute_git_command(Some(directory_path), &arguments).await
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
     }
 
     /// Adds a new Git remote to the repository.
@@ -803,7 +981,10 @@ impl GitRepositoryInspector {
         validate_remote_name(trimmed_name)?;
         validate_remote_url(trimmed_url)?;
         self.executor
-            .execute_git_command(Some(directory_path), &["remote", "add", trimmed_name, trimmed_url])
+            .execute_git_command(
+                Some(directory_path),
+                &["remote", "add", trimmed_name, trimmed_url],
+            )
             .await
     }
 
@@ -832,7 +1013,10 @@ impl GitRepositoryInspector {
         validate_remote_name(trimmed_old)?;
         validate_remote_name(trimmed_new)?;
         self.executor
-            .execute_git_command(Some(directory_path), &["remote", "rename", trimmed_old, trimmed_new])
+            .execute_git_command(
+                Some(directory_path),
+                &["remote", "rename", trimmed_old, trimmed_new],
+            )
             .await
     }
 
@@ -859,9 +1043,16 @@ impl GitRepositoryInspector {
     }
 
     /// Lists all stash records for the given repository.
-    pub async fn list_stashes(&self, directory_path: &Path) -> Result<Vec<StashRecord>, ApplicationError> {
-        let output = self.executor
-            .execute_git_command(Some(directory_path), &["stash", "list", "--format=%gd\x1f%gs\x1f%H\x1f%ct"])
+    pub async fn list_stashes(
+        &self,
+        directory_path: &Path,
+    ) -> Result<Vec<StashRecord>, ApplicationError> {
+        let output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["stash", "list", "--format=%gd\x1f%gs\x1f%H\x1f%ct"],
+            )
             .await?;
         Ok(parse_stash_list(&output))
     }
@@ -887,11 +1078,17 @@ impl GitRepositoryInspector {
                 arguments.push(trimmed_message);
             }
         }
-        self.executor.execute_git_command(Some(directory_path), &arguments).await
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
     }
 
     /// Applies a stash entry by its numeric index without removing it from the stash stack.
-    pub async fn apply_stash(&self, directory_path: &Path, stash_index: usize) -> Result<String, ApplicationError> {
+    pub async fn apply_stash(
+        &self,
+        directory_path: &Path,
+        stash_index: usize,
+    ) -> Result<String, ApplicationError> {
         let stash_identifier = format!("stash@{{{}}}", stash_index);
         self.executor
             .execute_git_command(Some(directory_path), &["stash", "apply", &stash_identifier])
@@ -899,7 +1096,11 @@ impl GitRepositoryInspector {
     }
 
     /// Pops a stash entry by its numeric index, applying it and removing it from the stack.
-    pub async fn pop_stash(&self, directory_path: &Path, stash_index: usize) -> Result<String, ApplicationError> {
+    pub async fn pop_stash(
+        &self,
+        directory_path: &Path,
+        stash_index: usize,
+    ) -> Result<String, ApplicationError> {
         let stash_identifier = format!("stash@{{{}}}", stash_index);
         self.executor
             .execute_git_command(Some(directory_path), &["stash", "pop", &stash_identifier])
@@ -907,7 +1108,11 @@ impl GitRepositoryInspector {
     }
 
     /// Drops a stash entry by its numeric index, removing it from the stack.
-    pub async fn drop_stash(&self, directory_path: &Path, stash_index: usize) -> Result<String, ApplicationError> {
+    pub async fn drop_stash(
+        &self,
+        directory_path: &Path,
+        stash_index: usize,
+    ) -> Result<String, ApplicationError> {
         let stash_identifier = format!("stash@{{{}}}", stash_index);
         self.executor
             .execute_git_command(Some(directory_path), &["stash", "drop", &stash_identifier])
@@ -923,27 +1128,49 @@ impl GitRepositoryInspector {
         let stash_identifier = format!("stash@{{{}}}", stash_index);
         let parent_identifier = format!("stash@{{{}}}^1", stash_index);
 
-        let log_output = self.executor
-            .execute_git_command(Some(directory_path), &["log", "-1", "--format=%H%x1f%s%x1f%ct", &stash_identifier])
+        let log_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["log", "-1", "--format=%H%x1f%s%x1f%ct", &stash_identifier],
+            )
             .await?;
         let parts: Vec<&str> = log_output.trim().split('\x1f').collect();
         let (commit_hash, message, timestamp) = if parts.len() >= 3 {
-            (parts[0].to_string(), parts[1].to_string(), parts[2].parse::<i64>().unwrap_or(0))
+            (
+                parts[0].to_string(),
+                parts[1].to_string(),
+                parts[2].parse::<i64>().unwrap_or(0),
+            )
         } else {
             (String::new(), format!("Stash {}", stash_index), 0)
         };
 
-        let name_status_output = self.executor
-            .execute_git_command(Some(directory_path), &["diff", "--name-status", &parent_identifier, &stash_identifier])
+        let name_status_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &[
+                    "diff",
+                    "--name-status",
+                    &parent_identifier,
+                    &stash_identifier,
+                ],
+            )
             .await
             .unwrap_or_default();
 
-        let numstat_output = self.executor
-            .execute_git_command(Some(directory_path), &["diff", "--numstat", &parent_identifier, &stash_identifier])
+        let numstat_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["diff", "--numstat", &parent_identifier, &stash_identifier],
+            )
             .await
             .unwrap_or_default();
 
-        let changed_files = super::history::parse_commit_changed_files(&name_status_output, &numstat_output);
+        let changed_files =
+            super::history::parse_commit_changed_files(&name_status_output, &numstat_output);
         let total_additions = changed_files.iter().map(|file| file.additions).sum();
         let total_deletions = changed_files.iter().map(|file| file.deletions).sum();
 
@@ -968,8 +1195,19 @@ impl GitRepositoryInspector {
     ) -> Result<crate::domain::FileDiff, ApplicationError> {
         let stash_identifier = format!("stash@{{{}}}", stash_index);
         let parent_identifier = format!("stash@{{{}}}^1", stash_index);
-        let raw_diff = self.executor
-            .execute_git_command(Some(directory_path), &["diff", "-p", &parent_identifier, &stash_identifier, "--", file_path])
+        let raw_diff = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &[
+                    "diff",
+                    "-p",
+                    &parent_identifier,
+                    &stash_identifier,
+                    "--",
+                    file_path,
+                ],
+            )
             .await?;
 
         Ok(super::diff::parse_unified_diff(&raw_diff, file_path))
@@ -1015,8 +1253,12 @@ impl GitRepositoryInspector {
     }
 
     /// Discovers the absolute path of the `.git` directory for repository or worktree.
-    pub async fn get_git_directory(&self, directory_path: &Path) -> Result<PathBuf, ApplicationError> {
-        let output = self.executor
+    pub async fn get_git_directory(
+        &self,
+        directory_path: &Path,
+    ) -> Result<PathBuf, ApplicationError> {
+        let output = self
+            .executor
             .execute_git_command(Some(directory_path), &["rev-parse", "--git-dir"])
             .await?;
         let trimmed = output.trim();
@@ -1057,18 +1299,30 @@ impl GitRepositoryInspector {
         directory_path: &Path,
         file_path: &str,
     ) -> Result<ConflictFileDetails, ApplicationError> {
-        let base_output = self.executor
-            .execute_git_command(Some(directory_path), &["show", &format!(":1:{}", file_path)])
+        let base_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["show", &format!(":1:{}", file_path)],
+            )
             .await
             .ok();
 
-        let ours_output = self.executor
-            .execute_git_command(Some(directory_path), &["show", &format!(":2:{}", file_path)])
+        let ours_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["show", &format!(":2:{}", file_path)],
+            )
             .await
             .ok();
 
-        let theirs_output = self.executor
-            .execute_git_command(Some(directory_path), &["show", &format!(":3:{}", file_path)])
+        let theirs_output = self
+            .executor
+            .execute_git_command(
+                Some(directory_path),
+                &["show", &format!(":3:{}", file_path)],
+            )
             .await
             .ok();
 
@@ -1096,7 +1350,10 @@ impl GitRepositoryInspector {
         match resolution_strategy {
             "ours" => {
                 self.executor
-                    .execute_git_command(Some(directory_path), &["checkout", "--ours", "--", file_path])
+                    .execute_git_command(
+                        Some(directory_path),
+                        &["checkout", "--ours", "--", file_path],
+                    )
                     .await?;
                 self.executor
                     .execute_git_command(Some(directory_path), &["add", "--", file_path])
@@ -1104,7 +1361,10 @@ impl GitRepositoryInspector {
             }
             "theirs" => {
                 self.executor
-                    .execute_git_command(Some(directory_path), &["checkout", "--theirs", "--", file_path])
+                    .execute_git_command(
+                        Some(directory_path),
+                        &["checkout", "--theirs", "--", file_path],
+                    )
                     .await?;
                 self.executor
                     .execute_git_command(Some(directory_path), &["add", "--", file_path])
@@ -1169,7 +1429,9 @@ impl GitRepositoryInspector {
                 message: stdout.trim().to_string(),
             })
         } else {
-            let operation_state = self.detect_repository_operation_state(directory_path).await?;
+            let operation_state = self
+                .detect_repository_operation_state(directory_path)
+                .await?;
             let has_conflicts = operation_state == RepositoryOperationState::Merging
                 || stdout.contains("CONFLICT")
                 || stderr.contains("CONFLICT");
@@ -1178,7 +1440,9 @@ impl GitRepositoryInspector {
                 Ok(MergeBranchOutcome {
                     is_successful: false,
                     has_conflicts: true,
-                    message: format!("{}\n{}", stdout.trim(), stderr.trim()).trim().to_string(),
+                    message: format!("{}\n{}", stdout.trim(), stderr.trim())
+                        .trim()
+                        .to_string(),
                 })
             } else {
                 let error_message = if !stderr.trim().is_empty() {
@@ -1212,7 +1476,9 @@ impl GitRepositoryInspector {
                 message: stdout.trim().to_string(),
             })
         } else {
-            let operation_state = self.detect_repository_operation_state(directory_path).await?;
+            let operation_state = self
+                .detect_repository_operation_state(directory_path)
+                .await?;
             let has_conflicts = operation_state == RepositoryOperationState::Rebasing
                 || stdout.contains("CONFLICT")
                 || stderr.contains("CONFLICT");
@@ -1221,7 +1487,9 @@ impl GitRepositoryInspector {
                 Ok(RebaseBranchOutcome {
                     is_successful: false,
                     has_conflicts: true,
-                    message: format!("{}\n{}", stdout.trim(), stderr.trim()).trim().to_string(),
+                    message: format!("{}\n{}", stdout.trim(), stderr.trim())
+                        .trim()
+                        .to_string(),
                 })
             } else {
                 let error_message = if !stderr.trim().is_empty() {
@@ -1249,7 +1517,9 @@ impl GitRepositoryInspector {
             let _ = self.create_pre_abort_backup(directory_path).await;
         }
 
-        let operation_state = self.detect_repository_operation_state(directory_path).await?;
+        let operation_state = self
+            .detect_repository_operation_state(directory_path)
+            .await?;
         match operation_state {
             RepositoryOperationState::Merging => {
                 self.executor
@@ -1271,25 +1541,34 @@ impl GitRepositoryInspector {
                     .execute_git_command(Some(directory_path), &["revert", "--abort"])
                     .await
             }
-            RepositoryOperationState::None => {
-                Err(ApplicationError::Unexpected("No active Git operation to abort".into()))
-            }
+            RepositoryOperationState::None => Err(ApplicationError::Unexpected(
+                "No active Git operation to abort".into(),
+            )),
         }
     }
 
     /// Creates a timestamped backup of conflicted/modified files to preserve manual work before aborting.
-    async fn create_pre_abort_backup(&self, directory_path: &Path) -> Result<PathBuf, ApplicationError> {
+    async fn create_pre_abort_backup(
+        &self,
+        directory_path: &Path,
+    ) -> Result<PathBuf, ApplicationError> {
         let git_dir = self.get_git_directory(directory_path).await?;
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|duration| duration.as_secs())
             .unwrap_or(0);
 
-        let backup_directory = git_dir.join("gitverse_backups").join(format!("backup_{}", timestamp));
+        let backup_directory = git_dir
+            .join("gitverse_backups")
+            .join(format!("backup_{}", timestamp));
         let _ = tokio::fs::create_dir_all(&backup_directory).await;
 
         let status = self.get_detailed_status(directory_path).await?;
-        for file in status.conflicted_files.iter().chain(status.unstaged_files.iter()) {
+        for file in status
+            .conflicted_files
+            .iter()
+            .chain(status.unstaged_files.iter())
+        {
             let source = directory_path.join(&file.path);
             let destination = backup_directory.join(&file.path);
             if let Some(parent) = destination.parent() {
@@ -1306,7 +1585,9 @@ impl GitRepositoryInspector {
         &self,
         directory_path: &Path,
     ) -> Result<String, ApplicationError> {
-        let operation_state = self.detect_repository_operation_state(directory_path).await?;
+        let operation_state = self
+            .detect_repository_operation_state(directory_path)
+            .await?;
         match operation_state {
             RepositoryOperationState::Merging => {
                 self.executor
@@ -1328,27 +1609,38 @@ impl GitRepositoryInspector {
                     .execute_git_command(Some(directory_path), &["revert", "--continue"])
                     .await
             }
-            RepositoryOperationState::None => {
-                Err(ApplicationError::Unexpected("No active Git operation to continue".into()))
-            }
+            RepositoryOperationState::None => Err(ApplicationError::Unexpected(
+                "No active Git operation to continue".into(),
+            )),
         }
     }
 
     /// Lists only directory folders within a specified path and checks if each is a Git repository.
-    pub async fn list_directory_folders(&self, directory_path: &Path) -> Result<DirectoryListing, ApplicationError> {
+    pub async fn list_directory_folders(
+        &self,
+        directory_path: &Path,
+    ) -> Result<DirectoryListing, ApplicationError> {
         let canonical_path = match std::fs::canonicalize(directory_path) {
             Ok(p) => p,
             Err(_) => directory_path.to_path_buf(),
         };
 
         let current_path_str = canonical_path.to_string_lossy().to_string();
-        let parent_path = canonical_path.parent().map(|p| p.to_string_lossy().to_string());
-        let is_current_git_repository = self.verify_repository_path(&canonical_path).await.unwrap_or(false);
+        let parent_path = canonical_path
+            .parent()
+            .map(|p| p.to_string_lossy().to_string());
+        let is_current_git_repository = self
+            .verify_repository_path(&canonical_path)
+            .await
+            .unwrap_or(false);
 
         let mut folders = Vec::new();
 
         let read_dir_result = std::fs::read_dir(&canonical_path).map_err(|error| {
-            ApplicationError::FilesystemError(format!("Failed to read directory {}: {}", current_path_str, error))
+            ApplicationError::FilesystemError(format!(
+                "Failed to read directory {}: {}",
+                current_path_str, error
+            ))
         })?;
 
         for entry_result in read_dir_result {
@@ -1375,7 +1667,9 @@ impl GitRepositoryInspector {
                 let is_git_repo = if has_git_folder {
                     true
                 } else {
-                    self.verify_repository_path(&subfolder_path).await.unwrap_or(false)
+                    self.verify_repository_path(&subfolder_path)
+                        .await
+                        .unwrap_or(false)
                 };
 
                 folders.push(FolderEntry {
@@ -1387,7 +1681,7 @@ impl GitRepositoryInspector {
         }
 
         // Sort folders alphabetically (case-insensitive)
-        folders.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        folders.sort_by_key(|a| a.name.to_lowercase());
 
         Ok(DirectoryListing {
             current_path: current_path_str,
@@ -1398,8 +1692,12 @@ impl GitRepositoryInspector {
     }
 
     /// Lists all worktrees linked to the repository.
-    pub async fn list_worktrees(&self, directory_path: &Path) -> Result<Vec<GitWorktreeSummary>, ApplicationError> {
-        let output = self.executor
+    pub async fn list_worktrees(
+        &self,
+        directory_path: &Path,
+    ) -> Result<Vec<GitWorktreeSummary>, ApplicationError> {
+        let output = self
+            .executor
             .execute_git_command(Some(directory_path), &["worktree", "list", "--porcelain"])
             .await?;
         Ok(parse_worktree_list(&output))
@@ -1414,26 +1712,25 @@ impl GitRepositoryInspector {
         is_new_branch: bool,
     ) -> Result<String, ApplicationError> {
         validate_worktree_path(worktree_path)?;
-        if is_new_branch {
-            if let Some(branch) = branch_name {
+        if is_new_branch
+            && let Some(branch) = branch_name {
                 validate_branch_name(branch)?;
             }
-        }
         let mut arguments = vec!["worktree", "add"];
-        if is_new_branch {
-            if let Some(branch) = branch_name {
+        if is_new_branch
+            && let Some(branch) = branch_name {
                 arguments.push("-b");
                 arguments.push(branch);
             }
-        }
         arguments.push(worktree_path);
-        if !is_new_branch {
-            if let Some(branch) = branch_name {
+        if !is_new_branch
+            && let Some(branch) = branch_name {
                 arguments.push(branch);
             }
-        }
 
-        self.executor.execute_git_command(Some(directory_path), &arguments).await
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
     }
 
     /// Removes a worktree from the repository.
@@ -1449,7 +1746,9 @@ impl GitRepositoryInspector {
         }
         arguments.push(worktree_path);
 
-        self.executor.execute_git_command(Some(directory_path), &arguments).await
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
     }
 
     /// Fetches all commits between base commit and HEAD for interactive rebase planning.
@@ -1501,7 +1800,10 @@ impl GitRepositoryInspector {
                 "reword" | "edit" | "squash" | "fixup" | "drop" => item.action.as_str(),
                 _ => "pick",
             };
-            todo_content.push_str(&format!("{} {} {}\n", valid_action, item.commit_hash, item.original_subject));
+            todo_content.push_str(&format!(
+                "{} {} {}\n",
+                valid_action, item.commit_hash, item.original_subject
+            ));
         }
 
         let temp_dir = std::env::temp_dir();
@@ -1513,10 +1815,18 @@ impl GitRepositoryInspector {
 
         tokio::fs::write(&temp_todo_path, &todo_content)
             .await
-            .map_err(|error| ApplicationError::FilesystemError(format!("Failed to write rebase plan file: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::FilesystemError(format!(
+                    "Failed to write rebase plan file: {}",
+                    error
+                ))
+            })?;
 
         let current_exe = std::env::current_exe().map_err(|error| {
-            ApplicationError::Unexpected(format!("Failed to determine current application path: {}", error))
+            ApplicationError::Unexpected(format!(
+                "Failed to determine current application path: {}",
+                error
+            ))
         })?;
 
         let editor_argument = format!(
@@ -1529,7 +1839,13 @@ impl GitRepositoryInspector {
             .executor
             .execute_git_command_with_status(
                 Some(directory_path),
-                &["-c", &editor_argument, "rebase", "-i", &request.base_commit_hash],
+                &[
+                    "-c",
+                    &editor_argument,
+                    "rebase",
+                    "-i",
+                    &request.base_commit_hash,
+                ],
             )
             .await?;
 
@@ -1542,7 +1858,9 @@ impl GitRepositoryInspector {
                 message: stdout.trim().to_string(),
             })
         } else {
-            let operation_state = self.detect_repository_operation_state(directory_path).await?;
+            let operation_state = self
+                .detect_repository_operation_state(directory_path)
+                .await?;
             let has_conflicts = operation_state == RepositoryOperationState::Rebasing
                 || stdout.contains("CONFLICT")
                 || stderr.contains("CONFLICT");
@@ -1570,18 +1888,21 @@ impl GitRepositoryInspector {
         revision: Option<&str>,
     ) -> Result<crate::domain::FileBlame, ApplicationError> {
         let mut arguments = vec!["blame", "--porcelain"];
-        if let Some(rev) = revision {
-            if !rev.trim().is_empty() {
+        if let Some(rev) = revision
+            && !rev.trim().is_empty() {
                 arguments.push(rev);
             }
-        }
         arguments.push("--");
         arguments.push(file_path);
 
-        let output = self.executor.execute_git_command(Some(directory_path), &arguments).await?;
+        let output = self
+            .executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await?;
 
         let mut lines = Vec::new();
-        let mut commit_metadata: std::collections::HashMap<String, (String, String, i64, String)> = std::collections::HashMap::new();
+        let mut commit_metadata: std::collections::HashMap<String, (String, String, i64, String)> =
+            std::collections::HashMap::new();
 
         let mut current_hash = String::new();
         let mut current_orig_line: u32 = 0;
@@ -1594,18 +1915,23 @@ impl GitRepositoryInspector {
 
         for line in output.lines() {
             if let Some(content) = line.strip_prefix('\t') {
-                let (author, email, time, summary) = if let Some(meta) = commit_metadata.get(&current_hash) {
-                    meta.clone()
-                } else {
-                    let meta = (
-                        if temp_author.is_empty() { "Unknown".to_string() } else { temp_author.clone() },
-                        temp_email.clone(),
-                        temp_time,
-                        temp_summary.clone(),
-                    );
-                    commit_metadata.insert(current_hash.clone(), meta.clone());
-                    meta
-                };
+                let (author, email, time, summary) =
+                    if let Some(meta) = commit_metadata.get(&current_hash) {
+                        meta.clone()
+                    } else {
+                        let meta = (
+                            if temp_author.is_empty() {
+                                "Unknown".to_string()
+                            } else {
+                                temp_author.clone()
+                            },
+                            temp_email.clone(),
+                            temp_time,
+                            temp_summary.clone(),
+                        );
+                        commit_metadata.insert(current_hash.clone(), meta.clone());
+                        meta
+                    };
 
                 lines.push(crate::domain::BlameHunk {
                     commit_hash: current_hash.clone(),
@@ -1683,7 +2009,10 @@ impl GitRepositoryInspector {
 
                 let current_commit_summary = if let Some(ref hash) = current_commit_hash {
                     self.executor
-                        .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", hash])
+                        .execute_git_command(
+                            Some(directory_path),
+                            &["log", "-1", "--format=%s", hash],
+                        )
                         .await
                         .map(|summary| summary.trim().to_string())
                         .ok()
@@ -1702,7 +2031,10 @@ impl GitRepositoryInspector {
                 if let Some(ref culprit_hash) = state.culprit_commit_hash {
                     state.culprit_commit_summary = self
                         .executor
-                        .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", culprit_hash])
+                        .execute_git_command(
+                            Some(directory_path),
+                            &["log", "-1", "--format=%s", culprit_hash],
+                        )
                         .await
                         .map(|summary| summary.trim().to_string())
                         .ok();
@@ -1734,7 +2066,12 @@ impl GitRepositoryInspector {
             .executor
             .execute_git_command(
                 Some(directory_path),
-                &["bisect", "start", bad_commit_hash.trim(), good_commit_hash.trim()],
+                &[
+                    "bisect",
+                    "start",
+                    bad_commit_hash.trim(),
+                    good_commit_hash.trim(),
+                ],
             )
             .await?;
 
@@ -1772,7 +2109,10 @@ impl GitRepositoryInspector {
         if let Some(ref culprit_hash) = state.culprit_commit_hash {
             state.culprit_commit_summary = self
                 .executor
-                .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", culprit_hash])
+                .execute_git_command(
+                    Some(directory_path),
+                    &["log", "-1", "--format=%s", culprit_hash],
+                )
                 .await
                 .map(|summary| summary.trim().to_string())
                 .ok();
@@ -1795,7 +2135,10 @@ impl GitRepositoryInspector {
         }
 
         let normalized_decision = decision.trim().to_lowercase();
-        if normalized_decision != "good" && normalized_decision != "bad" && normalized_decision != "skip" {
+        if normalized_decision != "good"
+            && normalized_decision != "bad"
+            && normalized_decision != "skip"
+        {
             return Err(ApplicationError::InvalidInput(format!(
                 "Invalid bisect decision: {decision}. Must be 'good', 'bad', or 'skip'."
             )));
@@ -1840,7 +2183,10 @@ impl GitRepositoryInspector {
         if let Some(ref culprit_hash) = state.culprit_commit_hash {
             state.culprit_commit_summary = self
                 .executor
-                .execute_git_command(Some(directory_path), &["log", "-1", "--format=%s", culprit_hash])
+                .execute_git_command(
+                    Some(directory_path),
+                    &["log", "-1", "--format=%s", culprit_hash],
+                )
                 .await
                 .map(|summary| summary.trim().to_string())
                 .ok();
@@ -1897,10 +2243,15 @@ impl GitRepositoryInspector {
             }
             "commit" => {
                 let hash = commit_hash.ok_or_else(|| {
-                    ApplicationError::InvalidInput("Commit hash is required when exporting commit patch".to_string())
+                    ApplicationError::InvalidInput(
+                        "Commit hash is required when exporting commit patch".to_string(),
+                    )
                 })?;
                 self.executor
-                    .execute_git_command(Some(directory_path), &["format-patch", "-1", hash.trim(), "--stdout"])
+                    .execute_git_command(
+                        Some(directory_path),
+                        &["format-patch", "-1", hash.trim(), "--stdout"],
+                    )
                     .await
             }
             other => Err(ApplicationError::InvalidInput(format!(
@@ -1926,14 +2277,13 @@ impl GitRepositoryInspector {
 
         let mut affected_files = Vec::new();
         for line in patch_content.lines() {
-            if let Some(rest) = line.strip_prefix("diff --git a/") {
-                if let Some(space_index) = rest.find(" b/") {
+            if let Some(rest) = line.strip_prefix("diff --git a/")
+                && let Some(space_index) = rest.find(" b/") {
                     let file_path = rest[..space_index].to_string();
                     if !affected_files.contains(&file_path) {
                         affected_files.push(file_path);
                     }
                 }
-            }
         }
 
         let check_result = self
@@ -2016,7 +2366,10 @@ impl GitRepositoryInspector {
 
         let status_output = self
             .executor
-            .execute_git_command(Some(directory_path), &["submodule", "status", "--recursive"])
+            .execute_git_command(
+                Some(directory_path),
+                &["submodule", "status", "--recursive"],
+            )
             .await
             .unwrap_or_default();
 
@@ -2037,9 +2390,14 @@ impl GitRepositoryInspector {
             if parts.len() >= 2 {
                 let key = parts[0];
                 let url = parts[1].to_string();
-                if let Some(submodule_identifier) = key.strip_prefix("submodule.").and_then(|k| k.strip_suffix(".url")) {
+                if let Some(submodule_identifier) = key
+                    .strip_prefix("submodule.")
+                    .and_then(|k| k.strip_suffix(".url"))
+                {
                     for submodule in &mut submodules {
-                        if submodule.name == submodule_identifier || submodule.path == submodule_identifier {
+                        if submodule.name == submodule_identifier
+                            || submodule.path == submodule_identifier
+                        {
                             submodule.url = Some(url.clone());
                         }
                     }
@@ -2149,7 +2507,12 @@ impl GitRepositoryInspector {
             .executor
             .execute_git_command(
                 Some(directory_path),
-                &["diff", "--shortstat", "4b825dc642cb6eb9a060e54bf8d69288fbee4904", "HEAD"],
+                &[
+                    "diff",
+                    "--shortstat",
+                    "4b825dc642cb6eb9a060e54bf8d69288fbee4904",
+                    "HEAD",
+                ],
             )
             .await
             .unwrap_or_default();
@@ -2202,7 +2565,9 @@ impl GitRepositoryInspector {
             )
             .await?;
 
-        Ok(super::file_history::parse_file_history_output(&output, file_path))
+        Ok(super::file_history::parse_file_history_output(
+            &output, file_path,
+        ))
     }
 
     /// Retrieves file content at a specific historical commit revision.
@@ -2281,18 +2646,16 @@ impl GitRepositoryInspector {
 
         arguments.push(query.trim());
 
-        if let Some(target_reference) = reference {
-            if !target_reference.trim().is_empty() {
+        if let Some(target_reference) = reference
+            && !target_reference.trim().is_empty() {
                 arguments.push(target_reference.trim());
             }
-        }
 
-        if let Some(pattern) = path_pattern {
-            if !pattern.trim().is_empty() {
+        if let Some(pattern) = path_pattern
+            && !pattern.trim().is_empty() {
                 arguments.push("--");
                 arguments.push(pattern.trim());
             }
-        }
 
         let output_result = self
             .executor
@@ -2333,12 +2696,22 @@ impl GitRepositoryInspector {
             }
             arguments.push(hash.as_str());
 
-            match self.executor.execute_git_command(Some(directory_path), &arguments).await {
+            match self
+                .executor
+                .execute_git_command(Some(directory_path), &arguments)
+                .await
+            {
                 Ok(_) => {
                     completed_commits.push(hash.clone());
                 }
-                Err(ApplicationError::GitExecutionFailed { exit_code: _, message }) => {
-                    let conflict_files = self.detect_conflicted_files(directory_path).await.unwrap_or_default();
+                Err(ApplicationError::GitExecutionFailed {
+                    exit_code: _,
+                    message,
+                }) => {
+                    let conflict_files = self
+                        .detect_conflicted_files(directory_path)
+                        .await
+                        .unwrap_or_default();
                     return Ok(crate::domain::CommitQueueOperationResult {
                         is_successful: false,
                         completed_commits,
@@ -2378,12 +2751,22 @@ impl GitRepositoryInspector {
             }
             arguments.push(hash.as_str());
 
-            match self.executor.execute_git_command(Some(directory_path), &arguments).await {
+            match self
+                .executor
+                .execute_git_command(Some(directory_path), &arguments)
+                .await
+            {
                 Ok(_) => {
                     completed_commits.push(hash.clone());
                 }
-                Err(ApplicationError::GitExecutionFailed { exit_code: _, message }) => {
-                    let conflict_files = self.detect_conflicted_files(directory_path).await.unwrap_or_default();
+                Err(ApplicationError::GitExecutionFailed {
+                    exit_code: _,
+                    message,
+                }) => {
+                    let conflict_files = self
+                        .detect_conflicted_files(directory_path)
+                        .await
+                        .unwrap_or_default();
                     return Ok(crate::domain::CommitQueueOperationResult {
                         is_successful: false,
                         completed_commits,
@@ -2406,8 +2789,14 @@ impl GitRepositoryInspector {
     }
 
     /// Helper to detect conflicted files during interrupted queue operations.
-    async fn detect_conflicted_files(&self, directory_path: &Path) -> Result<Vec<String>, ApplicationError> {
-        let status_output = self.executor.execute_git_command(Some(directory_path), &["status", "--porcelain=v2"]).await?;
+    async fn detect_conflicted_files(
+        &self,
+        directory_path: &Path,
+    ) -> Result<Vec<String>, ApplicationError> {
+        let status_output = self
+            .executor
+            .execute_git_command(Some(directory_path), &["status", "--porcelain=v2"])
+            .await?;
         let parsed_status = super::status::parse_porcelain_v2_status(&status_output);
         let conflicted = parsed_status
             .conflicted_files
@@ -2431,7 +2820,9 @@ impl GitRepositoryInspector {
         let range = revision_range.unwrap_or("--all");
         arguments.push(range);
 
-        self.executor.execute_git_command(Some(directory_path), &arguments).await
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
     }
 
     /// Verifies integrity and references contained within an offline Git bundle file.
@@ -2462,14 +2853,15 @@ impl GitRepositoryInspector {
                     message: "Bundle is valid and compatible".to_string(),
                 })
             }
-            Err(ApplicationError::GitExecutionFailed { exit_code: _, message }) => {
-                Ok(crate::domain::GitBundleVerificationResult {
-                    is_valid: false,
-                    bundle_file_path: bundle_str.to_string(),
-                    references: Vec::new(),
-                    message,
-                })
-            }
+            Err(ApplicationError::GitExecutionFailed {
+                exit_code: _,
+                message,
+            }) => Ok(crate::domain::GitBundleVerificationResult {
+                is_valid: false,
+                bundle_file_path: bundle_str.to_string(),
+                references: Vec::new(),
+                message,
+            }),
             Err(error) => Err(error),
         }
     }
@@ -2486,7 +2878,9 @@ impl GitRepositoryInspector {
         validate_commit_reference(reference)?;
 
         let arguments = ["archive", "--output", archive_str, reference];
-        self.executor.execute_git_command(Some(directory_path), &arguments).await
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
     }
 
     /// Retrieves Git LFS overview, tracked patterns, tracked files, and locks.
@@ -2495,16 +2889,20 @@ impl GitRepositoryInspector {
         directory_path: &Path,
     ) -> Result<crate::domain::GitLfsOverview, ApplicationError> {
         // 1. Check if git-lfs is available on system
-        let version_check = self.executor.execute_git_command(Some(directory_path), &["lfs", "version"]).await;
+        let version_check = self
+            .executor
+            .execute_git_command(Some(directory_path), &["lfs", "version"])
+            .await;
         let is_lfs_installed = version_check.is_ok();
 
         // 2. Read .gitattributes for tracked patterns
         let attributes_path = directory_path.join(".gitattributes");
-        let tracked_patterns = if let Ok(content) = tokio::fs::read_to_string(&attributes_path).await {
-            super::lfs::parse_lfs_attributes(&content)
-        } else {
-            Vec::new()
-        };
+        let tracked_patterns =
+            if let Ok(content) = tokio::fs::read_to_string(&attributes_path).await {
+                super::lfs::parse_lfs_attributes(&content)
+            } else {
+                Vec::new()
+            };
 
         if !is_lfs_installed {
             let mut overview = super::lfs::build_empty_lfs_overview(false);
@@ -2513,13 +2911,21 @@ impl GitRepositoryInspector {
         }
 
         // 3. Query tracked files via git lfs ls-files
-        let tracked_files = match self.executor.execute_git_command(Some(directory_path), &["lfs", "ls-files"]).await {
+        let tracked_files = match self
+            .executor
+            .execute_git_command(Some(directory_path), &["lfs", "ls-files"])
+            .await
+        {
             Ok(output) => super::lfs::parse_lfs_ls_files(&output),
             Err(_) => Vec::new(),
         };
 
         // 4. Query locks via git lfs locks
-        let locks = match self.executor.execute_git_command(Some(directory_path), &["lfs", "locks"]).await {
+        let locks = match self
+            .executor
+            .execute_git_command(Some(directory_path), &["lfs", "locks"])
+            .await
+        {
             Ok(output) => super::lfs::parse_lfs_locks(&output),
             Err(_) => Vec::new(),
         };
@@ -2540,7 +2946,9 @@ impl GitRepositoryInspector {
         pattern: &str,
     ) -> Result<String, ApplicationError> {
         validate_lfs_pattern(pattern)?;
-        self.executor.execute_git_command(Some(directory_path), &["lfs", "track", pattern]).await
+        self.executor
+            .execute_git_command(Some(directory_path), &["lfs", "track", pattern])
+            .await
     }
 
     /// Untracks a file pattern from Git LFS.
@@ -2550,7 +2958,9 @@ impl GitRepositoryInspector {
         pattern: &str,
     ) -> Result<String, ApplicationError> {
         validate_lfs_pattern(pattern)?;
-        self.executor.execute_git_command(Some(directory_path), &["lfs", "untrack", pattern]).await
+        self.executor
+            .execute_git_command(Some(directory_path), &["lfs", "untrack", pattern])
+            .await
     }
 
     /// Locks an LFS file to prevent concurrent remote edits.
@@ -2559,7 +2969,9 @@ impl GitRepositoryInspector {
         directory_path: &Path,
         file_path: &str,
     ) -> Result<String, ApplicationError> {
-        self.executor.execute_git_command(Some(directory_path), &["lfs", "lock", file_path]).await
+        self.executor
+            .execute_git_command(Some(directory_path), &["lfs", "lock", file_path])
+            .await
     }
 
     /// Unlocks an LFS file.
@@ -2574,6 +2986,8 @@ impl GitRepositoryInspector {
             arguments.push("--force");
         }
         arguments.push(file_path);
-        self.executor.execute_git_command(Some(directory_path), &arguments).await
+        self.executor
+            .execute_git_command(Some(directory_path), &arguments)
+            .await
     }
 }

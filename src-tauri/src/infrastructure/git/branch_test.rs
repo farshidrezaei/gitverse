@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use super::super::branch::{
-        parse_local_branches, parse_remote_branches, parse_remotes, parse_tags, REF_FIELD_DELIMITER,
+        REF_FIELD_DELIMITER, parse_local_branches, parse_remote_branches, parse_remotes, parse_tags,
     };
 
     #[test]
@@ -25,7 +25,10 @@ mod tests {
         // Branch 2: feature/graph
         assert_eq!(branches[1].name, "feature/graph");
         assert!(!branches[1].is_head);
-        assert_eq!(branches[1].upstream_name.as_deref(), Some("origin/feature/graph"));
+        assert_eq!(
+            branches[1].upstream_name.as_deref(),
+            Some("origin/feature/graph")
+        );
         assert_eq!(branches[1].ahead_count, 2);
         assert_eq!(branches[1].behind_count, 0);
 
@@ -54,7 +57,10 @@ mod tests {
 
     #[test]
     fn test_parse_tags() {
-        let raw = format!("v0.1.0{del}8f2a1b9\nv0.0.9{del}09b9058\n", del = REF_FIELD_DELIMITER);
+        let raw = format!(
+            "v0.1.0{del}8f2a1b9\nv0.0.9{del}09b9058\n",
+            del = REF_FIELD_DELIMITER
+        );
         let tags = parse_tags(&raw);
         assert_eq!(tags.len(), 2);
         assert_eq!(tags[0].name, "v0.1.0");
@@ -71,12 +77,21 @@ mod tests {
 
         let origin = &remotes[0];
         assert_eq!(origin.name, "origin");
-        assert_eq!(origin.fetch_url.as_deref(), Some("https://github.com/user/gitverse.git"));
-        assert_eq!(origin.push_url.as_deref(), Some("https://github.com/user/gitverse.git"));
+        assert_eq!(
+            origin.fetch_url.as_deref(),
+            Some("https://github.com/user/gitverse.git")
+        );
+        assert_eq!(
+            origin.push_url.as_deref(),
+            Some("https://github.com/user/gitverse.git")
+        );
 
         let upstream = &remotes[1];
         assert_eq!(upstream.name, "upstream");
-        assert_eq!(upstream.fetch_url.as_deref(), Some("https://github.com/upstream/gitverse.git"));
+        assert_eq!(
+            upstream.fetch_url.as_deref(),
+            Some("https://github.com/upstream/gitverse.git")
+        );
         assert_eq!(upstream.push_url, None);
     }
 

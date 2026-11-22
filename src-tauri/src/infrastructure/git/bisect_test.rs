@@ -15,7 +15,10 @@ fn test_parse_bisect_step_output_intermediate_step() {
     assert_eq!(state.revisions_remaining, Some(3));
     assert_eq!(state.estimated_steps_remaining, Some(2));
     assert_eq!(state.culprit_commit_hash, None);
-    assert_eq!(state.current_commit_hash.as_deref(), Some("c2381b329e528c4ee96f237ef319e27be8313e54"));
+    assert_eq!(
+        state.current_commit_hash.as_deref(),
+        Some("c2381b329e528c4ee96f237ef319e27be8313e54")
+    );
     assert_eq!(state.current_commit_summary.as_deref(), Some("commit 2"));
 }
 
@@ -31,7 +34,10 @@ fn test_parse_bisect_step_output_culprit_found() {
     );
 
     assert!(state.is_active);
-    assert_eq!(state.culprit_commit_hash.as_deref(), Some("c86466e99565eefe9891747df843197c13c43e57"));
+    assert_eq!(
+        state.culprit_commit_hash.as_deref(),
+        Some("c86466e99565eefe9891747df843197c13c43e57")
+    );
 }
 
 #[test]

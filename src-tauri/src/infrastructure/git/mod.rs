@@ -40,7 +40,9 @@ mod submodule_test;
 mod worktree_test;
 
 pub use bisect::parse_bisect_step_output;
-pub use branch::{parse_local_branches, parse_remote_branches, parse_remotes, parse_tags, validate_branch_name};
+pub use branch::{
+    parse_local_branches, parse_remote_branches, parse_remotes, parse_tags, validate_branch_name,
+};
 pub use diff::parse_unified_diff;
 pub use history::parse_delimited_git_log;
 pub use process::GitProcessExecutor;
@@ -50,6 +52,3 @@ pub use status::parse_porcelain_v2_status;
 pub use submodule::parse_submodule_status;
 pub use watcher::RepositoryWatcherManager;
 pub use worktree::parse_worktree_list;
-
-
-

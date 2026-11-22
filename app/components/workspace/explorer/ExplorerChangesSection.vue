@@ -7,7 +7,7 @@ import StagingTreeNodeItem from '../StagingTreeNodeItem.vue'
 import FileStatusBadge from '~/components/shared/FileStatusBadge.vue'
 import ConflictResolverModal from '../staging/ConflictResolverModal.vue'
 import ConventionalCommitBuilderModal from '../staging/ConventionalCommitBuilderModal.vue'
-import { useConflictController } from '~/composables/useConflictController'
+import { useConflictController, type ConflictResolutionStrategy } from '~/composables/useConflictController'
 import { useExternalToolsController } from '~/composables/useExternalToolsController'
 
 interface ExplorerChangesSectionProps {
@@ -65,7 +65,7 @@ async function openConflictResolver(filePath: string): Promise<void> {
   isConflictResolverOpen.value = true
 }
 
-async function resolveConflict(filePath: string, strategy: 'ours' | 'theirs'): Promise<void> {
+async function resolveConflict(filePath: string, strategy: ConflictResolutionStrategy): Promise<void> {
   await resolveConflictByStrategy(filePath, strategy)
   emit('refresh')
 }
@@ -101,12 +101,24 @@ const stagedTreeNodes = computed(() => {
   return buildFileTree(props.repositoryStatus?.staged_files || [])
 })
 
+const unstagedFiles = computed(() => {
+  return (props.repositoryStatus?.unstaged_files || []).filter(
+    file => file.status !== 'untracked'
+  )
+})
+
+const untrackedFiles = computed(() => {
+  return (props.repositoryStatus?.unstaged_files || []).filter(
+    file => file.status === 'untracked'
+  )
+})
+
 const unstagedTreeNodes = computed(() => {
-  return buildFileTree(props.repositoryStatus?.unstaged_files || [])
+  return buildFileTree(unstagedFiles.value)
 })
 
 const untrackedTreeNodes = computed(() => {
-  return buildFileTree(props.repositoryStatus?.untracked_files || [])
+  return buildFileTree(untrackedFiles.value)
 })
 
 function getFlatFileContextMenuItems(
@@ -165,9 +177,8 @@ function getFlatFileContextMenuItems(
 const totalChangesCount = computed(() => {
   const staged = props.repositoryStatus?.staged_files?.length || 0
   const unstaged = props.repositoryStatus?.unstaged_files?.length || 0
-  const untracked = props.repositoryStatus?.untracked_files?.length || 0
   const conflicted = props.repositoryStatus?.conflicted_files?.length || 0
-  return staged + unstaged + untracked + conflicted
+  return staged + unstaged + conflicted
 })
 </script>
 
@@ -476,12 +487,12 @@ const totalChangesCount = computed(() => {
       </div>
 
       <!-- Untracked Section -->
-      <div v-if="props.repositoryStatus?.untracked_files?.length">
+      <div v-if="untrackedFiles.length">
         <div class="flex items-center justify-between mb-1.5 gap-1">
           <span class="font-semibold text-highlighted flex items-center gap-1.5 text-xs truncate min-w-0">
             <span class="h-2 w-2 rounded-full bg-neutral-400 shrink-0" />
             <span class="truncate">{{ t('git.status.untracked') }}</span>
-            <span class="text-muted shrink-0">({{ props.repositoryStatus?.untracked_files?.length || 0 }})</span>
+            <span class="text-muted shrink-0">({{ untrackedFiles.length }})</span>
           </span>
         </div>
 
@@ -511,7 +522,7 @@ const totalChangesCount = computed(() => {
           class="rounded-lg border border-default/70 divide-y divide-default bg-surface/80"
         >
           <UContextMenu
-            v-for="file in props.repositoryStatus.untracked_files"
+            v-for="file in untrackedFiles"
             :key="file.path"
             :items="getFlatFileContextMenuItems(file.path, false, true)"
           >

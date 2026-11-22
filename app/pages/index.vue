@@ -17,6 +17,7 @@ import { useWorkspaceTabController } from '~/composables/useWorkspaceTabControll
 
 const { t } = useI18n()
 const { confirmStandard, confirmHold, confirmKeyword } = useConfirmationDialog()
+const { openFolderPicker } = useWorkspaceModals()
 
 const {
   currentRepository,
@@ -449,7 +450,7 @@ async function handlePush(): Promise<void> {
     <!-- Zero Repository Open State: Show Welcome screen with recent repos -->
     <WelcomeWorkspaceState
       v-if="!currentRepository"
-      @open-folder-picker="isFolderPickerModalOpen = true"
+      @open-folder-picker="openFolderPicker"
     />
 
     <!-- Active Repository: Full Edge-to-Edge Workspace -->

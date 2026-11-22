@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use super::super::stash::{parse_stash_list, STASH_FIELD_DELIMITER};
+    use super::super::stash::{STASH_FIELD_DELIMITER, parse_stash_list};
 
     #[test]
     fn test_parse_stash_list_with_multiple_entries() {

@@ -1,13 +1,12 @@
-use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, USER_AGENT};
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
-use chrono::Utc;
 use crate::domain::{
-    ApplicationError, CiCheckRun, PipelineState, PipelineSummary,
-    ProviderAccount, ProviderKind, PullRequestChangedFile, PullRequestMergeResult,
-    PullRequestState, RemoteProjectRepository, RemotePullRequest, RemoteReviewComment,
-    WorkflowJob, WorkflowJobStep, WorkflowRun,
+    ApplicationError, CiCheckRun, PipelineState, PipelineSummary, ProviderAccount, ProviderKind,
+    PullRequestChangedFile, PullRequestMergeResult, PullRequestState, RemoteProjectRepository,
+    RemotePullRequest, RemoteReviewComment, WorkflowJob, WorkflowJobStep, WorkflowRun,
 };
+use chrono::Utc;
+use reqwest::Client;
+use reqwest::header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderValue, USER_AGENT};
+use serde::{Deserialize, Serialize};
 
 const DEFAULT_GITHUB_API_URL: &str = "https://api.github.com";
 const GITHUB_USER_AGENT: &str = "GitVerse-Desktop";
@@ -92,17 +91,23 @@ impl GitHubClient {
             _ => DEFAULT_GITHUB_API_URL.to_string(),
         };
 
-        let client = Client::builder()
-            .build()
-            .map_err(|error| ApplicationError::ProviderError(format!("Failed to build HTTP client: {}", error)))?;
+        let client = Client::builder().build().map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to build HTTP client: {}", error))
+        })?;
 
-        Ok(Self { client, api_base_url })
+        Ok(Self {
+            client,
+            api_base_url,
+        })
     }
 
     fn build_headers(&self, token: &str) -> Result<HeaderMap, ApplicationError> {
         let mut headers = HeaderMap::new();
         headers.insert(USER_AGENT, HeaderValue::from_static(GITHUB_USER_AGENT));
-        headers.insert(ACCEPT, HeaderValue::from_static("application/vnd.github.v3+json"));
+        headers.insert(
+            ACCEPT,
+            HeaderValue::from_static("application/vnd.github.v3+json"),
+        );
 
         let auth_value = format!("Bearer {}", token.trim());
         let mut header_value = HeaderValue::from_str(&auth_value).map_err(|_| {
@@ -115,15 +120,23 @@ impl GitHubClient {
     }
 
     /// Fetches the authenticated user profile to validate credentials.
-    pub async fn get_authenticated_user(&self, token: &str, instance_url: &str) -> Result<ProviderAccount, ApplicationError> {
+    pub async fn get_authenticated_user(
+        &self,
+        token: &str,
+        instance_url: &str,
+    ) -> Result<ProviderAccount, ApplicationError> {
         let url = format!("{}/user", self.api_base_url);
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         let status = response.status();
         if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
@@ -141,7 +154,10 @@ impl GitHubClient {
         }
 
         let user_data: GitHubUserResponse = response.json().await.map_err(|error| {
-            ApplicationError::ProviderError(format!("Failed to parse GitHub user response: {}", error))
+            ApplicationError::ProviderError(format!(
+                "Failed to parse GitHub user response: {}",
+                error
+            ))
         })?;
 
         let account = ProviderAccount {
@@ -168,7 +184,9 @@ impl GitHubClient {
         let url = format!("{}/user/repos", self.api_base_url);
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .query(&[
                 ("page", page.to_string()),
@@ -177,21 +195,31 @@ impl GitHubClient {
             ])
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_message = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("GitHub list repos failed: {}", error_message)));
+            return Err(ApplicationError::ProviderError(format!(
+                "GitHub list repos failed: {}",
+                error_message
+            )));
         }
 
-        let raw_repositories: Vec<GitHubRepositoryResponse> = response.json().await.map_err(|error| {
-            ApplicationError::ProviderError(format!("Failed to parse GitHub repositories: {}", error))
-        })?;
+        let raw_repositories: Vec<GitHubRepositoryResponse> =
+            response.json().await.map_err(|error| {
+                ApplicationError::ProviderError(format!(
+                    "Failed to parse GitHub repositories: {}",
+                    error
+                ))
+            })?;
 
         let repositories = raw_repositories
             .into_iter()
             .map(|raw| {
-                let updated_timestamp = raw.updated_at
+                let updated_timestamp = raw
+                    .updated_at
                     .as_deref()
                     .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
                     .map(|datetime| datetime.timestamp())
@@ -227,7 +255,10 @@ impl GitHubClient {
         repository_name: &str,
         state_filter: Option<&str>,
     ) -> Result<Vec<RemotePullRequest>, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/pulls", self.api_base_url, owner, repository_name);
+        let url = format!(
+            "{}/repos/{}/{}/pulls",
+            self.api_base_url, owner, repository_name
+        );
         let headers = self.build_headers(token)?;
 
         let state = match state_filter {
@@ -236,16 +267,23 @@ impl GitHubClient {
             _ => "all",
         };
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .query(&[("state", state), ("per_page", "50")])
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to fetch pull requests: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to fetch pull requests: {}",
+                error_text
+            )));
         }
 
         let raw_pulls: Vec<GitHubPullRequestResponse> = response.json().await.map_err(|error| {
@@ -279,7 +317,8 @@ impl GitHubClient {
                     .map(|datetime| datetime.timestamp())
                     .unwrap_or_else(|_| Utc::now().timestamp());
 
-                let merged_timestamp = raw.merged_at
+                let merged_timestamp = raw
+                    .merged_at
                     .as_deref()
                     .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
                     .map(|datetime| datetime.timestamp());
@@ -307,7 +346,15 @@ impl GitHubClient {
 
         // Populate pipeline status for the first few open pull requests
         for pull_request in pull_requests.iter_mut().take(5) {
-            if let Ok(summary) = self.get_commit_pipeline_summary(token, owner, repository_name, &pull_request.source_branch).await {
+            if let Ok(summary) = self
+                .get_commit_pipeline_summary(
+                    token,
+                    owner,
+                    repository_name,
+                    &pull_request.source_branch,
+                )
+                .await
+            {
                 pull_request.pipeline_status = summary;
             }
         }
@@ -323,14 +370,21 @@ impl GitHubClient {
         repository: &str,
         reference_or_sha: &str,
     ) -> Result<Option<PipelineSummary>, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/commits/{}/check-runs", self.api_base_url, owner, repository, reference_or_sha);
+        let url = format!(
+            "{}/repos/{}/{}/commits/{}/check-runs",
+            self.api_base_url, owner, repository, reference_or_sha
+        );
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             return Ok(None);
@@ -384,7 +438,10 @@ impl GitHubClient {
             PipelineState::Pending
         };
 
-        let first_url = payload.check_runs.first().and_then(|check| check.html_url.clone());
+        let first_url = payload
+            .check_runs
+            .first()
+            .and_then(|check| check.html_url.clone());
 
         Ok(Some(PipelineSummary {
             state: pipeline_state,
@@ -404,18 +461,28 @@ impl GitHubClient {
         repository: &str,
         commit_sha: &str,
     ) -> Result<Vec<CiCheckRun>, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/commits/{}/check-runs", self.api_base_url, owner, repository, commit_sha);
+        let url = format!(
+            "{}/repos/{}/{}/commits/{}/check-runs",
+            self.api_base_url, owner, repository, commit_sha
+        );
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to fetch check runs: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to fetch check runs: {}",
+                error_text
+            )));
         }
 
         #[derive(Deserialize)]
@@ -438,26 +505,32 @@ impl GitHubClient {
             ApplicationError::ProviderError(format!("Failed to parse check runs: {}", error))
         })?;
 
-        let checks = payload.check_runs.into_iter().map(|item| {
-            let started_timestamp = item.started_at
-                .as_deref()
-                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
-                .map(|datetime| datetime.timestamp());
-            let completed_timestamp = item.completed_at
-                .as_deref()
-                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
-                .map(|datetime| datetime.timestamp());
+        let checks = payload
+            .check_runs
+            .into_iter()
+            .map(|item| {
+                let started_timestamp = item
+                    .started_at
+                    .as_deref()
+                    .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                    .map(|datetime| datetime.timestamp());
+                let completed_timestamp = item
+                    .completed_at
+                    .as_deref()
+                    .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                    .map(|datetime| datetime.timestamp());
 
-            CiCheckRun {
-                id: format!("github:{}", item.id),
-                name: item.name,
-                status: item.status,
-                conclusion: item.conclusion,
-                html_url: item.html_url,
-                started_at_timestamp: started_timestamp,
-                completed_at_timestamp: completed_timestamp,
-            }
-        }).collect();
+                CiCheckRun {
+                    id: format!("github:{}", item.id),
+                    name: item.name,
+                    status: item.status,
+                    conclusion: item.conclusion,
+                    html_url: item.html_url,
+                    started_at_timestamp: started_timestamp,
+                    completed_at_timestamp: completed_timestamp,
+                }
+            })
+            .collect();
 
         Ok(checks)
     }
@@ -469,18 +542,28 @@ impl GitHubClient {
         repository: &str,
         pull_number: u64,
     ) -> Result<Vec<RemoteReviewComment>, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/issues/{}/comments", self.api_base_url, owner, repository, pull_number);
+        let url = format!(
+            "{}/repos/{}/{}/issues/{}/comments",
+            self.api_base_url, owner, repository, pull_number
+        );
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to fetch PR comments: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to fetch PR comments: {}",
+                error_text
+            )));
         }
 
         #[derive(Deserialize)]
@@ -496,25 +579,28 @@ impl GitHubClient {
             ApplicationError::ProviderError(format!("Failed to parse comments: {}", error))
         })?;
 
-        let comments = items.into_iter().map(|item| {
-            let created_timestamp = chrono::DateTime::parse_from_rfc3339(&item.created_at)
-                .map(|datetime| datetime.timestamp())
-                .unwrap_or_else(|_| Utc::now().timestamp());
-            let updated_timestamp = chrono::DateTime::parse_from_rfc3339(&item.updated_at)
-                .map(|datetime| datetime.timestamp())
-                .unwrap_or_else(|_| Utc::now().timestamp());
+        let comments = items
+            .into_iter()
+            .map(|item| {
+                let created_timestamp = chrono::DateTime::parse_from_rfc3339(&item.created_at)
+                    .map(|datetime| datetime.timestamp())
+                    .unwrap_or_else(|_| Utc::now().timestamp());
+                let updated_timestamp = chrono::DateTime::parse_from_rfc3339(&item.updated_at)
+                    .map(|datetime| datetime.timestamp())
+                    .unwrap_or_else(|_| Utc::now().timestamp());
 
-            RemoteReviewComment {
-                id: format!("github:{}", item.id),
-                author_username: item.user.login,
-                author_avatar_url: item.user.avatar_url,
-                body: item.body.unwrap_or_default(),
-                path: None,
-                line_number: None,
-                created_at_timestamp: created_timestamp,
-                updated_at_timestamp: updated_timestamp,
-            }
-        }).collect();
+                RemoteReviewComment {
+                    id: format!("github:{}", item.id),
+                    author_username: item.user.login,
+                    author_avatar_url: item.user.avatar_url,
+                    body: item.body.unwrap_or_default(),
+                    path: None,
+                    line_number: None,
+                    created_at_timestamp: created_timestamp,
+                    updated_at_timestamp: updated_timestamp,
+                }
+            })
+            .collect();
 
         Ok(comments)
     }
@@ -527,7 +613,10 @@ impl GitHubClient {
         pull_number: u64,
         body: &str,
     ) -> Result<RemoteReviewComment, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/issues/{}/comments", self.api_base_url, owner, repository, pull_number);
+        let url = format!(
+            "{}/repos/{}/{}/issues/{}/comments",
+            self.api_base_url, owner, repository, pull_number
+        );
         let headers = self.build_headers(token)?;
 
         #[derive(Serialize)]
@@ -535,16 +624,23 @@ impl GitHubClient {
             body: &'a str,
         }
 
-        let response = self.client.post(&url)
+        let response = self
+            .client
+            .post(&url)
             .headers(headers)
             .json(&NewCommentPayload { body })
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to post comment: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to post comment: {}",
+                error_text
+            )));
         }
 
         #[derive(Deserialize)]
@@ -586,18 +682,28 @@ impl GitHubClient {
         repository: &str,
         pull_number: u64,
     ) -> Result<Vec<PullRequestChangedFile>, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/pulls/{}/files", self.api_base_url, owner, repository, pull_number);
+        let url = format!(
+            "{}/repos/{}/{}/pulls/{}/files",
+            self.api_base_url, owner, repository, pull_number
+        );
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to fetch PR files: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to fetch PR files: {}",
+                error_text
+            )));
         }
 
         #[derive(Deserialize)]
@@ -615,8 +721,9 @@ impl GitHubClient {
             ApplicationError::ProviderError(format!("Failed to parse PR files: {}", error))
         })?;
 
-        let files = items.into_iter().map(|item| {
-            PullRequestChangedFile {
+        let files = items
+            .into_iter()
+            .map(|item| PullRequestChangedFile {
                 file_path: item.filename,
                 previous_file_path: item.previous_filename,
                 status: item.status,
@@ -624,8 +731,8 @@ impl GitHubClient {
                 deletions_count: item.deletions,
                 changes_count: item.changes,
                 patch: item.patch,
-            }
-        }).collect();
+            })
+            .collect();
 
         Ok(files)
     }
@@ -639,7 +746,10 @@ impl GitHubClient {
         action: &str,
         body: Option<&str>,
     ) -> Result<bool, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/pulls/{}/reviews", self.api_base_url, owner, repository, pull_number);
+        let url = format!(
+            "{}/repos/{}/{}/pulls/{}/reviews",
+            self.api_base_url, owner, repository, pull_number
+        );
         let headers = self.build_headers(token)?;
 
         #[derive(Serialize)]
@@ -655,7 +765,9 @@ impl GitHubClient {
             _ => "COMMENT",
         };
 
-        let response = self.client.post(&url)
+        let response = self
+            .client
+            .post(&url)
             .headers(headers)
             .json(&ReviewPayload {
                 event,
@@ -663,11 +775,16 @@ impl GitHubClient {
             })
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to submit review: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to submit review: {}",
+                error_text
+            )));
         }
 
         Ok(true)
@@ -683,7 +800,10 @@ impl GitHubClient {
         commit_title: Option<&str>,
         commit_message: Option<&str>,
     ) -> Result<PullRequestMergeResult, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/pulls/{}/merge", self.api_base_url, owner, repository, pull_number);
+        let url = format!(
+            "{}/repos/{}/{}/pulls/{}/merge",
+            self.api_base_url, owner, repository, pull_number
+        );
         let headers = self.build_headers(token)?;
 
         #[derive(Serialize)]
@@ -701,7 +821,9 @@ impl GitHubClient {
             _ => "merge",
         };
 
-        let response = self.client.put(&url)
+        let response = self
+            .client
+            .put(&url)
             .headers(headers)
             .json(&MergePayload {
                 commit_title: commit_title.filter(|text| !text.trim().is_empty()),
@@ -710,7 +832,9 @@ impl GitHubClient {
             })
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         #[derive(Deserialize)]
         struct GitHubMergeApiResponse {
@@ -720,21 +844,26 @@ impl GitHubClient {
         }
 
         let status = response.status();
-        let payload: GitHubMergeApiResponse = response.json().await.unwrap_or(GitHubMergeApiResponse {
-            sha: None,
-            merged: Some(status.is_success()),
-            message: None,
-        });
+        let payload: GitHubMergeApiResponse =
+            response.json().await.unwrap_or(GitHubMergeApiResponse {
+                sha: None,
+                merged: Some(status.is_success()),
+                message: None,
+            });
 
         if !status.is_success() && payload.merged != Some(true) {
             return Err(ApplicationError::ProviderError(
-                payload.message.unwrap_or_else(|| "Failed to merge pull request".into())
+                payload
+                    .message
+                    .unwrap_or_else(|| "Failed to merge pull request".into()),
             ));
         }
 
         Ok(PullRequestMergeResult {
             is_merged: payload.merged.unwrap_or(true),
-            message: payload.message.unwrap_or_else(|| "Pull request merged successfully".into()),
+            message: payload
+                .message
+                .unwrap_or_else(|| "Pull request merged successfully".into()),
             commit_sha: payload.sha,
         })
     }
@@ -747,7 +876,10 @@ impl GitHubClient {
         pull_number: u64,
         new_state: &str,
     ) -> Result<bool, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/pulls/{}", self.api_base_url, owner, repository, pull_number);
+        let url = format!(
+            "{}/repos/{}/{}/pulls/{}",
+            self.api_base_url, owner, repository, pull_number
+        );
         let headers = self.build_headers(token)?;
 
         #[derive(Serialize)]
@@ -755,18 +887,31 @@ impl GitHubClient {
             state: &'a str,
         }
 
-        let target_state = if new_state == "open" { "open" } else { "closed" };
+        let target_state = if new_state == "open" {
+            "open"
+        } else {
+            "closed"
+        };
 
-        let response = self.client.patch(&url)
+        let response = self
+            .client
+            .patch(&url)
             .headers(headers)
-            .json(&StatePayload { state: target_state })
+            .json(&StatePayload {
+                state: target_state,
+            })
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to update PR state: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to update PR state: {}",
+                error_text
+            )));
         }
 
         Ok(true)
@@ -780,23 +925,32 @@ impl GitHubClient {
         repository: &str,
         branch: Option<&str>,
     ) -> Result<Vec<WorkflowRun>, ApplicationError> {
-        let mut url = format!("{}/repos/{}/{}/actions/runs?per_page=30", self.api_base_url, owner, repository);
-        if let Some(branch_name) = branch {
-            if !branch_name.trim().is_empty() {
+        let mut url = format!(
+            "{}/repos/{}/{}/actions/runs?per_page=30",
+            self.api_base_url, owner, repository
+        );
+        if let Some(branch_name) = branch
+            && !branch_name.trim().is_empty() {
                 url.push_str(&format!("&branch={}", branch_name.trim()));
             }
-        }
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to fetch workflow runs: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to fetch workflow runs: {}",
+                error_text
+            )));
         }
 
         #[derive(Deserialize)]
@@ -831,35 +985,45 @@ impl GitHubClient {
             ApplicationError::ProviderError(format!("Failed to parse workflow runs: {}", error))
         })?;
 
-        let runs = payload.workflow_runs.into_iter().map(|item| {
-            let created_timestamp = item.created_at
-                .as_deref()
-                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
-                .map(|datetime| datetime.timestamp())
-                .unwrap_or(0);
-            let updated_timestamp = item.updated_at
-                .as_deref()
-                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
-                .map(|datetime| datetime.timestamp())
-                .unwrap_or(0);
+        let runs = payload
+            .workflow_runs
+            .into_iter()
+            .map(|item| {
+                let created_timestamp = item
+                    .created_at
+                    .as_deref()
+                    .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                    .map(|datetime| datetime.timestamp())
+                    .unwrap_or(0);
+                let updated_timestamp = item
+                    .updated_at
+                    .as_deref()
+                    .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                    .map(|datetime| datetime.timestamp())
+                    .unwrap_or(0);
 
-            WorkflowRun {
-                id: item.id.to_string(),
-                workflow_name: item.name.unwrap_or_else(|| "Workflow".into()),
-                display_title: item.display_title.unwrap_or_else(|| "Workflow Run".into()),
-                head_branch: item.head_branch.unwrap_or_default(),
-                head_commit_sha: item.head_sha.unwrap_or_default(),
-                status: item.status.unwrap_or_else(|| "completed".into()),
-                conclusion: item.conclusion,
-                event: item.event.unwrap_or_else(|| "push".into()),
-                run_number: item.run_number.unwrap_or(1),
-                author_username: item.actor.as_ref().map(|a| a.login.clone()).unwrap_or_default(),
-                author_avatar_url: item.actor.and_then(|a| a.avatar_url),
-                created_at_timestamp: created_timestamp,
-                updated_at_timestamp: updated_timestamp,
-                html_url: item.html_url,
-            }
-        }).collect();
+                WorkflowRun {
+                    id: item.id.to_string(),
+                    workflow_name: item.name.unwrap_or_else(|| "Workflow".into()),
+                    display_title: item.display_title.unwrap_or_else(|| "Workflow Run".into()),
+                    head_branch: item.head_branch.unwrap_or_default(),
+                    head_commit_sha: item.head_sha.unwrap_or_default(),
+                    status: item.status.unwrap_or_else(|| "completed".into()),
+                    conclusion: item.conclusion,
+                    event: item.event.unwrap_or_else(|| "push".into()),
+                    run_number: item.run_number.unwrap_or(1),
+                    author_username: item
+                        .actor
+                        .as_ref()
+                        .map(|a| a.login.clone())
+                        .unwrap_or_default(),
+                    author_avatar_url: item.actor.and_then(|a| a.avatar_url),
+                    created_at_timestamp: created_timestamp,
+                    updated_at_timestamp: updated_timestamp,
+                    html_url: item.html_url,
+                }
+            })
+            .collect();
 
         Ok(runs)
     }
@@ -872,18 +1036,28 @@ impl GitHubClient {
         repository: &str,
         run_id: u64,
     ) -> Result<Vec<WorkflowJob>, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/actions/runs/{}/jobs", self.api_base_url, owner, repository, run_id);
+        let url = format!(
+            "{}/repos/{}/{}/actions/runs/{}/jobs",
+            self.api_base_url, owner, repository, run_id
+        );
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to fetch workflow jobs: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to fetch workflow jobs: {}",
+                error_text
+            )));
         }
 
         #[derive(Deserialize)]
@@ -917,48 +1091,61 @@ impl GitHubClient {
             ApplicationError::ProviderError(format!("Failed to parse workflow jobs: {}", error))
         })?;
 
-        let jobs = payload.jobs.into_iter().map(|item| {
-            let started_timestamp = item.started_at
-                .as_deref()
-                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
-                .map(|datetime| datetime.timestamp());
-            let completed_timestamp = item.completed_at
-                .as_deref()
-                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
-                .map(|datetime| datetime.timestamp());
-
-            let steps = item.steps.unwrap_or_default().into_iter().map(|s| {
-                let s_started = s.started_at
+        let jobs = payload
+            .jobs
+            .into_iter()
+            .map(|item| {
+                let started_timestamp = item
+                    .started_at
                     .as_deref()
                     .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
-                    .map(|dt| dt.timestamp());
-                let s_completed = s.completed_at
+                    .map(|datetime| datetime.timestamp());
+                let completed_timestamp = item
+                    .completed_at
                     .as_deref()
                     .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
-                    .map(|dt| dt.timestamp());
+                    .map(|datetime| datetime.timestamp());
 
-                WorkflowJobStep {
-                    name: s.name,
-                    status: s.status,
-                    conclusion: s.conclusion,
-                    number: s.number,
-                    started_at_timestamp: s_started,
-                    completed_at_timestamp: s_completed,
+                let steps = item
+                    .steps
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|s| {
+                        let s_started = s
+                            .started_at
+                            .as_deref()
+                            .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                            .map(|dt| dt.timestamp());
+                        let s_completed = s
+                            .completed_at
+                            .as_deref()
+                            .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                            .map(|dt| dt.timestamp());
+
+                        WorkflowJobStep {
+                            name: s.name,
+                            status: s.status,
+                            conclusion: s.conclusion,
+                            number: s.number,
+                            started_at_timestamp: s_started,
+                            completed_at_timestamp: s_completed,
+                        }
+                    })
+                    .collect();
+
+                WorkflowJob {
+                    id: item.id.to_string(),
+                    run_id: run_id.to_string(),
+                    name: item.name,
+                    status: item.status,
+                    conclusion: item.conclusion,
+                    started_at_timestamp: started_timestamp,
+                    completed_at_timestamp: completed_timestamp,
+                    steps,
+                    html_url: item.html_url,
                 }
-            }).collect();
-
-            WorkflowJob {
-                id: item.id.to_string(),
-                run_id: run_id.to_string(),
-                name: item.name,
-                status: item.status,
-                conclusion: item.conclusion,
-                started_at_timestamp: started_timestamp,
-                completed_at_timestamp: completed_timestamp,
-                steps,
-                html_url: item.html_url,
-            }
-        }).collect();
+            })
+            .collect();
 
         Ok(jobs)
     }
@@ -972,19 +1159,33 @@ impl GitHubClient {
         run_id: u64,
         failed_only: bool,
     ) -> Result<bool, ApplicationError> {
-        let endpoint = if failed_only { "rerun-failed-jobs" } else { "rerun" };
-        let url = format!("{}/repos/{}/{}/actions/runs/{}/{}", self.api_base_url, owner, repository, run_id, endpoint);
+        let endpoint = if failed_only {
+            "rerun-failed-jobs"
+        } else {
+            "rerun"
+        };
+        let url = format!(
+            "{}/repos/{}/{}/actions/runs/{}/{}",
+            self.api_base_url, owner, repository, run_id, endpoint
+        );
         let headers = self.build_headers(token)?;
 
-        let response = self.client.post(&url)
+        let response = self
+            .client
+            .post(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to rerun workflow: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to rerun workflow: {}",
+                error_text
+            )));
         }
 
         Ok(true)
@@ -998,18 +1199,28 @@ impl GitHubClient {
         repository: &str,
         run_id: u64,
     ) -> Result<bool, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/actions/runs/{}/cancel", self.api_base_url, owner, repository, run_id);
+        let url = format!(
+            "{}/repos/{}/{}/actions/runs/{}/cancel",
+            self.api_base_url, owner, repository, run_id
+        );
         let headers = self.build_headers(token)?;
 
-        let response = self.client.post(&url)
+        let response = self
+            .client
+            .post(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to cancel workflow run: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to cancel workflow run: {}",
+                error_text
+            )));
         }
 
         Ok(true)
@@ -1023,18 +1234,28 @@ impl GitHubClient {
         repository: &str,
         job_id: u64,
     ) -> Result<String, ApplicationError> {
-        let url = format!("{}/repos/{}/{}/actions/jobs/{}/logs", self.api_base_url, owner, repository, job_id);
+        let url = format!(
+            "{}/repos/{}/{}/actions/jobs/{}/logs",
+            self.api_base_url, owner, repository, job_id
+        );
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to fetch job logs: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to fetch job logs: {}",
+                error_text
+            )));
         }
 
         let logs = response.text().await.unwrap_or_default();
@@ -1066,7 +1287,9 @@ impl GitHubClient {
             draft: bool,
         }
 
-        let response = self.client.post(&url)
+        let response = self
+            .client
+            .post(&url)
             .headers(headers)
             .json(&CreatePullPayload {
                 title,
@@ -1077,15 +1300,23 @@ impl GitHubClient {
             })
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitHub network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitHub network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to create pull request: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to create pull request: {}",
+                error_text
+            )));
         }
 
         let raw: GitHubPullRequestResponse = response.json().await.map_err(|error| {
-            ApplicationError::ProviderError(format!("Failed to parse created pull request: {}", error))
+            ApplicationError::ProviderError(format!(
+                "Failed to parse created pull request: {}",
+                error
+            ))
         })?;
 
         let created_timestamp = chrono::DateTime::parse_from_rfc3339(&raw.created_at)

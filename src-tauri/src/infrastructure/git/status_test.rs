@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use crate::infrastructure::git::parse_porcelain_v2_status;
     use crate::domain::FileChangeStatus;
+    use crate::infrastructure::git::parse_porcelain_v2_status;
 
     #[test]
     fn test_parse_porcelain_v2_status_comprehensive() {
@@ -20,7 +20,10 @@ u UU N... 100644 100644 100644 100644 039562 039562 039562 conflict.txt\n\
         let parsed = parse_porcelain_v2_status(sample_output);
 
         assert_eq!(parsed.branch_name, Some("master".to_string()));
-        assert_eq!(parsed.upstream_branch_name, Some("origin/master".to_string()));
+        assert_eq!(
+            parsed.upstream_branch_name,
+            Some("origin/master".to_string())
+        );
         assert_eq!(parsed.ahead_count, 3);
         assert_eq!(parsed.behind_count, 1);
         assert!(!parsed.is_detached_head);
@@ -32,7 +35,10 @@ u UU N... 100644 100644 100644 100644 039562 039562 039562 conflict.txt\n\
         assert_eq!(parsed.staged_files[1].path, "new_file.txt");
         assert_eq!(parsed.staged_files[1].status, FileChangeStatus::Added);
         assert_eq!(parsed.staged_files[2].path, "renamed.rs");
-        assert_eq!(parsed.staged_files[2].original_path, Some("old_name.rs".to_string()));
+        assert_eq!(
+            parsed.staged_files[2].original_path,
+            Some("old_name.rs".to_string())
+        );
 
         // Unstaged files: src/main.rs (Modified), untracked_script.py (Untracked)
         assert_eq!(parsed.unstaged_files.len(), 2);
@@ -44,7 +50,10 @@ u UU N... 100644 100644 100644 100644 039562 039562 039562 conflict.txt\n\
         // Conflicted files: conflict.txt
         assert_eq!(parsed.conflicted_files.len(), 1);
         assert_eq!(parsed.conflicted_files[0].path, "conflict.txt");
-        assert_eq!(parsed.conflicted_files[0].status, FileChangeStatus::Conflicted);
+        assert_eq!(
+            parsed.conflicted_files[0].status,
+            FileChangeStatus::Conflicted
+        );
     }
 
     #[test]
@@ -62,7 +71,8 @@ u UU N... 100644 100644 100644 100644 039562 039562 039562 conflict.txt\n\
         for (state, expected_json) in states {
             let serialized = serde_json::to_string(&state).expect("serialize state");
             assert_eq!(serialized, expected_json);
-            let deserialized: RepositoryOperationState = serde_json::from_str(&serialized).expect("deserialize state");
+            let deserialized: RepositoryOperationState =
+                serde_json::from_str(&serialized).expect("deserialize state");
             assert_eq!(deserialized, state);
         }
     }

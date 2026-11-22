@@ -9,7 +9,10 @@ fn test_parse_submodule_status_clean_initialized() {
     let sub = &submodules[0];
     assert_eq!(sub.path, "libs/sub");
     assert_eq!(sub.name, "sub");
-    assert_eq!(sub.current_commit_hash, "0afa6c2685f487180f6b074d106da34149f51f38");
+    assert_eq!(
+        sub.current_commit_hash,
+        "0afa6c2685f487180f6b074d106da34149f51f38"
+    );
     assert!(sub.is_initialized);
     assert!(!sub.has_revision_divergence);
     assert!(!sub.has_uncommitted_changes);

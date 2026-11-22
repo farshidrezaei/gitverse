@@ -39,7 +39,10 @@ prunable gitdir file points to non-existent location
 
         // Main worktree
         assert_eq!(parsed[0].directory_path, "/home/user/project");
-        assert_eq!(parsed[0].head_commit_hash, "1234567890abcdef1234567890abcdef12345678");
+        assert_eq!(
+            parsed[0].head_commit_hash,
+            "1234567890abcdef1234567890abcdef12345678"
+        );
         assert_eq!(parsed[0].branch_name.as_deref(), Some("master"));
         assert!(parsed[0].is_main);
         assert!(!parsed[0].is_bare);
@@ -59,7 +62,10 @@ prunable gitdir file points to non-existent location
         // Locked worktree
         assert_eq!(parsed[3].directory_path, "/home/user/project-locked");
         assert!(parsed[3].is_locked);
-        assert_eq!(parsed[3].lock_reason.as_deref(), Some("Maintenance in progress"));
+        assert_eq!(
+            parsed[3].lock_reason.as_deref(),
+            Some("Maintenance in progress")
+        );
 
         // Prunable worktree
         assert_eq!(parsed[4].directory_path, "/home/user/project-prunable");

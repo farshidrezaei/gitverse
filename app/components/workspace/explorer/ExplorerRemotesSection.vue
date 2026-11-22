@@ -80,7 +80,7 @@ function getRemoteContextMenu(remote: RemoteSummary): ContextMenuItem[][] {
       {
         label: t('remote.copyUrl'),
         icon: 'i-lucide-copy',
-        onSelect: () => void copyRemoteUrl(remote),
+        onSelect: () => void copyRemoteUrl(remote.fetch_url || remote.push_url || ''),
       },
     ],
     [

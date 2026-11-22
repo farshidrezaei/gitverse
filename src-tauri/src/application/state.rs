@@ -1,17 +1,22 @@
+use crate::domain::{
+    ApplicationDiagnostics, ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails,
+    DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation, GitWorktreeSummary,
+    InteractiveRebaseRequest, MergeBranchOutcome, ProviderAccount, ProviderKind,
+    PullRequestChangedFile, PullRequestMergeResult, RebaseBranchOutcome, RebasePlanItem,
+    RecentRepositoryRecord, RemoteProjectRepository, RemotePullRequest, RemoteReviewComment,
+    RepositoryOverview, StashRecord, WorkflowJob, WorkflowRun,
+};
+use crate::infrastructure::git::{
+    GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager,
+};
+use crate::infrastructure::provider::{GitHubClient, GitLabClient};
+use crate::infrastructure::security::CredentialStore;
+use crate::infrastructure::storage::SQLiteRepositoryStore;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tauri::AppHandle;
 use tokio::sync::RwLock;
-use crate::domain::{
-    ApplicationDiagnostics, ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
-    GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome, ProviderAccount, ProviderKind, PullRequestChangedFile, PullRequestMergeResult, RebaseBranchOutcome, RebasePlanItem, RecentRepositoryRecord, RemoteProjectRepository, RemotePullRequest, RemoteReviewComment, RepositoryOverview, StashRecord,
-    WorkflowJob, WorkflowRun,
-};
-use crate::infrastructure::git::{GitProcessExecutor, GitRepositoryInspector, RepositoryWatcherManager};
-use crate::infrastructure::provider::{GitHubClient, GitLabClient};
-use crate::infrastructure::security::CredentialStore;
-use crate::infrastructure::storage::SQLiteRepositoryStore;
 
 const MAX_CACHE_ENTRIES: usize = 250;
 
@@ -48,23 +53,36 @@ impl ApplicationState {
     }
 
     /// Discovers system Git and returns binary metadata.
-    pub async fn discover_git(&self, custom_path: Option<&str>) -> Result<GitBinaryInformation, ApplicationError> {
+    pub async fn discover_git(
+        &self,
+        custom_path: Option<&str>,
+    ) -> Result<GitBinaryInformation, ApplicationError> {
         GitProcessExecutor::discover_system_git(custom_path).await
     }
 
     /// Opens a repository from the filesystem, records it in history, and starts file watcher.
-    pub async fn open_repository(&self, app_handle: AppHandle, directory_path: &Path) -> Result<RepositoryOverview, ApplicationError> {
-        let overview = self.git_inspector.inspect_repository(directory_path).await?;
+    pub async fn open_repository(
+        &self,
+        app_handle: AppHandle,
+        directory_path: &Path,
+    ) -> Result<RepositoryOverview, ApplicationError> {
+        let overview = self
+            .git_inspector
+            .inspect_repository(directory_path)
+            .await?;
 
         // Persist to recent history
-        let _ = self.store.record_opened_repository(&overview.path, &overview.name);
+        let _ = self
+            .store
+            .record_opened_repository(&overview.path, &overview.name);
 
         // Update active repository in memory
         let mut active = self.current_repository.write().await;
         *active = Some(overview.clone());
 
         // Start real-time background file watching
-        self.watcher_manager.watch_repository(app_handle, directory_path);
+        self.watcher_manager
+            .watch_repository(app_handle, directory_path);
 
         Ok(overview)
     }
@@ -87,7 +105,10 @@ impl ApplicationState {
     }
 
     /// Gets detailed repository status (staged, unstaged, conflicted files).
-    pub async fn get_repository_status(&self, directory_path: Option<&str>) -> Result<DetailedRepositoryStatus, ApplicationError> {
+    pub async fn get_repository_status(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<DetailedRepositoryStatus, ApplicationError> {
         let target_path = if let Some(path_str) = directory_path {
             PathBuf::from(path_str)
         } else {
@@ -95,7 +116,9 @@ impl ApplicationState {
             if let Some(ref current) = *active {
                 PathBuf::from(&current.path)
             } else {
-                return Err(ApplicationError::InvalidRepository("No active repository open".into()));
+                return Err(ApplicationError::InvalidRepository(
+                    "No active repository open".into(),
+                ));
             }
         };
 
@@ -103,15 +126,25 @@ impl ApplicationState {
     }
 
     /// Stage a file.
-    pub async fn stage_file(&self, directory_path: Option<&str>, file_path: &str) -> Result<(), ApplicationError> {
+    pub async fn stage_file(
+        &self,
+        directory_path: Option<&str>,
+        file_path: &str,
+    ) -> Result<(), ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
         self.git_inspector.stage_file(&target_path, file_path).await
     }
 
     /// Unstage a file.
-    pub async fn unstage_file(&self, directory_path: Option<&str>, file_path: &str) -> Result<(), ApplicationError> {
+    pub async fn unstage_file(
+        &self,
+        directory_path: Option<&str>,
+        file_path: &str,
+    ) -> Result<(), ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.unstage_file(&target_path, file_path).await
+        self.git_inspector
+            .unstage_file(&target_path, file_path)
+            .await
     }
 
     /// Stage all.
@@ -127,27 +160,52 @@ impl ApplicationState {
     }
 
     /// Discard file changes.
-    pub async fn discard_file_changes(&self, directory_path: Option<&str>, file_path: &str, is_untracked: bool) -> Result<(), ApplicationError> {
+    pub async fn discard_file_changes(
+        &self,
+        directory_path: Option<&str>,
+        file_path: &str,
+        is_untracked: bool,
+    ) -> Result<(), ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.discard_file_changes(&target_path, file_path, is_untracked).await
+        self.git_inspector
+            .discard_file_changes(&target_path, file_path, is_untracked)
+            .await
     }
 
     /// Stages a unified diff patch into the index.
-    pub async fn stage_patch(&self, directory_path: Option<&str>, patch_content: &str) -> Result<(), ApplicationError> {
+    pub async fn stage_patch(
+        &self,
+        directory_path: Option<&str>,
+        patch_content: &str,
+    ) -> Result<(), ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.stage_patch(&target_path, patch_content).await
+        self.git_inspector
+            .stage_patch(&target_path, patch_content)
+            .await
     }
 
     /// Unstages a unified diff patch from the index.
-    pub async fn unstage_patch(&self, directory_path: Option<&str>, patch_content: &str) -> Result<(), ApplicationError> {
+    pub async fn unstage_patch(
+        &self,
+        directory_path: Option<&str>,
+        patch_content: &str,
+    ) -> Result<(), ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.unstage_patch(&target_path, patch_content).await
+        self.git_inspector
+            .unstage_patch(&target_path, patch_content)
+            .await
     }
 
     /// Discards changes in a unified diff patch from the working tree.
-    pub async fn discard_patch(&self, directory_path: Option<&str>, patch_content: &str) -> Result<(), ApplicationError> {
+    pub async fn discard_patch(
+        &self,
+        directory_path: Option<&str>,
+        patch_content: &str,
+    ) -> Result<(), ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.discard_patch(&target_path, patch_content).await
+        self.git_inspector
+            .discard_patch(&target_path, patch_content)
+            .await
     }
 
     /// Commit staged changes with optional amend and hook bypass.
@@ -161,13 +219,22 @@ impl ApplicationState {
         let target_path = self.resolve_path(directory_path).await?;
         let status = self.git_inspector.get_detailed_status(&target_path).await?;
         crate::domain::preflight::verify_can_commit(&status, message, is_amend)?;
-        self.git_inspector.commit(&target_path, message, is_amend, bypass_hooks).await
+        self.git_inspector
+            .commit(&target_path, message, is_amend, bypass_hooks)
+            .await
     }
 
     /// Retrieves structured diff for a file.
-    pub async fn get_file_diff(&self, directory_path: Option<&str>, file_path: &str, is_staged: bool) -> Result<crate::domain::FileDiff, ApplicationError> {
+    pub async fn get_file_diff(
+        &self,
+        directory_path: Option<&str>,
+        file_path: &str,
+        is_staged: bool,
+    ) -> Result<crate::domain::FileDiff, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.get_file_diff(&target_path, file_path, is_staged).await
+        self.git_inspector
+            .get_file_diff(&target_path, file_path, is_staged)
+            .await
     }
 
     /// Retrieves configured commit template from repository or git config.
@@ -204,8 +271,14 @@ impl ApplicationState {
         let skip_count = skip.unwrap_or(0);
         let limit_count = limit.unwrap_or(100);
 
-        let commits = self.git_inspector
-            .get_commit_history(&target_path, skip_count, limit_count, branch_or_reference.as_deref())
+        let commits = self
+            .git_inspector
+            .get_commit_history(
+                &target_path,
+                skip_count,
+                limit_count,
+                branch_or_reference.as_deref(),
+            )
             .await?;
 
         let graph = crate::services::CommitGraphEngine::build_graph(commits);
@@ -218,7 +291,9 @@ impl ApplicationState {
         directory_path: Option<&str>,
     ) -> Result<crate::domain::RepositoryReferences, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.get_repository_references(&target_path).await
+        self.git_inspector
+            .get_repository_references(&target_path)
+            .await
     }
 
     /// Checks out or creates and checkouts a branch.
@@ -232,10 +307,16 @@ impl ApplicationState {
         let target_path = self.resolve_path(directory_path).await?;
         if !create_if_missing {
             let status = self.git_inspector.get_detailed_status(&target_path).await?;
-            let worktrees = self.git_inspector.list_worktrees(&target_path).await.unwrap_or_default();
+            let worktrees = self
+                .git_inspector
+                .list_worktrees(&target_path)
+                .await
+                .unwrap_or_default();
             crate::domain::preflight::verify_can_checkout(&status, branch_name, &worktrees)?;
         }
-        self.git_inspector.checkout_branch(&target_path, branch_name, create_if_missing, start_point).await
+        self.git_inspector
+            .checkout_branch(&target_path, branch_name, create_if_missing, start_point)
+            .await
     }
 
     /// Creates a branch without switching to it.
@@ -246,7 +327,9 @@ impl ApplicationState {
         start_point: Option<&str>,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.create_branch(&target_path, branch_name, start_point).await
+        self.git_inspector
+            .create_branch(&target_path, branch_name, start_point)
+            .await
     }
 
     /// Deletes a local branch.
@@ -258,9 +341,15 @@ impl ApplicationState {
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
         let status = self.git_inspector.get_detailed_status(&target_path).await?;
-        let worktrees = self.git_inspector.list_worktrees(&target_path).await.unwrap_or_default();
+        let worktrees = self
+            .git_inspector
+            .list_worktrees(&target_path)
+            .await
+            .unwrap_or_default();
         crate::domain::preflight::verify_can_delete_branch(&status, branch_name, &worktrees)?;
-        self.git_inspector.delete_branch(&target_path, branch_name, force).await
+        self.git_inspector
+            .delete_branch(&target_path, branch_name, force)
+            .await
     }
 
     /// Renames a local branch.
@@ -271,7 +360,9 @@ impl ApplicationState {
         new_name: &str,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.rename_branch(&target_path, old_name, new_name).await
+        self.git_inspector
+            .rename_branch(&target_path, old_name, new_name)
+            .await
     }
 
     /// Fetches changes from remote.
@@ -281,7 +372,9 @@ impl ApplicationState {
         remote_name: Option<&str>,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.fetch_remote(&target_path, remote_name).await
+        self.git_inspector
+            .fetch_remote(&target_path, remote_name)
+            .await
     }
 
     /// Pulls changes from upstream.
@@ -292,7 +385,9 @@ impl ApplicationState {
         branch_name: Option<&str>,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.pull_changes(&target_path, remote_name, branch_name).await
+        self.git_inspector
+            .pull_changes(&target_path, remote_name, branch_name)
+            .await
     }
 
     /// Pushes commits to remote.
@@ -304,7 +399,9 @@ impl ApplicationState {
         set_upstream: bool,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.push_changes(&target_path, remote_name, branch_name, set_upstream).await
+        self.git_inspector
+            .push_changes(&target_path, remote_name, branch_name, set_upstream)
+            .await
     }
 
     /// Adds a new Git remote.
@@ -336,7 +433,9 @@ impl ApplicationState {
         new_name: &str,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.rename_remote(&target_path, old_name, new_name).await
+        self.git_inspector
+            .rename_remote(&target_path, old_name, new_name)
+            .await
     }
 
     /// Sets the URL of a Git remote.
@@ -348,7 +447,9 @@ impl ApplicationState {
         is_push_only: bool,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.set_remote_url(&target_path, name, url, is_push_only).await
+        self.git_inspector
+            .set_remote_url(&target_path, name, url, is_push_only)
+            .await
     }
 
     /// Fetches full commit details including changed files. Uses in-memory cache to eliminate duplicate Git invocations.
@@ -367,7 +468,10 @@ impl ApplicationState {
             }
         }
 
-        let details = self.git_inspector.get_commit_details(&target_path, commit_hash).await?;
+        let details = self
+            .git_inspector
+            .get_commit_details(&target_path, commit_hash)
+            .await?;
 
         {
             let mut cache = self.commit_details_cache.write().await;
@@ -402,7 +506,10 @@ impl ApplicationState {
             }
         }
 
-        let diff = self.git_inspector.get_commit_file_diff(&target_path, commit_hash, file_path).await?;
+        let diff = self
+            .git_inspector
+            .get_commit_file_diff(&target_path, commit_hash, file_path)
+            .await?;
 
         {
             let mut cache = self.commit_file_diff_cache.write().await;
@@ -423,7 +530,9 @@ impl ApplicationState {
         target_hash: &str,
     ) -> Result<CommitComparison, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.compare_commits(&target_path, base_hash, target_hash).await
+        self.git_inspector
+            .compare_commits(&target_path, base_hash, target_hash)
+            .await
     }
 
     /// Fetches unified diff for a single file or entire comparison between two commits.
@@ -435,11 +544,16 @@ impl ApplicationState {
         file_path: Option<&str>,
     ) -> Result<FileDiff, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.get_comparison_file_diff(&target_path, base_hash, target_hash, file_path).await
+        self.git_inspector
+            .get_comparison_file_diff(&target_path, base_hash, target_hash, file_path)
+            .await
     }
 
     /// Lists stash records for repository.
-    pub async fn get_stash_list(&self, directory_path: Option<&str>) -> Result<Vec<StashRecord>, ApplicationError> {
+    pub async fn get_stash_list(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<Vec<StashRecord>, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
         self.git_inspector.list_stashes(&target_path).await
     }
@@ -454,25 +568,45 @@ impl ApplicationState {
         let target_path = self.resolve_path(directory_path).await?;
         let status = self.git_inspector.get_detailed_status(&target_path).await?;
         crate::domain::preflight::verify_can_stash_save(&status)?;
-        self.git_inspector.save_stash(&target_path, message, include_untracked).await
+        self.git_inspector
+            .save_stash(&target_path, message, include_untracked)
+            .await
     }
 
     /// Applies a stash entry without removing it.
-    pub async fn apply_stash(&self, directory_path: Option<&str>, stash_index: usize) -> Result<String, ApplicationError> {
+    pub async fn apply_stash(
+        &self,
+        directory_path: Option<&str>,
+        stash_index: usize,
+    ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.apply_stash(&target_path, stash_index).await
+        self.git_inspector
+            .apply_stash(&target_path, stash_index)
+            .await
     }
 
     /// Pops a stash entry, applying and dropping it.
-    pub async fn pop_stash(&self, directory_path: Option<&str>, stash_index: usize) -> Result<String, ApplicationError> {
+    pub async fn pop_stash(
+        &self,
+        directory_path: Option<&str>,
+        stash_index: usize,
+    ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.pop_stash(&target_path, stash_index).await
+        self.git_inspector
+            .pop_stash(&target_path, stash_index)
+            .await
     }
 
     /// Drops a stash entry from the stack.
-    pub async fn drop_stash(&self, directory_path: Option<&str>, stash_index: usize) -> Result<String, ApplicationError> {
+    pub async fn drop_stash(
+        &self,
+        directory_path: Option<&str>,
+        stash_index: usize,
+    ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.drop_stash(&target_path, stash_index).await
+        self.git_inspector
+            .drop_stash(&target_path, stash_index)
+            .await
     }
 
     /// Retrieves detailed stash inspection including changed files list.
@@ -482,7 +616,9 @@ impl ApplicationState {
         stash_index: usize,
     ) -> Result<crate::domain::StashDetails, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.get_stash_details(&target_path, stash_index).await
+        self.git_inspector
+            .get_stash_details(&target_path, stash_index)
+            .await
     }
 
     /// Retrieves file diff within a stash entry.
@@ -493,7 +629,9 @@ impl ApplicationState {
         file_path: &str,
     ) -> Result<FileDiff, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.get_stash_file_diff(&target_path, stash_index, file_path).await
+        self.git_inspector
+            .get_stash_file_diff(&target_path, stash_index, file_path)
+            .await
     }
 
     /// Cherry-picks a commit onto current branch.
@@ -505,7 +643,9 @@ impl ApplicationState {
         let target_path = self.resolve_path(directory_path).await?;
         let status = self.git_inspector.get_detailed_status(&target_path).await?;
         crate::domain::preflight::verify_can_cherry_pick(&status)?;
-        self.git_inspector.cherry_pick_commit(&target_path, commit_hash).await
+        self.git_inspector
+            .cherry_pick_commit(&target_path, commit_hash)
+            .await
     }
 
     /// Reverts a commit by creating an inverse commit.
@@ -517,7 +657,9 @@ impl ApplicationState {
         let target_path = self.resolve_path(directory_path).await?;
         let status = self.git_inspector.get_detailed_status(&target_path).await?;
         crate::domain::preflight::verify_can_revert(&status)?;
-        self.git_inspector.revert_commit(&target_path, commit_hash).await
+        self.git_inspector
+            .revert_commit(&target_path, commit_hash)
+            .await
     }
 
     /// Resets the current branch to a specific commit.
@@ -528,7 +670,9 @@ impl ApplicationState {
         reset_mode: &str,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.reset_to_commit(&target_path, commit_hash, reset_mode).await
+        self.git_inspector
+            .reset_to_commit(&target_path, commit_hash, reset_mode)
+            .await
     }
 
     /// Retrieves 3-way conflict stages and working file content for a conflicted file.
@@ -538,7 +682,9 @@ impl ApplicationState {
         file_path: &str,
     ) -> Result<ConflictFileDetails, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.get_conflict_file_details(&target_path, file_path).await
+        self.git_inspector
+            .get_conflict_file_details(&target_path, file_path)
+            .await
     }
 
     /// Resolves a conflicted file using a preset strategy ('ours', 'theirs', 'mark_resolved').
@@ -549,7 +695,9 @@ impl ApplicationState {
         resolution_strategy: &str,
     ) -> Result<(), ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.resolve_conflict_file(&target_path, file_path, resolution_strategy).await
+        self.git_inspector
+            .resolve_conflict_file(&target_path, file_path, resolution_strategy)
+            .await
     }
 
     /// Saves custom resolved content directly to disk and marks the file as resolved.
@@ -560,7 +708,9 @@ impl ApplicationState {
         resolved_content: &str,
     ) -> Result<(), ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.write_conflict_resolved_content(&target_path, file_path, resolved_content).await
+        self.git_inspector
+            .write_conflict_resolved_content(&target_path, file_path, resolved_content)
+            .await
     }
 
     /// Merges branch into current HEAD branch.
@@ -573,7 +723,9 @@ impl ApplicationState {
         let target_path = self.resolve_path(directory_path).await?;
         let status = self.git_inspector.get_detailed_status(&target_path).await?;
         crate::domain::preflight::verify_can_merge(&status, branch_name)?;
-        self.git_inspector.merge_branch(&target_path, branch_name, no_fast_forward).await
+        self.git_inspector
+            .merge_branch(&target_path, branch_name, no_fast_forward)
+            .await
     }
 
     /// Rebases current HEAD branch onto upstream branch.
@@ -585,7 +737,9 @@ impl ApplicationState {
         let target_path = self.resolve_path(directory_path).await?;
         let status = self.git_inspector.get_detailed_status(&target_path).await?;
         crate::domain::preflight::verify_can_rebase(&status, upstream_branch)?;
-        self.git_inspector.rebase_branch(&target_path, upstream_branch).await
+        self.git_inspector
+            .rebase_branch(&target_path, upstream_branch)
+            .await
     }
 
     /// Aborts active ongoing operation (merge, rebase, cherry-pick, revert).
@@ -597,7 +751,9 @@ impl ApplicationState {
         let target_path = self.resolve_path(directory_path).await?;
         let status = self.git_inspector.get_detailed_status(&target_path).await?;
         crate::domain::preflight::verify_can_abort_operation(&status)?;
-        self.git_inspector.abort_repository_operation(&target_path, create_backup.unwrap_or(false)).await
+        self.git_inspector
+            .abort_repository_operation(&target_path, create_backup.unwrap_or(false))
+            .await
     }
 
     /// Continues active ongoing operation after all conflicts are resolved.
@@ -608,10 +764,15 @@ impl ApplicationState {
         let target_path = self.resolve_path(directory_path).await?;
         let status = self.git_inspector.get_detailed_status(&target_path).await?;
         crate::domain::preflight::verify_can_continue_operation(&status)?;
-        self.git_inspector.continue_repository_operation(&target_path).await
+        self.git_inspector
+            .continue_repository_operation(&target_path)
+            .await
     }
 
-    async fn resolve_path(&self, directory_path: Option<&str>) -> Result<PathBuf, ApplicationError> {
+    async fn resolve_path(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<PathBuf, ApplicationError> {
         if let Some(p) = directory_path {
             Ok(PathBuf::from(p))
         } else {
@@ -619,13 +780,18 @@ impl ApplicationState {
             if let Some(ref current) = *active {
                 Ok(PathBuf::from(&current.path))
             } else {
-                Err(ApplicationError::InvalidRepository("No active repository open".into()))
+                Err(ApplicationError::InvalidRepository(
+                    "No active repository open".into(),
+                ))
             }
         }
     }
 
     /// Retrieves recent repositories list.
-    pub fn get_recent_repositories(&self, limit: usize) -> Result<Vec<RecentRepositoryRecord>, ApplicationError> {
+    pub fn get_recent_repositories(
+        &self,
+        limit: usize,
+    ) -> Result<Vec<RecentRepositoryRecord>, ApplicationError> {
         self.store.get_recent_repositories(limit)
     }
 
@@ -640,7 +806,10 @@ impl ApplicationState {
     }
 
     /// Lists subfolders in a given directory path for custom folder browsing.
-    pub async fn list_directory_folders(&self, directory_path: Option<&str>) -> Result<DirectoryListing, ApplicationError> {
+    pub async fn list_directory_folders(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<DirectoryListing, ApplicationError> {
         let home_dir = std::env::var("HOME")
             .or_else(|_| std::env::var("USERPROFILE"))
             .map(PathBuf::from)
@@ -666,7 +835,10 @@ impl ApplicationState {
     }
 
     /// Lists worktrees linked to the repository.
-    pub async fn list_worktrees(&self, directory_path: Option<&str>) -> Result<Vec<GitWorktreeSummary>, ApplicationError> {
+    pub async fn list_worktrees(
+        &self,
+        directory_path: Option<&str>,
+    ) -> Result<Vec<GitWorktreeSummary>, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
         self.git_inspector.list_worktrees(&target_path).await
     }
@@ -680,7 +852,9 @@ impl ApplicationState {
         is_new_branch: bool,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.add_worktree(&target_path, worktree_path, branch_name, is_new_branch).await
+        self.git_inspector
+            .add_worktree(&target_path, worktree_path, branch_name, is_new_branch)
+            .await
     }
 
     /// Removes a worktree from the repository.
@@ -691,7 +865,9 @@ impl ApplicationState {
         force: bool,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.remove_worktree(&target_path, worktree_path, force).await
+        self.git_inspector
+            .remove_worktree(&target_path, worktree_path, force)
+            .await
     }
 
     /// Fetches commits between base commit and HEAD for interactive rebase plan.
@@ -701,7 +877,9 @@ impl ApplicationState {
         base_commit_hash: &str,
     ) -> Result<Vec<RebasePlanItem>, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.get_rebase_commits(&target_path, base_commit_hash).await
+        self.git_inspector
+            .get_rebase_commits(&target_path, base_commit_hash)
+            .await
     }
 
     /// Executes interactive rebase according to plan items.
@@ -711,7 +889,9 @@ impl ApplicationState {
         request: InteractiveRebaseRequest,
     ) -> Result<RebaseBranchOutcome, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.execute_interactive_rebase(&target_path, &request).await
+        self.git_inspector
+            .execute_interactive_rebase(&target_path, &request)
+            .await
     }
 
     /// Retrieves file blame annotations for a file path.
@@ -722,7 +902,9 @@ impl ApplicationState {
         revision: Option<&str>,
     ) -> Result<crate::domain::FileBlame, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.get_file_blame(&target_path, file_path, revision).await
+        self.git_inspector
+            .get_file_blame(&target_path, file_path, revision)
+            .await
     }
 
     /// Queries the current bisect status for a repository.
@@ -754,16 +936,11 @@ impl ApplicationState {
         decision: &str,
     ) -> Result<crate::domain::BisectState, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector
-            .bisect_step(&target_path, decision)
-            .await
+        self.git_inspector.bisect_step(&target_path, decision).await
     }
 
     /// Resets the Git bisect session.
-    pub async fn bisect_reset(
-        &self,
-        directory_path: Option<&str>,
-    ) -> Result<(), ApplicationError> {
+    pub async fn bisect_reset(&self, directory_path: Option<&str>) -> Result<(), ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
         self.git_inspector.bisect_reset(&target_path).await
     }
@@ -849,7 +1026,9 @@ impl ApplicationState {
         directory_path: Option<&str>,
     ) -> Result<crate::domain::RepositoryInsights, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.get_repository_insights(&target_path).await
+        self.git_inspector
+            .get_repository_insights(&target_path)
+            .await
     }
 
     /// Fetches historical commit revisions affecting a specific file.
@@ -904,7 +1083,9 @@ impl ApplicationState {
     }
 
     /// Collects system diagnostics and environment details for voluntary bug reporting.
-    pub async fn get_application_diagnostics(&self) -> Result<ApplicationDiagnostics, ApplicationError> {
+    pub async fn get_application_diagnostics(
+        &self,
+    ) -> Result<ApplicationDiagnostics, ApplicationError> {
         let git_info = self.discover_git(None).await?;
         let current_repo = self.current_repository.read().await;
         let repo_path = current_repo.as_ref().map(|r| r.path.clone());
@@ -920,7 +1101,9 @@ impl ApplicationState {
     }
 
     /// Exports a complete, sanitized diagnostic bundle with environment info and recent logs.
-    pub async fn export_diagnostic_bundle(&self) -> Result<crate::infrastructure::diagnostics::DiagnosticBundle, ApplicationError> {
+    pub async fn export_diagnostic_bundle(
+        &self,
+    ) -> Result<crate::infrastructure::diagnostics::DiagnosticBundle, ApplicationError> {
         let git_info = self.discover_git(None).await?;
         let current_repo = self.current_repository.read().await;
         let repo_path = current_repo.as_ref().map(|r| r.path.clone());
@@ -952,10 +1135,13 @@ impl ApplicationState {
     ) -> Result<ProviderAccount, ApplicationError> {
         let instance = instance_url.unwrap_or("https://github.com");
         let client = GitHubClient::new(Some(instance))?;
-        let account = client.get_authenticated_user(personal_access_token, instance).await?;
+        let account = client
+            .get_authenticated_user(personal_access_token, instance)
+            .await?;
 
         // Securely store token
-        self.credential_store.store_token(&account.id, personal_access_token)?;
+        self.credential_store
+            .store_token(&account.id, personal_access_token)?;
 
         // Persist account profile
         self.store.save_provider_account(&account)?;
@@ -971,10 +1157,13 @@ impl ApplicationState {
     ) -> Result<ProviderAccount, ApplicationError> {
         let instance = instance_url.unwrap_or("https://gitlab.com");
         let client = GitLabClient::new(Some(instance))?;
-        let account = client.get_authenticated_user(personal_access_token, instance).await?;
+        let account = client
+            .get_authenticated_user(personal_access_token, instance)
+            .await?;
 
         // Securely store token
-        self.credential_store.store_token(&account.id, personal_access_token)?;
+        self.credential_store
+            .store_token(&account.id, personal_access_token)?;
 
         // Persist account profile
         self.store.save_provider_account(&account)?;
@@ -988,7 +1177,10 @@ impl ApplicationState {
     }
 
     /// Disconnects a remote provider account and wipes secure credentials.
-    pub async fn disconnect_provider_account(&self, account_identifier: &str) -> Result<bool, ApplicationError> {
+    pub async fn disconnect_provider_account(
+        &self,
+        account_identifier: &str,
+    ) -> Result<bool, ApplicationError> {
         self.credential_store.delete_token(account_identifier)?;
         self.store.delete_provider_account(account_identifier)
     }
@@ -1006,9 +1198,12 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         let page_number = page.unwrap_or(1);
         let items_per_page = per_page.unwrap_or(30);
@@ -1016,11 +1211,15 @@ impl ApplicationState {
         match account.provider {
             ProviderKind::GitHub => {
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.list_repositories(&token, page_number, items_per_page).await
+                client
+                    .list_repositories(&token, page_number, items_per_page)
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.list_projects(&token, page_number, items_per_page).await
+                client
+                    .list_projects(&token, page_number, items_per_page)
+                    .await
             }
         }
     }
@@ -1038,22 +1237,31 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.list_pull_requests(&token, parts[0], parts[1], state_filter).await
+                client
+                    .list_pull_requests(&token, parts[0], parts[1], state_filter)
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.list_merge_requests(&token, repository_full_name, state_filter).await
+                client
+                    .list_merge_requests(&token, repository_full_name, state_filter)
+                    .await
             }
         }
     }
@@ -1071,22 +1279,31 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.get_commit_pipeline_summary(&token, parts[0], parts[1], reference_or_sha).await
+                client
+                    .get_commit_pipeline_summary(&token, parts[0], parts[1], reference_or_sha)
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.get_commit_pipeline_summary(&token, repository_full_name, reference_or_sha).await
+                client
+                    .get_commit_pipeline_summary(&token, repository_full_name, reference_or_sha)
+                    .await
             }
         }
     }
@@ -1104,32 +1321,44 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.list_check_runs(&token, parts[0], parts[1], reference_or_pipeline_id).await
+                client
+                    .list_check_runs(&token, parts[0], parts[1], reference_or_pipeline_id)
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
                 let mut pipeline_id = reference_or_pipeline_id.parse::<u64>().unwrap_or(0);
-                if pipeline_id == 0 {
-                    if let Ok(Some(summary)) = client.get_commit_pipeline_summary(&token, repository_full_name, reference_or_pipeline_id).await {
-                        if let Some(ref web_url) = summary.web_url {
-                            if let Some(last_segment) = web_url.split('/').last() {
+                if pipeline_id == 0
+                    && let Ok(Some(summary)) = client
+                        .get_commit_pipeline_summary(
+                            &token,
+                            repository_full_name,
+                            reference_or_pipeline_id,
+                        )
+                        .await
+                        && let Some(ref web_url) = summary.web_url
+                            && let Some(last_segment) = web_url.split('/').next_back() {
                                 pipeline_id = last_segment.parse::<u64>().unwrap_or(0);
                             }
-                        }
-                    }
-                }
-                client.list_pipeline_jobs(&token, repository_full_name, pipeline_id).await
+                client
+                    .list_pipeline_jobs(&token, repository_full_name, pipeline_id)
+                    .await
             }
         }
     }
@@ -1147,22 +1376,31 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.get_pull_request_comments(&token, parts[0], parts[1], pull_request_number).await
+                client
+                    .get_pull_request_comments(&token, parts[0], parts[1], pull_request_number)
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.get_merge_request_comments(&token, repository_full_name, pull_request_number).await
+                client
+                    .get_merge_request_comments(&token, repository_full_name, pull_request_number)
+                    .await
             }
         }
     }
@@ -1181,22 +1419,42 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.create_pull_request_comment(&token, parts[0], parts[1], pull_request_number, body).await
+                client
+                    .create_pull_request_comment(
+                        &token,
+                        parts[0],
+                        parts[1],
+                        pull_request_number,
+                        body,
+                    )
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.create_merge_request_comment(&token, repository_full_name, pull_request_number, body).await
+                client
+                    .create_merge_request_comment(
+                        &token,
+                        repository_full_name,
+                        pull_request_number,
+                        body,
+                    )
+                    .await
             }
         }
     }
@@ -1214,22 +1472,31 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.get_pull_request_files(&token, parts[0], parts[1], pull_request_number).await
+                client
+                    .get_pull_request_files(&token, parts[0], parts[1], pull_request_number)
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.get_merge_request_files(&token, repository_full_name, pull_request_number).await
+                client
+                    .get_merge_request_files(&token, repository_full_name, pull_request_number)
+                    .await
             }
         }
     }
@@ -1249,22 +1516,44 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.submit_pull_request_review(&token, parts[0], parts[1], pull_request_number, action, body).await
+                client
+                    .submit_pull_request_review(
+                        &token,
+                        parts[0],
+                        parts[1],
+                        pull_request_number,
+                        action,
+                        body,
+                    )
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.submit_merge_request_review(&token, repository_full_name, pull_request_number, action, body).await
+                client
+                    .submit_merge_request_review(
+                        &token,
+                        repository_full_name,
+                        pull_request_number,
+                        action,
+                        body,
+                    )
+                    .await
             }
         }
     }
@@ -1286,23 +1575,47 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.merge_pull_request(&token, parts[0], parts[1], pull_request_number, merge_method, commit_title, commit_message).await
+                client
+                    .merge_pull_request(
+                        &token,
+                        parts[0],
+                        parts[1],
+                        pull_request_number,
+                        merge_method,
+                        commit_title,
+                        commit_message,
+                    )
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
                 let is_squash = merge_method == Some("squash");
-                client.merge_merge_request(&token, repository_full_name, pull_request_number, commit_message, Some(is_squash), delete_source_branch).await
+                client
+                    .merge_merge_request(
+                        &token,
+                        repository_full_name,
+                        pull_request_number,
+                        commit_message,
+                        Some(is_squash),
+                        delete_source_branch,
+                    )
+                    .await
             }
         }
     }
@@ -1321,22 +1634,42 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.update_pull_request_state(&token, parts[0], parts[1], pull_request_number, new_state).await
+                client
+                    .update_pull_request_state(
+                        &token,
+                        parts[0],
+                        parts[1],
+                        pull_request_number,
+                        new_state,
+                    )
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.update_merge_request_state(&token, repository_full_name, pull_request_number, new_state).await
+                client
+                    .update_merge_request_state(
+                        &token,
+                        repository_full_name,
+                        pull_request_number,
+                        new_state,
+                    )
+                    .await
             }
         }
     }
@@ -1349,7 +1682,9 @@ impl ApplicationState {
         should_commit: bool,
     ) -> Result<crate::domain::CommitQueueOperationResult, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.execute_cherry_pick_queue(&target_path, commit_hashes, should_commit).await
+        self.git_inspector
+            .execute_cherry_pick_queue(&target_path, commit_hashes, should_commit)
+            .await
     }
 
     /// Executes sequential revert queue across multiple commit hashes.
@@ -1360,7 +1695,9 @@ impl ApplicationState {
         should_commit: bool,
     ) -> Result<crate::domain::CommitQueueOperationResult, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.execute_revert_queue(&target_path, commit_hashes, should_commit).await
+        self.git_inspector
+            .execute_revert_queue(&target_path, commit_hashes, should_commit)
+            .await
     }
 
     /// Creates an offline Git bundle file packaging branches or revisions.
@@ -1372,7 +1709,11 @@ impl ApplicationState {
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
         self.git_inspector
-            .create_git_bundle(&target_path, std::path::Path::new(output_bundle_path), revision_range)
+            .create_git_bundle(
+                &target_path,
+                std::path::Path::new(output_bundle_path),
+                revision_range,
+            )
             .await
     }
 
@@ -1397,7 +1738,11 @@ impl ApplicationState {
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
         self.git_inspector
-            .export_source_archive(&target_path, std::path::Path::new(output_archive_path), reference)
+            .export_source_archive(
+                &target_path,
+                std::path::Path::new(output_archive_path),
+                reference,
+            )
             .await
     }
 
@@ -1417,7 +1762,9 @@ impl ApplicationState {
         pattern: &str,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.lfs_track_pattern(&target_path, pattern).await
+        self.git_inspector
+            .lfs_track_pattern(&target_path, pattern)
+            .await
     }
 
     /// Untracks a file pattern from Git LFS.
@@ -1427,7 +1774,9 @@ impl ApplicationState {
         pattern: &str,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.lfs_untrack_pattern(&target_path, pattern).await
+        self.git_inspector
+            .lfs_untrack_pattern(&target_path, pattern)
+            .await
     }
 
     /// Locks an LFS file to prevent concurrent remote edits.
@@ -1437,7 +1786,9 @@ impl ApplicationState {
         file_path: &str,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.lfs_lock_file(&target_path, file_path).await
+        self.git_inspector
+            .lfs_lock_file(&target_path, file_path)
+            .await
     }
 
     /// Unlocks an LFS file.
@@ -1448,16 +1799,23 @@ impl ApplicationState {
         force: bool,
     ) -> Result<String, ApplicationError> {
         let target_path = self.resolve_path(directory_path).await?;
-        self.git_inspector.lfs_unlock_file(&target_path, file_path, force).await
+        self.git_inspector
+            .lfs_unlock_file(&target_path, file_path, force)
+            .await
     }
 
     /// Lists configured custom actions.
-    pub fn list_custom_actions(&self) -> Result<Vec<crate::domain::CustomActionDefinition>, ApplicationError> {
+    pub fn list_custom_actions(
+        &self,
+    ) -> Result<Vec<crate::domain::CustomActionDefinition>, ApplicationError> {
         self.store.list_custom_actions()
     }
 
     /// Saves or updates a custom action.
-    pub fn save_custom_action(&self, action: crate::domain::CustomActionDefinition) -> Result<(), ApplicationError> {
+    pub fn save_custom_action(
+        &self,
+        action: crate::domain::CustomActionDefinition,
+    ) -> Result<(), ApplicationError> {
         crate::domain::validation::validate_custom_action_definition(&action)?;
         self.store.save_custom_action(&action)
     }
@@ -1483,7 +1841,9 @@ impl ApplicationState {
         // Parse command line into executable and arguments
         let parts: Vec<&str> = action.command_string.split_whitespace().collect();
         if parts.is_empty() {
-            return Err(ApplicationError::InvalidInput("Command string is empty".into()));
+            return Err(ApplicationError::InvalidInput(
+                "Command string is empty".into(),
+            ));
         }
 
         let executable = parts[0];
@@ -1533,22 +1893,31 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.list_workflow_runs(&token, parts[0], parts[1], status_filter).await
+                client
+                    .list_workflow_runs(&token, parts[0], parts[1], status_filter)
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.list_pipelines(&token, repository_full_name, status_filter, page, per_page).await
+                client
+                    .list_pipelines(&token, repository_full_name, status_filter, page, per_page)
+                    .await
             }
         }
     }
@@ -1566,22 +1935,31 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.get_workflow_run_jobs(&token, parts[0], parts[1], run_id).await
+                client
+                    .get_workflow_run_jobs(&token, parts[0], parts[1], run_id)
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.get_pipeline_jobs(&token, repository_full_name, run_id).await
+                client
+                    .get_pipeline_jobs(&token, repository_full_name, run_id)
+                    .await
             }
         }
     }
@@ -1600,22 +1978,31 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.rerun_workflow_run(&token, parts[0], parts[1], run_id, failed_jobs_only).await
+                client
+                    .rerun_workflow_run(&token, parts[0], parts[1], run_id, failed_jobs_only)
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.retry_pipeline(&token, repository_full_name, run_id).await
+                client
+                    .retry_pipeline(&token, repository_full_name, run_id)
+                    .await
             }
         }
     }
@@ -1633,22 +2020,31 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.cancel_workflow_run(&token, parts[0], parts[1], run_id).await
+                client
+                    .cancel_workflow_run(&token, parts[0], parts[1], run_id)
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.cancel_pipeline(&token, repository_full_name, run_id).await
+                client
+                    .cancel_pipeline(&token, repository_full_name, run_id)
+                    .await
             }
         }
     }
@@ -1666,22 +2062,31 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.get_job_logs(&token, parts[0], parts[1], job_id).await
+                client
+                    .get_job_logs(&token, parts[0], parts[1], job_id)
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.get_job_trace(&token, repository_full_name, job_id).await
+                client
+                    .get_job_trace(&token, repository_full_name, job_id)
+                    .await
             }
         }
     }
@@ -1703,45 +2108,49 @@ impl ApplicationState {
             .find(|item| item.id == account_identifier)
             .ok_or_else(|| ApplicationError::InvalidInput("Account not found".into()))?;
 
-        let token = self.credential_store
+        let token = self
+            .credential_store
             .get_token(account_identifier)?
-            .ok_or_else(|| ApplicationError::AuthenticationError("Stored credential not found".into()))?;
+            .ok_or_else(|| {
+                ApplicationError::AuthenticationError("Stored credential not found".into())
+            })?;
 
         match account.provider {
             ProviderKind::GitHub => {
                 let parts: Vec<&str> = repository_full_name.split('/').collect();
                 if parts.len() != 2 {
-                    return Err(ApplicationError::InvalidInput("Repository must be in 'owner/repo' format".into()));
+                    return Err(ApplicationError::InvalidInput(
+                        "Repository must be in 'owner/repo' format".into(),
+                    ));
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
-                client.create_pull_request(
-                    &token,
-                    parts[0],
-                    parts[1],
-                    title,
-                    description,
-                    source_branch,
-                    target_branch,
-                    is_draft,
-                ).await
+                client
+                    .create_pull_request(
+                        &token,
+                        parts[0],
+                        parts[1],
+                        title,
+                        description,
+                        source_branch,
+                        target_branch,
+                        is_draft,
+                    )
+                    .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
-                client.create_merge_request(
-                    &token,
-                    repository_full_name,
-                    title,
-                    description,
-                    source_branch,
-                    target_branch,
-                    is_draft,
-                ).await
+                client
+                    .create_merge_request(
+                        &token,
+                        repository_full_name,
+                        title,
+                        description,
+                        source_branch,
+                        target_branch,
+                        is_draft,
+                    )
+                    .await
             }
         }
     }
 }
-
-
-
-
-

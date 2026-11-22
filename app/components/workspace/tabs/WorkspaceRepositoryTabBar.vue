@@ -393,7 +393,7 @@ const newRepositoryDropdownItems = computed<DropdownMenuItem[][]>(() => {
           icon="i-lucide-terminal"
           class="h-7 px-1.5 text-muted hover:text-highlighted shrink-0"
           :aria-label="t('externalTools.openTerminal')"
-          @click="openInTerminal"
+          @click="() => void openInTerminal()"
         />
       </UTooltip>
 

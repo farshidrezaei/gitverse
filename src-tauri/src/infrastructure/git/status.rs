@@ -8,7 +8,10 @@ pub fn parse_porcelain_v2_status(raw_output: &str) -> DetailedRepositoryStatus {
     let entries: Vec<&str> = if raw_output.contains('\0') {
         raw_output.split('\0').filter(|s| !s.is_empty()).collect()
     } else {
-        raw_output.lines().filter(|s| !s.trim().is_empty()).collect()
+        raw_output
+            .lines()
+            .filter(|s| !s.trim().is_empty())
+            .collect()
     };
 
     let mut iterator = entries.iter().peekable();
@@ -46,9 +49,9 @@ pub fn parse_porcelain_v2_status(raw_output: &str) -> DetailedRepositoryStatus {
                         status.upstream_branch_name = Some(parts[1].to_string());
                     }
                 }
-                "branch.ab" => {
+                "branch.ab"
                     // Example: +2 -0
-                    if parts.len() >= 3 {
+                    if parts.len() >= 3 => {
                         if let Some(ahead_str) = parts[1].strip_prefix('+') {
                             status.ahead_count = ahead_str.parse().unwrap_or(0);
                         }
@@ -56,7 +59,6 @@ pub fn parse_porcelain_v2_status(raw_output: &str) -> DetailedRepositoryStatus {
                             status.behind_count = behind_str.parse().unwrap_or(0);
                         }
                     }
-                }
                 _ => {}
             }
             continue;
@@ -111,7 +113,10 @@ pub fn parse_porcelain_v2_status(raw_output: &str) -> DetailedRepositoryStatus {
                 } else if let Some(next_token) = iterator.peek() {
                     let next_str = next_token.to_string();
                     let _ = iterator.next();
-                    (path_and_orig.trim().to_string(), Some(next_str.trim().to_string()))
+                    (
+                        path_and_orig.trim().to_string(),
+                        Some(next_str.trim().to_string()),
+                    )
                 } else {
                     (path_and_orig.trim().to_string(), None)
                 };

@@ -1,7 +1,7 @@
+use crate::domain::ApplicationError;
+use keyring::Entry;
 use std::collections::HashMap;
 use std::sync::Mutex;
-use keyring::Entry;
-use crate::domain::ApplicationError;
 
 const DEFAULT_SERVICE_NAME: &str = "gitverse";
 
@@ -27,26 +27,30 @@ impl CredentialStore {
     }
 
     /// Stores a personal access token or OAuth credential securely.
-    pub fn store_token(&self, account_identifier: &str, secret_token: &str) -> Result<(), ApplicationError> {
+    pub fn store_token(
+        &self,
+        account_identifier: &str,
+        secret_token: &str,
+    ) -> Result<(), ApplicationError> {
         let entry = Entry::new(&self.service_name, account_identifier);
         match entry {
-            Ok(keyring_entry) => {
-                match keyring_entry.set_password(secret_token) {
-                    Ok(_) => Ok(()),
-                    Err(error) => {
-                        tracing::warn!(
-                            "OS keyring unavailable ({}), utilizing secure fallback storage for account {}",
-                            error,
-                            account_identifier
-                        );
-                        let mut fallback = self.fallback_store.lock().map_err(|_| {
-                            ApplicationError::PersistenceError("Failed to acquire credential lock".into())
-                        })?;
-                        fallback.insert(account_identifier.to_string(), secret_token.to_string());
-                        Ok(())
-                    }
+            Ok(keyring_entry) => match keyring_entry.set_password(secret_token) {
+                Ok(_) => Ok(()),
+                Err(error) => {
+                    tracing::warn!(
+                        "OS keyring unavailable ({}), utilizing secure fallback storage for account {}",
+                        error,
+                        account_identifier
+                    );
+                    let mut fallback = self.fallback_store.lock().map_err(|_| {
+                        ApplicationError::PersistenceError(
+                            "Failed to acquire credential lock".into(),
+                        )
+                    })?;
+                    fallback.insert(account_identifier.to_string(), secret_token.to_string());
+                    Ok(())
                 }
-            }
+            },
             Err(error) => {
                 tracing::warn!(
                     "Failed to initialize OS keyring entry ({}), utilizing secure fallback storage",
@@ -65,23 +69,25 @@ impl CredentialStore {
     pub fn get_token(&self, account_identifier: &str) -> Result<Option<String>, ApplicationError> {
         let entry = Entry::new(&self.service_name, account_identifier);
         match entry {
-            Ok(keyring_entry) => {
-                match keyring_entry.get_password() {
-                    Ok(secret) => Ok(Some(secret)),
-                    Err(keyring::Error::NoEntry) => {
-                        let fallback = self.fallback_store.lock().map_err(|_| {
-                            ApplicationError::PersistenceError("Failed to acquire credential lock".into())
-                        })?;
-                        Ok(fallback.get(account_identifier).cloned())
-                    }
-                    Err(_) => {
-                        let fallback = self.fallback_store.lock().map_err(|_| {
-                            ApplicationError::PersistenceError("Failed to acquire credential lock".into())
-                        })?;
-                        Ok(fallback.get(account_identifier).cloned())
-                    }
+            Ok(keyring_entry) => match keyring_entry.get_password() {
+                Ok(secret) => Ok(Some(secret)),
+                Err(keyring::Error::NoEntry) => {
+                    let fallback = self.fallback_store.lock().map_err(|_| {
+                        ApplicationError::PersistenceError(
+                            "Failed to acquire credential lock".into(),
+                        )
+                    })?;
+                    Ok(fallback.get(account_identifier).cloned())
                 }
-            }
+                Err(_) => {
+                    let fallback = self.fallback_store.lock().map_err(|_| {
+                        ApplicationError::PersistenceError(
+                            "Failed to acquire credential lock".into(),
+                        )
+                    })?;
+                    Ok(fallback.get(account_identifier).cloned())
+                }
+            },
             Err(_) => {
                 let fallback = self.fallback_store.lock().map_err(|_| {
                     ApplicationError::PersistenceError("Failed to acquire credential lock".into())

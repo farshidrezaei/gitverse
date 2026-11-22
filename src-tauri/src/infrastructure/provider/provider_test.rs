@@ -9,11 +9,15 @@ mod tests {
         let default_client = GitHubClient::new(None).expect("Default client");
         assert!(format!("{:?}", default_client).contains("https://api.github.com"));
 
-        let standard_client = GitHubClient::new(Some("https://github.com")).expect("Standard client");
+        let standard_client =
+            GitHubClient::new(Some("https://github.com")).expect("Standard client");
         assert!(format!("{:?}", standard_client).contains("https://api.github.com"));
 
-        let enterprise_client = GitHubClient::new(Some("https://github.mycompany.internal/")).expect("Enterprise client");
-        assert!(format!("{:?}", enterprise_client).contains("https://github.mycompany.internal/api/v3"));
+        let enterprise_client = GitHubClient::new(Some("https://github.mycompany.internal/"))
+            .expect("Enterprise client");
+        assert!(
+            format!("{:?}", enterprise_client).contains("https://github.mycompany.internal/api/v3")
+        );
     }
 
     #[test]
@@ -21,7 +25,8 @@ mod tests {
         let default_client = GitLabClient::new(None).expect("Default client");
         assert!(format!("{:?}", default_client).contains("https://gitlab.com/api/v4"));
 
-        let custom_client = GitLabClient::new(Some("https://gitlab.example.org/")).expect("Custom client");
+        let custom_client =
+            GitLabClient::new(Some("https://gitlab.example.org/")).expect("Custom client");
         assert!(format!("{:?}", custom_client).contains("https://gitlab.example.org/api/v4"));
     }
 
@@ -33,7 +38,8 @@ mod tests {
         let serialized_github = serde_json::to_string(&ProviderKind::GitHub).expect("Serialize");
         assert_eq!(serialized_github, "\"github\"");
 
-        let deserialized_gitlab: ProviderKind = serde_json::from_str("\"gitlab\"").expect("Deserialize");
+        let deserialized_gitlab: ProviderKind =
+            serde_json::from_str("\"gitlab\"").expect("Deserialize");
         assert_eq!(deserialized_gitlab, ProviderKind::GitLab);
     }
 

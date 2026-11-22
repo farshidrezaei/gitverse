@@ -20,7 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { repositoryReferences } = useRepositoryWorkspace()
+const { repositoryReferences, currentBranchName } = useBranchController()
 const {
   accounts,
   loadAccounts,
@@ -196,7 +196,7 @@ watch(
           square
           icon="i-lucide-refresh-cw"
           class="h-5 w-5 p-0 flex items-center justify-center text-muted hover:text-highlighted"
-          :loading="isLoading"
+          :loading="isLoadingPullRequests"
           :title="t('common.refresh')"
           @click="loadPullRequestsForCurrentRepository"
         />
@@ -444,8 +444,8 @@ watch(
       v-model:open="isCreatePullRequestModalOpen"
       :account="matchedAccount"
       :repository-full-name="matchedRepositoryFullName"
-      :branches="repositoryReferences?.branches.map(b => b.name) || []"
-      :current-branch="repositoryReferences?.head_branch"
+      :branches="repositoryReferences?.branches ? repositoryReferences.branches.map(branch => branch.name) : []"
+      :current-branch="currentBranchName"
       @created="loadPullRequestsForCurrentRepository"
     />
   </div>

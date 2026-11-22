@@ -1,9 +1,9 @@
+use crate::domain::{ApplicationError, GitBinaryInformation};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
-use crate::domain::{ApplicationError, GitBinaryInformation};
 
 const DEFAULT_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -19,7 +19,9 @@ impl GitProcessExecutor {
     }
 
     /// Discovers and validates the native Git binary on the host machine.
-    pub async fn discover_system_git(custom_path: Option<&str>) -> Result<GitBinaryInformation, ApplicationError> {
+    pub async fn discover_system_git(
+        custom_path: Option<&str>,
+    ) -> Result<GitBinaryInformation, ApplicationError> {
         let binary_to_test = if let Some(custom) = custom_path {
             if !custom.trim().is_empty() {
                 PathBuf::from(custom.trim())
@@ -35,8 +37,17 @@ impl GitProcessExecutor {
 
         let output = tokio::time::timeout(Duration::from_secs(5), command.output())
             .await
-            .map_err(|_| ApplicationError::TimeoutOrCancelled("Git binary discovery timed out after 5 seconds".into()))?
-            .map_err(|error| ApplicationError::GitBinaryNotFound(format!("Failed to execute {:?}: {}", binary_to_test, error)))?;
+            .map_err(|_| {
+                ApplicationError::TimeoutOrCancelled(
+                    "Git binary discovery timed out after 5 seconds".into(),
+                )
+            })?
+            .map_err(|error| {
+                ApplicationError::GitBinaryNotFound(format!(
+                    "Failed to execute {:?}: {}",
+                    binary_to_test, error
+                ))
+            })?;
 
         if !output.status.success() {
             let stderr_string = String::from_utf8_lossy(&output.stderr).to_string();
@@ -83,7 +94,10 @@ impl GitProcessExecutor {
 
         let debug_command = format!("git {}", arguments.join(" "));
         crate::infrastructure::diagnostics::append_diagnostic_log("debug", &debug_command);
-        tracing::debug!("Git execution: {}", crate::infrastructure::diagnostics::sanitize_sensitive_string(&debug_command));
+        tracing::debug!(
+            "Git execution: {}",
+            crate::infrastructure::diagnostics::sanitize_sensitive_string(&debug_command)
+        );
 
         // Standardize locale to C for predictable, machine-readable output
         command.env("LC_ALL", "C");
@@ -91,18 +105,26 @@ impl GitProcessExecutor {
         let execution_result = tokio::time::timeout(DEFAULT_COMMAND_TIMEOUT, command.output())
             .await
             .map_err(|_| {
-                let message = format!("Command 'git {:?}' timed out after {:?}", arguments, DEFAULT_COMMAND_TIMEOUT);
+                let message = format!(
+                    "Command 'git {:?}' timed out after {:?}",
+                    arguments, DEFAULT_COMMAND_TIMEOUT
+                );
                 crate::infrastructure::diagnostics::append_diagnostic_log("error", &message);
                 ApplicationError::TimeoutOrCancelled(message)
             })?
             .map_err(|error| {
-                let message = format!("Failed to spawn process {:?}: {}", self.executable_path, error);
+                let message = format!(
+                    "Failed to spawn process {:?}: {}",
+                    self.executable_path, error
+                );
                 crate::infrastructure::diagnostics::append_diagnostic_log("error", &message);
                 ApplicationError::FilesystemError(message)
             })?;
 
         if !execution_result.status.success() {
-            let stderr = String::from_utf8_lossy(&execution_result.stderr).trim().to_string();
+            let stderr = String::from_utf8_lossy(&execution_result.stderr)
+                .trim()
+                .to_string();
             let exit_code = execution_result.status.code().unwrap_or(-1);
             let message = format!("Git command failed (exit code {}): {}", exit_code, stderr);
             crate::infrastructure::diagnostics::append_diagnostic_log("warn", &message);
@@ -190,25 +212,31 @@ impl GitProcessExecutor {
             drop(stdin);
         }
 
-        let execution_result = tokio::time::timeout(DEFAULT_COMMAND_TIMEOUT, child.wait_with_output())
-            .await
-            .map_err(|_| {
-                ApplicationError::TimeoutOrCancelled(format!(
-                    "Command 'git {:?}' timed out after {:?}",
-                    arguments, DEFAULT_COMMAND_TIMEOUT
-                ))
-            })?
-            .map_err(|error| {
-                ApplicationError::FilesystemError(format!(
-                    "Failed to read child process output: {}",
-                    error
-                ))
-            })?;
+        let execution_result =
+            tokio::time::timeout(DEFAULT_COMMAND_TIMEOUT, child.wait_with_output())
+                .await
+                .map_err(|_| {
+                    ApplicationError::TimeoutOrCancelled(format!(
+                        "Command 'git {:?}' timed out after {:?}",
+                        arguments, DEFAULT_COMMAND_TIMEOUT
+                    ))
+                })?
+                .map_err(|error| {
+                    ApplicationError::FilesystemError(format!(
+                        "Failed to read child process output: {}",
+                        error
+                    ))
+                })?;
 
         if !execution_result.status.success() {
-            let stderr = String::from_utf8_lossy(&execution_result.stderr).trim().to_string();
+            let stderr = String::from_utf8_lossy(&execution_result.stderr)
+                .trim()
+                .to_string();
             let exit_code = execution_result.status.code().unwrap_or(-1);
-            let message = format!("Git command with stdin failed (exit code {}): {}", exit_code, stderr);
+            let message = format!(
+                "Git command with stdin failed (exit code {}): {}",
+                exit_code, stderr
+            );
             crate::infrastructure::diagnostics::append_diagnostic_log("warn", &message);
             return Err(ApplicationError::GitExecutionFailed {
                 exit_code,
@@ -251,9 +279,14 @@ impl GitProcessExecutor {
             })?;
 
         if !execution_result.status.success() {
-            let stderr = String::from_utf8_lossy(&execution_result.stderr).trim().to_string();
+            let stderr = String::from_utf8_lossy(&execution_result.stderr)
+                .trim()
+                .to_string();
             let exit_code = execution_result.status.code().unwrap_or(-1);
-            let message = format!("Git command with stdin failed (exit code {}): {}", exit_code, stderr);
+            let message = format!(
+                "Git command with stdin failed (exit code {}): {}",
+                exit_code, stderr
+            );
             crate::infrastructure::diagnostics::append_diagnostic_log("warn", &message);
             return Err(ApplicationError::GitExecutionFailed {
                 exit_code,

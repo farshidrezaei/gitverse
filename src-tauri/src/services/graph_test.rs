@@ -134,7 +134,10 @@ mod tests {
                 parents.push(format!("hash_{}", index - 8));
             }
 
-            commits.push(create_test_commit(&format!("hash_{}", index), parents.iter().map(|s| s.as_str()).collect()));
+            commits.push(create_test_commit(
+                &format!("hash_{}", index),
+                parents.iter().map(|s| s.as_str()).collect(),
+            ));
         }
 
         let start_time = Instant::now();
@@ -143,7 +146,11 @@ mod tests {
 
         assert_eq!(graph.nodes.len(), total_commits);
         assert!(graph.max_lane_index >= 1);
-        assert!(duration.as_millis() < 250, "Graph layout for 2,000 commits must complete within 250ms, took {:?}", duration);
+        assert!(
+            duration.as_millis() < 250,
+            "Graph layout for 2,000 commits must complete within 250ms, took {:?}",
+            duration
+        );
     }
 
     #[test]
@@ -162,7 +169,10 @@ mod tests {
                 parents.push(format!("hash_{}", index - 12));
             }
 
-            commits.push(create_test_commit(&format!("hash_{}", index), parents.iter().map(|s| s.as_str()).collect()));
+            commits.push(create_test_commit(
+                &format!("hash_{}", index),
+                parents.iter().map(|s| s.as_str()).collect(),
+            ));
         }
 
         let start_time = Instant::now();
@@ -171,6 +181,10 @@ mod tests {
 
         assert_eq!(graph.nodes.len(), total_commits);
         assert!(graph.max_lane_index >= 1);
-        assert!(duration.as_millis() < 1200, "Graph layout for 10,000 commits must complete within 1200ms, took {:?}", duration);
+        assert!(
+            duration.as_millis() < 1200,
+            "Graph layout for 10,000 commits must complete within 1200ms, took {:?}",
+            duration
+        );
     }
 }

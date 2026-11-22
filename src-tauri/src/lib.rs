@@ -1,3 +1,5 @@
+#![allow(clippy::too_many_arguments)]
+
 pub mod application;
 pub mod commands;
 pub mod domain;
@@ -7,11 +9,11 @@ pub mod services;
 #[cfg(test)]
 mod lib_test;
 
+use application::ApplicationState;
 use std::fs;
 use std::path::PathBuf;
 use tauri::Manager;
 use tracing_subscriber::EnvFilter;
-use application::ApplicationState;
 
 /// Configures and launches the Tauri desktop application runtime.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -39,7 +41,10 @@ pub fn run() {
             let _ = fs::create_dir_all(&logs_directory);
             let log_file_path = logs_directory.join("gitverse.log");
             crate::infrastructure::diagnostics::configure_diagnostic_log_file(log_file_path);
-            crate::infrastructure::diagnostics::append_diagnostic_log("info", "GitVerse desktop application runtime initializing...");
+            crate::infrastructure::diagnostics::append_diagnostic_log(
+                "info",
+                "GitVerse desktop application runtime initializing...",
+            );
 
             let database_path = app_data_directory.join("gitverse_workspace.sqlite");
             let state = ApplicationState::new(&database_path).map_err(|error| {

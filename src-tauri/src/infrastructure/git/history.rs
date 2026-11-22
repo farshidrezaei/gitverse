@@ -1,9 +1,12 @@
-use crate::domain::{CommitChangedFile, FileChangeStatus, GitCommit, GitCommitDecoration, GitReferenceType};
+use crate::domain::{
+    CommitChangedFile, FileChangeStatus, GitCommit, GitCommitDecoration, GitReferenceType,
+};
 
 /// Delimiter constants for machine-readable Git log output.
 pub const COMMIT_RECORD_DELIMITER: char = '\x1e';
 pub const COMMIT_FIELD_DELIMITER: char = '\x1f';
-pub const COMMIT_LOG_FORMAT: &str = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ce%x1f%ct%x1f%s%x1f%b%x1f%D%x1e";
+pub const COMMIT_LOG_FORMAT: &str =
+    "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ce%x1f%ct%x1f%s%x1f%b%x1f%D%x1e";
 
 /// Parse a decoration item from Git's `%D` placeholder.
 pub fn parse_commit_decorations(decorations_text: &str) -> Vec<GitCommitDecoration> {
@@ -118,7 +121,10 @@ pub fn parse_delimited_git_log(raw_output: &str) -> Vec<GitCommit> {
 }
 
 /// Parse git diff-tree name-status and numstat outputs into structured `CommitChangedFile` list.
-pub fn parse_commit_changed_files(name_status_output: &str, numstat_output: &str) -> Vec<CommitChangedFile> {
+pub fn parse_commit_changed_files(
+    name_status_output: &str,
+    numstat_output: &str,
+) -> Vec<CommitChangedFile> {
     let name_status_lines: Vec<&str> = name_status_output
         .lines()
         .map(|line| line.trim())
@@ -140,33 +146,38 @@ pub fn parse_commit_changed_files(name_status_output: &str, numstat_output: &str
         }
 
         let raw_status = columns[0].trim();
-        let (status, original_path, path) = if raw_status.starts_with('R') || raw_status.starts_with('C') {
-            if columns.len() >= 3 {
-                let status_variant = if raw_status.starts_with('R') {
-                    FileChangeStatus::Renamed
+        let (status, original_path, path) =
+            if raw_status.starts_with('R') || raw_status.starts_with('C') {
+                if columns.len() >= 3 {
+                    let status_variant = if raw_status.starts_with('R') {
+                        FileChangeStatus::Renamed
+                    } else {
+                        FileChangeStatus::Copied
+                    };
+                    (
+                        status_variant,
+                        Some(columns[1].to_string()),
+                        columns[2].to_string(),
+                    )
+                } else if columns.len() == 2 {
+                    (FileChangeStatus::Renamed, None, columns[1].to_string())
                 } else {
-                    FileChangeStatus::Copied
+                    continue;
+                }
+            } else {
+                let status_variant = match raw_status.chars().next() {
+                    Some('A') => FileChangeStatus::Added,
+                    Some('D') => FileChangeStatus::Deleted,
+                    Some('M') => FileChangeStatus::Modified,
+                    Some('T') => FileChangeStatus::TypeChanged,
+                    _ => FileChangeStatus::Modified,
                 };
-                (status_variant, Some(columns[1].to_string()), columns[2].to_string())
-            } else if columns.len() == 2 {
-                (FileChangeStatus::Renamed, None, columns[1].to_string())
-            } else {
-                continue;
-            }
-        } else {
-            let status_variant = match raw_status.chars().next() {
-                Some('A') => FileChangeStatus::Added,
-                Some('D') => FileChangeStatus::Deleted,
-                Some('M') => FileChangeStatus::Modified,
-                Some('T') => FileChangeStatus::TypeChanged,
-                _ => FileChangeStatus::Modified,
+                if columns.len() >= 2 {
+                    (status_variant, None, columns[1].to_string())
+                } else {
+                    continue;
+                }
             };
-            if columns.len() >= 2 {
-                (status_variant, None, columns[1].to_string())
-            } else {
-                continue;
-            }
-        };
 
         // Extract additions and deletions from corresponding numstat line if available
         let (additions, deletions) = if let Some(num_line) = numstat_lines.get(index) {

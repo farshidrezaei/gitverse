@@ -11,7 +11,10 @@ fn test_parse_git_grep_output_standard() {
 
     assert_eq!(result.matches[0].file_path, "src-tauri/src/domain/mod.rs");
     assert_eq!(result.matches[0].line_number, 443);
-    assert_eq!(result.matches[0].line_content, "pub struct FileRevisionEntry {");
+    assert_eq!(
+        result.matches[0].line_content,
+        "pub struct FileRevisionEntry {"
+    );
 
     assert_eq!(result.matches[1].file_path, "src-tauri/src/main.rs");
     assert_eq!(result.matches[1].line_number, 12);

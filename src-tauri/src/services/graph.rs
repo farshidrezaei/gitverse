@@ -1,5 +1,5 @@
-use std::cmp::max;
 use crate::domain::{CommitGraphHistoryResponse, CommitGraphNode, GitCommit, GraphEdge};
+use std::cmp::max;
 
 /// Service responsible for DAG construction and deterministic lane assignment.
 pub struct CommitGraphEngine;
@@ -13,7 +13,10 @@ impl CommitGraphEngine {
         let mut max_lane_index: usize = 0;
 
         for commit in commits {
-            let is_head = commit.decorations.iter().any(|decoration| decoration.is_head);
+            let is_head = commit
+                .decorations
+                .iter()
+                .any(|decoration| decoration.is_head);
             let is_merge = commit.parent_hashes.len() > 1;
 
             // Step 1: Determine the lane for this commit
@@ -54,7 +57,11 @@ impl CommitGraphEngine {
                         to_lane: existing_parent_lane,
                         is_merge_edge,
                     });
-                } else if parent_index == 0 && active_lanes.get(current_lane).map_or(true, |slot| slot.is_none()) {
+                } else if parent_index == 0
+                    && active_lanes
+                        .get(current_lane)
+                        .is_none_or(|slot| slot.is_none())
+                {
                     // First parent continues down the same lane if the slot is free
                     if current_lane >= active_lanes.len() {
                         active_lanes.resize(current_lane + 1, None);
@@ -69,7 +76,9 @@ impl CommitGraphEngine {
                     });
                 } else {
                     // Subsequent parent or primary slot already taken: allocate next free lane
-                    let allocated_lane = if let Some(vacant_index) = active_lanes.iter().position(|slot| slot.is_none()) {
+                    let allocated_lane = if let Some(vacant_index) =
+                        active_lanes.iter().position(|slot| slot.is_none())
+                    {
                         vacant_index
                     } else {
                         let new_index = active_lanes.len();
@@ -98,7 +107,7 @@ impl CommitGraphEngine {
             });
 
             // Shrink trailing None lanes to prevent unneeded lane growth
-            while active_lanes.last().map_or(false, |slot| slot.is_none()) {
+            while active_lanes.last().is_some_and(|slot| slot.is_none()) {
                 active_lanes.pop();
             }
         }

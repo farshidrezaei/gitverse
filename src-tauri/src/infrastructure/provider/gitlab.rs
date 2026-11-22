@@ -1,13 +1,12 @@
-use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, USER_AGENT};
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
-use chrono::Utc;
 use crate::domain::{
-    ApplicationError, CiCheckRun, PipelineState, PipelineSummary,
-    ProviderAccount, ProviderKind, PullRequestChangedFile, PullRequestMergeResult,
-    PullRequestState, RemoteProjectRepository, RemotePullRequest, RemoteReviewComment,
-    WorkflowJob, WorkflowRun,
+    ApplicationError, CiCheckRun, PipelineState, PipelineSummary, ProviderAccount, ProviderKind,
+    PullRequestChangedFile, PullRequestMergeResult, PullRequestState, RemoteProjectRepository,
+    RemotePullRequest, RemoteReviewComment, WorkflowJob, WorkflowRun,
 };
+use chrono::Utc;
+use reqwest::Client;
+use reqwest::header::{ACCEPT, HeaderMap, HeaderValue, USER_AGENT};
+use serde::{Deserialize, Serialize};
 
 const DEFAULT_GITLAB_API_URL: &str = "https://gitlab.com/api/v4";
 const GITLAB_USER_AGENT: &str = "GitVerse-Desktop";
@@ -87,11 +86,14 @@ impl GitLabClient {
             _ => DEFAULT_GITLAB_API_URL.to_string(),
         };
 
-        let client = Client::builder()
-            .build()
-            .map_err(|error| ApplicationError::ProviderError(format!("Failed to build HTTP client: {}", error)))?;
+        let client = Client::builder().build().map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to build HTTP client: {}", error))
+        })?;
 
-        Ok(Self { client, api_base_url })
+        Ok(Self {
+            client,
+            api_base_url,
+        })
     }
 
     fn build_headers(&self, token: &str) -> Result<HeaderMap, ApplicationError> {
@@ -100,7 +102,9 @@ impl GitLabClient {
         headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
 
         let mut token_header = HeaderValue::from_str(token.trim()).map_err(|_| {
-            ApplicationError::AuthenticationError("Invalid GitLab personal access token format".into())
+            ApplicationError::AuthenticationError(
+                "Invalid GitLab personal access token format".into(),
+            )
         })?;
         token_header.set_sensitive(true);
         headers.insert("PRIVATE-TOKEN", token_header);
@@ -109,15 +113,23 @@ impl GitLabClient {
     }
 
     /// Fetches authenticated GitLab user profile to validate credentials.
-    pub async fn get_authenticated_user(&self, token: &str, instance_url: &str) -> Result<ProviderAccount, ApplicationError> {
+    pub async fn get_authenticated_user(
+        &self,
+        token: &str,
+        instance_url: &str,
+    ) -> Result<ProviderAccount, ApplicationError> {
         let url = format!("{}/user", self.api_base_url);
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         let status = response.status();
         if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
@@ -135,7 +147,10 @@ impl GitLabClient {
         }
 
         let user_data: GitLabUserResponse = response.json().await.map_err(|error| {
-            ApplicationError::ProviderError(format!("Failed to parse GitLab user response: {}", error))
+            ApplicationError::ProviderError(format!(
+                "Failed to parse GitLab user response: {}",
+                error
+            ))
         })?;
 
         let account = ProviderAccount {
@@ -162,7 +177,9 @@ impl GitLabClient {
         let url = format!("{}/projects", self.api_base_url);
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .query(&[
                 ("membership", "true"),
@@ -174,11 +191,16 @@ impl GitLabClient {
             ])
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_message = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("GitLab list projects failed: {}", error_message)));
+            return Err(ApplicationError::ProviderError(format!(
+                "GitLab list projects failed: {}",
+                error_message
+            )));
         }
 
         let raw_projects: Vec<GitLabProjectResponse> = response.json().await.map_err(|error| {
@@ -188,7 +210,8 @@ impl GitLabClient {
         let projects = raw_projects
             .into_iter()
             .map(|raw| {
-                let updated_timestamp = raw.last_activity_at
+                let updated_timestamp = raw
+                    .last_activity_at
                     .as_deref()
                     .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
                     .map(|datetime| datetime.timestamp())
@@ -227,7 +250,10 @@ impl GitLabClient {
         state_filter: Option<&str>,
     ) -> Result<Vec<RemotePullRequest>, ApplicationError> {
         let encoded_project = urlencoding_simple(project_id_or_path);
-        let url = format!("{}/projects/{}/merge_requests", self.api_base_url, encoded_project);
+        let url = format!(
+            "{}/projects/{}/merge_requests",
+            self.api_base_url, encoded_project
+        );
         let headers = self.build_headers(token)?;
 
         let state = match state_filter {
@@ -237,16 +263,23 @@ impl GitLabClient {
             _ => "all",
         };
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .query(&[("state", state), ("per_page", "50")])
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to fetch merge requests: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to fetch merge requests: {}",
+                error_text
+            )));
         }
 
         let raw_mrs: Vec<GitLabMergeRequestResponse> = response.json().await.map_err(|error| {
@@ -270,7 +303,8 @@ impl GitLabClient {
                     .map(|datetime| datetime.timestamp())
                     .unwrap_or_else(|_| Utc::now().timestamp());
 
-                let merged_timestamp = raw.merged_at
+                let merged_timestamp = raw
+                    .merged_at
                     .as_deref()
                     .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
                     .map(|datetime| datetime.timestamp());
@@ -300,7 +334,14 @@ impl GitLabClient {
 
         // Populate pipeline status for the first few open merge requests
         for merge_request in merge_requests.iter_mut().take(5) {
-            if let Ok(summary) = self.get_commit_pipeline_summary(token, project_id_or_path, &merge_request.source_branch).await {
+            if let Ok(summary) = self
+                .get_commit_pipeline_summary(
+                    token,
+                    project_id_or_path,
+                    &merge_request.source_branch,
+                )
+                .await
+            {
                 merge_request.pipeline_status = summary;
             }
         }
@@ -316,15 +357,22 @@ impl GitLabClient {
         reference_or_sha: &str,
     ) -> Result<Option<PipelineSummary>, ApplicationError> {
         let encoded_project = urlencoding_simple(project_id_or_path);
-        let url = format!("{}/projects/{}/pipelines", self.api_base_url, encoded_project);
+        let url = format!(
+            "{}/projects/{}/pipelines",
+            self.api_base_url, encoded_project
+        );
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .query(&[("ref", reference_or_sha), ("per_page", "1")])
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             return Ok(None);
@@ -363,8 +411,16 @@ impl GitLabClient {
             web_url: Some(latest.web_url),
             commit_sha: Some(latest.sha),
             total_checks_count: 1,
-            successful_checks_count: if pipeline_state == PipelineState::Success { 1 } else { 0 },
-            failed_checks_count: if pipeline_state == PipelineState::Failed { 1 } else { 0 },
+            successful_checks_count: if pipeline_state == PipelineState::Success {
+                1
+            } else {
+                0
+            },
+            failed_checks_count: if pipeline_state == PipelineState::Failed {
+                1
+            } else {
+                0
+            },
         }))
     }
 
@@ -376,21 +432,32 @@ impl GitLabClient {
         pipeline_id: u64,
     ) -> Result<Vec<CiCheckRun>, ApplicationError> {
         let encoded_project = urlencoding_simple(project_id_or_path);
-        let url = format!("{}/projects/{}/pipelines/{}/jobs", self.api_base_url, encoded_project, pipeline_id);
+        let url = format!(
+            "{}/projects/{}/pipelines/{}/jobs",
+            self.api_base_url, encoded_project, pipeline_id
+        );
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to fetch pipeline jobs: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to fetch pipeline jobs: {}",
+                error_text
+            )));
         }
 
         #[derive(Deserialize)]
+        #[allow(dead_code)]
         struct GitLabJobItem {
             id: u64,
             name: String,
@@ -404,33 +471,38 @@ impl GitLabClient {
             ApplicationError::ProviderError(format!("Failed to parse pipeline jobs: {}", error))
         })?;
 
-        let checks = jobs.into_iter().map(|item| {
-            let started_timestamp = item.started_at
-                .as_deref()
-                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
-                .map(|datetime| datetime.timestamp());
-            let completed_timestamp = item.finished_at
-                .as_deref()
-                .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
-                .map(|datetime| datetime.timestamp());
+        let checks = jobs
+            .into_iter()
+            .map(|item| {
+                let started_timestamp = item
+                    .started_at
+                    .as_deref()
+                    .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                    .map(|datetime| datetime.timestamp());
+                let completed_timestamp = item
+                    .finished_at
+                    .as_deref()
+                    .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
+                    .map(|datetime| datetime.timestamp());
 
-            let conclusion = match item.status.as_str() {
-                "success" => Some("success".to_string()),
-                "failed" => Some("failure".to_string()),
-                "canceled" => Some("cancelled".to_string()),
-                _ => None,
-            };
+                let conclusion = match item.status.as_str() {
+                    "success" => Some("success".to_string()),
+                    "failed" => Some("failure".to_string()),
+                    "canceled" => Some("cancelled".to_string()),
+                    _ => None,
+                };
 
-            CiCheckRun {
-                id: format!("gitlab:{}", item.id),
-                name: item.name,
-                status: item.status,
-                conclusion,
-                html_url: Some(item.web_url),
-                started_at_timestamp: started_timestamp,
-                completed_at_timestamp: completed_timestamp,
-            }
-        }).collect();
+                CiCheckRun {
+                    id: format!("gitlab:{}", item.id),
+                    name: item.name,
+                    status: item.status,
+                    conclusion,
+                    html_url: Some(item.web_url),
+                    started_at_timestamp: started_timestamp,
+                    completed_at_timestamp: completed_timestamp,
+                }
+            })
+            .collect();
 
         Ok(checks)
     }
@@ -442,18 +514,28 @@ impl GitLabClient {
         mr_iid: u64,
     ) -> Result<Vec<RemoteReviewComment>, ApplicationError> {
         let encoded_project = urlencoding_simple(project_full_name);
-        let url = format!("{}/projects/{}/merge_requests/{}/notes", self.api_base_url, encoded_project, mr_iid);
+        let url = format!(
+            "{}/projects/{}/merge_requests/{}/notes",
+            self.api_base_url, encoded_project, mr_iid
+        );
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to fetch MR comments: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to fetch MR comments: {}",
+                error_text
+            )));
         }
 
         #[derive(Deserialize)]
@@ -470,7 +552,8 @@ impl GitLabClient {
             ApplicationError::ProviderError(format!("Failed to parse MR comments: {}", error))
         })?;
 
-        let comments = items.into_iter()
+        let comments = items
+            .into_iter()
             .filter(|item| !item.system)
             .map(|item| {
                 let created_timestamp = chrono::DateTime::parse_from_rfc3339(&item.created_at)
@@ -504,7 +587,10 @@ impl GitLabClient {
         body: &str,
     ) -> Result<RemoteReviewComment, ApplicationError> {
         let encoded_project = urlencoding_simple(project_full_name);
-        let url = format!("{}/projects/{}/merge_requests/{}/notes", self.api_base_url, encoded_project, mr_iid);
+        let url = format!(
+            "{}/projects/{}/merge_requests/{}/notes",
+            self.api_base_url, encoded_project, mr_iid
+        );
         let headers = self.build_headers(token)?;
 
         #[derive(Serialize)]
@@ -512,16 +598,23 @@ impl GitLabClient {
             body: &'a str,
         }
 
-        let response = self.client.post(&url)
+        let response = self
+            .client
+            .post(&url)
             .headers(headers)
             .json(&NewNotePayload { body })
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to post MR comment: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to post MR comment: {}",
+                error_text
+            )));
         }
 
         #[derive(Deserialize)]
@@ -563,18 +656,28 @@ impl GitLabClient {
         mr_iid: u64,
     ) -> Result<Vec<PullRequestChangedFile>, ApplicationError> {
         let encoded_project = urlencoding_simple(project_full_name);
-        let url = format!("{}/projects/{}/merge_requests/{}/diffs", self.api_base_url, encoded_project, mr_iid);
+        let url = format!(
+            "{}/projects/{}/merge_requests/{}/diffs",
+            self.api_base_url, encoded_project, mr_iid
+        );
         let headers = self.build_headers(token)?;
 
-        let response = self.client.get(&url)
+        let response = self
+            .client
+            .get(&url)
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to fetch MR diffs: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to fetch MR diffs: {}",
+                error_text
+            )));
         }
 
         #[derive(Deserialize)]
@@ -591,29 +694,44 @@ impl GitLabClient {
             ApplicationError::ProviderError(format!("Failed to parse MR diffs: {}", error))
         })?;
 
-        let files = items.into_iter().map(|item| {
-            let additions = item.diff.lines().filter(|line| line.starts_with('+') && !line.starts_with("+++")).count() as u32;
-            let deletions = item.diff.lines().filter(|line| line.starts_with('-') && !line.starts_with("---")).count() as u32;
-            let status = if item.new_file {
-                "added".to_string()
-            } else if item.deleted_file {
-                "deleted".to_string()
-            } else if item.renamed_file {
-                "renamed".to_string()
-            } else {
-                "modified".to_string()
-            };
+        let files = items
+            .into_iter()
+            .map(|item| {
+                let additions = item
+                    .diff
+                    .lines()
+                    .filter(|line| line.starts_with('+') && !line.starts_with("+++"))
+                    .count() as u32;
+                let deletions = item
+                    .diff
+                    .lines()
+                    .filter(|line| line.starts_with('-') && !line.starts_with("---"))
+                    .count() as u32;
+                let status = if item.new_file {
+                    "added".to_string()
+                } else if item.deleted_file {
+                    "deleted".to_string()
+                } else if item.renamed_file {
+                    "renamed".to_string()
+                } else {
+                    "modified".to_string()
+                };
 
-            PullRequestChangedFile {
-                file_path: item.new_path,
-                previous_file_path: if item.renamed_file { Some(item.old_path) } else { None },
-                status,
-                additions_count: additions,
-                deletions_count: deletions,
-                changes_count: additions + deletions,
-                patch: Some(item.diff),
-            }
-        }).collect();
+                PullRequestChangedFile {
+                    file_path: item.new_path,
+                    previous_file_path: if item.renamed_file {
+                        Some(item.old_path)
+                    } else {
+                        None
+                    },
+                    status,
+                    additions_count: additions,
+                    deletions_count: deletions,
+                    changes_count: additions + deletions,
+                    patch: Some(item.diff),
+                }
+            })
+            .collect();
 
         Ok(files)
     }
@@ -631,30 +749,41 @@ impl GitLabClient {
 
         match action.to_uppercase().as_str() {
             "APPROVE" => {
-                let url = format!("{}/projects/{}/merge_requests/{}/approve", self.api_base_url, encoded_project, mr_iid);
-                let response = self.client.post(&url)
+                let url = format!(
+                    "{}/projects/{}/merge_requests/{}/approve",
+                    self.api_base_url, encoded_project, mr_iid
+                );
+                let response = self
+                    .client
+                    .post(&url)
                     .headers(headers.clone())
                     .send()
                     .await
-                    .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+                    .map_err(|error| {
+                        ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+                    })?;
 
                 if !response.status().is_success() {
                     let error_text = response.text().await.unwrap_or_default();
-                    return Err(ApplicationError::ProviderError(format!("Failed to approve MR: {}", error_text)));
+                    return Err(ApplicationError::ProviderError(format!(
+                        "Failed to approve MR: {}",
+                        error_text
+                    )));
                 }
             }
             "REQUEST_CHANGES" => {
-                let url = format!("{}/projects/{}/merge_requests/{}/unapprove", self.api_base_url, encoded_project, mr_iid);
-                let _ = self.client.post(&url)
-                    .headers(headers.clone())
-                    .send()
-                    .await;
+                let url = format!(
+                    "{}/projects/{}/merge_requests/{}/unapprove",
+                    self.api_base_url, encoded_project, mr_iid
+                );
+                let _ = self.client.post(&url).headers(headers.clone()).send().await;
             }
             _ => {}
         }
 
         if let Some(comment_text) = body.filter(|text| !text.trim().is_empty()) {
-            self.create_merge_request_comment(token, project_full_name, mr_iid, comment_text).await?;
+            self.create_merge_request_comment(token, project_full_name, mr_iid, comment_text)
+                .await?;
         }
 
         Ok(true)
@@ -670,7 +799,10 @@ impl GitLabClient {
         delete_source_branch: Option<bool>,
     ) -> Result<PullRequestMergeResult, ApplicationError> {
         let encoded_project = urlencoding_simple(project_full_name);
-        let url = format!("{}/projects/{}/merge_requests/{}/merge", self.api_base_url, encoded_project, mr_iid);
+        let url = format!(
+            "{}/projects/{}/merge_requests/{}/merge",
+            self.api_base_url, encoded_project, mr_iid
+        );
         let headers = self.build_headers(token)?;
 
         #[derive(Serialize)]
@@ -681,7 +813,9 @@ impl GitLabClient {
             should_remove_source_branch: bool,
         }
 
-        let response = self.client.put(&url)
+        let response = self
+            .client
+            .put(&url)
             .headers(headers)
             .json(&MergePayload {
                 merge_commit_message: commit_message.filter(|text| !text.trim().is_empty()),
@@ -690,7 +824,9 @@ impl GitLabClient {
             })
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         #[derive(Deserialize)]
         struct GitLabMergeApiResponse {
@@ -700,21 +836,26 @@ impl GitLabClient {
         }
 
         let status = response.status();
-        let payload: GitLabMergeApiResponse = response.json().await.unwrap_or(GitLabMergeApiResponse {
-            state: None,
-            merge_commit_sha: None,
-            message: None,
-        });
+        let payload: GitLabMergeApiResponse =
+            response.json().await.unwrap_or(GitLabMergeApiResponse {
+                state: None,
+                merge_commit_sha: None,
+                message: None,
+            });
 
         if !status.is_success() && payload.state.as_deref() != Some("merged") {
             return Err(ApplicationError::ProviderError(
-                payload.message.unwrap_or_else(|| "Failed to merge merge request".into())
+                payload
+                    .message
+                    .unwrap_or_else(|| "Failed to merge merge request".into()),
             ));
         }
 
         Ok(PullRequestMergeResult {
             is_merged: true,
-            message: payload.message.unwrap_or_else(|| "Merge request merged successfully".into()),
+            message: payload
+                .message
+                .unwrap_or_else(|| "Merge request merged successfully".into()),
             commit_sha: payload.merge_commit_sha,
         })
     }
@@ -727,7 +868,10 @@ impl GitLabClient {
         new_state: &str,
     ) -> Result<bool, ApplicationError> {
         let encoded_project = urlencoding_simple(project_full_name);
-        let url = format!("{}/projects/{}/merge_requests/{}", self.api_base_url, encoded_project, mr_iid);
+        let url = format!(
+            "{}/projects/{}/merge_requests/{}",
+            self.api_base_url, encoded_project, mr_iid
+        );
         let headers = self.build_headers(token)?;
 
         #[derive(Serialize)]
@@ -735,18 +879,29 @@ impl GitLabClient {
             state_event: &'a str,
         }
 
-        let state_event = if new_state == "open" { "reopen" } else { "close" };
+        let state_event = if new_state == "open" {
+            "reopen"
+        } else {
+            "close"
+        };
 
-        let response = self.client.put(&url)
+        let response = self
+            .client
+            .put(&url)
             .headers(headers)
             .json(&StatePayload { state_event })
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(ApplicationError::ProviderError(format!("Failed to update MR state: {}", error_text)));
+            return Err(ApplicationError::ProviderError(format!(
+                "Failed to update MR state: {}",
+                error_text
+            )));
         }
 
         Ok(true)
@@ -768,11 +923,10 @@ impl GitLabClient {
             page.max(1),
             per_page.clamp(1, 100)
         );
-        if let Some(status) = status_filter {
-            if !status.is_empty() && status != "all" {
+        if let Some(status) = status_filter
+            && !status.is_empty() && status != "all" {
                 url.push_str(&format!("&status={}", status));
             }
-        }
 
         let headers = self.build_headers(token)?;
         let response = self
@@ -781,7 +935,9 @@ impl GitLabClient {
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
@@ -792,6 +948,7 @@ impl GitLabClient {
         }
 
         #[derive(Deserialize)]
+        #[allow(dead_code)]
         struct GitLabPipelineItem {
             id: u64,
             iid: Option<u64>,
@@ -807,10 +964,9 @@ impl GitLabClient {
             name: Option<String>,
         }
 
-        let pipelines: Vec<GitLabPipelineItem> = response
-            .json()
-            .await
-            .map_err(|error| ApplicationError::ProviderError(format!("Failed to parse GitLab pipelines: {}", error)))?;
+        let pipelines: Vec<GitLabPipelineItem> = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse GitLab pipelines: {}", error))
+        })?;
 
         let runs = pipelines
             .into_iter()
@@ -819,22 +975,26 @@ impl GitLabClient {
                     "success" => ("completed".to_string(), Some("success".to_string())),
                     "failed" => ("completed".to_string(), Some("failure".to_string())),
                     "running" => ("in_progress".to_string(), None),
-                    "pending" | "waiting_for_resource" | "preparing" => ("queued".to_string(), None),
+                    "pending" | "waiting_for_resource" | "preparing" => {
+                        ("queued".to_string(), None)
+                    }
                     "canceled" => ("completed".to_string(), Some("cancelled".to_string())),
                     "skipped" => ("completed".to_string(), Some("skipped".to_string())),
                     other => (other.to_string(), None),
                 };
 
-                let name = pipeline.name.unwrap_or_else(|| {
-                    format!("Pipeline #{}", pipeline.id)
-                });
+                let name = pipeline
+                    .name
+                    .unwrap_or_else(|| format!("Pipeline #{}", pipeline.id));
 
-                let created_timestamp = pipeline.created_at
+                let created_timestamp = pipeline
+                    .created_at
                     .as_deref()
                     .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
                     .map(|datetime| datetime.timestamp())
                     .unwrap_or(0);
-                let updated_timestamp = pipeline.updated_at
+                let updated_timestamp = pipeline
+                    .updated_at
                     .as_deref()
                     .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
                     .map(|datetime| datetime.timestamp())
@@ -843,7 +1003,11 @@ impl GitLabClient {
                 WorkflowRun {
                     id: pipeline.id.to_string(),
                     workflow_name: name,
-                    display_title: format!("Pipeline #{} on {}", pipeline.id, pipeline.ref_name.as_deref().unwrap_or("unknown")),
+                    display_title: format!(
+                        "Pipeline #{} on {}",
+                        pipeline.id,
+                        pipeline.ref_name.as_deref().unwrap_or("unknown")
+                    ),
                     head_branch: pipeline.ref_name.unwrap_or_default(),
                     head_commit_sha: pipeline.sha,
                     status,
@@ -871,9 +1035,7 @@ impl GitLabClient {
         let encoded_project = urlencoding_simple(project_full_name);
         let url = format!(
             "{}/projects/{}/pipelines/{}/jobs?per_page=100",
-            self.api_base_url,
-            encoded_project,
-            pipeline_id
+            self.api_base_url, encoded_project, pipeline_id
         );
 
         let headers = self.build_headers(token)?;
@@ -883,7 +1045,9 @@ impl GitLabClient {
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
@@ -894,6 +1058,7 @@ impl GitLabClient {
         }
 
         #[derive(Deserialize)]
+        #[allow(dead_code)]
         struct GitLabJobItem {
             id: u64,
             name: String,
@@ -905,10 +1070,12 @@ impl GitLabClient {
             web_url: String,
         }
 
-        let jobs: Vec<GitLabJobItem> = response
-            .json()
-            .await
-            .map_err(|error| ApplicationError::ProviderError(format!("Failed to parse GitLab pipeline jobs: {}", error)))?;
+        let jobs: Vec<GitLabJobItem> = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!(
+                "Failed to parse GitLab pipeline jobs: {}",
+                error
+            ))
+        })?;
 
         let result_jobs = jobs
             .into_iter()
@@ -917,17 +1084,21 @@ impl GitLabClient {
                     "success" => ("completed".to_string(), Some("success".to_string())),
                     "failed" => ("completed".to_string(), Some("failure".to_string())),
                     "running" => ("in_progress".to_string(), None),
-                    "pending" | "waiting_for_resource" | "preparing" => ("queued".to_string(), None),
+                    "pending" | "waiting_for_resource" | "preparing" => {
+                        ("queued".to_string(), None)
+                    }
                     "canceled" => ("completed".to_string(), Some("cancelled".to_string())),
                     "skipped" => ("completed".to_string(), Some("skipped".to_string())),
                     other => (other.to_string(), None),
                 };
 
-                let started_timestamp = job.started_at
+                let started_timestamp = job
+                    .started_at
                     .as_deref()
                     .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
                     .map(|datetime| datetime.timestamp());
-                let completed_timestamp = job.finished_at
+                let completed_timestamp = job
+                    .finished_at
                     .as_deref()
                     .and_then(|iso| chrono::DateTime::parse_from_rfc3339(iso).ok())
                     .map(|datetime| datetime.timestamp());
@@ -958,9 +1129,7 @@ impl GitLabClient {
         let encoded_project = urlencoding_simple(project_full_name);
         let url = format!(
             "{}/projects/{}/pipelines/{}/retry",
-            self.api_base_url,
-            encoded_project,
-            pipeline_id
+            self.api_base_url, encoded_project, pipeline_id
         );
 
         let headers = self.build_headers(token)?;
@@ -970,7 +1139,9 @@ impl GitLabClient {
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
@@ -992,9 +1163,7 @@ impl GitLabClient {
         let encoded_project = urlencoding_simple(project_full_name);
         let url = format!(
             "{}/projects/{}/pipelines/{}/cancel",
-            self.api_base_url,
-            encoded_project,
-            pipeline_id
+            self.api_base_url, encoded_project, pipeline_id
         );
 
         let headers = self.build_headers(token)?;
@@ -1004,7 +1173,9 @@ impl GitLabClient {
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
@@ -1026,9 +1197,7 @@ impl GitLabClient {
         let encoded_project = urlencoding_simple(project_full_name);
         let url = format!(
             "{}/projects/{}/jobs/{}/trace",
-            self.api_base_url,
-            encoded_project,
-            job_id
+            self.api_base_url, encoded_project, job_id
         );
 
         let headers = self.build_headers(token)?;
@@ -1038,7 +1207,9 @@ impl GitLabClient {
             .headers(headers)
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
@@ -1064,14 +1235,18 @@ impl GitLabClient {
         is_draft: bool,
     ) -> Result<RemotePullRequest, ApplicationError> {
         let encoded_project = urlencoding_simple(project_full_name);
-        let url = format!("{}/projects/{}/merge_requests", self.api_base_url, encoded_project);
+        let url = format!(
+            "{}/projects/{}/merge_requests",
+            self.api_base_url, encoded_project
+        );
         let headers = self.build_headers(token)?;
 
-        let formatted_title = if is_draft && !title.starts_with("Draft:") && !title.starts_with("WIP:") {
-            format!("Draft: {}", title)
-        } else {
-            title.to_string()
-        };
+        let formatted_title =
+            if is_draft && !title.starts_with("Draft:") && !title.starts_with("WIP:") {
+                format!("Draft: {}", title)
+            } else {
+                title.to_string()
+            };
 
         #[derive(Serialize)]
         struct CreateMrPayload<'a> {
@@ -1094,7 +1269,9 @@ impl GitLabClient {
             })
             .send()
             .await
-            .map_err(|error| ApplicationError::ProviderError(format!("GitLab network error: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::ProviderError(format!("GitLab network error: {}", error))
+            })?;
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
@@ -1105,6 +1282,7 @@ impl GitLabClient {
         }
 
         #[derive(Deserialize)]
+        #[allow(dead_code)]
         struct GitLabCreateMrResponse {
             id: u64,
             iid: u64,
@@ -1122,10 +1300,9 @@ impl GitLabClient {
             updated_at: String,
         }
 
-        let raw: GitLabCreateMrResponse = response
-            .json()
-            .await
-            .map_err(|error| ApplicationError::ProviderError(format!("Failed to parse created MR: {}", error)))?;
+        let raw: GitLabCreateMrResponse = response.json().await.map_err(|error| {
+            ApplicationError::ProviderError(format!("Failed to parse created MR: {}", error))
+        })?;
 
         let created_timestamp = chrono::DateTime::parse_from_rfc3339(&raw.created_at)
             .map(|dt| dt.timestamp())
@@ -1135,7 +1312,10 @@ impl GitLabClient {
             .map(|dt| dt.timestamp())
             .unwrap_or_else(|_| Utc::now().timestamp());
 
-        let is_mr_draft = raw.draft.unwrap_or(false) || raw.work_in_progress.unwrap_or(false) || raw.title.starts_with("Draft:") || raw.title.starts_with("WIP:");
+        let is_mr_draft = raw.draft.unwrap_or(false)
+            || raw.work_in_progress.unwrap_or(false)
+            || raw.title.starts_with("Draft:")
+            || raw.title.starts_with("WIP:");
 
         Ok(RemotePullRequest {
             id: format!("gitlab:{}", raw.id),

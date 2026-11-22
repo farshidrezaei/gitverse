@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use crate::infrastructure::git::diff::parse_unified_diff;
     use crate::domain::DiffLineType;
+    use crate::infrastructure::git::diff::parse_unified_diff;
 
     #[test]
     fn test_parse_unified_diff_with_hunks() {

@@ -6,7 +6,10 @@ fn main() {
         let source_todo = &arguments[2];
         let target_todo = &arguments[3];
         if let Err(error) = std::fs::copy(source_todo, target_todo) {
-            eprintln!("Failed to copy rebase todo file from {} to {}: {}", source_todo, target_todo, error);
+            eprintln!(
+                "Failed to copy rebase todo file from {} to {}: {}",
+                source_todo, target_todo, error
+            );
             std::process::exit(1);
         }
         std::process::exit(0);

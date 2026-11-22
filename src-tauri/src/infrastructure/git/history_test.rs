@@ -1,8 +1,8 @@
 #[cfg(test)]
 pub mod tests {
     use super::super::history::{
-        parse_commit_changed_files, parse_commit_decorations, parse_delimited_git_log,
-        COMMIT_FIELD_DELIMITER, COMMIT_RECORD_DELIMITER,
+        COMMIT_FIELD_DELIMITER, COMMIT_RECORD_DELIMITER, parse_commit_changed_files,
+        parse_commit_decorations, parse_delimited_git_log,
     };
     use crate::domain::{FileChangeStatus, GitReferenceType};
 
@@ -25,7 +25,10 @@ pub mod tests {
 
         // Remote branch origin/master
         assert_eq!(decorations[2].name, "origin/master");
-        assert_eq!(decorations[2].reference_type, GitReferenceType::RemoteBranch);
+        assert_eq!(
+            decorations[2].reference_type,
+            GitReferenceType::RemoteBranch
+        );
         assert!(!decorations[2].is_head);
 
         // Tag v0.1.0
@@ -35,7 +38,10 @@ pub mod tests {
 
         // Other branch
         assert_eq!(decorations[4].name, "feature/new-branch");
-        assert_eq!(decorations[4].reference_type, GitReferenceType::RemoteBranch);
+        assert_eq!(
+            decorations[4].reference_type,
+            GitReferenceType::RemoteBranch
+        );
         assert!(!decorations[4].is_head);
     }
 
@@ -89,7 +95,10 @@ pub mod tests {
 
         // Renamed
         assert_eq!(changed_files[3].path, "new_doc.md");
-        assert_eq!(changed_files[3].original_path, Some("old_doc.md".to_string()));
+        assert_eq!(
+            changed_files[3].original_path,
+            Some("old_doc.md".to_string())
+        );
         assert_eq!(changed_files[3].status, FileChangeStatus::Renamed);
         assert_eq!(changed_files[3].additions, 0);
         assert_eq!(changed_files[3].deletions, 0);
@@ -111,7 +120,10 @@ pub mod tests {
         let untrusted_key = "U\x1fBob Developer\x1f";
         let parsed_untrusted = parse_commit_signature(untrusted_key).expect("parsed untrusted key");
         assert_eq!(parsed_untrusted.status, CommitSignatureStatus::Verified);
-        assert_eq!(parsed_untrusted.signer_name, Some("Bob Developer".to_string()));
+        assert_eq!(
+            parsed_untrusted.signer_name,
+            Some("Bob Developer".to_string())
+        );
         assert_eq!(parsed_untrusted.key_id, None);
 
         // Bad signature (B)

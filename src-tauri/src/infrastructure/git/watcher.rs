@@ -1,8 +1,8 @@
+use notify_debouncer_mini::{DebounceEventResult, new_debouncer, notify::RecursiveMode};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use notify_debouncer_mini::{new_debouncer, notify::RecursiveMode, DebounceEventResult};
 use tauri::{AppHandle, Emitter};
 
 /// Checks if a file path belongs to high-frequency or build directories that should not trigger Git status refreshes.
@@ -68,8 +68,14 @@ impl RepositoryWatcherManager {
                 }
             };
 
-            if let Err(error) = debouncer.watcher().watch(&repo_path, RecursiveMode::Recursive) {
-                let message = format!("Failed to watch repository directory {:?}: {:?}", repo_path, error);
+            if let Err(error) = debouncer
+                .watcher()
+                .watch(&repo_path, RecursiveMode::Recursive)
+            {
+                let message = format!(
+                    "Failed to watch repository directory {:?}: {:?}",
+                    repo_path, error
+                );
                 crate::infrastructure::diagnostics::append_diagnostic_log("warn", &message);
                 tracing::error!("{}", message);
                 return;
@@ -80,12 +86,13 @@ impl RepositoryWatcherManager {
             while is_watching_clone.load(Ordering::SeqCst) {
                 match rx.recv_timeout(Duration::from_millis(500)) {
                     Ok(DebounceEventResult::Ok(events)) => {
-                        let has_relevant_change = events.iter().any(|event| {
-                            !is_ignored_path(&event.path)
-                        });
+                        let has_relevant_change =
+                            events.iter().any(|event| !is_ignored_path(&event.path));
 
                         if has_relevant_change {
-                            tracing::debug!("Detected relevant file change, emitting status event to frontend");
+                            tracing::debug!(
+                                "Detected relevant file change, emitting status event to frontend"
+                            );
                             let _ = app_handle.emit("repository://status-changed", ());
                         }
                     }
@@ -121,16 +128,26 @@ impl RepositoryWatcherManager {
     }
 }
 
+impl Default for RepositoryWatcherManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_is_ignored_path() {
-        assert!(is_ignored_path(Path::new("/project/node_modules/vue/package.json")));
+        assert!(is_ignored_path(Path::new(
+            "/project/node_modules/vue/package.json"
+        )));
         assert!(is_ignored_path(Path::new("/project/target/debug/app")));
         assert!(is_ignored_path(Path::new("/project/.git/objects/3a/d5d4c")));
-        assert!(is_ignored_path(Path::new("/project/.output/server/index.mjs")));
+        assert!(is_ignored_path(Path::new(
+            "/project/.output/server/index.mjs"
+        )));
         assert!(is_ignored_path(Path::new("/project/.nuxt/types/app.d.ts")));
 
         // Normal tracked source files must NOT be ignored

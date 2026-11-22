@@ -20,11 +20,7 @@ pub fn parse_shortlog_contributors(
         }
 
         let commit_count = parts[0].trim().parse::<u32>().unwrap_or(0);
-        let name_and_email = if parts.len() > 1 {
-            parts[1].trim()
-        } else {
-            ""
-        };
+        let name_and_email = if parts.len() > 1 { parts[1].trim() } else { "" };
 
         let (name, email) = if let Some(open_bracket) = name_and_email.find('<') {
             let name_part = name_and_email[..open_bracket].trim();
@@ -60,14 +56,13 @@ pub fn parse_weekday_activity(timestamps_output: &str) -> Vec<ActivityDay> {
 
     for line in timestamps_output.lines() {
         let trimmed_line = line.trim();
-        if let Ok(timestamp) = trimmed_line.parse::<i64>() {
-            if timestamp >= 0 {
+        if let Ok(timestamp) = trimmed_line.parse::<i64>()
+            && timestamp >= 0 {
                 // 1970-01-01 was Thursday = 4. (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
                 let days_since_epoch = timestamp / 86400;
                 let weekday_index = ((days_since_epoch + 4) % 7) as usize;
                 weekday_counts[weekday_index] += 1;
             }
-        }
     }
 
     (0..7)

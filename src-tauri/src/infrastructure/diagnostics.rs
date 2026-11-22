@@ -1,10 +1,10 @@
+use chrono::Utc;
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
-use chrono::Utc;
-use serde::{Deserialize, Serialize};
 
 const MAXIMUM_DIAGNOSTIC_LOG_ENTRIES: usize = 500;
 
@@ -53,26 +53,27 @@ pub fn sanitize_sensitive_string(raw_text: &str) -> String {
         let parts: Vec<&str> = sanitized.split_whitespace().collect();
         let mut replaced_parts = Vec::new();
         for part in parts {
-            if part.contains("://") && part.contains('@') {
-                if let Some((proto, rest)) = part.split_once("://") {
-                    if let Some((_, host_and_path)) = rest.split_once('@') {
+            if part.contains("://") && part.contains('@')
+                && let Some((proto, rest)) = part.split_once("://")
+                    && let Some((_, host_and_path)) = rest.split_once('@') {
                         replaced_parts.push(format!("{}://***@{}", proto, host_and_path));
                         continue;
                     }
-                }
-            }
             replaced_parts.push(part.to_string());
         }
         sanitized = replaced_parts.join(" ");
     }
 
     // Redact GitHub Personal Access Tokens (ghp_*, gho_*, etc.)
-    if sanitized.contains("ghp_") || sanitized.contains("gho_") || sanitized.contains("github_pat_") {
+    if sanitized.contains("ghp_") || sanitized.contains("gho_") || sanitized.contains("github_pat_")
+    {
         let tokens = ["ghp_", "gho_", "github_pat_"];
         for token_prefix in &tokens {
             while let Some(index) = sanitized.find(token_prefix) {
                 let end = sanitized[index..]
-                    .find(|character: char| character.is_whitespace() || character == '"' || character == '\'')
+                    .find(|character: char| {
+                        character.is_whitespace() || character == '"' || character == '\''
+                    })
                     .map(|offset| index + offset)
                     .unwrap_or(sanitized.len());
                 sanitized.replace_range(index..end, "***REDACTED_GITHUB_TOKEN***");
@@ -84,7 +85,9 @@ pub fn sanitize_sensitive_string(raw_text: &str) -> String {
     if sanitized.contains("glpat-") {
         while let Some(index) = sanitized.find("glpat-") {
             let end = sanitized[index..]
-                .find(|character: char| character.is_whitespace() || character == '"' || character == '\'')
+                .find(|character: char| {
+                    character.is_whitespace() || character == '"' || character == '\''
+                })
                 .map(|offset| index + offset)
                 .unwrap_or(sanitized.len());
             sanitized.replace_range(index..end, "***REDACTED_GITLAB_TOKEN***");
@@ -97,7 +100,9 @@ pub fn sanitize_sensitive_string(raw_text: &str) -> String {
         if let Some(index) = lower.find("bearer ") {
             let start = index + 7;
             let end = sanitized[start..]
-                .find(|character: char| character.is_whitespace() || character == '"' || character == '\'')
+                .find(|character: char| {
+                    character.is_whitespace() || character == '"' || character == '\''
+                })
                 .map(|offset| start + offset)
                 .unwrap_or(sanitized.len());
             sanitized.replace_range(start..end, "***REDACTED_BEARER***");
@@ -129,11 +134,14 @@ pub fn append_diagnostic_log(level: &str, raw_message: &str) {
         }
         state.log_entries.push_back(entry.clone());
 
-        if let Some(ref path) = state.log_file_path {
-            if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path) {
-                let _ = writeln!(file, "[{}] [{}] {}", entry.timestamp, entry.level, entry.message);
+        if let Some(ref path) = state.log_file_path
+            && let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path) {
+                let _ = writeln!(
+                    file,
+                    "[{}] [{}] {}",
+                    entry.timestamp, entry.level, entry.message
+                );
             }
-        }
     }
 }
 

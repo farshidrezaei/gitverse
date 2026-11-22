@@ -1,10 +1,12 @@
-use std::path::PathBuf;
-use tauri::{AppHandle, State};
 use crate::application::ApplicationState;
 use crate::domain::{
-    ApplicationDiagnostics, ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails, DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation,
-    GitWorktreeSummary, InteractiveRebaseRequest, MergeBranchOutcome, RebaseBranchOutcome, RebasePlanItem, RecentRepositoryRecord, RepositoryOverview, StashRecord,
+    ApplicationDiagnostics, ApplicationError, CommitComparison, CommitDetails, ConflictFileDetails,
+    DetailedRepositoryStatus, DirectoryListing, FileDiff, GitBinaryInformation, GitWorktreeSummary,
+    InteractiveRebaseRequest, MergeBranchOutcome, RebaseBranchOutcome, RebasePlanItem,
+    RecentRepositoryRecord, RepositoryOverview, StashRecord,
 };
+use std::path::PathBuf;
+use tauri::{AppHandle, State};
 
 /// Tauri IPC command to discover and validate the native Git binary.
 #[tauri::command]
@@ -36,9 +38,7 @@ pub async fn get_current_repository(
 
 /// Tauri IPC command to close the currently active repository.
 #[tauri::command]
-pub async fn close_repository(
-    state: State<'_, ApplicationState>,
-) -> Result<(), ApplicationError> {
+pub async fn close_repository(state: State<'_, ApplicationState>) -> Result<(), ApplicationError> {
     state.close_current_repository().await;
     Ok(())
 }
@@ -59,7 +59,9 @@ pub async fn stage_file(
     file_path: String,
     directory_path: Option<String>,
 ) -> Result<(), ApplicationError> {
-    state.stage_file(directory_path.as_deref(), &file_path).await
+    state
+        .stage_file(directory_path.as_deref(), &file_path)
+        .await
 }
 
 /// Tauri IPC command to unstage a file.
@@ -69,7 +71,9 @@ pub async fn unstage_file(
     file_path: String,
     directory_path: Option<String>,
 ) -> Result<(), ApplicationError> {
-    state.unstage_file(directory_path.as_deref(), &file_path).await
+    state
+        .unstage_file(directory_path.as_deref(), &file_path)
+        .await
 }
 
 /// Tauri IPC command to stage all changes.
@@ -98,7 +102,9 @@ pub async fn discard_file_changes(
     is_untracked: bool,
     directory_path: Option<String>,
 ) -> Result<(), ApplicationError> {
-    state.discard_file_changes(directory_path.as_deref(), &file_path, is_untracked).await
+    state
+        .discard_file_changes(directory_path.as_deref(), &file_path, is_untracked)
+        .await
 }
 
 /// Tauri IPC command to stage a unified diff patch into the Git index.
@@ -108,7 +114,9 @@ pub async fn stage_patch(
     patch_content: String,
     directory_path: Option<String>,
 ) -> Result<(), ApplicationError> {
-    state.stage_patch(directory_path.as_deref(), &patch_content).await
+    state
+        .stage_patch(directory_path.as_deref(), &patch_content)
+        .await
 }
 
 /// Tauri IPC command to unstage a unified diff patch from the Git index.
@@ -118,7 +126,9 @@ pub async fn unstage_patch(
     patch_content: String,
     directory_path: Option<String>,
 ) -> Result<(), ApplicationError> {
-    state.unstage_patch(directory_path.as_deref(), &patch_content).await
+    state
+        .unstage_patch(directory_path.as_deref(), &patch_content)
+        .await
 }
 
 /// Tauri IPC command to discard changes matching a unified diff patch from working tree.
@@ -128,7 +138,9 @@ pub async fn discard_patch(
     patch_content: String,
     directory_path: Option<String>,
 ) -> Result<(), ApplicationError> {
-    state.discard_patch(directory_path.as_deref(), &patch_content).await
+    state
+        .discard_patch(directory_path.as_deref(), &patch_content)
+        .await
 }
 
 /// Tauri IPC command to export repository changes or a commit as a patch.
@@ -226,7 +238,9 @@ pub async fn get_repository_insights(
     state: State<'_, ApplicationState>,
     directory_path: Option<String>,
 ) -> Result<crate::domain::RepositoryInsights, ApplicationError> {
-    state.get_repository_insights(directory_path.as_deref()).await
+    state
+        .get_repository_insights(directory_path.as_deref())
+        .await
 }
 
 /// Tauri IPC command to fetch the chronological commit history of a file.
@@ -251,11 +265,7 @@ pub async fn get_file_content_at_commit(
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
     state
-        .get_file_content_at_commit(
-            directory_path.as_deref(),
-            &commit_hash,
-            &file_path,
-        )
+        .get_file_content_at_commit(directory_path.as_deref(), &commit_hash, &file_path)
         .await
 }
 
@@ -311,7 +321,9 @@ pub async fn get_file_diff(
     is_staged: bool,
     directory_path: Option<String>,
 ) -> Result<crate::domain::FileDiff, ApplicationError> {
-    state.get_file_diff(directory_path.as_deref(), &file_path, is_staged).await
+    state
+        .get_file_diff(directory_path.as_deref(), &file_path, is_staged)
+        .await
 }
 
 /// Tauri IPC command to retrieve configured commit template from repository or git config.
@@ -392,7 +404,9 @@ pub async fn get_commit_graph(
     limit: Option<usize>,
     branch_or_reference: Option<String>,
 ) -> Result<crate::domain::CommitGraphHistoryResponse, ApplicationError> {
-    state.get_commit_graph(directory_path.as_deref(), skip, limit, branch_or_reference).await
+    state
+        .get_commit_graph(directory_path.as_deref(), skip, limit, branch_or_reference)
+        .await
 }
 
 /// Tauri IPC command to fetch repository references (branches, remotes, tags).
@@ -401,7 +415,9 @@ pub async fn get_repository_references(
     state: State<'_, ApplicationState>,
     directory_path: Option<String>,
 ) -> Result<crate::domain::RepositoryReferences, ApplicationError> {
-    state.get_repository_references(directory_path.as_deref()).await
+    state
+        .get_repository_references(directory_path.as_deref())
+        .await
 }
 
 /// Tauri IPC command to checkout or switch branches.
@@ -413,12 +429,14 @@ pub async fn checkout_branch(
     start_point: Option<String>,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.checkout_branch(
-        directory_path.as_deref(),
-        &branch_name,
-        create_if_missing.unwrap_or(false),
-        start_point.as_deref(),
-    ).await
+    state
+        .checkout_branch(
+            directory_path.as_deref(),
+            &branch_name,
+            create_if_missing.unwrap_or(false),
+            start_point.as_deref(),
+        )
+        .await
 }
 
 /// Tauri IPC command to create a new branch.
@@ -429,7 +447,13 @@ pub async fn create_branch(
     start_point: Option<String>,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.create_branch(directory_path.as_deref(), &branch_name, start_point.as_deref()).await
+    state
+        .create_branch(
+            directory_path.as_deref(),
+            &branch_name,
+            start_point.as_deref(),
+        )
+        .await
 }
 
 /// Tauri IPC command to delete a branch.
@@ -440,7 +464,13 @@ pub async fn delete_branch(
     force: Option<bool>,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.delete_branch(directory_path.as_deref(), &branch_name, force.unwrap_or(false)).await
+    state
+        .delete_branch(
+            directory_path.as_deref(),
+            &branch_name,
+            force.unwrap_or(false),
+        )
+        .await
 }
 
 /// Tauri IPC command to rename a branch.
@@ -451,7 +481,9 @@ pub async fn rename_branch(
     new_name: String,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.rename_branch(directory_path.as_deref(), &old_name, &new_name).await
+    state
+        .rename_branch(directory_path.as_deref(), &old_name, &new_name)
+        .await
 }
 
 /// Tauri IPC command to fetch changes from remote.
@@ -461,7 +493,9 @@ pub async fn fetch_remote(
     remote_name: Option<String>,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.fetch_remote(directory_path.as_deref(), remote_name.as_deref()).await
+    state
+        .fetch_remote(directory_path.as_deref(), remote_name.as_deref())
+        .await
 }
 
 /// Tauri IPC command to pull changes.
@@ -472,7 +506,13 @@ pub async fn pull_changes(
     branch_name: Option<String>,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.pull_changes(directory_path.as_deref(), remote_name.as_deref(), branch_name.as_deref()).await
+    state
+        .pull_changes(
+            directory_path.as_deref(),
+            remote_name.as_deref(),
+            branch_name.as_deref(),
+        )
+        .await
 }
 
 /// Tauri IPC command to push commits.
@@ -484,12 +524,14 @@ pub async fn push_changes(
     set_upstream: Option<bool>,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.push_changes(
-        directory_path.as_deref(),
-        remote_name.as_deref(),
-        branch_name.as_deref(),
-        set_upstream.unwrap_or(false),
-    ).await
+    state
+        .push_changes(
+            directory_path.as_deref(),
+            remote_name.as_deref(),
+            branch_name.as_deref(),
+            set_upstream.unwrap_or(false),
+        )
+        .await
 }
 
 /// Tauri IPC command to add a new Git remote.
@@ -500,7 +542,9 @@ pub async fn add_remote(
     url: String,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.add_remote(directory_path.as_deref(), &name, &url).await
+    state
+        .add_remote(directory_path.as_deref(), &name, &url)
+        .await
 }
 
 /// Tauri IPC command to remove a Git remote.
@@ -521,7 +565,9 @@ pub async fn rename_remote(
     new_name: String,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.rename_remote(directory_path.as_deref(), &old_name, &new_name).await
+    state
+        .rename_remote(directory_path.as_deref(), &old_name, &new_name)
+        .await
 }
 
 /// Tauri IPC command to update a Git remote URL.
@@ -533,12 +579,14 @@ pub async fn set_remote_url(
     is_push_only: Option<bool>,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.set_remote_url(
-        directory_path.as_deref(),
-        &name,
-        &url,
-        is_push_only.unwrap_or(false),
-    ).await
+    state
+        .set_remote_url(
+            directory_path.as_deref(),
+            &name,
+            &url,
+            is_push_only.unwrap_or(false),
+        )
+        .await
 }
 
 /// Tauri IPC command to retrieve comprehensive commit details with changed files.
@@ -548,7 +596,9 @@ pub async fn get_commit_details(
     commit_hash: String,
     directory_path: Option<String>,
 ) -> Result<CommitDetails, ApplicationError> {
-    state.get_commit_details(directory_path.as_deref(), &commit_hash).await
+    state
+        .get_commit_details(directory_path.as_deref(), &commit_hash)
+        .await
 }
 
 /// Tauri IPC command to retrieve the diff of a specific file or the entire commit.
@@ -559,7 +609,13 @@ pub async fn get_commit_file_diff(
     file_path: Option<String>,
     directory_path: Option<String>,
 ) -> Result<FileDiff, ApplicationError> {
-    state.get_commit_file_diff(directory_path.as_deref(), &commit_hash, file_path.as_deref()).await
+    state
+        .get_commit_file_diff(
+            directory_path.as_deref(),
+            &commit_hash,
+            file_path.as_deref(),
+        )
+        .await
 }
 
 /// Tauri IPC command to compare two commits or references and return changed files and metrics.
@@ -570,7 +626,9 @@ pub async fn compare_commits(
     target_hash: String,
     directory_path: Option<String>,
 ) -> Result<CommitComparison, ApplicationError> {
-    state.compare_commits(directory_path.as_deref(), &base_hash, &target_hash).await
+    state
+        .compare_commits(directory_path.as_deref(), &base_hash, &target_hash)
+        .await
 }
 
 /// Tauri IPC command to retrieve the diff of a specific file or all files between two commits.
@@ -582,7 +640,14 @@ pub async fn get_comparison_file_diff(
     file_path: Option<String>,
     directory_path: Option<String>,
 ) -> Result<FileDiff, ApplicationError> {
-    state.get_comparison_file_diff(directory_path.as_deref(), &base_hash, &target_hash, file_path.as_deref()).await
+    state
+        .get_comparison_file_diff(
+            directory_path.as_deref(),
+            &base_hash,
+            &target_hash,
+            file_path.as_deref(),
+        )
+        .await
 }
 
 /// Tauri IPC command to fetch recent repositories from local SQLite database.
@@ -629,7 +694,13 @@ pub async fn save_stash(
     include_untracked: bool,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.save_stash(directory_path.as_deref(), message.as_deref(), include_untracked).await
+    state
+        .save_stash(
+            directory_path.as_deref(),
+            message.as_deref(),
+            include_untracked,
+        )
+        .await
 }
 
 /// Tauri IPC command to apply a stash entry by index without removing it.
@@ -639,7 +710,9 @@ pub async fn apply_stash(
     stash_index: usize,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.apply_stash(directory_path.as_deref(), stash_index).await
+    state
+        .apply_stash(directory_path.as_deref(), stash_index)
+        .await
 }
 
 /// Tauri IPC command to pop a stash entry by index.
@@ -649,7 +722,9 @@ pub async fn pop_stash(
     stash_index: usize,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.pop_stash(directory_path.as_deref(), stash_index).await
+    state
+        .pop_stash(directory_path.as_deref(), stash_index)
+        .await
 }
 
 /// Tauri IPC command to drop a stash entry by index.
@@ -659,7 +734,9 @@ pub async fn drop_stash(
     stash_index: usize,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.drop_stash(directory_path.as_deref(), stash_index).await
+    state
+        .drop_stash(directory_path.as_deref(), stash_index)
+        .await
 }
 
 /// Tauri IPC command to get detailed changed files within a stash.
@@ -669,7 +746,9 @@ pub async fn get_stash_details(
     stash_index: usize,
     directory_path: Option<String>,
 ) -> Result<crate::domain::StashDetails, ApplicationError> {
-    state.get_stash_details(directory_path.as_deref(), stash_index).await
+    state
+        .get_stash_details(directory_path.as_deref(), stash_index)
+        .await
 }
 
 /// Tauri IPC command to get unified diff for a single file within a stash.
@@ -680,7 +759,9 @@ pub async fn get_stash_file_diff(
     file_path: String,
     directory_path: Option<String>,
 ) -> Result<crate::domain::FileDiff, ApplicationError> {
-    state.get_stash_file_diff(directory_path.as_deref(), stash_index, &file_path).await
+    state
+        .get_stash_file_diff(directory_path.as_deref(), stash_index, &file_path)
+        .await
 }
 
 /// Tauri IPC command to cherry-pick a commit.
@@ -690,7 +771,9 @@ pub async fn cherry_pick_commit(
     commit_hash: String,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.cherry_pick_commit(directory_path.as_deref(), &commit_hash).await
+    state
+        .cherry_pick_commit(directory_path.as_deref(), &commit_hash)
+        .await
 }
 
 /// Tauri IPC command to revert a commit.
@@ -700,7 +783,9 @@ pub async fn revert_commit(
     commit_hash: String,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.revert_commit(directory_path.as_deref(), &commit_hash).await
+    state
+        .revert_commit(directory_path.as_deref(), &commit_hash)
+        .await
 }
 
 /// Tauri IPC command to reset current branch to a commit.
@@ -711,7 +796,9 @@ pub async fn reset_to_commit(
     reset_mode: String,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.reset_to_commit(directory_path.as_deref(), &commit_hash, &reset_mode).await
+    state
+        .reset_to_commit(directory_path.as_deref(), &commit_hash, &reset_mode)
+        .await
 }
 
 /// Tauri IPC command to retrieve 3-way conflict stages and working file content.
@@ -721,7 +808,9 @@ pub async fn get_conflict_file_details(
     file_path: String,
     directory_path: Option<String>,
 ) -> Result<ConflictFileDetails, ApplicationError> {
-    state.get_conflict_file_details(directory_path.as_deref(), &file_path).await
+    state
+        .get_conflict_file_details(directory_path.as_deref(), &file_path)
+        .await
 }
 
 /// Tauri IPC command to resolve a conflict file with a preset strategy ('ours', 'theirs', 'mark_resolved').
@@ -732,7 +821,9 @@ pub async fn resolve_conflict_file(
     resolution_strategy: String,
     directory_path: Option<String>,
 ) -> Result<(), ApplicationError> {
-    state.resolve_conflict_file(directory_path.as_deref(), &file_path, &resolution_strategy).await
+    state
+        .resolve_conflict_file(directory_path.as_deref(), &file_path, &resolution_strategy)
+        .await
 }
 
 /// Tauri IPC command to save custom resolved file content and stage it.
@@ -743,7 +834,9 @@ pub async fn write_conflict_resolved_content(
     resolved_content: String,
     directory_path: Option<String>,
 ) -> Result<(), ApplicationError> {
-    state.write_conflict_resolved_content(directory_path.as_deref(), &file_path, &resolved_content).await
+    state
+        .write_conflict_resolved_content(directory_path.as_deref(), &file_path, &resolved_content)
+        .await
 }
 
 /// Tauri IPC command to merge a branch into current branch.
@@ -782,7 +875,9 @@ pub async fn abort_repository_operation(
     create_backup: Option<bool>,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.abort_repository_operation(directory_path.as_deref(), create_backup).await
+    state
+        .abort_repository_operation(directory_path.as_deref(), create_backup)
+        .await
 }
 
 /// Tauri IPC command to continue active ongoing repository operation after conflicts are resolved.
@@ -791,7 +886,9 @@ pub async fn continue_repository_operation(
     state: State<'_, ApplicationState>,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.continue_repository_operation(directory_path.as_deref()).await
+    state
+        .continue_repository_operation(directory_path.as_deref())
+        .await
 }
 
 /// Tauri IPC command to list subdirectories only for custom folder picker.
@@ -800,7 +897,9 @@ pub async fn list_directory_folders(
     state: State<'_, ApplicationState>,
     directory_path: Option<String>,
 ) -> Result<DirectoryListing, ApplicationError> {
-    state.list_directory_folders(directory_path.as_deref()).await
+    state
+        .list_directory_folders(directory_path.as_deref())
+        .await
 }
 
 /// Tauri IPC command to list worktrees linked to the repository.
@@ -821,12 +920,14 @@ pub async fn add_worktree(
     branch_name: Option<String>,
     is_new_branch: Option<bool>,
 ) -> Result<String, ApplicationError> {
-    state.add_worktree(
-        directory_path.as_deref(),
-        &worktree_path,
-        branch_name.as_deref(),
-        is_new_branch.unwrap_or(false),
-    ).await
+    state
+        .add_worktree(
+            directory_path.as_deref(),
+            &worktree_path,
+            branch_name.as_deref(),
+            is_new_branch.unwrap_or(false),
+        )
+        .await
 }
 
 /// Tauri IPC command to remove a worktree from the repository.
@@ -837,11 +938,13 @@ pub async fn remove_worktree(
     worktree_path: String,
     force: Option<bool>,
 ) -> Result<String, ApplicationError> {
-    state.remove_worktree(
-        directory_path.as_deref(),
-        &worktree_path,
-        force.unwrap_or(false),
-    ).await
+    state
+        .remove_worktree(
+            directory_path.as_deref(),
+            &worktree_path,
+            force.unwrap_or(false),
+        )
+        .await
 }
 
 /// Tauri IPC command to get commits for interactive rebase plan.
@@ -851,7 +954,9 @@ pub async fn get_rebase_commits(
     directory_path: Option<String>,
     base_commit_hash: String,
 ) -> Result<Vec<RebasePlanItem>, ApplicationError> {
-    state.get_rebase_commits(directory_path.as_deref(), &base_commit_hash).await
+    state
+        .get_rebase_commits(directory_path.as_deref(), &base_commit_hash)
+        .await
 }
 
 /// Tauri IPC command to execute interactive rebase with plan items.
@@ -861,7 +966,9 @@ pub async fn execute_interactive_rebase(
     directory_path: Option<String>,
     request: InteractiveRebaseRequest,
 ) -> Result<RebaseBranchOutcome, ApplicationError> {
-    state.execute_interactive_rebase(directory_path.as_deref(), request).await
+    state
+        .execute_interactive_rebase(directory_path.as_deref(), request)
+        .await
 }
 
 /// Tauri IPC command to extract file blame annotations.
@@ -872,7 +979,9 @@ pub async fn get_file_blame(
     file_path: String,
     revision: Option<String>,
 ) -> Result<crate::domain::FileBlame, ApplicationError> {
-    state.get_file_blame(directory_path.as_deref(), &file_path, revision.as_deref()).await
+    state
+        .get_file_blame(directory_path.as_deref(), &file_path, revision.as_deref())
+        .await
 }
 
 /// Tauri IPC command to get system and application diagnostics.
@@ -895,7 +1004,9 @@ pub async fn export_diagnostic_bundle(
 #[tauri::command]
 pub async fn open_external_url(url: String) -> Result<(), ApplicationError> {
     if !url.starts_with("https://") && !url.starts_with("http://") {
-        return Err(ApplicationError::InvalidInput("Only HTTP/HTTPS URLs are allowed".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Only HTTP/HTTPS URLs are allowed".into(),
+        ));
     }
 
     #[cfg(target_os = "linux")]
@@ -903,7 +1014,9 @@ pub async fn open_external_url(url: String) -> Result<(), ApplicationError> {
         tokio::process::Command::new("xdg-open")
             .arg(&url)
             .spawn()
-            .map_err(|error| ApplicationError::Unexpected(format!("Failed to open browser: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::Unexpected(format!("Failed to open browser: {}", error))
+            })?;
     }
 
     #[cfg(target_os = "macos")]
@@ -911,7 +1024,9 @@ pub async fn open_external_url(url: String) -> Result<(), ApplicationError> {
         tokio::process::Command::new("open")
             .arg(&url)
             .spawn()
-            .map_err(|error| ApplicationError::Unexpected(format!("Failed to open browser: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::Unexpected(format!("Failed to open browser: {}", error))
+            })?;
     }
 
     #[cfg(target_os = "windows")]
@@ -919,7 +1034,9 @@ pub async fn open_external_url(url: String) -> Result<(), ApplicationError> {
         tokio::process::Command::new("cmd")
             .args(["/C", "start", "", &url])
             .spawn()
-            .map_err(|error| ApplicationError::Unexpected(format!("Failed to open browser: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::Unexpected(format!("Failed to open browser: {}", error))
+            })?;
     }
 
     Ok(())
@@ -931,27 +1048,32 @@ pub async fn read_clipboard_text() -> Result<String, ApplicationError> {
     #[cfg(target_os = "linux")]
     {
         // Try wl-paste (Wayland)
-        if let Ok(output) = tokio::process::Command::new("wl-paste").output().await {
-            if output.status.success() {
+        if let Ok(output) = tokio::process::Command::new("wl-paste").output().await
+            && output.status.success() {
                 return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
             }
-        }
 
         // Try xclip (X11)
-        if let Ok(output) = tokio::process::Command::new("xclip").args(["-selection", "clipboard", "-o"]).output().await {
-            if output.status.success() {
+        if let Ok(output) = tokio::process::Command::new("xclip")
+            .args(["-selection", "clipboard", "-o"])
+            .output()
+            .await
+            && output.status.success() {
                 return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
             }
-        }
 
         // Try xsel (X11)
-        if let Ok(output) = tokio::process::Command::new("xsel").args(["--clipboard", "--output"]).output().await {
-            if output.status.success() {
+        if let Ok(output) = tokio::process::Command::new("xsel")
+            .args(["--clipboard", "--output"])
+            .output()
+            .await
+            && output.status.success() {
                 return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
             }
-        }
 
-        Err(ApplicationError::Unexpected("Clipboard command failed on Linux".into()))
+        Err(ApplicationError::Unexpected(
+            "Clipboard command failed on Linux".into(),
+        ))
     }
 
     #[cfg(target_os = "macos")]
@@ -959,7 +1081,9 @@ pub async fn read_clipboard_text() -> Result<String, ApplicationError> {
         let output = tokio::process::Command::new("pbpaste")
             .output()
             .await
-            .map_err(|error| ApplicationError::Unexpected(format!("Failed to execute pbpaste: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::Unexpected(format!("Failed to execute pbpaste: {}", error))
+            })?;
 
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
@@ -970,7 +1094,9 @@ pub async fn read_clipboard_text() -> Result<String, ApplicationError> {
             .args(["-NoProfile", "-Command", "Get-Clipboard"])
             .output()
             .await
-            .map_err(|error| ApplicationError::Unexpected(format!("Failed to read clipboard: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::Unexpected(format!("Failed to read clipboard: {}", error))
+            })?;
 
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
@@ -1001,7 +1127,7 @@ pub async fn open_in_external_editor(
             return Err(ApplicationError::InvalidInput(format!(
                 "Unsupported external editor: {}",
                 editor_name
-            )))
+            )));
         }
     };
 
@@ -1043,15 +1169,14 @@ pub async fn open_in_terminal(directory_path: String) -> Result<(), ApplicationE
 
     #[cfg(target_os = "linux")]
     {
-        if let Ok(terminal_from_environment) = std::env::var("TERMINAL") {
-            if tokio::process::Command::new(&terminal_from_environment)
+        if let Ok(terminal_from_environment) = std::env::var("TERMINAL")
+            && tokio::process::Command::new(&terminal_from_environment)
                 .current_dir(target_directory)
                 .spawn()
                 .is_ok()
             {
                 return Ok(());
             }
-        }
 
         let terminal_candidates = [
             "x-terminal-emulator",
@@ -1275,7 +1400,9 @@ pub async fn lfs_track_pattern(
     pattern: String,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.lfs_track_pattern(directory_path.as_deref(), &pattern).await
+    state
+        .lfs_track_pattern(directory_path.as_deref(), &pattern)
+        .await
 }
 
 /// Tauri IPC command to untrack a file pattern from Git LFS.
@@ -1285,7 +1412,9 @@ pub async fn lfs_untrack_pattern(
     pattern: String,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.lfs_untrack_pattern(directory_path.as_deref(), &pattern).await
+    state
+        .lfs_untrack_pattern(directory_path.as_deref(), &pattern)
+        .await
 }
 
 /// Tauri IPC command to lock a file in Git LFS.
@@ -1295,7 +1424,9 @@ pub async fn lfs_lock_file(
     file_path: String,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.lfs_lock_file(directory_path.as_deref(), &file_path).await
+    state
+        .lfs_lock_file(directory_path.as_deref(), &file_path)
+        .await
 }
 
 /// Tauri IPC command to unlock a file in Git LFS.
@@ -1306,7 +1437,9 @@ pub async fn lfs_unlock_file(
     force: bool,
     directory_path: Option<String>,
 ) -> Result<String, ApplicationError> {
-    state.lfs_unlock_file(directory_path.as_deref(), &file_path, force).await
+    state
+        .lfs_unlock_file(directory_path.as_deref(), &file_path, force)
+        .await
 }
 
 /// Tauri IPC command to list all custom actions.
@@ -1346,7 +1479,3 @@ pub async fn execute_custom_action(
         .execute_custom_action(directory_path.as_deref(), &action_identifier)
         .await
 }
-
-
-
-

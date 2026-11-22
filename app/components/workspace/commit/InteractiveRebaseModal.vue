@@ -272,9 +272,9 @@ async function handleConfirmRebase(): Promise<void> {
                         color: action.id === 'drop' ? 'error' as const : undefined,
                         onSelect: () => { item.action = action.id },
                       }))]"
-                      :content="{ align: 'start', minWidth: '15rem' }"
+                      :content="{ align: 'start' }"
                       :ui="{
-                        content: 'p-1.5 rounded-xl border border-default/70 bg-[var(--gv-surface)] shadow-2xl space-y-1',
+                        content: 'min-w-60 p-1.5 rounded-xl border border-default/70 bg-[var(--gv-surface)] shadow-2xl space-y-1',
                         item: 'p-2 rounded-lg gap-2.5 cursor-pointer',
                       }"
                     >

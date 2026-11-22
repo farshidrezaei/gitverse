@@ -16,7 +16,10 @@ pub fn validate_branch_name(candidate_name: &str) -> Result<(), ApplicationError
         ));
     }
 
-    if trimmed.chars().any(|character| character.is_whitespace() || character.is_ascii_control()) {
+    if trimmed
+        .chars()
+        .any(|character| character.is_whitespace() || character.is_ascii_control())
+    {
         return Err(ApplicationError::InvalidInput(
             "Branch name cannot contain whitespace or control characters".into(),
         ));
@@ -58,9 +61,9 @@ pub fn validate_branch_name(candidate_name: &str) -> Result<(), ApplicationError
         ));
     }
 
-    let has_invalid_characters = trimmed.chars().any(|character| {
-        matches!(character, '~' | '^' | ':' | '?' | '*' | '[' | '\\' | '@')
-    });
+    let has_invalid_characters = trimmed
+        .chars()
+        .any(|character| matches!(character, '~' | '^' | ':' | '?' | '*' | '[' | '\\' | '@'));
 
     if has_invalid_characters {
         return Err(ApplicationError::InvalidInput(
@@ -87,7 +90,10 @@ pub fn validate_remote_name(candidate_name: &str) -> Result<(), ApplicationError
         ));
     }
 
-    if trimmed.chars().any(|character| character.is_whitespace() || character.is_ascii_control()) {
+    if trimmed
+        .chars()
+        .any(|character| character.is_whitespace() || character.is_ascii_control())
+    {
         return Err(ApplicationError::InvalidInput(
             "Remote name cannot contain whitespace or control characters".into(),
         ));
@@ -99,7 +105,11 @@ pub fn validate_remote_name(candidate_name: &str) -> Result<(), ApplicationError
         ));
     }
 
-    if trimmed.starts_with('/') || trimmed.ends_with('/') || trimmed.starts_with('-') || trimmed.ends_with('-') {
+    if trimmed.starts_with('/')
+        || trimmed.ends_with('/')
+        || trimmed.starts_with('-')
+        || trimmed.ends_with('-')
+    {
         return Err(ApplicationError::InvalidInput(
             "Remote name cannot start or end with a slash or hyphen".into(),
         ));
@@ -111,9 +121,9 @@ pub fn validate_remote_name(candidate_name: &str) -> Result<(), ApplicationError
         ));
     }
 
-    let has_invalid_characters = trimmed.chars().any(|character| {
-        matches!(character, '~' | '^' | ':' | '?' | '*' | '[' | '\\' | '@')
-    });
+    let has_invalid_characters = trimmed
+        .chars()
+        .any(|character| matches!(character, '~' | '^' | ':' | '?' | '*' | '[' | '\\' | '@'));
 
     if has_invalid_characters {
         return Err(ApplicationError::InvalidInput(
@@ -140,7 +150,10 @@ pub fn validate_remote_url(candidate_url: &str) -> Result<(), ApplicationError> 
         ));
     }
 
-    if trimmed.chars().any(|character| character.is_whitespace() || character.is_ascii_control()) {
+    if trimmed
+        .chars()
+        .any(|character| character.is_whitespace() || character.is_ascii_control())
+    {
         return Err(ApplicationError::InvalidInput(
             "Remote URL cannot contain whitespace or control characters".into(),
         ));
@@ -158,12 +171,21 @@ pub fn validate_remote_url(candidate_url: &str) -> Result<(), ApplicationError> 
 
     let is_scp_ssh = trimmed.contains(':')
         && !trimmed.contains("://")
-        && (trimmed.contains('@') || trimmed.chars().take_while(|c| *c != ':').all(|c| c.is_alphanumeric() || c == '.' || c == '-'));
+        && (trimmed.contains('@')
+            || trimmed
+                .chars()
+                .take_while(|c| *c != ':')
+                .all(|c| c.is_alphanumeric() || c == '.' || c == '-'));
 
     let is_local_path = trimmed.starts_with('/')
         || trimmed.starts_with("./")
         || trimmed.starts_with("../")
-        || (trimmed.len() >= 3 && trimmed.chars().next().map_or(false, |c| c.is_ascii_alphabetic()) && &trimmed[1..3] == ":\\");
+        || (trimmed.len() >= 3
+            && trimmed
+                .chars()
+                .next()
+                .is_some_and(|c| c.is_ascii_alphabetic())
+            && &trimmed[1..3] == ":\\");
 
     if !is_standard_url && !is_scp_ssh && !is_local_path {
         return Err(ApplicationError::InvalidInput(
@@ -203,7 +225,10 @@ pub fn validate_stash_message(message: &str) -> Result<(), ApplicationError> {
         ));
     }
 
-    if trimmed.chars().any(|character| character.is_ascii_control() && character != '\n' && character != '\t') {
+    if trimmed
+        .chars()
+        .any(|character| character.is_ascii_control() && character != '\n' && character != '\t')
+    {
         return Err(ApplicationError::InvalidInput(
             "Stash message cannot contain control characters".into(),
         ));
@@ -424,7 +449,10 @@ pub fn validate_workflow_run_id(run_id: &str) -> Result<(), ApplicationError> {
         ));
     }
 
-    if !trimmed.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_') {
+    if !trimmed
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
         return Err(ApplicationError::InvalidInput(
             "Workflow run ID contains illegal characters".into(),
         ));
@@ -441,20 +469,28 @@ pub fn validate_create_pull_request(
 ) -> Result<(), ApplicationError> {
     let trimmed_title = title.trim();
     if trimmed_title.is_empty() {
-        return Err(ApplicationError::InvalidInput("Pull request title cannot be empty".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Pull request title cannot be empty".into(),
+        ));
     }
     if trimmed_title.contains('\0') {
-        return Err(ApplicationError::InvalidInput("Pull request title cannot contain null bytes".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Pull request title cannot contain null bytes".into(),
+        ));
     }
     if trimmed_title.len() > 300 {
-        return Err(ApplicationError::InvalidInput("Pull request title cannot exceed 300 characters".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Pull request title cannot exceed 300 characters".into(),
+        ));
     }
 
     validate_branch_name(source_branch)?;
     validate_branch_name(target_branch)?;
 
     if source_branch.trim() == target_branch.trim() {
-        return Err(ApplicationError::InvalidInput("Source and target branches cannot be identical".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Source and target branches cannot be identical".into(),
+        ));
     }
 
     Ok(())
@@ -560,7 +596,9 @@ mod tests {
 
     #[test]
     fn test_validate_create_pull_request() {
-        assert!(validate_create_pull_request("feat: add cool feature", "feature-x", "main").is_ok());
+        assert!(
+            validate_create_pull_request("feat: add cool feature", "feature-x", "main").is_ok()
+        );
         assert!(validate_create_pull_request("", "feature-x", "main").is_err());
         assert!(validate_create_pull_request("title", "same-branch", "same-branch").is_err());
         assert!(validate_create_pull_request("title", "invalid branch name", "main").is_err());

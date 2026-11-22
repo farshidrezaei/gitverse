@@ -41,8 +41,9 @@ export function useExternalToolsController() {
     }
   }
 
-  async function openInTerminal(): Promise<boolean> {
-    if (!currentRepository.value) {
+  async function openInTerminal(directoryPath?: string): Promise<boolean> {
+    const targetPath = directoryPath || currentRepository.value?.path
+    if (!targetPath) {
       return false
     }
 
@@ -50,7 +51,7 @@ export function useExternalToolsController() {
       if (await isTauriEnvironment()) {
         const { invoke } = await import('@tauri-apps/api/core')
         await invoke('open_in_terminal', {
-          directoryPath: currentRepository.value.path,
+          directoryPath: targetPath,
         })
       }
       return true

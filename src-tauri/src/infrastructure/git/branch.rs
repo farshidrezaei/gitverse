@@ -1,5 +1,7 @@
+use crate::domain::{
+    ApplicationError, BranchSummary, RemoteBranchSummary, RemoteSummary, TagSummary,
+};
 use std::collections::HashMap;
-use crate::domain::{ApplicationError, BranchSummary, RemoteBranchSummary, RemoteSummary, TagSummary};
 
 pub const REF_FIELD_DELIMITER: char = '\x1f';
 
@@ -23,8 +25,9 @@ pub fn parse_local_branches(raw: &str) -> Vec<BranchSummary> {
             continue;
         }
 
-        let is_head = fields.get(1).map_or(false, |val| val.trim() == "*");
-        let upstream_name = fields.get(2)
+        let is_head = fields.get(1).is_some_and(|val| val.trim() == "*");
+        let upstream_name = fields
+            .get(2)
             .map(|val| val.trim().to_string())
             .filter(|val| !val.is_empty());
 
@@ -42,7 +45,8 @@ pub fn parse_local_branches(raw: &str) -> Vec<BranchSummary> {
             }
         }
 
-        let head_commit_hash = fields.get(4)
+        let head_commit_hash = fields
+            .get(4)
             .map(|val| val.trim().to_string())
             .filter(|val| !val.is_empty());
 
@@ -79,14 +83,14 @@ pub fn parse_remote_branches(raw: &str) -> Vec<RemoteBranchSummary> {
             continue;
         }
 
-        if let Some(symref) = fields.get(2) {
-            if !symref.trim().is_empty() {
+        if let Some(symref) = fields.get(2)
+            && !symref.trim().is_empty() {
                 continue;
             }
-        }
 
         let remote_name = name.split('/').next().unwrap_or("origin").to_string();
-        let head_commit_hash = fields.get(1)
+        let head_commit_hash = fields
+            .get(1)
             .map(|val| val.trim().to_string())
             .filter(|val| !val.is_empty());
 
@@ -120,7 +124,8 @@ pub fn parse_tags(raw: &str) -> Vec<TagSummary> {
             continue;
         }
 
-        let commit_hash = fields.get(1)
+        let commit_hash = fields
+            .get(1)
             .map(|val| val.trim().to_string())
             .unwrap_or_default();
 
@@ -175,35 +180,51 @@ pub fn validate_branch_name(candidate_name: &str) -> Result<(), ApplicationError
     let trimmed = candidate_name.trim();
 
     if trimmed.is_empty() {
-        return Err(ApplicationError::InvalidInput("Branch name cannot be empty".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot be empty".into(),
+        ));
     }
 
     if trimmed.contains(char::is_whitespace) {
-        return Err(ApplicationError::InvalidInput("Branch name cannot contain whitespace".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot contain whitespace".into(),
+        ));
     }
 
     if trimmed.starts_with('/') || trimmed.ends_with('/') {
-        return Err(ApplicationError::InvalidInput("Branch name cannot start or end with a slash".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot start or end with a slash".into(),
+        ));
     }
 
     if trimmed.starts_with('-') || trimmed.ends_with('-') {
-        return Err(ApplicationError::InvalidInput("Branch name cannot start or end with a hyphen".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot start or end with a hyphen".into(),
+        ));
     }
 
     if trimmed.starts_with('.') || trimmed.ends_with('.') {
-        return Err(ApplicationError::InvalidInput("Branch name cannot start or end with a dot".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot start or end with a dot".into(),
+        ));
     }
 
     if trimmed.contains("//") || trimmed.contains("..") {
-        return Err(ApplicationError::InvalidInput("Branch name cannot contain consecutive separators (// or ..)".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot contain consecutive separators (// or ..)".into(),
+        ));
     }
 
     if trimmed.ends_with(".lock") {
-        return Err(ApplicationError::InvalidInput("Branch name cannot end with .lock".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot end with .lock".into(),
+        ));
     }
 
     if trimmed.contains("@{") {
-        return Err(ApplicationError::InvalidInput("Branch name cannot contain '@{'".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Branch name cannot contain '@{'".into(),
+        ));
     }
 
     let is_valid_characters = trimmed.chars().all(|character| {
@@ -215,7 +236,9 @@ pub fn validate_branch_name(candidate_name: &str) -> Result<(), ApplicationError
     });
 
     if !is_valid_characters {
-        return Err(ApplicationError::InvalidInput("Branch name contains illegal characters".into()));
+        return Err(ApplicationError::InvalidInput(
+            "Branch name contains illegal characters".into(),
+        ));
     }
 
     Ok(())

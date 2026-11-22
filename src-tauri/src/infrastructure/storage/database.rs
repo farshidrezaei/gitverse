@@ -1,9 +1,9 @@
+use crate::domain::{ApplicationError, ProviderAccount, ProviderKind, RecentRepositoryRecord};
+use chrono::Utc;
+use rusqlite::{Connection, params};
 use std::path::Path;
 use std::sync::Mutex;
-use rusqlite::{params, Connection};
 use uuid::Uuid;
-use chrono::Utc;
-use crate::domain::{ApplicationError, ProviderAccount, ProviderKind, RecentRepositoryRecord};
 
 /// Persistent SQLite store for recent repositories, bookmarks, and local workspace state.
 pub struct SQLiteRepositoryStore {
@@ -12,8 +12,9 @@ pub struct SQLiteRepositoryStore {
 
 impl SQLiteRepositoryStore {
     pub fn new(database_path: &Path) -> Result<Self, ApplicationError> {
-        let connection = Connection::open(database_path)
-            .map_err(|error| ApplicationError::PersistenceError(format!("Failed to open SQLite database: {}", error)))?;
+        let connection = Connection::open(database_path).map_err(|error| {
+            ApplicationError::PersistenceError(format!("Failed to open SQLite database: {}", error))
+        })?;
 
         let store = Self {
             connection: Mutex::new(connection),
@@ -29,8 +30,9 @@ impl SQLiteRepositoryStore {
             ApplicationError::PersistenceError("Failed to acquire database lock".into())
         })?;
 
-        connection.execute_batch(
-            r#"
+        connection
+            .execute_batch(
+                r#"
             CREATE TABLE IF NOT EXISTS recent_repositories (
                 id TEXT PRIMARY KEY,
                 path TEXT NOT NULL UNIQUE,
@@ -63,14 +65,21 @@ impl SQLiteRepositoryStore {
                 icon_name TEXT NOT NULL,
                 description_text TEXT NOT NULL
             );
-            "#
-        ).map_err(|error| ApplicationError::PersistenceError(format!("Migration failed: {}", error)))?;
+            "#,
+            )
+            .map_err(|error| {
+                ApplicationError::PersistenceError(format!("Migration failed: {}", error))
+            })?;
 
         Ok(())
     }
 
     /// Records or updates an opened repository path in the recent repositories history.
-    pub fn record_opened_repository(&self, path: &str, name: &str) -> Result<RecentRepositoryRecord, ApplicationError> {
+    pub fn record_opened_repository(
+        &self,
+        path: &str,
+        name: &str,
+    ) -> Result<RecentRepositoryRecord, ApplicationError> {
         let connection = self.connection.lock().map_err(|_| {
             ApplicationError::PersistenceError("Failed to acquire database lock".into())
         })?;
@@ -110,7 +119,10 @@ impl SQLiteRepositoryStore {
     }
 
     /// Retrieves all recent repositories ordered by last opened timestamp.
-    pub fn get_recent_repositories(&self, limit: usize) -> Result<Vec<RecentRepositoryRecord>, ApplicationError> {
+    pub fn get_recent_repositories(
+        &self,
+        limit: usize,
+    ) -> Result<Vec<RecentRepositoryRecord>, ApplicationError> {
         let connection = self.connection.lock().map_err(|_| {
             ApplicationError::PersistenceError("Failed to acquire database lock".into())
         })?;
@@ -135,13 +147,13 @@ impl SQLiteRepositoryStore {
                     is_missing,
                 })
             })
-            .map_err(|error| ApplicationError::PersistenceError(format!("Query execution failed: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::PersistenceError(format!("Query execution failed: {}", error))
+            })?;
 
         let mut results = Vec::new();
-        for row in rows {
-            if let Ok(record) = row {
-                results.push(record);
-            }
+        for record in rows.flatten() {
+            results.push(record);
         }
 
         Ok(results)
@@ -153,10 +165,14 @@ impl SQLiteRepositoryStore {
             ApplicationError::PersistenceError("Failed to acquire database lock".into())
         })?;
 
-        connection.execute(
-            "DELETE FROM recent_repositories WHERE path = ?1",
-            params![path],
-        ).map_err(|error| ApplicationError::PersistenceError(format!("Deletion failed: {}", error)))?;
+        connection
+            .execute(
+                "DELETE FROM recent_repositories WHERE path = ?1",
+                params![path],
+            )
+            .map_err(|error| {
+                ApplicationError::PersistenceError(format!("Deletion failed: {}", error))
+            })?;
 
         Ok(())
     }
@@ -167,10 +183,14 @@ impl SQLiteRepositoryStore {
             ApplicationError::PersistenceError("Failed to acquire database lock".into())
         })?;
 
-        connection.execute(
-            "DELETE FROM recent_repositories",
-            [],
-        ).map_err(|error| ApplicationError::PersistenceError(format!("Clearing recent repositories failed: {}", error)))?;
+        connection
+            .execute("DELETE FROM recent_repositories", [])
+            .map_err(|error| {
+                ApplicationError::PersistenceError(format!(
+                    "Clearing recent repositories failed: {}",
+                    error
+                ))
+            })?;
 
         Ok(())
     }
@@ -226,51 +246,65 @@ impl SQLiteRepositoryStore {
             "#
         ).map_err(|error| ApplicationError::PersistenceError(format!("Query preparation failed: {}", error)))?;
 
-        let rows = statement.query_map([], |row| {
-            let provider_raw: String = row.get(1)?;
-            let provider = match provider_raw.as_str() {
-                "gitlab" => ProviderKind::GitLab,
-                _ => ProviderKind::GitHub,
-            };
+        let rows = statement
+            .query_map([], |row| {
+                let provider_raw: String = row.get(1)?;
+                let provider = match provider_raw.as_str() {
+                    "gitlab" => ProviderKind::GitLab,
+                    _ => ProviderKind::GitHub,
+                };
 
-            Ok(ProviderAccount {
-                id: row.get(0)?,
-                provider,
-                username: row.get(2)?,
-                display_name: row.get(3)?,
-                email: row.get(4)?,
-                avatar_url: row.get(5)?,
-                instance_url: row.get(6)?,
-                created_at_timestamp: row.get(7)?,
+                Ok(ProviderAccount {
+                    id: row.get(0)?,
+                    provider,
+                    username: row.get(2)?,
+                    display_name: row.get(3)?,
+                    email: row.get(4)?,
+                    avatar_url: row.get(5)?,
+                    instance_url: row.get(6)?,
+                    created_at_timestamp: row.get(7)?,
+                })
             })
-        }).map_err(|error| ApplicationError::PersistenceError(format!("Query execution failed: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::PersistenceError(format!("Query execution failed: {}", error))
+            })?;
 
         let mut accounts = Vec::new();
-        for row in rows {
-            if let Ok(account) = row {
-                accounts.push(account);
-            }
+        for account in rows.flatten() {
+            accounts.push(account);
         }
 
         Ok(accounts)
     }
 
     /// Deletes a connected provider account by ID.
-    pub fn delete_provider_account(&self, account_identifier: &str) -> Result<bool, ApplicationError> {
+    pub fn delete_provider_account(
+        &self,
+        account_identifier: &str,
+    ) -> Result<bool, ApplicationError> {
         let connection = self.connection.lock().map_err(|_| {
             ApplicationError::PersistenceError("Failed to acquire database lock".into())
         })?;
 
-        let rows_affected = connection.execute(
-            "DELETE FROM provider_accounts WHERE id = ?1",
-            params![account_identifier],
-        ).map_err(|error| ApplicationError::PersistenceError(format!("Failed to delete provider account: {}", error)))?;
+        let rows_affected = connection
+            .execute(
+                "DELETE FROM provider_accounts WHERE id = ?1",
+                params![account_identifier],
+            )
+            .map_err(|error| {
+                ApplicationError::PersistenceError(format!(
+                    "Failed to delete provider account: {}",
+                    error
+                ))
+            })?;
 
         Ok(rows_affected > 0)
     }
 
     /// Lists all persisted custom actions.
-    pub fn list_custom_actions(&self) -> Result<Vec<crate::domain::CustomActionDefinition>, ApplicationError> {
+    pub fn list_custom_actions(
+        &self,
+    ) -> Result<Vec<crate::domain::CustomActionDefinition>, ApplicationError> {
         let connection = self.connection.lock().map_err(|_| {
             ApplicationError::PersistenceError("Failed to acquire database lock".into())
         })?;
@@ -289,20 +323,23 @@ impl SQLiteRepositoryStore {
                     description_text: row.get(4)?,
                 })
             })
-            .map_err(|error| ApplicationError::PersistenceError(format!("Query failed: {}", error)))?;
+            .map_err(|error| {
+                ApplicationError::PersistenceError(format!("Query failed: {}", error))
+            })?;
 
         let mut actions = Vec::new();
-        for row in rows {
-            if let Ok(action) = row {
-                actions.push(action);
-            }
+        for action in rows.flatten() {
+            actions.push(action);
         }
 
         Ok(actions)
     }
 
     /// Saves or updates a custom action.
-    pub fn save_custom_action(&self, action: &crate::domain::CustomActionDefinition) -> Result<(), ApplicationError> {
+    pub fn save_custom_action(
+        &self,
+        action: &crate::domain::CustomActionDefinition,
+    ) -> Result<(), ApplicationError> {
         let connection = self.connection.lock().map_err(|_| {
             ApplicationError::PersistenceError("Failed to acquire database lock".into())
         })?;
@@ -336,8 +373,13 @@ impl SQLiteRepositoryStore {
         })?;
 
         let rows_affected = connection
-            .execute("DELETE FROM custom_actions WHERE action_identifier = ?1", params![action_identifier])
-            .map_err(|error| ApplicationError::PersistenceError(format!("Failed to delete action: {}", error)))?;
+            .execute(
+                "DELETE FROM custom_actions WHERE action_identifier = ?1",
+                params![action_identifier],
+            )
+            .map_err(|error| {
+                ApplicationError::PersistenceError(format!("Failed to delete action: {}", error))
+            })?;
 
         Ok(rows_affected > 0)
     }

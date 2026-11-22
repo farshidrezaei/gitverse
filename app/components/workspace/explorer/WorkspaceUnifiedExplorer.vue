@@ -114,9 +114,8 @@ async function handleRenameBranch(oldName: string, newName: string): Promise<voi
 const totalChangesCount = computed(() => {
   const staged = props.repositoryStatus?.staged_files?.length || 0
   const unstaged = props.repositoryStatus?.unstaged_files?.length || 0
-  const untracked = props.repositoryStatus?.untracked_files?.length || 0
   const conflicted = props.repositoryStatus?.conflicted_files?.length || 0
-  return staged + unstaged + untracked + conflicted
+  return staged + unstaged + conflicted
 })
 </script>
 
