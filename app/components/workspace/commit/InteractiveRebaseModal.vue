@@ -16,6 +16,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const { isRebasing, fetchRebaseCommits, executeRebase } = useRebaseController()
+const { confirmStandard } = useConfirmationDialog()
 
 const planItems = ref<RebasePlanItem[]>([])
 const isLoadingCommits = ref<boolean>(false)
@@ -112,6 +113,16 @@ function handleClose(): void {
 
 async function handleConfirmRebase(): Promise<void> {
   if (planItems.value.length === 0) return
+
+  // Tier 1 confirmation for history mutating rebase operation
+  const confirmed = await confirmStandard({
+    title: t('rebase.confirmTitle'),
+    description: t('rebase.confirmDescription', { hash: props.baseCommitHash.slice(0, 7) }),
+    variant: 'warning',
+    confirmLabel: t('rebase.startRebaseButton'),
+  })
+
+  if (!confirmed) return
 
   const outcome = await executeRebase({
     base_commit_hash: props.baseCommitHash,

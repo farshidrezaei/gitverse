@@ -19,21 +19,21 @@ export function useRebaseController() {
 
   const isRebasing = safeState<boolean>('workspace-is-interactive-rebasing', () => false)
 
+  // Capture composables at the top level of setup
+  const notificationService = tryUseNuxtApp() ? useNotificationService() : null
+  const i18n = tryUseNuxtApp() ? useI18n() : null
+
   function notifySuccess(message: string): void {
-    if (tryUseNuxtApp()) {
-      useNotificationService().notifySuccess(message)
-    }
+    notificationService?.notifySuccess(message)
   }
 
   function notifyError(message: string): void {
-    if (tryUseNuxtApp()) {
-      useNotificationService().notifyError(message)
-    }
+    notificationService?.notifyError(message)
   }
 
   function translate(key: string, parameters?: Record<string, unknown>): string {
-    if (tryUseNuxtApp()) {
-      return useI18n().t(key, parameters || {})
+    if (i18n) {
+      return i18n.t(key, parameters || {})
     }
     return key
   }

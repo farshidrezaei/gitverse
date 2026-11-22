@@ -139,7 +139,9 @@
     },
     "moveUp": "Move up",
     "moveDown": "Move down",
-    "dragToReorder": "Drag to reorder"
+    "dragToReorder": "Drag to reorder",
+    "confirmTitle": "Confirm Interactive Rebase",
+    "confirmDescription": "Are you sure you want to proceed with interactive rebase? This will rewrite local commit history from commit {hash}."
   },
   "confirmation": {
     "defaultTitle": "Confirm Action",
