@@ -5,13 +5,13 @@
   "description": "Local-first, cross-platform Git client with custom commit graph, diff engine, and provider integrations.",
   "license": "MIT",
   "author": "GitVerse Contributors",
-  "homepage": "https://github.com/farshid/gitverse",
+  "homepage": "https://github.com/farshidrezaei/gitverse",
   "repository": {
     "type": "git",
-    "url": "https://github.com/farshid/gitverse.git"
+    "url": "https://github.com/farshidrezaei/gitverse.git"
   },
   "bugs": {
-    "url": "https://github.com/farshid/gitverse/issues"
+    "url": "https://github.com/farshidrezaei/gitverse/issues"
   },
   "keywords": [
     "git",

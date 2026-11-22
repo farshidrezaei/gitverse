@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: GitVerse Discussions & Questions
-    url: https://github.com/farshid/gitverse/discussions
+    url: https://github.com/farshidrezaei/gitverse/discussions
     about: Ask questions, discuss workflows, or request help.
   - name: Architecture & Documentation
-    url: https://github.com/farshid/gitverse/tree/main/docs
+    url: https://github.com/farshidrezaei/gitverse/tree/main/docs
     about: Read specifications, architectural decision records, and technical guides.

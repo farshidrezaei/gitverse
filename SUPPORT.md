@@ -8,7 +8,7 @@ Thank you for using **GitVerse**! Here is how to get help, ask questions, and re
 
 If you have a general question about how to use GitVerse, need advice on Git workflows, or want to discuss feature ideas:
 
-- **GitHub Discussions**: Open a discussion thread on [GitHub Discussions](https://github.com/farshid/gitverse/discussions).
+- **GitHub Discussions**: Open a discussion thread on [GitHub Discussions](https://github.com/farshidrezaei/gitverse/discussions).
 - **Documentation**: Browse technical guides and architectural specs in the [`docs/`](docs/) directory.
 
 ---
@@ -17,7 +17,7 @@ If you have a general question about how to use GitVerse, need advice on Git wor
 
 If you encountered a reproducible defect or crash in GitVerse:
 
-1. Search [Existing Issues](https://github.com/farshid/gitverse/issues) to verify if the issue was already reported.
+1. Search [Existing Issues](https://github.com/farshidrezaei/gitverse/issues) to verify if the issue was already reported.
 2. If not reported, open a new issue using our [Bug Report Form](.github/ISSUE_TEMPLATE/bug_report.yml).
 3. Include your operating system, Git CLI version (`git --version`), GitVerse version, reproduction steps, and relevant log excerpts.
 

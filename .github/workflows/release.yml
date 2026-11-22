@@ -24,7 +24,7 @@ jobs:
       - name: Install Linux system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libsecret-1-dev patchelf libssl-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libsecret-1-dev patchelf libssl-dev rpm
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -91,7 +91,7 @@ jobs:
             -f tag_name="${TAG}" \
             -f target_commitish="${GITHUB_SHA}" \
             -f name="GitVerse ${TAG}" \
-            -f body="Cross-platform desktop installers for Linux (.deb, .AppImage), Windows (.exe, .msi), and macOS (.dmg), plus signed in-app updater artifacts." \
+            -f body="Cross-platform desktop installers for Linux (.deb, .rpm, .AppImage), Windows (.exe, .msi), and macOS (.dmg), plus signed in-app updater artifacts." \
             -F draft=true \
             -F prerelease=false \
             --jq '.id')
@@ -149,7 +149,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libsecret-1-dev patchelf libssl-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libsecret-1-dev patchelf libssl-dev rpm
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
@@ -165,7 +165,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           releaseId: ${{ needs.prepare_release.outputs.release_id }}
-          releaseBody: 'Cross-platform desktop installers for Linux (.deb, .AppImage), Windows (.exe, .msi), and macOS (.dmg), plus signed in-app updater artifacts.'
+          releaseBody: 'Cross-platform desktop installers for Linux (.deb, .rpm, .AppImage), Windows (.exe, .msi), and macOS (.dmg), plus signed in-app updater artifacts.'
           args: ${{ matrix.platform.args }}
 
   finalize_release:
@@ -207,9 +207,9 @@ jobs:
             ' CHANGELOG.md | sed '/./,$!d')
           fi
           if [ -z "${NOTES}" ]; then
-            NOTES="Cross-platform desktop installers for Linux (.deb, .AppImage), Windows (.exe, .msi), and macOS (.dmg), plus signed in-app updater artifacts."
+            NOTES="Cross-platform desktop installers for Linux (.deb, .rpm, .AppImage), Windows (.exe, .msi), and macOS (.dmg), plus signed in-app updater artifacts."
           else
-            NOTES=$(printf '%s\n\nCross-platform desktop installers for Linux (.deb, .AppImage), Windows (.exe, .msi), and macOS (.dmg), plus signed in-app updater artifacts.\n' "${NOTES}")
+            NOTES=$(printf '%s\n\nCross-platform desktop installers for Linux (.deb, .rpm, .AppImage), Windows (.exe, .msi), and macOS (.dmg), plus signed in-app updater artifacts.\n' "${NOTES}")
           fi
           jq -n --arg body "${NOTES}" '{draft: false, body: $body}' | gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" \
             --input - \

@@ -6,7 +6,7 @@
 
 ### Modern, Cross-Platform, Local-First Git Desktop Client
 
-[![Build & Test](https://github.com/farshid/gitverse/actions/workflows/ci.yml/badge.svg)](https://github.com/farshid/gitverse)
+[![Build & Test](https://github.com/farshidrezaei/gitverse/actions/workflows/ci.yml/badge.svg)](https://github.com/farshidrezaei/gitverse)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Tauri 2](https://img.shields.io/badge/Tauri-2.x-orange.svg)](https://tauri.app)
 [![Nuxt 4](https://img.shields.io/badge/Nuxt-4.x-00DC82.svg)](https://nuxt.com)
@@ -82,11 +82,12 @@ Pre-built application binaries for all supported platforms are automatically gen
 
 | Platform | Architecture | Package Format | Direct Download |
 |---|---|---|---|
-| **macOS** | Universal (`Apple Silicon` + `Intel`) | `.dmg` | [Latest macOS DMG](https://github.com/farshid/gitverse/releases/latest) |
-| **Linux** | `x86_64` | `.AppImage` (Standalone portable) | [Latest Linux AppImage](https://github.com/farshid/gitverse/releases/latest) |
-| **Linux** | `x86_64` | `.deb` (Debian / Ubuntu) | [Latest Linux DEB](https://github.com/farshid/gitverse/releases/latest) |
-| **Windows** | `x64` | `.exe` (NSIS Installer) | [Latest Windows Installer](https://github.com/farshid/gitverse/releases/latest) |
-| **Windows** | `x64` | `.msi` (Enterprise MSI Package) | [Latest Windows MSI](https://github.com/farshid/gitverse/releases/latest) |
+| **macOS** | Universal (`Apple Silicon` + `Intel`) | `.dmg` | [Latest macOS DMG](https://github.com/farshidrezaei/gitverse/releases/latest) |
+| **Linux** | `x86_64` | `.AppImage` (Standalone portable) | [Latest Linux AppImage](https://github.com/farshidrezaei/gitverse/releases/latest) |
+| **Linux** | `x86_64` | `.deb` (Debian / Ubuntu) | [Latest Linux DEB](https://github.com/farshidrezaei/gitverse/releases/latest) |
+| **Linux** | `x86_64` | `.rpm` (Fedora / RHEL / openSUSE) | [Latest Linux RPM](https://github.com/farshidrezaei/gitverse/releases/latest) |
+| **Windows** | `x64` | `.exe` (NSIS Installer) | [Latest Windows Installer](https://github.com/farshidrezaei/gitverse/releases/latest) |
+| **Windows** | `x64` | `.msi` (Enterprise MSI Package) | [Latest Windows MSI](https://github.com/farshidrezaei/gitverse/releases/latest) |
 
 SHA256 checksums are published in `SHA256SUMS.txt` alongside every release for binary integrity verification.
 
@@ -105,7 +106,7 @@ SHA256 checksums are published in `SHA256SUMS.txt` alongside every release for b
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/farshid/gitverse.git
+git clone https://github.com/farshidrezaei/gitverse.git
 cd gitverse
 
 # 2. Install dependencies

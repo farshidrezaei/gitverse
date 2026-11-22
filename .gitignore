@@ -25,6 +25,9 @@ src-tauri/gen/schemas/
 .env.*
 !.env.example
 
+# Local tooling & indexing
+.codegraph/
+
 # OS / Editor
 .DS_Store
 Thumbs.db

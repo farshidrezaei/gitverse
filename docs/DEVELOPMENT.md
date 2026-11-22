@@ -43,7 +43,7 @@ sudo apt-get install -y \
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/farshid/gitverse.git
+git clone https://github.com/farshidrezaei/gitverse.git
 cd gitverse
 
 # 2. Install Node dependencies
