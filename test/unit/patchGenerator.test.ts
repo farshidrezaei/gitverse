@@ -74,6 +74,36 @@ describe('patchGenerator', () => {
     expect(patch).not.toContain('-line 3')
   })
 
+  it('preserves no newline marker in hunk and line-level staging patch', () => {
+    const eofHunk: DiffHunk = {
+      header: '@@ -1,1 +1,1 @@',
+      old_start: 1,
+      old_lines: 1,
+      new_start: 1,
+      new_lines: 1,
+      lines: [
+        { line_type: 'deletion', old_line_number: 1, new_line_number: null, content: 'old line', has_no_newline: true },
+        { line_type: 'addition', old_line_number: null, new_line_number: 1, content: 'new line', has_no_newline: true },
+      ],
+    }
+    const eofFileDiff: FileDiff = {
+      old_path: 'eof.txt',
+      new_path: 'eof.txt',
+      is_binary: false,
+      is_new_file: false,
+      is_deleted_file: false,
+      hunks: [eofHunk],
+      total_additions: 1,
+      total_deletions: 1,
+    }
+
+    const wholePatch = buildHunkPatch(eofFileDiff, 0)
+    expect(wholePatch).toContain('-old line\n\\ No newline at end of file\n+new line\n\\ No newline at end of file\n')
+
+    const linePatch = buildSelectedLinesPatch(eofFileDiff, 0, [0, 1], 'stage')
+    expect(linePatch).toContain('-old line\n\\ No newline at end of file\n+new line\n\\ No newline at end of file\n')
+  })
+
   it('returns null for non-existent hunk index or empty selected indices', () => {
     expect(buildHunkPatch(sampleFileDiff, 99)).toBeNull()
     expect(buildSelectedLinesPatch(sampleFileDiff, 0, [], 'stage')).toBeNull()

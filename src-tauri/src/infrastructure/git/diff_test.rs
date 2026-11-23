@@ -43,6 +43,28 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_unified_diff_with_no_newline_marker() {
+        let sample_diff = concat!(
+            "--- a/file.txt\n",
+            "+++ b/file.txt\n",
+            "@@ -1,1 +1,1 @@\n",
+            "-old\n",
+            "\\ No newline at end of file\n",
+            "+new\n",
+            "\\ No newline at end of file\n"
+        );
+
+        let diff = parse_unified_diff(sample_diff, "file.txt");
+        assert_eq!(diff.hunks.len(), 1);
+        let hunk = &diff.hunks[0];
+        assert_eq!(hunk.lines.len(), 2);
+        assert_eq!(hunk.lines[0].line_type, DiffLineType::Deletion);
+        assert!(hunk.lines[0].has_no_newline);
+        assert_eq!(hunk.lines[1].line_type, DiffLineType::Addition);
+        assert!(hunk.lines[1].has_no_newline);
+    }
+
+    #[test]
     fn test_parse_binary_diff() {
         let binary_diff = "Binary files a/logo.png and b/logo.png differ\n";
         let diff = parse_unified_diff(binary_diff, "logo.png");

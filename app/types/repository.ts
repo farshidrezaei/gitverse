@@ -78,6 +78,7 @@ export interface DiffLine {
   old_line_number: number | null
   new_line_number: number | null
   content: string
+  has_no_newline?: boolean
 }
 
 export interface DiffHunk {

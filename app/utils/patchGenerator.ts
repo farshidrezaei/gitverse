@@ -35,6 +35,9 @@ export function buildHunkPatch(fileDiff: FileDiff, hunkIndex: number): string | 
     } else if (line.line_type === 'context') {
       hunkBody += ` ${line.content}\n`
     }
+    if (line.has_no_newline) {
+      hunkBody += '\\ No newline at end of file\n'
+    }
   }
 
   return `${fileHeader}${hunkBody}`
@@ -70,6 +73,9 @@ export function buildSelectedLinesPatch(
 
     if (line.line_type === 'context') {
       outputLines.push(` ${line.content}`)
+      if (line.has_no_newline) {
+        outputLines.push('\\ No newline at end of file')
+      }
       oldCount += 1
       newCount += 1
     } else if (actionType === 'stage') {
@@ -77,16 +83,25 @@ export function buildSelectedLinesPatch(
       if (line.line_type === 'addition') {
         if (isSelected) {
           outputLines.push(`+${line.content}`)
+          if (line.has_no_newline) {
+            outputLines.push('\\ No newline at end of file')
+          }
           newCount += 1
         }
         // If not selected, omitted from patch
       } else if (line.line_type === 'deletion') {
         if (isSelected) {
           outputLines.push(`-${line.content}`)
+          if (line.has_no_newline) {
+            outputLines.push('\\ No newline at end of file')
+          }
           oldCount += 1
         } else {
           // Unselected deletion stays in index as context
           outputLines.push(` ${line.content}`)
+          if (line.has_no_newline) {
+            outputLines.push('\\ No newline at end of file')
+          }
           oldCount += 1
           newCount += 1
         }
@@ -96,16 +111,25 @@ export function buildSelectedLinesPatch(
       if (line.line_type === 'addition') {
         if (isSelected) {
           outputLines.push(`+${line.content}`)
+          if (line.has_no_newline) {
+            outputLines.push('\\ No newline at end of file')
+          }
           newCount += 1
         } else {
           // Unselected addition stays in file/index as context
           outputLines.push(` ${line.content}`)
+          if (line.has_no_newline) {
+            outputLines.push('\\ No newline at end of file')
+          }
           oldCount += 1
           newCount += 1
         }
       } else if (line.line_type === 'deletion') {
         if (isSelected) {
           outputLines.push(`-${line.content}`)
+          if (line.has_no_newline) {
+            outputLines.push('\\ No newline at end of file')
+          }
           oldCount += 1
         }
         // If not selected, omitted from patch so it remains deleted

@@ -96,6 +96,7 @@ pub fn parse_unified_diff(raw_diff: &str, file_path: &str) -> FileDiff {
                     old_line_number: None,
                     new_line_number: Some(current_new_line),
                     content: content.to_string(),
+                    has_no_newline: false,
                 });
                 current_new_line += 1;
             } else if let Some(content) = line.strip_prefix('-') {
@@ -105,6 +106,7 @@ pub fn parse_unified_diff(raw_diff: &str, file_path: &str) -> FileDiff {
                     old_line_number: Some(current_old_line),
                     new_line_number: None,
                     content: content.to_string(),
+                    has_no_newline: false,
                 });
                 current_old_line += 1;
             } else if let Some(content) = line.strip_prefix(' ') {
@@ -113,11 +115,14 @@ pub fn parse_unified_diff(raw_diff: &str, file_path: &str) -> FileDiff {
                     old_line_number: Some(current_old_line),
                     new_line_number: Some(current_new_line),
                     content: content.to_string(),
+                    has_no_newline: false,
                 });
                 current_old_line += 1;
                 current_new_line += 1;
             } else if line == "\\ No newline at end of file" {
-                // Ignore EOF marker
+                if let Some(last_line) = hunk.lines.last_mut() {
+                    last_line.has_no_newline = true;
+                }
                 continue;
             }
         }

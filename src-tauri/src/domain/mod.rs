@@ -166,6 +166,8 @@ pub struct DiffLine {
     pub old_line_number: Option<u32>,
     pub new_line_number: Option<u32>,
     pub content: String,
+    #[serde(default)]
+    pub has_no_newline: bool,
 }
 
 /// A contiguous block (hunk) of changes in a file diff.
