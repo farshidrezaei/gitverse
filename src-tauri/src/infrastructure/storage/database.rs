@@ -24,52 +24,70 @@ impl SQLiteRepositoryStore {
         Ok(store)
     }
 
-    /// Initializes local SQLite database tables if not existing.
+    /// Runs versioned, transactional migrations on the SQLite database using PRAGMA user_version.
     fn run_migrations(&self) -> Result<(), ApplicationError> {
-        let connection = self.connection.lock().map_err(|_| {
+        let mut connection = self.connection.lock().map_err(|_| {
             ApplicationError::PersistenceError("Failed to acquire database lock".into())
         })?;
 
-        connection
-            .execute_batch(
-                r#"
-            CREATE TABLE IF NOT EXISTS recent_repositories (
-                id TEXT PRIMARY KEY,
-                path TEXT NOT NULL UNIQUE,
-                name TEXT NOT NULL,
-                last_opened_timestamp INTEGER NOT NULL,
-                is_pinned INTEGER NOT NULL DEFAULT 0
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_recent_repositories_last_opened
-            ON recent_repositories(last_opened_timestamp DESC);
-
-            CREATE TABLE IF NOT EXISTS provider_accounts (
-                id TEXT PRIMARY KEY,
-                provider TEXT NOT NULL,
-                username TEXT NOT NULL,
-                display_name TEXT,
-                email TEXT,
-                avatar_url TEXT,
-                instance_url TEXT NOT NULL,
-                created_at_timestamp INTEGER NOT NULL
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_provider_accounts_lookup
-            ON provider_accounts(provider, username);
-
-            CREATE TABLE IF NOT EXISTS custom_actions (
-                action_identifier TEXT PRIMARY KEY,
-                display_name TEXT NOT NULL,
-                command_string TEXT NOT NULL,
-                icon_name TEXT NOT NULL,
-                description_text TEXT NOT NULL
-            );
-            "#,
-            )
+        let current_version: i32 = connection
+            .query_row("PRAGMA user_version;", [], |row| row.get(0))
             .map_err(|error| {
-                ApplicationError::PersistenceError(format!("Migration failed: {}", error))
+                ApplicationError::PersistenceError(format!("Failed to read schema version: {}", error))
             })?;
+
+        if current_version < 1 {
+            let transaction = connection.transaction().map_err(|error| {
+                ApplicationError::PersistenceError(format!("Failed to start migration transaction: {}", error))
+            })?;
+
+            transaction
+                .execute_batch(
+                    r#"
+                CREATE TABLE IF NOT EXISTS recent_repositories (
+                    id TEXT PRIMARY KEY,
+                    path TEXT NOT NULL UNIQUE,
+                    name TEXT NOT NULL,
+                    last_opened_timestamp INTEGER NOT NULL,
+                    is_pinned INTEGER NOT NULL DEFAULT 0
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_recent_repositories_last_opened
+                ON recent_repositories(last_opened_timestamp DESC);
+
+                CREATE TABLE IF NOT EXISTS provider_accounts (
+                    id TEXT PRIMARY KEY,
+                    provider TEXT NOT NULL,
+                    username TEXT NOT NULL,
+                    display_name TEXT,
+                    email TEXT,
+                    avatar_url TEXT,
+                    instance_url TEXT NOT NULL,
+                    created_at_timestamp INTEGER NOT NULL
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_provider_accounts_lookup
+                ON provider_accounts(provider, username);
+
+                CREATE TABLE IF NOT EXISTS custom_actions (
+                    action_identifier TEXT PRIMARY KEY,
+                    display_name TEXT NOT NULL,
+                    command_string TEXT NOT NULL,
+                    icon_name TEXT NOT NULL,
+                    description_text TEXT NOT NULL
+                );
+
+                PRAGMA user_version = 1;
+                "#,
+                )
+                .map_err(|error| {
+                    ApplicationError::PersistenceError(format!("Migration v1 failed: {}", error))
+                })?;
+
+            transaction.commit().map_err(|error| {
+                ApplicationError::PersistenceError(format!("Failed to commit migration v1: {}", error))
+            })?;
+        }
 
         Ok(())
     }
