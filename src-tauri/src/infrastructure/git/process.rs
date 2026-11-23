@@ -5,7 +5,38 @@ use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
-const DEFAULT_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
+const DEFAULT_LOCAL_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
+const DEFAULT_NETWORK_COMMAND_TIMEOUT: Duration = Duration::from_secs(300);
+
+/// Determines appropriate execution timeout based on command arguments.
+fn resolve_command_timeout(arguments: &[&str]) -> Duration {
+    if arguments.is_empty() {
+        return DEFAULT_LOCAL_COMMAND_TIMEOUT;
+    }
+    match arguments[0] {
+        "clone" | "fetch" | "pull" | "push" | "ls-remote" | "submodule" => {
+            DEFAULT_NETWORK_COMMAND_TIMEOUT
+        }
+        _ => DEFAULT_LOCAL_COMMAND_TIMEOUT,
+    }
+}
+
+/// Parses Git version string (e.g. "git version 2.43.0" or "git version 2.56.0.windows.1")
+/// and determines if version >= 2.18.0 (when porcelain v2 stabilized).
+fn check_porcelain_v2_support(raw_version: &str) -> bool {
+    let lower = raw_version.to_lowercase();
+    let prefix = "git version ";
+    if let Some(version_part) = lower.strip_prefix(prefix) {
+        let clean_version = version_part.split_whitespace().next().unwrap_or("");
+        let mut segments = clean_version.split('.');
+        if let (Some(major_str), Some(minor_str)) = (segments.next(), segments.next()) {
+            if let (Ok(major), Ok(minor)) = (major_str.parse::<u32>(), minor_str.parse::<u32>()) {
+                return (major > 2) || (major == 2 && minor >= 18);
+            }
+        }
+    }
+    false
+}
 
 /// Safe, argument-array-based runner for executing Git commands without shell interpolation.
 #[derive(Debug, Clone)]
@@ -34,6 +65,7 @@ impl GitProcessExecutor {
 
         let mut command = Command::new(&binary_to_test);
         command.arg("version");
+        command.kill_on_drop(true);
 
         let output = tokio::time::timeout(Duration::from_secs(5), command.output())
             .await
@@ -58,8 +90,7 @@ impl GitProcessExecutor {
         }
 
         let raw_version = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        // git version 2.43.0 -> parse or verify
-        let has_porcelain_v2 = raw_version.contains("git version");
+        let has_porcelain_v2 = check_porcelain_v2_support(&raw_version);
 
         let resolved_path = if binary_to_test == Path::new("git") {
             // Find absolute path via which/where if available or return "git"
@@ -101,13 +132,15 @@ impl GitProcessExecutor {
 
         // Standardize locale to C for predictable, machine-readable output
         command.env("LC_ALL", "C");
+        command.kill_on_drop(true);
 
-        let execution_result = tokio::time::timeout(DEFAULT_COMMAND_TIMEOUT, command.output())
+        let timeout_duration = resolve_command_timeout(arguments);
+        let execution_result = tokio::time::timeout(timeout_duration, command.output())
             .await
             .map_err(|_| {
                 let message = format!(
                     "Command 'git {:?}' timed out after {:?}",
-                    arguments, DEFAULT_COMMAND_TIMEOUT
+                    arguments, timeout_duration
                 );
                 crate::infrastructure::diagnostics::append_diagnostic_log("error", &message);
                 ApplicationError::TimeoutOrCancelled(message)
@@ -154,13 +187,15 @@ impl GitProcessExecutor {
         }
 
         command.env("LC_ALL", "C");
+        command.kill_on_drop(true);
 
-        let execution_result = tokio::time::timeout(DEFAULT_COMMAND_TIMEOUT, command.output())
+        let timeout_duration = resolve_command_timeout(arguments);
+        let execution_result = tokio::time::timeout(timeout_duration, command.output())
             .await
             .map_err(|_| {
                 ApplicationError::TimeoutOrCancelled(format!(
                     "Command 'git {:?}' timed out after {:?}",
-                    arguments, DEFAULT_COMMAND_TIMEOUT
+                    arguments, timeout_duration
                 ))
             })?
             .map_err(|error| {
@@ -198,6 +233,7 @@ impl GitProcessExecutor {
         command.stdout(Stdio::piped());
         command.stderr(Stdio::piped());
         command.env("LC_ALL", "C");
+        command.kill_on_drop(true);
 
         let mut child = command.spawn().map_err(|error| {
             ApplicationError::FilesystemError(format!(
@@ -212,13 +248,14 @@ impl GitProcessExecutor {
             drop(stdin);
         }
 
+        let timeout_duration = resolve_command_timeout(arguments);
         let execution_result =
-            tokio::time::timeout(DEFAULT_COMMAND_TIMEOUT, child.wait_with_output())
+            tokio::time::timeout(timeout_duration, child.wait_with_output())
                 .await
                 .map_err(|_| {
                     ApplicationError::TimeoutOrCancelled(format!(
                         "Command 'git {:?}' timed out after {:?}",
-                        arguments, DEFAULT_COMMAND_TIMEOUT
+                        arguments, timeout_duration
                     ))
                 })?
                 .map_err(|error| {
@@ -263,12 +300,15 @@ impl GitProcessExecutor {
             command.arg(argument);
         }
 
-        let execution_result = tokio::time::timeout(DEFAULT_COMMAND_TIMEOUT, command.output())
+        command.kill_on_drop(true);
+
+        let timeout_duration = resolve_command_timeout(arguments);
+        let execution_result = tokio::time::timeout(timeout_duration, command.output())
             .await
             .map_err(|_| {
                 ApplicationError::TimeoutOrCancelled(format!(
                     "Command 'git {:?}' timed out after {:?}",
-                    arguments, DEFAULT_COMMAND_TIMEOUT
+                    arguments, timeout_duration
                 ))
             })?
             .map_err(|error| {
