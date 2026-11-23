@@ -1,6 +1,6 @@
 [package]
 name = "gitverse"
-version = "1.0.0"
+version = "1.0.1"
 default-run = "gitverse"
 description = "Local-first, cross-platform Git client desktop application."
 authors = ["GitVerse Contributors"]
