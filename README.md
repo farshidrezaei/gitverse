@@ -15,6 +15,11 @@
 
 [Download](#downloads--installation) • [Features](#key-features) • [Why GitVerse?](#why-gitverse) • [Documentation](docs/ARCHITECTURE.md) • [Development](#quick-start-for-contributors)
 
+<br />
+<br />
+
+<img src="docs/assets/gitverse-workspace.png" alt="GitVerse Workspace, Commit Graph, and Diff Viewer" width="100%" style="border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);" />
+
 </div>
 
 ---
@@ -54,10 +59,24 @@ Traditional Git GUIs are often slow, memory-hungry Electron wrappers that hide G
 - **Image Diff Support**: Visual comparison for common image formats.
 
 ### 🤝 Integrated Pull Request & Code Review Studio
+
+<p align="center">
+  <img src="docs/assets/gitverse-pr-review.png" alt="GitVerse Pull Request Review Studio" width="92%" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);" />
+</p>
+
 - **GitHub & GitLab Support**: Connect multiple accounts securely using native OS Keychains (no tokens stored in plain text).
 - **In-App Reviews**: Review diffs, read discussion threads, write multi-line inline comments, and submit reviews (`APPROVE`, `REQUEST_CHANGES`, `COMMENT`).
 - **CI/CD Checks**: Inspect build status, test pipelines, and workflow runs directly within each pull request tab.
 - **Safe Remote Merge**: Merge branches using merge commit, squash, or rebase strategies.
+
+### ⚡ Visual CI/CD Workflow & Pipeline Monitor
+
+<p align="center">
+  <img src="docs/assets/gitverse-ci-pipeline.png" alt="GitVerse Visual CI Pipeline Graph" width="92%" style="border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);" />
+</p>
+
+- **Multi-Stage Pipeline Graphs**: Inspect multi-stage build, test, lint, and deploy workflows with live step execution counters and durations.
+- **Instant Re-run & Inspection**: View failed job logs and trigger job re-runs directly from your desktop.
 
 ### 🗂️ Multi-Repository Tabs & Workspace Scopes
 - **Two-Tier Tab Strip**: Keep multiple repositories open in tabs and switch between projects instantly.
