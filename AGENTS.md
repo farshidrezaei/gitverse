@@ -2,7 +2,7 @@
 
 This document is the permanent engineering contract for **GitVerse**. Every contributor and coding agent must read and obey it before designing, editing, or reviewing code.
 
-Source specification: `implement.md`.
+Source specification: `docs/SPECIFICATION.md`.
 
 ---
 

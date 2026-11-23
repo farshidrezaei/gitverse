@@ -1,10 +1,10 @@
-# Git Client — Technical Specification & Implementation Backlog
+# GitVerse — Technical Specification & Implementation Backlog
 
-**Document status:** Initial Technical Baseline  
-**Product stage:** Pre-development  
-**Release target:** v1.0  
-**Distribution:** Portable Desktop Application  
-**License:** To be selected before public release  
+**Document status:** Living Technical Specification (Post-v1.0 Baseline)  
+**Product stage:** Active Development  
+**Release target:** v1.0.0+  
+**Distribution:** Portable Desktop Application (Workbench)  
+**License:** MIT  
 **Primary platforms:** Linux, Windows, macOS
 
 ---
