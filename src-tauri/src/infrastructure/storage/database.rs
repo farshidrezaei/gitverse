@@ -33,12 +33,18 @@ impl SQLiteRepositoryStore {
         let current_version: i32 = connection
             .query_row("PRAGMA user_version;", [], |row| row.get(0))
             .map_err(|error| {
-                ApplicationError::PersistenceError(format!("Failed to read schema version: {}", error))
+                ApplicationError::PersistenceError(format!(
+                    "Failed to read schema version: {}",
+                    error
+                ))
             })?;
 
         if current_version < 1 {
             let transaction = connection.transaction().map_err(|error| {
-                ApplicationError::PersistenceError(format!("Failed to start migration transaction: {}", error))
+                ApplicationError::PersistenceError(format!(
+                    "Failed to start migration transaction: {}",
+                    error
+                ))
             })?;
 
             transaction
@@ -85,7 +91,10 @@ impl SQLiteRepositoryStore {
                 })?;
 
             transaction.commit().map_err(|error| {
-                ApplicationError::PersistenceError(format!("Failed to commit migration v1: {}", error))
+                ApplicationError::PersistenceError(format!(
+                    "Failed to commit migration v1: {}",
+                    error
+                ))
             })?;
         }
 

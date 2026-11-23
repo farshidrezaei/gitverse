@@ -29,13 +29,18 @@ fn check_porcelain_v2_support(raw_version: &str) -> bool {
     if let Some(version_part) = lower.strip_prefix(prefix) {
         let clean_version = version_part.split_whitespace().next().unwrap_or("");
         let mut segments = clean_version.split('.');
-        if let (Some(major_str), Some(minor_str)) = (segments.next(), segments.next()) {
-            if let (Ok(major), Ok(minor)) = (major_str.parse::<u32>(), minor_str.parse::<u32>()) {
-                return (major > 2) || (major == 2 && minor >= 18);
+        match (segments.next(), segments.next()) {
+            (Some(major_str), Some(minor_str)) => {
+                match (major_str.parse::<u32>(), minor_str.parse::<u32>()) {
+                    (Ok(major), Ok(minor)) => (major > 2) || (major == 2 && minor >= 18),
+                    _ => false,
+                }
             }
+            _ => false,
         }
+    } else {
+        false
     }
-    false
 }
 
 /// Safe, argument-array-based runner for executing Git commands without shell interpolation.
@@ -164,10 +169,7 @@ impl GitProcessExecutor {
                 ApplicationError::TimeoutOrCancelled(message)
             })?
             .map_err(|error| {
-                let message = format!(
-                    "Failed to spawn process {:?}: {}",
-                    current_path, error
-                );
+                let message = format!("Failed to spawn process {:?}: {}", current_path, error);
                 crate::infrastructure::diagnostics::append_diagnostic_log("error", &message);
                 ApplicationError::FilesystemError(message)
             })?;
@@ -269,21 +271,20 @@ impl GitProcessExecutor {
         }
 
         let timeout_duration = resolve_command_timeout(arguments);
-        let execution_result =
-            tokio::time::timeout(timeout_duration, child.wait_with_output())
-                .await
-                .map_err(|_| {
-                    ApplicationError::TimeoutOrCancelled(format!(
-                        "Command 'git {:?}' timed out after {:?}",
-                        arguments, timeout_duration
-                    ))
-                })?
-                .map_err(|error| {
-                    ApplicationError::FilesystemError(format!(
-                        "Failed to read child process output: {}",
-                        error
-                    ))
-                })?;
+        let execution_result = tokio::time::timeout(timeout_duration, child.wait_with_output())
+            .await
+            .map_err(|_| {
+                ApplicationError::TimeoutOrCancelled(format!(
+                    "Command 'git {:?}' timed out after {:?}",
+                    arguments, timeout_duration
+                ))
+            })?
+            .map_err(|error| {
+                ApplicationError::FilesystemError(format!(
+                    "Failed to read child process output: {}",
+                    error
+                ))
+            })?;
 
         if !execution_result.status.success() {
             let stderr = String::from_utf8_lossy(&execution_result.stderr)
