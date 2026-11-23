@@ -247,13 +247,15 @@ impl GitHubClient {
         Ok(repositories)
     }
 
-    /// Lists pull requests for a given repository owner and name.
+    /// Lists pull requests for a given repository owner and name with pagination.
     pub async fn list_pull_requests(
         &self,
         token: &str,
         owner: &str,
         repository_name: &str,
         state_filter: Option<&str>,
+        page: Option<u32>,
+        per_page: Option<u32>,
     ) -> Result<Vec<RemotePullRequest>, ApplicationError> {
         let url = format!(
             "{}/repos/{}/{}/pulls",
@@ -267,11 +269,18 @@ impl GitHubClient {
             _ => "all",
         };
 
+        let page_str = page.unwrap_or(1).to_string();
+        let per_page_str = per_page.unwrap_or(50).clamp(1, 100).to_string();
+
         let response = self
             .client
             .get(&url)
             .headers(headers)
-            .query(&[("state", state), ("per_page", "50")])
+            .query(&[
+                ("state", state),
+                ("page", &page_str),
+                ("per_page", &per_page_str),
+            ])
             .send()
             .await
             .map_err(|error| {

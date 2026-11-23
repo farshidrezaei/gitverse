@@ -59,19 +59,23 @@ pub async fn get_provider_repositories(
         .await
 }
 
-/// Tauri IPC command to fetch pull requests or merge requests for a repository.
+/// Tauri IPC command to fetch pull requests or merge requests for a repository with pagination support.
 #[tauri::command]
 pub async fn get_provider_pull_requests(
     state: State<'_, ApplicationState>,
     account_identifier: String,
     repository_full_name: String,
     state_filter: Option<String>,
+    page: Option<u32>,
+    per_page: Option<u32>,
 ) -> Result<Vec<RemotePullRequest>, ApplicationError> {
     state
         .get_provider_pull_requests(
             &account_identifier,
             &repository_full_name,
             state_filter.as_deref(),
+            page,
+            per_page,
         )
         .await
 }

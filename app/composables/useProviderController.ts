@@ -119,6 +119,8 @@ export function useProviderController() {
     accountIdentifier: string,
     repositoryFullName: string,
     stateFilter?: PullRequestState,
+    page?: number,
+    perPage?: number,
   ): Promise<RemotePullRequest[]> {
     isLoading.value = true
     pullRequests.value = []
@@ -128,6 +130,8 @@ export function useProviderController() {
         accountIdentifier,
         repositoryFullName,
         stateFilter: stateFilter || null,
+        page: page || null,
+        perPage: perPage || null,
       })
       pullRequests.value = result || []
       return pullRequests.value

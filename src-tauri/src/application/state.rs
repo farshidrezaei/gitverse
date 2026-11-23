@@ -1259,12 +1259,14 @@ impl ApplicationState {
         }
     }
 
-    /// Retrieves pull requests or merge requests for a repository.
+    /// Retrieves pull requests or merge requests for a repository with pagination support.
     pub async fn get_provider_pull_requests(
         &self,
         account_identifier: &str,
         repository_full_name: &str,
         state_filter: Option<&str>,
+        page: Option<u32>,
+        per_page: Option<u32>,
     ) -> Result<Vec<RemotePullRequest>, ApplicationError> {
         let accounts = self.store.list_provider_accounts()?;
         let account = accounts
@@ -1289,13 +1291,13 @@ impl ApplicationState {
                 }
                 let client = GitHubClient::new(Some(&account.instance_url))?;
                 client
-                    .list_pull_requests(&token, parts[0], parts[1], state_filter)
+                    .list_pull_requests(&token, parts[0], parts[1], state_filter, page, per_page)
                     .await
             }
             ProviderKind::GitLab => {
                 let client = GitLabClient::new(Some(&account.instance_url))?;
                 client
-                    .list_merge_requests(&token, repository_full_name, state_filter)
+                    .list_merge_requests(&token, repository_full_name, state_filter, page, per_page)
                     .await
             }
         }

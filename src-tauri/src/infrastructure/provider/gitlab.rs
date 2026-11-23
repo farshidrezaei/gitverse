@@ -242,12 +242,14 @@ impl GitLabClient {
         Ok(projects)
     }
 
-    /// Lists merge requests for a project ID or encoded path.
+    /// Lists merge requests for a project ID or encoded path with pagination.
     pub async fn list_merge_requests(
         &self,
         token: &str,
         project_id_or_path: &str,
         state_filter: Option<&str>,
+        page: Option<u32>,
+        per_page: Option<u32>,
     ) -> Result<Vec<RemotePullRequest>, ApplicationError> {
         let encoded_project = urlencoding_simple(project_id_or_path);
         let url = format!(
@@ -263,11 +265,18 @@ impl GitLabClient {
             _ => "all",
         };
 
+        let page_str = page.unwrap_or(1).to_string();
+        let per_page_str = per_page.unwrap_or(50).clamp(1, 100).to_string();
+
         let response = self
             .client
             .get(&url)
             .headers(headers)
-            .query(&[("state", state), ("per_page", "50")])
+            .query(&[
+                ("state", state),
+                ("page", &page_str),
+                ("per_page", &per_page_str),
+            ])
             .send()
             .await
             .map_err(|error| {
