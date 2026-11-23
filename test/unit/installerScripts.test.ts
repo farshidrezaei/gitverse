@@ -70,4 +70,34 @@ describe('GitVerse Installer Scripts', () => {
     expect(combinedContent).not.toMatch(/\b(\$|local\s+)msg\b/)
     expect(combinedContent).not.toMatch(/\b(\$|local\s+)auth\b/)
   })
+
+  it('verifies jq release asset filtering logic parses patterns correctly without escape errors', () => {
+    const mockReleaseJson = JSON.stringify({
+      tag_name: 'v1.0.1',
+      assets: [
+        {
+          name: 'GitVerse_1.0.1_amd64.AppImage.sig',
+          browser_download_url: 'https://github.com/farshidrezaei/gitverse/releases/download/v1.0.1/GitVerse_1.0.1_amd64.AppImage.sig'
+        },
+        {
+          name: 'GitVerse_1.0.1_amd64.AppImage',
+          browser_download_url: 'https://github.com/farshidrezaei/gitverse/releases/download/v1.0.1/GitVerse_1.0.1_amd64.AppImage'
+        },
+        {
+          name: 'GitVerse_1.0.1_universal.dmg',
+          browser_download_url: 'https://github.com/farshidrezaei/gitverse/releases/download/v1.0.1/GitVerse_1.0.1_universal.dmg'
+        }
+      ]
+    })
+
+    const bashScriptContent = readFileSync(bashScriptPath, 'utf8')
+    expect(bashScriptContent).toContain('downloaded_dmg')
+    expect(bashScriptContent).not.toMatch(/curl[^\n]+-o\s+"\$\{download_dmg\}"/)
+
+    // Execute the jq pattern filter command directly to ensure jq does not fail on escape characters
+    const testCommand = `printf '%s' '${mockReleaseJson}' | jq -r --arg pattern '\\.AppImage$' '.assets[] | select((.name | test($pattern; "i")) and (.name | test("\\\\.sig$") | not)) | .browser_download_url'`
+    const extractedUrl = execSync(testCommand, { shell: '/bin/bash' }).toString().trim()
+
+    expect(extractedUrl).toBe('https://github.com/farshidrezaei/gitverse/releases/download/v1.0.1/GitVerse_1.0.1_amd64.AppImage')
+  })
 })

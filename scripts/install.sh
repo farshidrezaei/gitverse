@@ -312,7 +312,7 @@ extract_json_field() {
     local field_name="$2"
 
     if command -v jq >/dev/null 2>&1; then
-        echo "${json_content}" | jq -r ".${field_name} // empty"
+        echo "${json_content}" | jq -r --arg field "${field_name}" '.[$field] // empty'
     else
         # Fallback regex extraction
         echo "${json_content}" | grep -oE "\"${field_name}\":\\s*\"[^\"]+\"" | head -n 1 | cut -d'"' -f4
@@ -324,7 +324,7 @@ extract_download_url() {
     local filename_pattern="$2"
 
     if command -v jq >/dev/null 2>&1; then
-        echo "${json_content}" | jq -r ".assets[] | select((.name | test(\"${filename_pattern}\"; \"i\")) and (.name | test(\"\\\\.sig$\") | not)) | .browser_download_url" | head -n 1
+        echo "${json_content}" | jq -r --arg pattern "${filename_pattern}" '.assets[] | select((.name | test($pattern; "i")) and (.name | test("\\.sig$") | not)) | .browser_download_url' | head -n 1
     else
         echo "${json_content}" | grep -oE '"browser_download_url":\s*"[^"]+' | cut -d'"' -f4 | grep -iE "${filename_pattern}" | grep -v '\.sig$' | head -n 1
     fi
@@ -477,7 +477,7 @@ install_macos() {
 
     log_info "Downloading GitVerse ${target_version} DMG..."
     printf "URL: %s\n" "${download_url}"
-    curl -fSL --progress-bar "${download_url}" -o "${download_dmg}"
+    curl -fSL --progress-bar "${download_url}" -o "${downloaded_dmg}"
 
     log_info "Mounting disk image..."
     mkdir -p "${mount_point}"
