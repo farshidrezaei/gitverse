@@ -200,44 +200,9 @@ jobs:
 
       - name: Publish draft release with changelog notes
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_ID: ${{ needs.prepare_release.outputs.release_id }}
-        run: |
-          VERSION=$(jq -r '.version' src-tauri/tauri.conf.json)
-          NOTES=""
-          if [ -f CHANGELOG.md ]; then
-            NOTES=$(awk -v ver="## [${VERSION}]" '
-              index($0, ver) == 1 { capture=1; next }
-              capture && /^## \[/ { exit }
-              capture { print }
-            ' CHANGELOG.md | sed '/./,$!d')
-          fi
-
-          BINARY_TABLE=$(cat << 'EOF'
-### Official Desktop Installers
-
-| Platform | Architecture | Package Format |
-|---|---|---|
-| **macOS** | Universal (`Apple Silicon` + `Intel`) | `.dmg` |
-| **Linux** | `x86_64` | `.AppImage` (Portable) |
-| **Linux** | `x86_64` | `.deb` (Debian / Ubuntu) |
-| **Linux** | `x86_64` | `.rpm` (Fedora / RHEL / openSUSE) |
-| **Windows** | `x64` | `.exe` (NSIS Installer) |
-| **Windows** | `x64` | `.msi` (Enterprise MSI) |
-
-*SHA256 checksums are verified and recorded in `SHA256SUMS.txt` attached below.*
-EOF
-)
-
-          if [ -n "${NOTES}" ]; then
-            FINAL_BODY=$(printf '## What is Changed in GitVerse %s\n\n%s\n\n---\n\n%s\n' "v${VERSION}" "${NOTES}" "${BINARY_TABLE}")
-          else
-            FINAL_BODY="${BINARY_TABLE}"
-          fi
-
-          jq -n --arg body "${FINAL_BODY}" '{draft: false, body: $body}' | gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" \
-            --input - \
-            --jq '{id, tag_name, draft, html_url}'
+        run: node scripts/publish-github-release.mjs
 
       - name: Broadcast Release to Telegram Channel
         if: success()
