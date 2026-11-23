@@ -75,6 +75,11 @@ export function formatMarkdownToTelegramHtml(markdown) {
       formattedLines.push('⚠️ <b>تغییرات ساختاری (Deprecated/Removed):</b>')
       continue
     }
+    if (line.startsWith('#### ')) {
+      const headerText = escapeHtml(line.replace(/^####\s*/, ''))
+      formattedLines.push(`\n🔹 <b>${headerText}</b>`)
+      continue
+    }
 
     let isBullet = false
     let content = line
@@ -115,7 +120,7 @@ export function buildTelegramReleaseMessage({ version, releaseUrl, changelogMark
 
   const platforms =
     `\n\n📦 <b>نصاب‌های رسمی:</b>\n` +
-    `🐧 <b>Linux:</b> <code>.AppImage</code> | <code>.deb</code>\n` +
+    `🐧 <b>Linux:</b> <code>.AppImage</code> | <code>.deb</code> | <code>.rpm</code>\n` +
     `🪟 <b>Windows:</b> <code>.exe</code> | <code>.msi</code>\n` +
     `🍏 <b>macOS:</b> <code>.dmg</code> (Universal Intel &amp; Apple Silicon)\n\n`
 
