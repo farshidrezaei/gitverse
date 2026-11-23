@@ -42,13 +42,25 @@ export function useNotificationService() {
     })
   }
 
-  function notifyError(title: string, errorOrMessage?: unknown): void {
-    const formatted = formatApplicationError(errorOrMessage)
-    const description = formatted === title ? undefined : formatted
+  function notifyError(titleOrError: unknown, errorOrMessage?: unknown): void {
+    let title: string
+    let description: string | undefined
+
+    if (typeof titleOrError === 'string') {
+      title = titleOrError
+      if (errorOrMessage !== undefined) {
+        description = formatApplicationError(errorOrMessage)
+      }
+    } else {
+      title = formatApplicationError(titleOrError)
+      if (errorOrMessage !== undefined) {
+        description = formatApplicationError(errorOrMessage)
+      }
+    }
 
     showNotification({
       title,
-      description,
+      description: description === title ? undefined : description,
       color: 'error',
       duration: 6000,
     })

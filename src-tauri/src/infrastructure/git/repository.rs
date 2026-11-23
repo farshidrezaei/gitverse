@@ -1622,9 +1622,27 @@ impl GitRepositoryInspector {
         &self,
         directory_path: &Path,
     ) -> Result<DirectoryListing, ApplicationError> {
-        let canonical_path = match std::fs::canonicalize(directory_path) {
+        let initial_canonical = match std::fs::canonicalize(directory_path) {
             Ok(p) => p,
             Err(_) => directory_path.to_path_buf(),
+        };
+
+        let (canonical_path, read_dir_result) = match std::fs::read_dir(&initial_canonical) {
+            Ok(entries) => (initial_canonical, entries),
+            Err(_) => {
+                let home_path = std::env::var("HOME")
+                    .or_else(|_| std::env::var("USERPROFILE"))
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|_| PathBuf::from("."));
+                let entries = std::fs::read_dir(&home_path).map_err(|error| {
+                    ApplicationError::FilesystemError(format!(
+                        "Failed to read directory {}: {}",
+                        home_path.display(),
+                        error
+                    ))
+                })?;
+                (home_path, entries)
+            }
         };
 
         let current_path_str = canonical_path.to_string_lossy().to_string();
@@ -1638,13 +1656,6 @@ impl GitRepositoryInspector {
 
         let mut folders = Vec::new();
         let mut files = Vec::new();
-
-        let read_dir_result = std::fs::read_dir(&canonical_path).map_err(|error| {
-            ApplicationError::FilesystemError(format!(
-                "Failed to read directory {}: {}",
-                current_path_str, error
-            ))
-        })?;
 
         for entry_result in read_dir_result {
             let entry = match entry_result {

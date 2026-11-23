@@ -815,23 +815,49 @@ impl ApplicationState {
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from("."));
 
-        let path = if let Some(p) = directory_path {
-            if p.is_empty() {
-                home_dir
-            } else if p.starts_with("~/") || p == "~" {
-                if p == "~" {
-                    home_dir
+        let initial_path = if let Some(p) = directory_path {
+            let trimmed = p.trim();
+            if trimmed.is_empty() {
+                home_dir.clone()
+            } else if trimmed.starts_with("~/") || trimmed == "~" {
+                if trimmed == "~" {
+                    home_dir.clone()
                 } else {
-                    home_dir.join(&p[2..])
+                    home_dir.join(&trimmed[2..])
                 }
             } else {
-                PathBuf::from(p)
+                PathBuf::from(trimmed)
             }
         } else {
-            home_dir
+            home_dir.clone()
         };
 
-        self.git_inspector.list_directory_folders(&path).await
+        let mut target_dir = initial_path;
+
+        // If target path does not exist on disk, traverse ancestors until an existing folder is reached
+        while !target_dir.exists() {
+            if let Some(parent) = target_dir.parent() {
+                if parent.as_os_str().is_empty() || parent == target_dir {
+                    target_dir = home_dir.clone();
+                    break;
+                }
+                target_dir = parent.to_path_buf();
+            } else {
+                target_dir = home_dir.clone();
+                break;
+            }
+        }
+
+        // If target path is a file, use its parent directory
+        if target_dir.is_file() {
+            if let Some(parent) = target_dir.parent() {
+                target_dir = parent.to_path_buf();
+            } else {
+                target_dir = home_dir;
+            }
+        }
+
+        self.git_inspector.list_directory_folders(&target_dir).await
     }
 
     /// Lists worktrees linked to the repository.

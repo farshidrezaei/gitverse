@@ -1,3 +1,4 @@
+import { formatApplicationError } from '~/utils/tauriClient'
 import type {
   DirectoryListing,
   GitBinaryInformation,
@@ -265,7 +266,7 @@ export function useRepositoryWorkspace() {
       if (await isTauriEnvironment()) {
         const { invoke } = await import('@tauri-apps/api/core')
         return await invoke<DirectoryListing>('list_directory_folders', {
-          directoryPath: directoryPath || null,
+          directoryPath: directoryPath?.trim() || null,
         })
       } else {
         // Mock browser listing
@@ -288,8 +289,7 @@ export function useRepositoryWorkspace() {
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      notifyError(t('common.error'), errorMessage)
+      notifyError(t('common.error'), formatApplicationError(error))
       return null
     }
   }
@@ -305,8 +305,7 @@ export function useRepositoryWorkspace() {
         return '// Mock file text content'
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      notifyError(t('common.error'), errorMessage)
+      notifyError(t('common.error'), formatApplicationError(error))
       return null
     }
   }
