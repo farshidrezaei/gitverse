@@ -172,8 +172,8 @@ sequenceDiagram
    - Every Git invocation executes through `std::process::Command::new("git")` with sanitized directory path strings.
    - Command arguments are strictly passed as vector items (`.args(&["checkout", branch_name])`), preventing argument injection.
 2. **Credential Privacy**:
-   - Access tokens (GitHub PAT, GitLab PAT) are persisted directly to the host OS Secure Enclave / Keyring via the `keyring` crate.
-   - If keyring is unavailable in headless environments, fallback credentials use file encryption with restricted permissions (`0600`).
+   - Access tokens (GitHub PAT, GitLab PAT) are persisted directly to the host OS Secure Enclave / Keyring via the `keyring` crate (Secret Service on Linux, Keychain on macOS, Credential Manager on Windows).
+   - If keyring daemon is unavailable in headless or sandboxed environments, a secure in-memory fallback (`Mutex<HashMap<String, String>>`) is used so tokens are never persisted in plaintext or unencrypted files.
    - Tokens, credentials, and sensitive headers are excluded from logs, error serializations, and command payloads.
 3. **Markdown Sanitization & Safe DOM Rendering**:
    - Markdown rendering in pull requests and commit inspectors parses through `marked` with custom syntax highlighting via `highlight.js`.
@@ -254,5 +254,5 @@ gitverse/
 │   │   ├── services/                 # Graph DAG computation algorithms & benchmarks
 │   │   ├── lib.rs                    # Plugin registration, invoke handlers, initialization
 │   │   └── main.rs                   # Desktop entrypoint
-│   └── test/                         # Frontend Vitest test suites (142 passing unit & E2E tests; 80 Rust unit/integration tests)
+│   └── test/                         # Frontend Vitest test suites (331 passing unit & E2E tests; 93 Rust unit/integration tests)
 ```

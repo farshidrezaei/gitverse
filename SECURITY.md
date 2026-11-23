@@ -22,7 +22,9 @@ GitVerse adheres to strict security standards codified in our engineering consti
 ### 2.1. Local-First & Zero Telemetry
 - GitVerse does not transmit your repository files, commit contents, diffs, branch names, or commit graphs to any third-party or proprietary GitVerse cloud server.
 - All Git operations run locally using your machine's native `git` CLI executable.
-- Network traffic is strictly limited to explicit provider actions you configure (e.g., GitHub and GitLab API endpoints for Pull Requests, Merge Requests, and CI status checks).
+- Network traffic is strictly limited to:
+  - Explicit provider actions you configure (e.g., GitHub and GitLab API endpoints for Pull Requests, Merge Requests, and CI status checks).
+  - Explicit or background application update checks querying official GitHub Releases endpoints (configured via `tauri.conf.json` updater endpoints; update checks transmit no repository code or personal telemetry and can be configured in app settings).
 
 ### 2.2. Zero Shell Interpolation Standard
 - All Git CLI process execution is performed via direct, structured argument arrays (`std::process::Command` / `tokio::process::Command`).
