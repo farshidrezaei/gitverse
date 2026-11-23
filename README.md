@@ -93,7 +93,30 @@ Traditional Git GUIs are often slow, memory-hungry Electron wrappers that hide G
 
 ## Downloads & Installation
 
-Pre-built binaries are available for every major desktop operating system on the [Releases page](https://github.com/farshidrezaei/gitverse/releases/latest):
+### 🚀 One-Line Quick Install (Recommended)
+
+Install or update GitVerse automatically with a single command. The installer detects your OS and architecture, checks for existing installations, prompts for upgrades/reinstalls, and sets up your system desktop launcher:
+
+**Linux & macOS:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/farshidrezaei/gitverse/main/scripts/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/farshidrezaei/gitverse/main/scripts/install.ps1 | iex
+```
+
+> [!TIP]
+> **Smart Re-run & In-Place Updates**: Running the installer again automatically checks GitHub for newer releases. If a newer version is available, it offers a 1-click update. If already up to date, it prompts if you wish to reinstall.
+>
+> Pass `--force` (`-Force` on Windows) for silent/CI execution, or `--help` to see options like `--version <tag>` and `--uninstall`.
+
+---
+
+### 📦 Manual Binary Downloads
+
+Standalone installers and portable packages are available for all major platforms on the [Releases page](https://github.com/farshidrezaei/gitverse/releases/latest):
 
 | Platform | Architecture | Package Format | Direct Download |
 |---|---|---|---|

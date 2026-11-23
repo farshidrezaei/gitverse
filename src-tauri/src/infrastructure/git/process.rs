@@ -41,12 +41,29 @@ fn check_porcelain_v2_support(raw_version: &str) -> bool {
 /// Safe, argument-array-based runner for executing Git commands without shell interpolation.
 #[derive(Debug, Clone)]
 pub struct GitProcessExecutor {
-    executable_path: PathBuf,
+    executable_path: std::sync::Arc<std::sync::RwLock<PathBuf>>,
 }
 
 impl GitProcessExecutor {
     pub fn new(executable_path: PathBuf) -> Self {
-        Self { executable_path }
+        Self {
+            executable_path: std::sync::Arc::new(std::sync::RwLock::new(executable_path)),
+        }
+    }
+
+    /// Sets the executable path for subsequent git commands.
+    pub fn set_executable_path(&self, new_path: PathBuf) {
+        if let Ok(mut lock) = self.executable_path.write() {
+            *lock = new_path;
+        }
+    }
+
+    /// Returns the currently configured executable path.
+    pub fn executable_path(&self) -> PathBuf {
+        self.executable_path
+            .read()
+            .map(|guard| guard.clone())
+            .unwrap_or_else(|_| PathBuf::from("git"))
     }
 
     /// Discovers and validates the native Git binary on the host machine.
@@ -113,7 +130,8 @@ impl GitProcessExecutor {
         working_directory: Option<&Path>,
         arguments: &[&str],
     ) -> Result<String, ApplicationError> {
-        let mut command = Command::new(&self.executable_path);
+        let current_path = self.executable_path();
+        let mut command = Command::new(&current_path);
 
         if let Some(directory) = working_directory {
             command.current_dir(directory);
@@ -148,7 +166,7 @@ impl GitProcessExecutor {
             .map_err(|error| {
                 let message = format!(
                     "Failed to spawn process {:?}: {}",
-                    self.executable_path, error
+                    current_path, error
                 );
                 crate::infrastructure::diagnostics::append_diagnostic_log("error", &message);
                 ApplicationError::FilesystemError(message)
@@ -176,7 +194,8 @@ impl GitProcessExecutor {
         working_directory: Option<&Path>,
         arguments: &[&str],
     ) -> Result<(i32, String, String), ApplicationError> {
-        let mut command = Command::new(&self.executable_path);
+        let current_path = self.executable_path();
+        let mut command = Command::new(&current_path);
 
         if let Some(directory) = working_directory {
             command.current_dir(directory);
@@ -201,7 +220,7 @@ impl GitProcessExecutor {
             .map_err(|error| {
                 ApplicationError::FilesystemError(format!(
                     "Failed to spawn process {:?}: {}",
-                    self.executable_path, error
+                    current_path, error
                 ))
             })?;
 
@@ -219,7 +238,8 @@ impl GitProcessExecutor {
         arguments: &[&str],
         standard_input_bytes: &[u8],
     ) -> Result<String, ApplicationError> {
-        let mut command = Command::new(&self.executable_path);
+        let current_path = self.executable_path();
+        let mut command = Command::new(&current_path);
 
         if let Some(directory) = working_directory {
             command.current_dir(directory);
@@ -238,7 +258,7 @@ impl GitProcessExecutor {
         let mut child = command.spawn().map_err(|error| {
             ApplicationError::FilesystemError(format!(
                 "Failed to spawn process {:?}: {}",
-                self.executable_path, error
+                current_path, error
             ))
         })?;
 
@@ -290,7 +310,8 @@ impl GitProcessExecutor {
         working_directory: Option<&Path>,
         arguments: &[&str],
     ) -> Result<Vec<u8>, ApplicationError> {
-        let mut command = Command::new(&self.executable_path);
+        let current_path = self.executable_path();
+        let mut command = Command::new(&current_path);
 
         if let Some(directory) = working_directory {
             command.current_dir(directory);
@@ -314,7 +335,7 @@ impl GitProcessExecutor {
             .map_err(|error| {
                 ApplicationError::FilesystemError(format!(
                     "Failed to spawn process {:?}: {}",
-                    self.executable_path, error
+                    current_path, error
                 ))
             })?;
 

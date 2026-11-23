@@ -52,12 +52,21 @@ impl ApplicationState {
         })
     }
 
-    /// Discovers system Git and returns binary metadata.
+    /// Discovers system Git, returns binary metadata, and updates active executor if custom path is valid.
     pub async fn discover_git(
         &self,
         custom_path: Option<&str>,
     ) -> Result<GitBinaryInformation, ApplicationError> {
-        GitProcessExecutor::discover_system_git(custom_path).await
+        let binary_info = GitProcessExecutor::discover_system_git(custom_path).await?;
+        if custom_path.is_some() && binary_info.is_valid {
+            self.set_git_executable_path(PathBuf::from(&binary_info.executable_path));
+        }
+        Ok(binary_info)
+    }
+
+    /// Updates the Git executable path used by the active executor and inspector.
+    pub fn set_git_executable_path(&self, executable_path: PathBuf) {
+        self.git_executor.set_executable_path(executable_path);
     }
 
     /// Opens a repository from the filesystem, records it in history, and starts file watcher.

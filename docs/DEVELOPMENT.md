@@ -57,6 +57,9 @@ npm run dev
 
 # 5. Launch Tauri desktop app in dev mode (Hot Module Reload enabled)
 npm run tauri dev
+
+# 6. Test one-line installer script locally
+./scripts/install.sh --help
 ```
 
 ---

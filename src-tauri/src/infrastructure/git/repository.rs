@@ -45,6 +45,11 @@ impl GitRepositoryInspector {
         Self { executor }
     }
 
+    /// Updates the underlying git process executor.
+    pub fn update_executor(&mut self, executor: GitProcessExecutor) {
+        self.executor = executor;
+    }
+
     /// Verifies if a given path is a valid Git repository root or worktree.
     pub async fn verify_repository_path(
         &self,

@@ -17,9 +17,70 @@ GitVerse is engineered to support both installed packages and zero-installation 
 
 ---
 
-## 2. Installation & Execution Instructions
+## 2. Automated One-Line Installers (Recommended)
 
-### 2.1. Linux (AppImage)
+GitVerse provides state-aware, one-line installer scripts that automatically detect your operating system and architecture, check for existing installations, manage updates/reinstalls, configure desktop entries, and set up your system PATH.
+
+### 2.1. Linux & macOS (Bash)
+
+Install or update with a single terminal command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/farshidrezaei/gitverse/main/scripts/install.sh | bash
+```
+
+#### Smart Re-run & Version Awareness:
+- **First run**: Installs the latest release to `~/.local/bin/gitverse` and creates an application launcher with official icons.
+- **Already installed (up to date)**: Alerts you that GitVerse is current, offering a clean reinstall:
+  ```text
+  GitVerse is already installed and up to date (v1.0.0).
+  Would you like to reinstall GitVerse v1.0.0? [y/N]:
+  ```
+- **Newer version available**: Prompts for a one-click automatic upgrade:
+  ```text
+  Update Available!
+  Installed version: v1.0.0
+  Latest version:    v1.1.0
+
+  Would you like to update GitVerse to v1.1.0 now? [Y/n]:
+  ```
+
+#### CLI Options:
+```bash
+# Bypass prompts (CI / Non-interactive mode)
+curl -fsSL https://raw.githubusercontent.com/farshidrezaei/gitverse/main/scripts/install.sh | bash -s -- --force
+
+# Install a specific tagged release
+curl -fsSL https://raw.githubusercontent.com/farshidrezaei/gitverse/main/scripts/install.sh | bash -s -- --version v1.0.0
+
+# Force immediate reinstallation
+curl -fsSL https://raw.githubusercontent.com/farshidrezaei/gitverse/main/scripts/install.sh | bash -s -- --reinstall
+
+# Uninstall GitVerse and clean up desktop entries & symlinks
+curl -fsSL https://raw.githubusercontent.com/farshidrezaei/gitverse/main/scripts/install.sh | bash -s -- --uninstall
+```
+
+---
+
+### 2.2. Windows (PowerShell)
+
+Install or update from PowerShell 5.1+ or PowerShell 7+:
+
+```powershell
+irm https://raw.githubusercontent.com/farshidrezaei/gitverse/main/scripts/install.ps1 | iex
+```
+
+#### Features:
+- Silent NSIS or MSI installer execution without administrative prompts.
+- Automatically places binary into `%LOCALAPPDATA%\Programs\GitVerse` and updates the user's `PATH`.
+- Supports the same update/reinstall detection prompts as the Unix installer.
+- Supports `-Force`, `-Version <tag>`, `-Reinstall`, and `-Uninstall` switches.
+
+---
+
+## 3. Manual Installation & Execution Instructions
+
+### 3.1. Linux (AppImage)
 
 The AppImage package requires no installation and can be executed directly from any folder or USB drive:
 
@@ -34,20 +95,20 @@ chmod +x GitVerse_1.0.0_amd64.AppImage
 > [!NOTE]
 > Ensure FUSE (`libfuse2` on Ubuntu 22.04+) is present on your system to launch AppImage files.
 
-### 2.2. Linux (Debian / Ubuntu Package)
+### 3.2. Linux (Debian / Ubuntu Package)
 
 ```bash
 sudo dpkg -i gitverse_1.0.0_amd64.deb
 sudo apt-get install -f
 ```
 
-### 2.3. macOS (Universal DMG)
+### 3.3. macOS (Universal DMG)
 
 1. Download `GitVerse_1.0.0_universal.dmg`.
 2. Double-click the DMG to mount it.
 3. Drag `GitVerse.app` into your `/Applications` directory (or run it directly from the volume).
 
-### 2.4. Windows (Portable)
+### 3.4. Windows (Portable)
 
 1. Download `GitVerse_1.0.0_x64-portable.exe`.
 2. Move it to your preferred directory (e.g. `C:\Tools\GitVerse` or a portable drive).
@@ -55,7 +116,7 @@ sudo apt-get install -f
 
 ---
 
-## 3. Native Git CLI Runtime Requirement
+## 4. Native Git CLI Runtime Requirement
 
 Operating under **ADR-001 (Native Git CLI)**, GitVerse requires an installed `git` executable on your system:
 
@@ -65,7 +126,7 @@ Operating under **ADR-001 (Native Git CLI)**, GitVerse requires an installed `gi
 
 ---
 
-## 4. Local-First Storage Isolation
+## 5. Local-First Storage Isolation
 
 GitVerse strictly adheres to the principle that **application state never pollutes your repository working tree**:
 
@@ -78,7 +139,7 @@ GitVerse strictly adheres to the principle that **application state never pollut
 
 ---
 
-## 5. Verifying Release Integrity
+## 6. Verifying Release Integrity
 
 Every official release includes a `SHA256SUMS.txt` checksum file. Verify your downloaded asset:
 
@@ -95,7 +156,7 @@ Get-FileHash -Algorithm SHA256 .\GitVerse_1.0.0_x64-portable.exe
 
 ---
 
-## 6. In-App Updates & Release Automation
+## 7. In-App Updates & Release Automation
 
 GitVerse includes a built-in cryptographic in-app updater powered by Tauri 2 and Minisign:
 
